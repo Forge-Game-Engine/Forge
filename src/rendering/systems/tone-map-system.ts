@@ -35,12 +35,12 @@ import { RenderTarget } from '../render-target.js';
 export const createToneMapEcsSystem = (
   renderContext: RenderContext,
 ): EcsSystem<[CameraEcsComponent, ToneMappingEcsComponent]> => {
-  const { gl, shaderCache } = renderContext;
+  const { shaderCache } = renderContext;
 
   const toneMapMaterial = new Material(
+    renderContext,
     shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('tone-mapping.frag'),
-    gl,
   );
 
   const processedTargetsThisFrame = new Set<RenderTarget>();

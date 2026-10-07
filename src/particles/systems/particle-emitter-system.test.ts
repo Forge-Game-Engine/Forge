@@ -17,7 +17,7 @@ import {
   Time,
 } from '../../common/index.js';
 import { Random, Vec2, Vector2 } from '../../math/index.js';
-import { Renderable, Sprite, spriteId } from '../../rendering/index.js';
+import { Sprite, spriteId, Texture } from '../../rendering/index.js';
 
 describe('createParticleEcsSystem', () => {
   let world: EcsWorld;
@@ -50,7 +50,7 @@ describe('createParticleEcsSystem', () => {
     sprite = new Sprite({
       width: 10,
       height: 10,
-      renderable: {} as Renderable,
+      texture: {} as Texture,
     });
   });
 
@@ -349,7 +349,7 @@ describe('createParticleEcsSystem', () => {
     ).toBeCloseTo(0.8);
   });
 
-  it('gives each particle its own renderable copy of a plain Sprite', () => {
+  it('gives each particle its own copy of a plain Sprite', () => {
     const emitter = addEmitter({ numParticlesRange: { min: 2, max: 2 } });
 
     emitter.emit();
@@ -369,7 +369,7 @@ describe('createParticleEcsSystem', () => {
       layer: 0,
       width: 10,
       height: 10,
-      renderable: sprite.renderable,
+      texture: sprite.texture,
       uvOffset: { x: 0, y: 0 },
       uvScale: { x: 1, y: 1 },
     });
@@ -377,7 +377,7 @@ describe('createParticleEcsSystem', () => {
 
   it("draws particles on the sprite's layer", () => {
     const emitter = new ParticleEmitter(
-      { width: 1, height: 1, renderable: {} as Renderable, layer: 3 },
+      { width: 1, height: 1, texture: {} as Texture, layer: 3 },
       { numParticlesRange: { min: 1, max: 1 } },
     );
 

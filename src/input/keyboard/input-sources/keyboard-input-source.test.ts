@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { KeyboardInputSource } from './keyboard-input-source';
-import { actionResetTypes, buttonMoments, keyCodes } from '../../constants';
+import { buttonMoments, keyCodes } from '../../constants';
 import { InputManager } from '../../input-manager';
 import {
   Axis1dAction,
@@ -33,8 +33,8 @@ describe('KeyboardInputSource', () => {
     keyDownAction = new TriggerAction('keyDownAction', group);
     keyHoldAction = new HoldAction('holdAction', group);
 
-    inputManager.addResettable(keyUpAction);
-    inputManager.addResettable(keyDownAction);
+    inputManager.addTriggerActions(keyUpAction, keyDownAction);
+    inputManager.addHoldActions(keyHoldAction);
 
     source.triggerBindings.add(
       new KeyboardTriggerBinding(keyUpAction, keyCodes.a, buttonMoments.up),
@@ -50,8 +50,10 @@ describe('KeyboardInputSource', () => {
   });
 
   it('dispatches key up trigger actions', () => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.a }));
     expect(keyUpAction.isTriggered).toBe(false);
 
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.a }));
     window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.a }));
     expect(keyUpAction.isTriggered).toBe(true);
 
@@ -206,18 +208,43 @@ describe('KeyboardInputSource', () => {
   });
 
   it('stops dispatching after stop is called', () => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.a }));
     source.stop();
 
     window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.a }));
     expect(keyUpAction.isTriggered).toBe(false);
   });
 
-  it('combines several axis1d bindings for the same action, clamped to -1 to 1', () => {
-    const axis1dAction = new Axis1dAction(
-      'axis1dAction',
-      group,
-      actionResetTypes.noReset,
+  it('releases the keys it was holding when stopped', () => {
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { code: keyCodes.space }),
     );
+    expect(keyHoldAction.isHeld).toBe(true);
+
+    source.stop();
+    expect(keyHoldAction.isHeld).toBe(false);
+  });
+
+  it('holds an action while any of its keys is held', () => {
+    source.holdBindings.add(
+      new KeyboardHoldBinding(keyHoldAction, keyCodes.enter),
+    );
+
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { code: keyCodes.space }),
+    );
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { code: keyCodes.enter }),
+    );
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.space }));
+    expect(keyHoldAction.isHeld).toBe(true);
+
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.enter }));
+    expect(keyHoldAction.isHeld).toBe(false);
+  });
+
+  it('combines several axis1d bindings for the same action, clamped to -1 to 1', () => {
+    const axis1dAction = new Axis1dAction('axis1dAction', group);
 
     inputManager.addAxis1dActions(axis1dAction);
     source.axis1dBindings.add(
@@ -247,11 +274,7 @@ describe('KeyboardInputSource', () => {
   });
 
   it('combines several axis2d bindings for the same action, clamped to -1 to 1', () => {
-    const axis2dAction = new Axis2dAction(
-      'axis2dAction',
-      group,
-      actionResetTypes.noReset,
-    );
+    const axis2dAction = new Axis2dAction('axis2dAction', group);
 
     inputManager.addAxis2dActions(axis2dAction);
     source.axis2dBindings.add(
@@ -289,11 +312,7 @@ describe('KeyboardInputSource', () => {
   });
 
   it('does not let a key up for a key it never saw pressed move an axis', () => {
-    const axis1dAction = new Axis1dAction(
-      'axis1dAction',
-      group,
-      actionResetTypes.noReset,
-    );
+    const axis1dAction = new Axis1dAction('axis1dAction', group);
 
     inputManager.addAxis1dActions(axis1dAction);
     source.axis1dBindings.add(
@@ -304,6 +323,87 @@ describe('KeyboardInputSource', () => {
     expect(axis1dAction.value).toBe(0);
   });
 
+  describe('keys typed into editable elements', () => {
+    const dispatchKey = (
+      target: EventTarget,
+      type: 'keydown' | 'keyup',
+      code: string,
+    ): void => {
+      target.dispatchEvent(
+        new KeyboardEvent(type, { code, bubbles: true, composed: true }),
+      );
+    };
+
+    let input: HTMLInputElement;
+
+    beforeEach(() => {
+      input = document.createElement('input');
+      document.body.appendChild(input);
+    });
+
+    it('ignores a key pressed in an <input>, and its release', () => {
+      dispatchKey(input, 'keydown', keyCodes.s);
+      expect(keyDownAction.isTriggered).toBe(false);
+
+      dispatchKey(input, 'keydown', keyCodes.a);
+      dispatchKey(input, 'keyup', keyCodes.a);
+      expect(keyUpAction.isTriggered).toBe(false);
+
+      input.remove();
+    });
+
+    it('ignores keys pressed in a <textarea>, a <select> and a contentEditable element', () => {
+      const textarea = document.createElement('textarea');
+      const select = document.createElement('select');
+      const editable = document.createElement('div');
+
+      editable.contentEditable = 'true';
+      // jsdom doesn't implement isContentEditable.
+      Object.defineProperty(editable, 'isContentEditable', { value: true });
+
+      for (const element of [textarea, select, editable]) {
+        document.body.appendChild(element);
+        dispatchKey(element, 'keydown', keyCodes.s);
+        element.remove();
+      }
+
+      expect(keyDownAction.isTriggered).toBe(false);
+      input.remove();
+    });
+
+    it('ignores a key pressed in an <input> inside a shadow root', () => {
+      const host = document.createElement('div');
+      const shadowInput = document.createElement('input');
+
+      host.attachShadow({ mode: 'open' }).appendChild(shadowInput);
+      document.body.appendChild(host);
+
+      dispatchKey(shadowInput, 'keydown', keyCodes.s);
+      expect(keyDownAction.isTriggered).toBe(false);
+
+      host.remove();
+      input.remove();
+    });
+
+    it('still releases a key held before typing started', () => {
+      dispatchKey(window, 'keydown', keyCodes.space);
+      expect(keyHoldAction.isHeld).toBe(true);
+
+      dispatchKey(input, 'keyup', keyCodes.space);
+      expect(keyHoldAction.isHeld).toBe(false);
+
+      input.remove();
+    });
+
+    it('does not report a key released outside the input after being pressed in it', () => {
+      dispatchKey(input, 'keydown', keyCodes.a);
+      input.remove();
+      dispatchKey(window, 'keyup', keyCodes.a);
+
+      expect(keyUpAction.isTriggered).toBe(false);
+    });
+  });
+
   describe('switching the active input group', () => {
     const menuGroup = 'menu';
 
@@ -311,8 +411,8 @@ describe('KeyboardInputSource', () => {
     let move2d: Axis2dAction;
 
     beforeEach(() => {
-      move = new Axis1dAction('move', group, actionResetTypes.noReset);
-      move2d = new Axis2dAction('move2d', group, actionResetTypes.noReset);
+      move = new Axis1dAction('move', group);
+      move2d = new Axis2dAction('move2d', group);
 
       inputManager.addAxis1dActions(move);
       inputManager.addAxis2dActions(move2d);
@@ -378,9 +478,7 @@ describe('KeyboardInputSource', () => {
       expect(move2d.value.x).toBe(0);
     });
 
-    it('ends a hold when its group is deactivated and starts it again if its key is still held', () => {
-      inputManager.addHoldActions(keyHoldAction);
-
+    it('ends a hold when its group is deactivated, and waits for a fresh press once it is active again', () => {
       window.dispatchEvent(
         new KeyboardEvent('keydown', { code: keyCodes.space }),
       );
@@ -390,12 +488,15 @@ describe('KeyboardInputSource', () => {
       expect(keyHoldAction.isHeld).toBe(false);
 
       inputManager.setActiveGroup(group);
-      expect(keyHoldAction.isHeld).toBe(true);
+      expect(keyHoldAction.isHeld).toBe(false);
 
       window.dispatchEvent(
         new KeyboardEvent('keyup', { code: keyCodes.space }),
       );
-      expect(keyHoldAction.isHeld).toBe(false);
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { code: keyCodes.space }),
+      );
+      expect(keyHoldAction.isHeld).toBe(true);
     });
   });
 });

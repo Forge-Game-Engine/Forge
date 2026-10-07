@@ -1,31 +1,23 @@
 /**
- * A named volume and mute stage in a {@link SoundMixer}. Every sound plays
- * through a bus, and every bus feeds its parent, up to the mixer's `master`
- * bus. A sound's loudness is its own volume multiplied by the gain of every
- * bus between it and the speakers, so changing a bus's `volume` or `muted`
- * applies to every sound routed through it, including sounds already
- * playing.
- *
- * Buses are created with {@link SoundMixer.createBus}.
+ * A named stage in a {@link SoundMixer}'s tree that sounds play through.
+ * Its volume and mute apply to every sound routed through it, and through
+ * the buses under it, including sounds that are already playing. Create
+ * buses with {@link SoundMixer.createBus}.
  */
 export interface MixerBus {
   /** The bus's name, unique within its mixer. */
   readonly name: string;
 
-  /** The bus this one feeds, or `null` for the mixer's `master` bus. */
+  /** The bus this one feeds into, or `null` for the mixer's `master` bus. */
   readonly parent: MixerBus | null;
 
   /**
-   * Linear gain, from `0` (silent) to `1` (unchanged). Values above `1`
-   * amplify. Changes ramp over a few milliseconds, so they don't click on
-   * sounds that are playing.
-   * @throws An error when set to a negative or non-finite value.
+   * Linear gain: 0 is silent, 1 leaves sounds unchanged. Changes ramp over
+   * a few milliseconds, so they don't click on sounds already playing.
+   * @throws When set to a negative or non-finite number.
    */
   volume: number;
 
-  /**
-   * Silences the bus without changing `volume`. Clearing it restores the
-   * bus's gain to `volume`.
-   */
+  /** Silences the bus without changing {@link MixerBus.volume}. */
   muted: boolean;
 }

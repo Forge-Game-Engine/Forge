@@ -15,6 +15,7 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
+  createTexture,
   getCameraView,
   NineSliceOptions,
   RenderContext,
@@ -70,18 +71,24 @@ async function loadSuspensionSprites(
   ]);
 
   return {
-    mount: createImageSprite(mountImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
-    wheel: createImageSprite(wheelImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
-    line: createImageSprite(lineImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayer,
-    }),
+    mount: {
+      ...createImageSprite(createTexture(renderContext, mountImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayer,
+    },
+    wheel: {
+      ...createImageSprite(createTexture(renderContext, wheelImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayer,
+    },
+    line: {
+      ...createImageSprite(createTexture(renderContext, lineImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayer,
+    },
   };
 }
 

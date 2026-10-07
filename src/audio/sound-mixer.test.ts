@@ -1,196 +1,242 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  createFakeSound,
-  FakeAudioContext,
-  FakeGainNode,
-  setUserActivation,
-} from './fake-audio-context.test-helper.js';
-import { createSoundMixer } from './sound-mixer.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { playSound } from './play-sound.js';
-import { toAudioBus } from './audio-bus.js';
-
-const gainOf = (node: GainNode): number =>
-  (node as unknown as FakeGainNode).gain.value;
+import { createSoundMixer, SoundMixer } from './sound-mixer.js';
+import {
+  createFakeSoundAsset,
+  FakeAudioContext,
+} from './test-helpers/fake-audio-context.js';
 
 describe('createSoundMixer', () => {
   let context: FakeAudioContext;
+  let mixer: SoundMixer;
 
   beforeEach(() => {
     context = new FakeAudioContext();
-    setUserActivation(false);
+    mixer = createSoundMixer(context.asAudioContext());
   });
 
-  it('connects the master bus to the destination', () => {
-    const mixer = createSoundMixer(context.asAudioContext());
-    const master = toAudioBus(mixer.master);
-
-    expect(master.name).toBe('master');
-    expect(master.parent).toBeNull();
-    expect(
-      (master.node as unknown as FakeGainNode).connections.has(
-        context.destination,
-      ),
-    ).toBe(true);
+  afterEach(async () => {
+    await mixer.stop();
   });
 
-  it('creates buses under master by default, or under a given parent', () => {
-    const mixer = createSoundMixer(context.asAudioContext());
-    const music = mixer.createBus('music');
-    const ambience = mixer.createBus('ambience', music);
+  describe('buses', () => {
+    it('connects the master bus to the destination', () => {
+      const [masterGain] = context.gains;
 
-    expect(music.parent).toBe(mixer.master);
-    expect(ambience.parent).toBe(music);
-    expect(
-      (toAudioBus(ambience).node as unknown as FakeGainNode).connections.has(
-        toAudioBus(music).node as unknown as FakeGainNode,
-      ),
-    ).toBe(true);
-    expect(mixer.getBus('ambience')).toBe(ambience);
-  });
+      expect(mixer.master.name).toBe('master');
+      expect(mixer.master.parent).toBeNull();
+      expect(masterGain.connections).toEqual(new Set([context.destination]));
+    });
 
-  it('throws on a duplicate bus name or an unknown bus', () => {
-    const mixer = createSoundMixer(context.asAudioContext());
+    it('creates buses under master by default', () => {
+      const music = mixer.createBus('music');
+      const [masterGain, musicGain] = context.gains;
 
-    mixer.createBus('sfx');
+      expect(music.parent).toBe(mixer.master);
+      expect(musicGain.connections).toEqual(new Set([masterGain]));
+    });
 
-    expect(() => mixer.createBus('sfx')).toThrow(/already has a bus/);
-    expect(() => mixer.createBus('master')).toThrow(/already has a bus/);
-    expect(() => mixer.getBus('music')).toThrow(/no bus named "music"/);
-  });
+    it('nests a bus under the given parent', () => {
+      const sfx = mixer.createBus('sfx');
+      const ui = mixer.createBus('ui', sfx);
+      const [, sfxGain, uiGain] = context.gains;
 
-  it('throws when the parent belongs to another mixer', () => {
-    const mixer = createSoundMixer(context.asAudioContext());
-    const other = createSoundMixer(new FakeAudioContext().asAudioContext());
+      expect(ui.parent).toBe(sfx);
+      expect(uiGain.connections).toEqual(new Set([sfxGain]));
+    });
 
-    expect(() => mixer.createBus('sfx', other.master)).toThrow(
-      /different mixer/,
-    );
-  });
+    it('throws when a bus name is already used', () => {
+      mixer.createBus('music');
 
-  it('sets a bus gain from volume and muted', () => {
-    const mixer = createSoundMixer(context.asAudioContext());
-    const music = mixer.createBus('music');
-    const node = toAudioBus(music).node;
+      expect(() => mixer.createBus('music')).toThrow(/already has a bus/);
+      expect(() => mixer.createBus('master')).toThrow(/already has a bus/);
+    });
 
-    music.volume = 0.5;
-    expect(gainOf(node)).toBe(0.5);
+    it('throws when the parent belongs to another mixer', async () => {
+      const otherMixer = createSoundMixer(
+        new FakeAudioContext().asAudioContext(),
+      );
 
-    music.muted = true;
-    expect(gainOf(node)).toBe(0);
-    expect(music.volume).toBe(0.5);
+      expect(() => mixer.createBus('music', otherMixer.master)).toThrow(
+        /different sound mixer/,
+      );
 
-    music.muted = false;
-    expect(gainOf(node)).toBe(0.5);
-  });
+      await otherMixer.stop();
+    });
 
-  it('rejects a negative or non-finite volume', () => {
-    const mixer = createSoundMixer(context.asAudioContext());
+    it('gets buses by name', () => {
+      const music = mixer.createBus('music');
 
-    expect(() => {
-      mixer.master.volume = -1;
-    }).toThrow();
-    expect(() => {
-      mixer.master.volume = Number.NaN;
-    }).toThrow();
-  });
+      expect(mixer.getBus('music')).toBe(music);
+      expect(mixer.getBus('master')).toBe(mixer.master);
+      expect(() => mixer.getBus('voice')).toThrow(/no bus named "voice"/);
+    });
 
-  it('mirrors the context state', () => {
-    const mixer = createSoundMixer(context.asAudioContext());
+    it('ramps the gain to a new volume', () => {
+      const music = mixer.createBus('music');
+      const [, musicGain] = context.gains;
 
-    expect(mixer.state).toBe('suspended');
+      context.currentTime = 3;
+      music.volume = 0.25;
 
-    context.setState('running');
+      expect(music.volume).toBe(0.25);
+      expect(musicGain.gain.value).toBe(0.25);
+      expect(musicGain.gain.calls).toEqual(['setTargetAtTime(0.25, 3)']);
+    });
 
-    expect(mixer.state).toBe('running');
+    it('silences a muted bus and restores its volume when unmuted', () => {
+      const music = mixer.createBus('music');
+      const [, musicGain] = context.gains;
+
+      music.volume = 0.5;
+      music.muted = true;
+
+      expect(music.muted).toBe(true);
+      expect(musicGain.gain.value).toBe(0);
+      expect(music.volume).toBe(0.5);
+
+      music.muted = false;
+
+      expect(musicGain.gain.value).toBe(0.5);
+    });
+
+    it('throws for a negative or non-finite volume', () => {
+      expect(() => {
+        mixer.master.volume = -0.1;
+      }).toThrow(/"master" must be a finite number/);
+      expect(() => {
+        mixer.master.volume = Number.NaN;
+      }).toThrow(/finite number/);
+    });
   });
 
   describe('unlocking', () => {
-    it('resumes the context on user input until it runs', () => {
-      const resume = vi.spyOn(context, 'resume');
-
-      createSoundMixer(context.asAudioContext());
-
+    it('resumes the context on a pointer release', () => {
       window.dispatchEvent(new Event('pointerup'));
 
-      expect(resume).toHaveBeenCalledTimes(1);
-      expect(context.state).toBe('running');
-
-      window.dispatchEvent(new Event('pointerup'));
-
-      expect(resume).toHaveBeenCalledTimes(1);
+      expect(context.resumeCalls).toBe(1);
     });
 
-    it('ignores Escape', () => {
-      const resume = vi.spyOn(context, 'resume');
+    it.each(['touchend', 'click'])('resumes the context on %s', (type) => {
+      window.dispatchEvent(new Event(type));
 
-      createSoundMixer(context.asAudioContext());
+      expect(context.resumeCalls).toBe(1);
+    });
 
+    it('resumes on a key press, but not on Escape', () => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-      expect(resume).not.toHaveBeenCalled();
 
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
-      expect(resume).toHaveBeenCalledTimes(1);
+      expect(context.resumeCalls).toBe(0);
+
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+
+      expect(context.resumeCalls).toBe(1);
+    });
+
+    it('keeps listening after the browser refuses a resume', async () => {
+      context.resume = (): Promise<void> => {
+        context.resumeCalls++;
+
+        return Promise.reject(new Error('Not allowed to start'));
+      };
+
+      window.dispatchEvent(new Event('pointerup'));
+      // Lets the refused resume settle before the next gesture.
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+      window.dispatchEvent(new Event('pointerup'));
+
+      expect(context.resumeCalls).toBe(2);
+    });
+
+    it('keeps listening until the context runs', () => {
+      window.dispatchEvent(new Event('pointerup'));
+      window.dispatchEvent(new Event('pointerup'));
+
+      expect(context.resumeCalls).toBe(2);
+
+      context.setState('running');
+      window.dispatchEvent(new Event('pointerup'));
+
+      expect(context.resumeCalls).toBe(2);
     });
 
     it('listens again when the context is interrupted', () => {
-      const resume = vi.spyOn(context, 'resume');
-
-      createSoundMixer(context.asAudioContext());
       context.setState('running');
-
-      window.dispatchEvent(new Event('click'));
-      expect(resume).not.toHaveBeenCalled();
-
       context.setState('interrupted');
-      window.dispatchEvent(new Event('touchend'));
+      window.dispatchEvent(new Event('pointerup'));
 
-      expect(resume).toHaveBeenCalledTimes(1);
+      expect(context.resumeCalls).toBe(1);
+      expect(mixer.state).toBe('interrupted');
     });
 
-    it("doesn't resume a context the game suspended", async () => {
-      const mixer = createSoundMixer(context.asAudioContext());
+    it("doesn't add its listeners twice when the state changes before audio runs", () => {
+      context.setState('interrupted');
+      window.dispatchEvent(new Event('pointerup'));
 
+      expect(context.resumeCalls).toBe(1);
+    });
+
+    it("doesn't resume on gestures while the game has suspended audio", async () => {
       context.setState('running');
       await mixer.suspend();
+      window.dispatchEvent(new Event('pointerup'));
 
-      const resume = vi.spyOn(context, 'resume');
-
-      window.dispatchEvent(new Event('click'));
-      expect(resume).not.toHaveBeenCalled();
+      expect(context.resumeCalls).toBe(0);
 
       await mixer.resume();
 
-      expect(mixer.state).toBe('running');
+      expect(context.resumeCalls).toBe(1);
     });
 
-    it('stops listening when stopped', async () => {
-      const mixer = createSoundMixer(context.asAudioContext());
-
-      await mixer.stop();
-
-      const resume = vi.spyOn(context, 'resume');
+    it("doesn't listen when the context starts out running", async () => {
+      const runningContext = new FakeAudioContext('running');
+      const runningMixer = createSoundMixer(runningContext.asAudioContext());
 
       window.dispatchEvent(new Event('pointerup'));
 
-      expect(resume).not.toHaveBeenCalled();
-      expect(mixer.state).toBe('closed');
+      expect(runningContext.resumeCalls).toBe(0);
+
+      await runningMixer.stop();
     });
   });
 
-  it('stops every playing sound when stopped', async () => {
-    setUserActivation(true);
+  describe('stop', () => {
+    it('stops listening for gestures and closes the context', async () => {
+      await mixer.stop();
+      window.dispatchEvent(new Event('pointerup'));
 
-    const mixer = createSoundMixer(context.asAudioContext());
-    const sfx = mixer.createBus('sfx');
-    const first = playSound(sfx, createFakeSound());
-    const second = playSound(sfx, createFakeSound(), { loop: true });
+      expect(context.resumeCalls).toBe(0);
+      expect(mixer.state).toBe('closed');
+    });
 
-    await mixer.stop();
+    it('stops every playing sound', async () => {
+      context.setState('running');
 
-    expect(first.isPlaying).toBe(false);
-    expect(second.isPlaying).toBe(false);
-    expect(context.sources.every((source) => source.stoppedAt !== null)).toBe(
-      true,
-    );
+      const sound = playSound(mixer.master, createFakeSoundAsset());
+      const [source] = context.sources;
+
+      await mixer.stop();
+
+      expect(sound.isPlaying).toBe(false);
+      expect(source.stopTime).toBe(0);
+      expect(source.connections.size).toBe(0);
+    });
+
+    it('refuses to play or create buses afterwards', async () => {
+      await mixer.stop();
+
+      expect(() => playSound(mixer.master, createFakeSoundAsset())).toThrow(
+        /stopped sound mixer/,
+      );
+      expect(() => mixer.createBus('music')).toThrow(/has been stopped/);
+    });
+
+    it('does nothing when called again', async () => {
+      await mixer.stop();
+
+      await expect(mixer.stop()).resolves.toBeUndefined();
+    });
   });
 });

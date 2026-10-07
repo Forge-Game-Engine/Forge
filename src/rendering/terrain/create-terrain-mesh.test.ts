@@ -7,17 +7,15 @@ import { Vec2 } from '../../math/index.js';
 import { Color } from '../color.js';
 import { RenderContext } from '../render-context.js';
 import { ForgeShaderSource, ShaderCache } from '../shaders/index.js';
+import { Texture } from '../texture.js';
 import { terrainFragmentShader, terrainVertexShader } from './shaders/index';
-
-// Mock WebGLTexture constructor for instanceof checks in Material.bind
-globalThis.WebGLTexture = class WebGLTexture {};
 
 describe('createTerrainMesh', () => {
   let canvas: HTMLCanvasElement;
   let mockGl: WebGL2RenderingContext;
   let renderContext: RenderContext;
-  let fillImage: HTMLImageElement;
-  let borderImage: HTMLImageElement;
+  let fillTexture: Texture;
+  let borderTexture: Texture;
 
   const createOptions = (
     overrides: Partial<Parameters<typeof createTerrainMesh>[1]> = {},
@@ -34,12 +32,12 @@ describe('createTerrainMesh', () => {
     position: Vec2.zero,
     angle: 0,
     border: {
-      image: borderImage,
+      texture: borderTexture,
       tileSize: { x: 20, y: 20 },
       tint: Color.white,
     },
     fill: {
-      image: fillImage,
+      texture: fillTexture,
       tileSize: { x: 30, y: 30 },
       tint: Color.white,
     },
@@ -51,9 +49,6 @@ describe('createTerrainMesh', () => {
     canvas = document.createElement('canvas');
     canvas.width = 800;
     canvas.height = 600;
-
-    fillImage = { width: 32, height: 32 } as HTMLImageElement;
-    borderImage = { width: 32, height: 32 } as HTMLImageElement;
 
     mockGl = {
       VERTEX_SHADER: 'VERTEX_SHADER',
@@ -79,12 +74,13 @@ describe('createTerrainMesh', () => {
       bindBuffer: vi.fn(),
       bufferData: vi.fn(),
 
-      createTexture: vi.fn().mockImplementation(() => new WebGLTexture()),
+      createTexture: vi.fn().mockImplementation(() => ({})),
       bindTexture: vi.fn(),
       texParameteri: vi.fn(),
       texImage2D: vi.fn(),
 
       createShader: vi.fn().mockReturnValue({}),
+      deleteShader: vi.fn(),
       shaderSource: vi.fn(),
       compileShader: vi.fn(),
       getShaderParameter: vi.fn().mockReturnValue(true),
@@ -135,6 +131,8 @@ describe('createTerrainMesh', () => {
       .addShader(new ForgeShaderSource(terrainFragmentShader));
 
     renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);
+    fillTexture = new Texture(mockGl, { wrap: 'repeat' });
+    borderTexture = new Texture(mockGl, { wrap: 'repeat' });
   });
 
   it('does not throw when building a mesh', () => {
@@ -229,17 +227,33 @@ describe('createTerrainMesh', () => {
     expect(borderBlendCall).toBeDefined();
   });
 
-  it('wraps both textures with REPEAT rather than CLAMP_TO_EDGE', () => {
-    createTerrainMesh(renderContext, createOptions());
+  it('binds each layer texture to its sampler', () => {
+    const mesh = createTerrainMesh(renderContext, createOptions());
 
-    const wrapCalls = (mockGl.texParameteri as Mock).mock.calls.filter(
-      ([, pname]) => pname === 'TEXTURE_WRAP_S',
+    (mockGl.bindTexture as Mock).mockClear();
+
+    mesh.material.bind(mockGl);
+
+    const boundTextures = (mockGl.bindTexture as Mock).mock.calls.map(
+      ([, texture]: unknown[]) => texture,
     );
 
-    expect(wrapCalls.length).toBeGreaterThan(0);
-
-    for (const call of wrapCalls) {
-      expect(call[2]).toBe('REPEAT');
-    }
+    expect(boundTextures).toContain(fillTexture.glTexture);
+    expect(boundTextures).toContain(borderTexture.glTexture);
   });
+
+  it.each(['border', 'fill'] as const)(
+    "throws when the %s texture doesn't wrap with repeat",
+    (layer) => {
+      const clampedTexture = new Texture(mockGl, { wrap: 'clamp' });
+      const options = createOptions();
+
+      expect(() =>
+        createTerrainMesh(renderContext, {
+          ...options,
+          [layer]: { ...options[layer], texture: clampedTexture },
+        }),
+      ).toThrow(/must be created with wrap: 'repeat'/);
+    },
+  );
 });

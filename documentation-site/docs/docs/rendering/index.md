@@ -1,40 +1,31 @@
 # Rendering
 
-Forge's renderer is a WebGL2, sprite-batching renderer driven by the ECS.
+Forge's renderer is a WebGL2 renderer driven by the ECS.
 [`RenderContext`](/Forge/docs/api/classes/RenderContext) owns the canvas and
-WebGL2 context; `createRenderEcsSystem` queries every camera entity
-(a [`CameraEcsComponent`](/Forge/docs/api/interfaces/CameraEcsComponent)) and
-draws the sprites matching that camera's `cullingMask`, sorted by each
-sprite's `layer` (draw order, lower first) and then by depth within a layer,
-batching consecutive sprites that share a
-[`Renderable`](/Forge/docs/api/classes/Renderable) into a single draw call.
-Depth defaults to world Y position, but a sprite can override it by setting
-[`SpriteEcsComponent.sortDepth`](/Forge/docs/api/interfaces/SpriteEcsComponent#sortdepth)
-explicitly - useful for anything whose draw order shouldn't be tied to its
-world position, such as a screen-space UI hierarchy sorted by tree order
-instead.
+the WebGL2 context. `createRenderEcsSystem` queries every camera entity (a
+[`CameraEcsComponent`](/Forge/docs/api/interfaces/CameraEcsComponent)) and
+draws the sprites and text whose `category` matches that camera's
+`cullingMask`, sorted by `layer` and then by depth within a layer.
+Consecutive sprites with the same material, texture and emissive map are
+drawn in one instanced draw call.
 
-This section is a work in progress and currently covers the multipass
-rendering foundation and its first post-processing effect; a full guide to
-sprites, materials, and cameras is planned separately.
+Rendering is made of these parts:
 
-Guides in this section:
-
-- [World Units and Cameras](./world-units-and-cameras.md): fixing a camera's
-  vertical world units so rendering stays consistent across screen
-  resolutions and aspect ratios, instead of hand-computing canvas-pixel
-  fractions in game logic.
-- [Multipass Rendering](./multipass-rendering.md): rendering a camera into
-  an off-screen texture and presenting it, the groundwork for future
-  post-processing and lighting passes.
-- [Gaussian Blur](./gaussian-blur.md): a two-pass separable blur
-  post-processing effect built on top of multipass rendering.
-- [Bloom](./bloom.md): an additive glow post-processing effect built on the
-  same separable blur technique.
-- [HDR Rendering & Tone Mapping](./hdr-rendering.md): opting a camera's
-  render target into HDR storage and compressing it back to displayable
-  range, so bloom can react to true HDR brightness (including emissive
-  maps) instead of an 8-bit ceiling.
-- [Nine-Slice Sprites](./nine-slice-sprites.md): slicing a sprite into a 3x3
-  grid so its corners keep their size while its edges/center stretch or
-  tile, for UI panels and buttons that resize without distorting.
+- [Textures](./textures.md): images on the GPU, created from images,
+  canvases, pixel data or video frames, and sampled by sprites and
+  materials.
+- [Sprites](./sprites.md): the `SpriteEcsComponent` that draws a texture at
+  an entity's position, with its draw order, camera category, emissive map
+  and material, and [nine-slice sprites](./nine-slice-sprites.md) that
+  resize without stretching their corners.
+- [Masks](./masks.md): clipping sprites and text to a rect, or revealing
+  part of them from an edge or around a center, for scroll views, filling
+  bars and draining rings.
+- [Cameras and world units](./world-units-and-cameras.md): how a camera maps
+  world units to the screen, and how a texture's texels map to world units.
+- [Materials](./material-uniforms.md): shader programs and the uniform
+  values they draw with.
+- [Render targets](./multipass-rendering.md): rendering a camera into an
+  off-screen texture, and the post-processing effects built on it
+  ([Gaussian blur](./gaussian-blur.md), [bloom](./bloom.md) and
+  [HDR rendering](./hdr-rendering.md)).

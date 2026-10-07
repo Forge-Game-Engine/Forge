@@ -44,10 +44,7 @@ export const createBackgroundEcsSystem = (
         : null;
 
       for (const spriteComponent of spriteComponents) {
-        spriteComponent.renderable.material.setUniform(
-          'u_time',
-          time.timeInSeconds,
-        );
+        spriteComponent.material?.setUniform('u_time', time.timeInSeconds);
 
         if (!visibleWorldSize) {
           continue;
@@ -56,7 +53,7 @@ export const createBackgroundEcsSystem = (
         spriteComponent.width = visibleWorldSize.x;
         spriteComponent.height = visibleWorldSize.y;
 
-        spriteComponent.renderable.material.setUniform(
+        spriteComponent.material?.setUniform(
           'u_resolution',
           new Float32Array([renderContext.width, renderContext.height]),
         );

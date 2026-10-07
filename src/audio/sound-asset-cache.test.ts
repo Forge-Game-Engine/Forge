@@ -1,75 +1,99 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  FakeAudioBuffer,
-  FakeAudioContext,
-} from './fake-audio-context.test-helper.js';
-import { createSoundMixer } from './sound-mixer.js';
 import { SoundAssetCache } from './sound-asset-cache.js';
+import { createSoundMixer, SoundMixer } from './sound-mixer.js';
+import { FakeAudioContext } from './test-helpers/fake-audio-context.js';
 
 describe('SoundAssetCache', () => {
   let context: FakeAudioContext;
+  let mixer: SoundMixer;
   let cache: SoundAssetCache;
-  const fetchMock = vi.fn<typeof fetch>();
+  let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     context = new FakeAudioContext();
-    cache = new SoundAssetCache(createSoundMixer(context.asAudioContext()));
-    fetchMock.mockImplementation(() =>
-      Promise.resolve(new Response(new ArrayBuffer(8))),
+    mixer = createSoundMixer(context.asAudioContext());
+    cache = new SoundAssetCache(mixer);
+    fetchMock = vi.fn(() =>
+      Promise.resolve(new Response(new ArrayBuffer(8), { status: 200 })),
     );
     vi.stubGlobal('fetch', fetchMock);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     vi.unstubAllGlobals();
+    await mixer.stop();
   });
 
   it('fetches, decodes and caches a sound', async () => {
-    context.decodeResult = () => Promise.resolve(new FakeAudioBuffer(2.5));
+    const buffer = { duration: 2.5 };
 
-    const sound = await cache.getOrLoad('laser.ogg');
+    context.decodeAudioData = vi.fn(() => Promise.resolve(buffer));
 
-    expect(fetchMock).toHaveBeenCalledWith('laser.ogg');
-    expect(sound.durationSeconds).toBe(2.5);
-    expect(cache.get('laser.ogg')).toBe(sound);
-    expect(await cache.getOrLoad('laser.ogg')).toBe(sound);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const sound = await cache.getOrLoad('laser.mp3');
+
+    expect(fetchMock).toHaveBeenCalledWith('laser.mp3');
+    expect(sound).toEqual({ buffer, durationSeconds: 2.5 });
+    expect(cache.get('laser.mp3')).toBe(sound);
   });
 
-  it('shares one decode between concurrent loads', async () => {
+  it('decodes a sound once for concurrent requests', async () => {
+    const decode = vi.fn(() => Promise.resolve({ duration: 1 }));
+
+    context.decodeAudioData = decode;
+
     const [first, second] = await Promise.all([
-      cache.getOrLoad('music.ogg'),
-      cache.getOrLoad('music.ogg'),
+      cache.getOrLoad('music.mp3'),
+      cache.getOrLoad('music.mp3'),
     ]);
 
     expect(first).toBe(second);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(context.decodedBytes).toHaveLength(1);
+    expect(decode).toHaveBeenCalledTimes(1);
   });
 
-  it('throws for a sound that is not cached', () => {
-    expect(() => cache.get('missing.ogg')).toThrow(/missing\.ogg/);
+  it("doesn't fetch a cached sound again", async () => {
+    await cache.load('laser.mp3');
+    await cache.getOrLoad('laser.mp3');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('rejects naming the URL when the fetch fails', async () => {
-    fetchMock.mockImplementation(() =>
-      Promise.resolve(new Response(null, { status: 404 })),
+  it("throws when getting a sound that isn't loaded", () => {
+    expect(() => cache.get('laser.mp3')).toThrow(
+      /"laser.mp3" not found in the cache/,
     );
-
-    await expect(cache.load('missing.ogg')).rejects.toThrow(/missing\.ogg/);
   });
 
-  it('rejects naming the URL when the sound cannot be decoded', async () => {
-    context.decodeResult = () => Promise.reject(new Error('EncodingError'));
+  it("throws for a mixer that wasn't made by createSoundMixer", () => {
+    const mixerCopy: SoundMixer = { ...mixer };
 
-    await expect(cache.load('sound.xyz')).rejects.toThrow(/sound\.xyz/);
+    expect(() => new SoundAssetCache(mixerCopy)).toThrow(
+      /not made by `createSoundMixer`/,
+    );
+  });
+
+  it('rejects with the URL when the file fails to load', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 404 }));
+
+    await expect(cache.getOrLoad('missing.mp3')).rejects.toThrow(
+      /Failed to load the sound at "missing.mp3"/,
+    );
+  });
+
+  it("rejects with the URL when the file can't be decoded", async () => {
+    context.decodeAudioData = () =>
+      Promise.reject(new DOMException('Unable to decode', 'EncodingError'));
+
+    await expect(cache.getOrLoad('sound.ogg')).rejects.toThrow(
+      /Unable to decode the sound at "sound.ogg"/,
+    );
   });
 
   it('loads again after a failed load', async () => {
-    context.decodeResult = () => Promise.reject(new Error('EncodingError'));
-    await expect(cache.load('sound.ogg')).rejects.toThrow();
+    fetchMock.mockRejectedValueOnce(new TypeError('Network error'));
 
-    context.decodeResult = () => Promise.resolve(new FakeAudioBuffer(1));
-    await expect(cache.getOrLoad('sound.ogg')).resolves.toBeDefined();
+    await expect(cache.getOrLoad('laser.mp3')).rejects.toThrow();
+    await expect(cache.getOrLoad('laser.mp3')).resolves.toBeDefined();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,11 +1,9 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { ParameterizedForgeEvent } from '../../events/index.js';
-import { Vec2, Vector2 } from '../../math/index.js';
+import { Vector2 } from '../../math/index.js';
 import {
+  addMaskComponent,
   addSpriteComponent,
   NineSliceOptions,
   SpriteEcsComponent,
@@ -29,6 +27,7 @@ import { rectTransformId } from '../components/rect-transform-component.js';
 import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
 import { driveUiAxis, UiAxis } from '../types/ui-axis.js';
 import { createPanel } from './create-panel.js';
+import { driveUiFillMask } from './drive-ui-fill-mask.js';
 
 /**
  * Fields of {@link CreateSliderOptions} with no sensible default; callers
@@ -64,9 +63,10 @@ export interface CreateSliderDefaultedOptions {
   handleSize: Vector2;
 
   /**
-   * The sprite to draw an optional fill visual with - a child rect
-   * stretch-anchored from the track's left edge to the handle's position.
-   * Omitted, the slider has no fill visual (just a track and a handle).
+   * The sprite to draw an optional fill visual with: a child covering the
+   * track, revealed from the left edge up to the handle by a linear
+   * `MaskEcsComponent`, so a nine-slice fill keeps its end caps. Omitted,
+   * the slider has no fill visual (just a track and a handle).
    */
   fillSprite?: SpriteEcsComponent;
 
@@ -129,9 +129,10 @@ export interface Slider {
 /**
  * Creates a slider: a panel (see `createPanel`) used as the drag track, with
  * a `UiInteractableEcsComponent`, a `UiColorTransitionEcsComponent`, and a
- * `UiSliderEcsComponent` added, plus a child handle (and, if `fillSprite` is
- * given, a child fill) whose rect transforms `createUiSliderEcsSystem`
- * drives from the slider's value every tick. The whole track is the drag
+ * `UiSliderEcsComponent` added, plus a child handle whose rect transform
+ * `createUiSliderEcsSystem` drives from the slider's value every tick (and,
+ * if `fillSprite` is given, a child fill covering the track, whose mask it
+ * reveals up to the handle). The whole track is the drag
  * surface - clicking anywhere on it, not just the handle, jumps the handle
  * there.
  * @param world - The ECS world to create the slider entity in.
@@ -192,28 +193,24 @@ export function createSlider(
     fill = world.createEntity();
 
     addPositionComponent(world, fill);
-    addParentComponent(world, fill, { parent: entity });
-    addRectTransformComponent(world, fill, {
-      // A stretch axis rather than a point one even though it starts at
-      // zero width (`anchorMin.x == anchorMax.x == 0` here) - `x.anchorMax`
-      // is driven up to the slider's normalized value below and every tick
-      // by `createUiSliderEcsSystem`, growing the fill as a genuine stretch
-      // span rather than ever becoming a literal size.
-      x: UiAxis.stretch({ min: 0, max: 0 }, { pivot: 0 }),
-      y: UiAxis.stretch({ min: 0, max: 1 }),
-    });
+    world.setParent(fill, entity);
+    addRectTransformComponent(world, fill, UiAnchor.stretchAll());
     addSpriteComponent(world, fill, {
       ...fillSprite,
-      pivot: Vec2.clone(fillSprite.pivot),
-      uvOffset: Vec2.clone(fillSprite.uvOffset),
-      uvScale: Vec2.clone(fillSprite.uvScale),
+    });
+    // The layout system sizes the mask to the fill's rect, and
+    // `createUiSliderEcsSystem` sets its amount from the slider's value.
+    addMaskComponent(world, fill, {
+      width: fillSprite.width,
+      height: fillSprite.height,
+      shape: { kind: 'linear', origin: 'left', amount: 0 },
     });
   }
 
   const handle = world.createEntity();
 
   addPositionComponent(world, handle);
-  addParentComponent(world, handle, { parent: entity });
+  world.setParent(handle, entity);
   addRectTransformComponent(world, handle, {
     // `x.anchor` is driven to the slider's normalized value below and every
     // tick by `createUiSliderEcsSystem`, sliding the handle along the track.
@@ -222,9 +219,6 @@ export function createSlider(
   });
   addSpriteComponent(world, handle, {
     ...handleSprite,
-    pivot: Vec2.clone(handleSprite.pivot),
-    uvOffset: Vec2.clone(handleSprite.uvOffset),
-    uvScale: Vec2.clone(handleSprite.uvScale),
   });
 
   const slider = addUiSliderComponent(world, entity, {
@@ -245,7 +239,7 @@ export function createSlider(
   driveUiAxis(handleRectTransform.x, t);
 
   if (fill !== undefined) {
-    driveUiAxis(world.getComponentRequired(fill, rectTransformId).x, t);
+    driveUiFillMask(world, fill, t, 'slider');
   }
 
   return {

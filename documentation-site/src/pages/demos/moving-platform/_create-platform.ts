@@ -12,6 +12,7 @@ import {
 import {
   addSpriteComponent,
   createImageSprite,
+  createTexture,
   NineSliceOptions,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -71,10 +72,12 @@ export async function createPlatform(
   const platformImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/physics/block_square.png'),
   );
-  const platformSprite = createImageSprite(platformImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
+  const platformSprite = {
+    ...createImageSprite(createTexture(renderContext, platformImage), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
 
   const entity = world.createEntity();
   const startPosition: Vector2 = { x: leftX, y: platformY };

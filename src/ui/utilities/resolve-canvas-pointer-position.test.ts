@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { resolveCanvasPointerPosition } from './resolve-canvas-pointer-position.js';
 import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { MouseInputSource } from '../../input/index.js';
+import { Vector2 } from '../../math/index.js';
 import { addCameraComponent, RenderContext } from '../../rendering/index.js';
 import { addCanvasComponent } from '../components/canvas-component.js';
 import { addRectTransformComponent } from '../components/rect-transform-component.js';
@@ -16,8 +16,7 @@ const buildRenderContext = (width: number, height: number): RenderContext =>
     pixelRatio: 1,
   }) as RenderContext;
 
-const buildMouseInputSource = (x: number, y: number): MouseInputSource =>
-  ({ position: { x, y } }) as MouseInputSource;
+const buildViewportPosition = (x: number, y: number): Vector2 => ({ x, y });
 
 describe('resolveCanvasPointerPosition', () => {
   it('converts the pointer position into the canvas camera UI world space', () => {
@@ -38,7 +37,7 @@ describe('resolveCanvasPointerPosition', () => {
       world,
       canvas,
       renderContext,
-      buildMouseInputSource(960, 540),
+      buildViewportPosition(960, 540),
     );
 
     expect(center).toEqual({ x: 0, y: 0 });
@@ -49,7 +48,7 @@ describe('resolveCanvasPointerPosition', () => {
       world,
       canvas,
       renderContext,
-      buildMouseInputSource(0, 0),
+      buildViewportPosition(0, 0),
     );
 
     expect(topLeft).toEqual({ x: -960, y: 540 });
@@ -82,7 +81,7 @@ describe('resolveCanvasPointerPosition', () => {
         world,
         canvas,
         renderContext,
-        buildMouseInputSource(480, 270),
+        buildViewportPosition(480, 270),
       ),
     ).toEqual({ x: 0, y: 0 });
     expect(
@@ -90,7 +89,7 @@ describe('resolveCanvasPointerPosition', () => {
         world,
         canvas,
         renderContext,
-        buildMouseInputSource(0, 0),
+        buildViewportPosition(0, 0),
       ),
     ).toEqual({ x: -960, y: 540 });
   });
@@ -110,7 +109,7 @@ describe('resolveCanvasPointerPosition', () => {
       world,
       canvas,
       renderContext,
-      buildMouseInputSource(0, 0),
+      buildViewportPosition(0, 0),
     );
 
     expect(result).toBeNull();

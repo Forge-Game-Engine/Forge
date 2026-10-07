@@ -1,9 +1,4 @@
-import {
-  ParentEcsComponent,
-  parentId,
-  PositionEcsComponent,
-  positionId,
-} from '../../common/index.js';
+import { PositionEcsComponent, positionId } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Rect, Rects, Vector2 } from '../../math/index.js';
@@ -12,6 +7,8 @@ import {
   cameraId,
   CameraView,
   computeCameraView,
+  MaskEcsComponent,
+  maskId,
   RenderContext,
   SpriteEcsComponent,
   spriteId,
@@ -177,7 +174,8 @@ function computeCanvasCameraView(
  * `position.world`), and `RectTransformEcsComponent.sortDepth` - and, for
  * elements that also carry a `SpriteEcsComponent` and/or a
  * `TextEcsComponent`, their `sortDepth` too (plus, for a sprite, its
- * `width`/`height`/`pivot`) - all set to the element's hierarchy pre-order
+ * `width`/`height`/`pivot`, which a `MaskEcsComponent` also gets, so it
+ * clips to the element's rect) - all set to the element's hierarchy pre-order
  * index, so draw order follows hierarchy order within a canvas regardless
  * of whether a panel and its label happen to share a world Y (draw order
  * otherwise ties on `position.world.y`, which a panel and a centered child
@@ -219,38 +217,27 @@ export const createUiLayoutEcsSystem = (
   query: [rectTransformId, positionId],
   update: (world, { entities }) => {
     const elements = new Set(entities);
-    const childrenByParent = new Map<number, number[]>();
     const roots: number[] = [];
 
-    for (const entity of entities) {
-      const canvasComponent = world.getComponent(entity, canvasId);
-      const parentComponent = world.getComponent<ParentEcsComponent>(
-        entity,
-        parentId,
+    // A canvas is always the root of its own tree, even when it's parented
+    // to another element (so it follows that element's transform).
+    const isTreeRoot = (entity: number): boolean => {
+      const parent = world.getParent(entity);
+
+      return (
+        world.getComponent(entity, canvasId) !== null ||
+        parent === null ||
+        !elements.has(parent)
       );
+    };
 
-      if (
-        canvasComponent ||
-        !parentComponent ||
-        !elements.has(parentComponent.parent)
-      ) {
+    for (const entity of entities) {
+      if (isTreeRoot(entity)) {
         roots.push(entity);
-
-        continue;
       }
-
-      let children = childrenByParent.get(parentComponent.parent);
-
-      if (!children) {
-        children = [];
-        childrenByParent.set(parentComponent.parent, children);
-      }
-
-      children.push(entity);
     }
 
     let sortDepth = 0;
-    const visited = new Set<number>();
 
     const visit = (
       entity: number,
@@ -258,12 +245,6 @@ export const createUiLayoutEcsSystem = (
       parentPivotPosition: Vector2,
       pixelsPerUnit: number,
     ): void => {
-      if (visited.has(entity)) {
-        return;
-      }
-
-      visited.add(entity);
-
       const rectTransform =
         world.getComponentRequired<RectTransformEcsComponent>(
           entity,
@@ -309,6 +290,17 @@ export const createUiLayoutEcsSystem = (
         sprite.sortDepth = sortDepth;
       }
 
+      const mask = world.getComponent<MaskEcsComponent>(entity, maskId);
+
+      if (mask) {
+        const size = Rects.size(rect);
+
+        mask.width = size.x;
+        mask.height = size.y;
+        mask.pivot.x = pivot.x;
+        mask.pivot.y = pivot.y;
+      }
+
       const text = world.getComponent<TextEcsComponent>(entity, textId);
 
       if (text) {
@@ -345,8 +337,10 @@ export const createUiLayoutEcsSystem = (
 
       sortDepth += 1;
 
-      for (const child of childrenByParent.get(entity) ?? []) {
-        visit(child, rect, pivotPosition, childPixelsPerUnit);
+      for (const child of world.getChildren(entity)) {
+        if (elements.has(child) && !isTreeRoot(child)) {
+          visit(child, rect, pivotPosition, childPixelsPerUnit);
+        }
       }
     };
 

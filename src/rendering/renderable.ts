@@ -7,12 +7,13 @@ import type {
 import type { Vector2 } from '../math/index.js';
 import type { SpriteEcsComponent } from './components/index.js';
 import type { Color } from './color.js';
-import type { Geometry } from './geometry/index.js';
-import type { Material } from './materials/index.js';
+import type { Material } from './materials/material.js';
+import type { RenderCommand } from './render-command.js';
+import type { InstanceMask } from './utilities/resolve-instance-mask.js';
 
 /**
  * Per-glyph outline/soft-shadow parameters, bound by
- * `textEffectsInstanceDataSegment` (`@forge-game-engine/forge/text`).
+ * `textEffectsInstanceDataSegment`.
  * Populated only for glyph instances pushed by `pushTextRenderCommands` -
  * `InstanceComponents.textEffects` is `undefined` for ordinary sprites.
  */
@@ -65,6 +66,12 @@ export interface InstanceComponents {
   flip: FlipEcsComponent | null;
 
   /**
+   * The masks (see `MaskEcsComponent`) on the entity and its ancestors,
+   * combined, or `null` when none apply.
+   */
+  mask: InstanceMask | null;
+
+  /**
    * The entity's text outline/shadow effect data, if this instance is a
    * glyph quad pushed by `pushTextRenderCommands`. `undefined` for ordinary
    * sprites.
@@ -106,43 +113,27 @@ export type SetupInstanceAttributesCallback = (
 ) => void;
 
 /**
- * Represents a renderable object in the rendering pipeline.
+ * Binds a batch's material for drawing the batch's commands: uploads the
+ * per-batch values (the batch's texture) and uses the material's program.
  *
- * A `Renderable` encapsulates all the information needed to render a group of entities
- * with instanced rendering. It combines geometry, material, and instance-specific callbacks
- * to efficiently render multiple entities with the same geometry and material in a single draw call.
- *
- * @example
- * ```typescript
- * const renderable = new Renderable(
- *   quadGeometry,
- *   spriteMaterial,
- *   17, // floats per instance
- *   1, // render layer
- *   ({ position }, buffer, offset) => {
- *     // Bind instance data for this entity
- *     buffer[offset] = position.x;
- *     buffer[offset + 1] = position.y;
- *   },
- *   (gl, renderable) => {
- *     // Setup vertex attribute pointers for instanced rendering
- *     const posLoc = gl.getAttribLocation(renderable.material.program, 'a_position');
- *     gl.enableVertexAttribArray(posLoc);
- *     // ... configure attribute pointer
- *   }
- * );
- * ```
+ * @param gl - The WebGL2 rendering context
+ * @param command - The batch's first command; every command in a batch has
+ * the same renderable, texture and emissive texture
+ */
+export type BindBatchCallback = (
+  gl: WebGL2RenderingContext,
+  command: RenderCommand,
+) => void;
+
+/**
+ * How the render system draws one kind of instanced quad: the material, the
+ * per-instance data layout its vertex shader reads, and how a batch's
+ * textures are bound. Internal to the render system, which creates one per
+ * sprite material and one per text pass; not part of the public API.
  */
 export class Renderable {
   /**
-   * The geometry (vertex data) to be rendered.
-   * This defines the shape and structure of the mesh (e.g., a quad for sprites).
-   */
-  public readonly geometry: Geometry;
-
-  /**
-   * The material (shaders and uniforms) to use for rendering.
-   * Defines how the geometry should be drawn (textures, colors, etc.).
+   * The material (shaders and uniforms) to draw with.
    */
   public readonly material: Material;
 
@@ -151,9 +142,6 @@ export class Renderable {
    * This determines how much data needs to be provided for each entity being rendered.
    */
   public readonly floatsPerInstance: number;
-
-  /** The rendering category this renderable belongs to. */
-  public category: number;
 
   /**
    * Callback function that binds instance-specific data for an entity into a buffer.
@@ -168,41 +156,30 @@ export class Renderable {
   public readonly setupInstanceAttributes: SetupInstanceAttributesCallback;
 
   /**
-   * Creates a new Renderable.
-   *
-   * @param geometry - The geometry defining the shape to be rendered
-   * @param material - The material defining how to render the geometry
-   * @param floatsPerInstance - The number of floats per instance in the instance buffer
-   * @param layer - The rendering category this renderable belongs to
-   * @param bindInstanceData - Callback to bind instance data for each entity
-   * @param setupInstanceAttributes - Callback to setup instance attributes in WebGL
+   * Binds the material for a batch, with the batch's textures.
    */
-  constructor(
-    geometry: Geometry,
-    material: Material,
-    floatsPerInstance: number,
-    layer: number,
-    bindInstanceData: BindInstanceDataCallback,
-    setupInstanceAttributes: SetupInstanceAttributesCallback,
-  ) {
-    this.geometry = geometry;
-    this.material = material;
-    this.floatsPerInstance = floatsPerInstance;
-    this.category = layer;
-    this.bindInstanceData = bindInstanceData;
-    this.setupInstanceAttributes = setupInstanceAttributes;
-  }
+  public readonly bindBatch: BindBatchCallback;
 
   /**
-   * Prepares for drawing by binding the material and geometry for rendering.
+   * Creates a new Renderable.
    *
-   * This method binds the shader program (material) and sets up the Vertex Array Object (VAO)
-   * for the geometry. After calling this method, the renderable is ready to be drawn.
-   *
-   * @param gl - The WebGL2 rendering context
+   * @param material - The material to draw with
+   * @param floatsPerInstance - The number of floats per instance in the instance buffer
+   * @param bindInstanceData - Callback to bind instance data for each entity
+   * @param setupInstanceAttributes - Callback to setup instance attributes in WebGL
+   * @param bindBatch - Callback to bind the material for a batch
    */
-  public bind(gl: WebGL2RenderingContext): void {
-    this.material.bind(gl);
-    this.geometry.bind(gl, this.material.program);
+  constructor(
+    material: Material,
+    floatsPerInstance: number,
+    bindInstanceData: BindInstanceDataCallback,
+    setupInstanceAttributes: SetupInstanceAttributesCallback,
+    bindBatch: BindBatchCallback,
+  ) {
+    this.material = material;
+    this.floatsPerInstance = floatsPerInstance;
+    this.bindInstanceData = bindInstanceData;
+    this.setupInstanceAttributes = setupInstanceAttributes;
+    this.bindBatch = bindBatch;
   }
 }

@@ -12,10 +12,10 @@ export default function UiProgressBar(): JSX.Element {
       metaData={{
         title: 'UI Progress Bar',
         description:
-          'A demo showcasing createProgressBar from the ui module: a read-only linear fill indicator driven purely by value.',
+          'A demo showcasing createProgressBar from the ui module: read-only linear and radial fill indicators driven purely by value.',
       }}
       header="UI Progress Bar"
-      blurb="createProgressBar builds a read-only linear fill indicator - no UiInteractableEcsComponent, since a progress bar reports state rather than accepting input. This demo's own _pulse.system.ts (not part of the ui module) oscillates the health bar's value on a timer to show it moving without needing any player interaction; createUiProgressBarEcsSystem picks up that write the same frame it's made, unlike a slider, which has no such guarantee."
+      blurb="createProgressBar builds a read-only fill indicator - no UiInteractableEcsComponent, since a progress bar reports state rather than accepting input. Its fill keeps its full size and a mask reveals the part the value covers: a linear mask for the health bar, a radial one (fillShape) for the cooldown ring. This demo's own _pulse.system.ts (not part of the ui module) oscillates both values on a timer to show them moving without needing any player interaction; createUiProgressBarEcsSystem picks up those writes the same frame they're made, unlike a slider, which has no such guarantee."
       createGame={createProgressBarGame}
       codeFiles={[
         { name: 'game.ts', content: gameCode },

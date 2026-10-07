@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { addTextComponent, textId } from './text-component.js';
+import {
+  addTextComponent,
+  TEXT_RENDER_CATEGORY,
+  textId,
+} from './text-component.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Color } from '../../rendering/color.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
-import { TEXT_RENDER_CATEGORY } from '../rendering/create-text-renderable.js';
 
 const fontAtlas = {} as FontAtlas;
 
@@ -24,6 +27,7 @@ describe('addTextComponent', () => {
       horizontalAlign: 'left',
       verticalAlign: 'top',
       horizontalAlignPivot: 0,
+      richText: true,
       layer: 0,
       category: TEXT_RENDER_CATEGORY,
       enabled: true,

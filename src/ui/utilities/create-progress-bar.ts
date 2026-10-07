@@ -1,10 +1,8 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import { Vec2, Vector2 } from '../../math/index.js';
+import { Vector2 } from '../../math/index.js';
 import {
+  addMaskComponent,
   addSpriteComponent,
   NineSliceOptions,
   SpriteEcsComponent,
@@ -15,9 +13,8 @@ import {
   normalizeUiProgressBarValue,
   UiProgressBarEcsComponent,
 } from '../components/ui-progress-bar-component.js';
-import { rectTransformId } from '../components/rect-transform-component.js';
 import { UiAnchor, UiAnchorConfig } from '../types/ui-anchor.js';
-import { driveUiAxis, UiAxis } from '../types/ui-axis.js';
+import { UiFillShape } from '../types/ui-fill-shape.js';
 import { createPanel } from './create-panel.js';
 
 /**
@@ -28,7 +25,10 @@ export interface CreateProgressBarRequiredOptions {
   /** The sprite to draw the bar's background/track with, e.g. from `createImageSprite`. */
   trackSprite: SpriteEcsComponent;
 
-  /** The sprite to draw the fill with. */
+  /**
+   * The sprite to draw the fill with. It covers the whole bar and is
+   * revealed by `fillShape`, so a nine-slice fill keeps its end caps.
+   */
   fillSprite: SpriteEcsComponent;
 }
 
@@ -58,6 +58,13 @@ export interface CreateProgressBarDefaultedOptions {
 
   /** The bar's initial value, clamped to `[minValue, maxValue]`. Defaults to `minValue`. */
   value: number;
+
+  /**
+   * How the fill is revealed as the value rises: a linear fill from one
+   * edge, or a radial fill around the bar's center (a ring or a cooldown).
+   * Defaults to a linear fill from the left.
+   */
+  fillShape: UiFillShape;
 }
 
 export type CreateProgressBarOptions = CreateProgressBarRequiredOptions &
@@ -67,7 +74,7 @@ export interface ProgressBar {
   /** The bar's root entity - the track - a `RectTransformEcsComponent` + `SpriteEcsComponent`. */
   entity: number;
 
-  /** The child fill entity. */
+  /** The child fill entity, covering the bar, with its sprite and mask. */
   fill: number;
 
   /** The bar's `UiProgressBarEcsComponent`, for reading/setting `value` directly. */
@@ -76,8 +83,10 @@ export interface ProgressBar {
 
 /**
  * Creates a progress bar: a panel (see `createPanel`) used as the
- * background/track, plus a child fill panel whose rect transform
- * `createUiProgressBarEcsSystem` drives from `value` every tick. Purely
+ * background/track, plus a child fill covering it, revealed by a
+ * `MaskEcsComponent` whose amount `createUiProgressBarEcsSystem` sets from
+ * `value` every tick. Children added to the fill (a label) are revealed
+ * with it. Purely
  * visual - unlike `createSlider`, no `UiInteractableEcsComponent` is added,
  * since a progress bar reports state rather than accepting input.
  * @param world - The ECS world to create the progress bar entity in.
@@ -93,10 +102,14 @@ export function createProgressBar(
   parent: number,
   options: CreateProgressBarOptions,
 ): ProgressBar {
-  const defaultCreateProgressBarOptions = {
+  const defaultCreateProgressBarOptions: Pick<
+    CreateProgressBarDefaultedOptions,
+    'anchor' | 'minValue' | 'maxValue' | 'fillShape'
+  > = {
     anchor: UiAnchor.center({ x: 300, y: 24 }),
     minValue: 0,
     maxValue: 1,
+    fillShape: { kind: 'linear', origin: 'left' },
   };
 
   const {
@@ -108,6 +121,7 @@ export function createProgressBar(
     minValue,
     maxValue,
     value,
+    fillShape,
   } = { ...defaultCreateProgressBarOptions, ...options };
 
   const entity = createPanel(world, parent, {
@@ -120,21 +134,10 @@ export function createProgressBar(
   const fill = world.createEntity();
 
   addPositionComponent(world, fill);
-  addParentComponent(world, fill, { parent: entity });
-  addRectTransformComponent(world, fill, {
-    // A stretch axis rather than a point one even though it starts at zero
-    // width (`anchorMin.x == anchorMax.x == 0` here) - `x.anchorMax` is
-    // driven up to the bar's normalized value below and every tick by
-    // `createUiProgressBarEcsSystem`, growing the fill as a genuine stretch
-    // span rather than ever becoming a literal size.
-    x: UiAxis.stretch({ min: 0, max: 0 }, { pivot: 0 }),
-    y: UiAxis.stretch({ min: 0, max: 1 }),
-  });
+  world.setParent(fill, entity);
+  addRectTransformComponent(world, fill, UiAnchor.stretchAll());
   addSpriteComponent(world, fill, {
     ...fillSprite,
-    pivot: Vec2.clone(fillSprite.pivot),
-    uvOffset: Vec2.clone(fillSprite.uvOffset),
-    uvScale: Vec2.clone(fillSprite.uvScale),
   });
 
   const progressBar = addUiProgressBarComponent(world, entity, {
@@ -144,10 +147,12 @@ export function createProgressBar(
     ...(value !== undefined && { value }),
   });
 
-  driveUiAxis(
-    world.getComponentRequired(fill, rectTransformId).x,
-    normalizeUiProgressBarValue(progressBar),
-  );
+  // The layout system sizes the mask to the fill's rect.
+  addMaskComponent(world, fill, {
+    width: fillSprite.width,
+    height: fillSprite.height,
+    shape: { ...fillShape, amount: normalizeUiProgressBarValue(progressBar) },
+  });
 
   return { entity, fill, progressBar };
 }

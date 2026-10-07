@@ -1,19 +1,28 @@
-import { describe, expect, it } from 'vitest';
-import { addSoundComponent, soundId } from './sound-component.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EcsWorld } from '../../ecs/index.js';
-import { createSoundMixer } from '../sound-mixer.js';
+import { createSoundMixer, SoundMixer } from '../sound-mixer.js';
 import {
-  createFakeSound,
+  createFakeSoundAsset,
   FakeAudioContext,
-} from '../fake-audio-context.test-helper.js';
+} from '../test-helpers/fake-audio-context.js';
+import { addSoundComponent, soundId } from './sound-component.js';
 
 describe('addSoundComponent', () => {
-  const mixer = createSoundMixer(new FakeAudioContext().asAudioContext());
-  const sound = createFakeSound();
+  let world: EcsWorld;
+  let mixer: SoundMixer;
+
+  beforeEach(() => {
+    world = new EcsWorld();
+    mixer = createSoundMixer(new FakeAudioContext().asAudioContext());
+  });
+
+  afterEach(async () => {
+    await mixer.stop();
+  });
 
   it('attaches a component with defaults applied', () => {
-    const world = new EcsWorld();
     const entity = world.createEntity();
+    const sound = createFakeSoundAsset();
 
     addSoundComponent(world, entity, { sound, bus: mixer.master });
 
@@ -29,30 +38,32 @@ describe('addSoundComponent', () => {
   });
 
   it('overrides only the provided options', () => {
-    const world = new EcsWorld();
     const entity = world.createEntity();
+    const sound = createFakeSoundAsset();
 
     addSoundComponent(world, entity, {
       sound,
       bus: mixer.master,
-      volume: 0.5,
+      volume: 0.3,
       loop: true,
     });
 
-    expect(world.getComponent(entity, soundId)).toMatchObject({
-      volume: 0.5,
+    expect(world.getComponent(entity, soundId)).toEqual({
+      sound,
+      bus: mixer.master,
+      volume: 0.3,
       rate: 1,
       loop: true,
       paused: false,
+      hasFinished: false,
     });
   });
 
   it('returns the attached component', () => {
-    const world = new EcsWorld();
     const entity = world.createEntity();
 
     const component = addSoundComponent(world, entity, {
-      sound,
+      sound: createFakeSoundAsset(),
       bus: mixer.master,
     });
 

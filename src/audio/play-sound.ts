@@ -1,20 +1,47 @@
+import {
+  assertMixerNotStopped,
+  assertValidRate,
+  assertValidVolume,
+  canStartOneShot,
+  getBusInternals,
+} from './internal/audio-internals.js';
+import { SoundInstance } from './internal/sound-instance.js';
 import type { MixerBus } from './mixer-bus.js';
 import type { SoundAsset } from './sound-asset.js';
-import { toAudioBus } from './audio-bus.js';
-import { SoundPlayback } from './sound-playback.js';
 
 /**
- * Options for {@link playSound}.
+ * How {@link playSound} plays a sound.
  */
 export interface PlaySoundOptions {
-  /** The sound's own linear gain, multiplied with every bus's gain. */
+  /** The sound's own gain, multiplied by its bus's and every bus above it. */
   volume: number;
 
-  /** Playback speed. Also shifts pitch: `2` is twice as fast, an octave up. */
+  /** The playback rate. Also shifts the pitch: 2 is an octave up. */
   rate: number;
 
-  /** Whether the sound starts again from the beginning when it ends. */
+  /** Whether the sound repeats until stopped. */
   loop: boolean;
+}
+
+/**
+ * A sound started by {@link playSound}.
+ */
+export interface PlayingSound {
+  /**
+   * The sound's own gain. Changes ramp over a few milliseconds.
+   * @throws When set to a negative or non-finite number.
+   */
+  volume: number;
+
+  /**
+   * `false` once the sound has played to its end or been stopped, and for a
+   * sound that was dropped because the player hadn't interacted with the
+   * page yet.
+   */
+  readonly isPlaying: boolean;
+
+  /** Fades the sound out over a few milliseconds and stops it. */
+  stop(): void;
 }
 
 const defaultPlaySoundOptions: PlaySoundOptions = {
@@ -24,64 +51,75 @@ const defaultPlaySoundOptions: PlaySoundOptions = {
 };
 
 /**
- * A sound started by {@link playSound}.
- */
-export interface PlayingSound {
-  /**
-   * The sound's own linear gain. Changes ramp over a few milliseconds, so
-   * they don't click.
-   */
-  volume: number;
-
-  /**
-   * Whether the sound is playing: `false` once it has ended, been stopped,
-   * or if it was dropped because the page hadn't had user input yet.
-   */
-  readonly isPlaying: boolean;
-
-  /**
-   * Fades the sound out over a few milliseconds and stops it. Does nothing
-   * if it has already stopped.
-   */
-  stop(): void;
-}
-
-/**
- * Plays `sound` through `bus`. Any number of plays of the same sound can
- * overlap.
+ * Plays `sound` on `bus`. Any number of sounds, including the same one, can
+ * play at once.
  *
- * Until the page has had user input, browsers keep audio silent. A looping
- * sound played before then starts, and becomes audible from its beginning
- * once audio is unlocked. A non-looping sound played before then is
- * dropped: the returned sound's `isPlaying` is `false`.
- * @param bus - The bus to play through.
+ * Until the player first interacts with the page, browsers keep audio
+ * suspended. A looping sound requested before then starts as soon as audio
+ * runs; a non-looping one is dropped (its handle reports `isPlaying` as
+ * `false`), so a burst of stale sound effects doesn't play on the first
+ * click. A sound requested in the handler of that first click plays.
+ * @param bus - The bus to play through, which sets which volume and mute settings apply.
  * @param sound - The sound to play.
- * @param options - The sound's volume, playback rate and looping.
- * @returns The playing sound, to change its volume or stop it.
- * @throws An error if `bus` wasn't created by a sound mixer.
+ * @param options - The volume, rate and looping to play it with.
+ * @returns A handle to change the sound's volume or stop it.
+ * @throws If the bus's mixer was stopped, or the volume or rate is invalid.
  */
 export function playSound(
   bus: MixerBus,
   sound: SoundAsset,
   options: Partial<PlaySoundOptions> = {},
 ): PlayingSound {
-  const settings: PlaySoundOptions = { ...defaultPlaySoundOptions, ...options };
-  const playback = new SoundPlayback(toAudioBus(bus), sound, settings);
+  const { volume, rate, loop } = { ...defaultPlaySoundOptions, ...options };
+  const busInternals = getBusInternals(bus);
 
-  playback.start();
+  assertMixerNotStopped(busInternals.mixer);
+
+  assertValidVolume(volume, 'a sound');
+  assertValidRate(rate);
+
+  if (!loop && !canStartOneShot(busInternals.mixer)) {
+    return createDroppedSound(volume);
+  }
+
+  const instance = new SoundInstance(busInternals, sound, {
+    volume,
+    rate,
+    loop,
+    offsetSeconds: 0,
+  });
+
+  let currentVolume = volume;
 
   return {
     get volume(): number {
-      return playback.volume;
+      return currentVolume;
     },
     set volume(value: number) {
-      playback.volume = value;
+      instance.setVolume(value);
+      currentVolume = value;
     },
     get isPlaying(): boolean {
-      return playback.isPlaying;
+      return instance.isPlaying;
     },
-    stop: () => {
-      playback.stop();
+    stop: (): void => {
+      instance.stop();
     },
   };
 }
+
+const createDroppedSound = (volume: number): PlayingSound => {
+  let currentVolume = volume;
+
+  return {
+    get volume(): number {
+      return currentVolume;
+    },
+    set volume(value: number) {
+      assertValidVolume(value, 'a sound');
+      currentVolume = value;
+    },
+    isPlaying: false,
+    stop: (): void => {},
+  };
+};

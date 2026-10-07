@@ -5,8 +5,8 @@ import { addParticleComponent } from '../components/particle-component.js';
 import { addLifetimeComponent } from '../../lifecycle/index.js';
 import {
   addSpriteComponent,
-  Renderable,
   SpriteEcsComponent,
+  Texture,
 } from '../../rendering/index.js';
 
 describe('createParticleOpacityEcsSystem', () => {
@@ -29,7 +29,7 @@ describe('createParticleOpacityEcsSystem', () => {
     return addSpriteComponent(world, entity, {
       width: 1,
       height: 1,
-      renderable: {} as Renderable,
+      texture: {} as Texture,
     });
   };
 

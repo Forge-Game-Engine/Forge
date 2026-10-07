@@ -1,4 +1,5 @@
-import { ImageCache } from '../../asset-loading/index.js';
+import type { RenderContext } from '../../rendering/render-context.js';
+import { createTexture } from '../../rendering/texture.js';
 import type { FontAtlas } from './font-atlas.js';
 import type { FontAtlasData } from './font-atlas-data.js';
 import { toFontAtlasData } from './font-atlas-file-data.js';
@@ -24,15 +25,21 @@ interface FontAtlasLoad {
 
 /**
  * Loads and caches `FontAtlas`es from a metrics JSON file and its atlas
- * image, keyed by the metrics file's URL.
+ * image, keyed by the metrics file's URL. Uploads each atlas image to a
+ * texture, which the cache owns.
  */
 export class FontAtlasCache {
-  private readonly _imageCache: ImageCache;
+  private readonly _renderContext: RenderContext;
   private readonly _loads = new Map<string, FontAtlasLoad>();
   private readonly _fontAtlases = new Map<string, FontAtlas>();
 
-  constructor(imageCache: ImageCache = new ImageCache()) {
-    this._imageCache = imageCache;
+  /**
+   * Constructs a new instance of the `FontAtlasCache` class.
+   * @param renderContext - The render context the atlas textures are
+   * created in. Atlas images load through its `imageCache`.
+   */
+  constructor(renderContext: RenderContext) {
+    this._renderContext = renderContext;
   }
 
   /**
@@ -98,7 +105,7 @@ export class FontAtlasCache {
   ): Promise<FontAtlas> {
     const [data, image] = await Promise.all([
       loadFontAtlasData(metricsUrl),
-      this._imageCache.getOrLoad(imageUrl),
+      this._renderContext.imageCache.getOrLoad(imageUrl),
     ]);
 
     const { width, height } = data.atlasSize;
@@ -109,7 +116,12 @@ export class FontAtlasCache {
       );
     }
 
-    const fontAtlas: FontAtlas = { data, image };
+    // Linear filtering: the MSDF shaders reconstruct the glyph's edge from
+    // distances interpolated between texels.
+    const fontAtlas: FontAtlas = {
+      data,
+      texture: createTexture(this._renderContext, image),
+    };
 
     this._fontAtlases.set(metricsUrl, fontAtlas);
 

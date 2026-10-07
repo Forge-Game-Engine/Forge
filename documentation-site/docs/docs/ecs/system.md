@@ -43,7 +43,7 @@ If a system needs to run some logic exactly once per tick regardless of how many
 
 ## Looking up optional components in a loop
 
-`query` only matches entities that have _every_ listed component, so a
+`query` only matches entities that have *every* listed component, so a
 component only some matched entities have (for example, a sprite's optional
 rotation) can't just be added to `query` - doing so would silently exclude
 every entity that lacks it. The usual fix is to call `world.getComponent`
@@ -125,27 +125,38 @@ Systems may implement an optional `cleanup(world)` method. It runs once - not pe
 Since `cleanup` doesn't receive a query result, a system that needs to release a resource per matched entity should track what it acquired itself (for example in a `Map` keyed by entity id) rather than re-querying the world:
 
 ```ts
-const createSoundEcsSystem = (): EcsSystem<[SoundEcsComponent]> => {
-  const playbacks = new Map<SoundEcsComponent, SoundPlayback>();
+import { EcsSystem } from '@forge-game-engine/forge/ecs';
+
+// Shows each player's name in an HTML label over the game.
+const createNameplateEcsSystem = (
+  container: HTMLElement,
+): EcsSystem<[NameplateEcsComponent]> => {
+  const labels = new Map<number, HTMLElement>();
 
   return {
-    query: [soundId],
-    update(world, { components: [sounds] }) {
-      for (const sound of sounds) {
-        if (!playbacks.has(sound)) {
-          playbacks.set(sound, startPlayback(sound));
+    query: [nameplateId],
+    update(_world, { entities, components: [nameplates] }) {
+      for (let i = 0; i < entities.length; i++) {
+        let label = labels.get(entities[i]);
+
+        if (!label) {
+          label = document.createElement('div');
+          container.appendChild(label);
+          labels.set(entities[i], label);
         }
+
+        label.textContent = nameplates[i].name;
       }
     },
-    cleanup(world) {
-      for (const playback of playbacks.values()) {
-        playback.stop();
+    cleanup() {
+      for (const label of labels.values()) {
+        label.remove();
       }
 
-      playbacks.clear();
+      labels.clear();
     },
   };
 };
 ```
 
-The engine's own [`createSoundEcsSystem`](/Forge/docs/api/functions/createSoundEcsSystem) follows this shape. Other systems use `cleanup` to remove physics bodies/joints from the physics world (tracking a `Map<entity, RigidBody>` of what they registered, so `cleanup` only has to iterate that map), or to dispose scratch GPU render targets that a system allocates outside of any component (see the gaussian blur system for an example of the latter). If a system doesn't acquire any resources beyond its components, leave `cleanup` off.
+Other systems use `cleanup` to remove physics bodies/joints from the physics world (tracking a `Map<entity, RigidBody>` of what they registered, so `cleanup` only has to iterate that map), or to dispose scratch GPU render targets that a system allocates outside of any component (see the gaussian blur system for an example of the latter). If a system doesn't acquire any resources beyond its components, leave `cleanup` off.

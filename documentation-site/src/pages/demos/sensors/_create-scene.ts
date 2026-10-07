@@ -18,7 +18,6 @@ import {
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
-import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { drainId } from './_drain.system';
 import { addTriggerZoneComponent } from './_trigger-zone.component';
 
@@ -66,13 +65,10 @@ export async function createScene(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<void> {
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-  const whiteSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-  });
+  const whiteSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayer,
+  };
 
   const { x: width, y: height } = getCameraView(
     world,

@@ -1,254 +1,54 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createImageSprite } from './create-image-sprite';
-import { ImageCache } from '../../asset-loading/index.js';
 import { Color } from '../color.js';
-import { RenderContext } from '../render-context.js';
-import {
-  ForgeShaderSource,
-  ShaderCache,
-  spriteFragmentShader,
-  spriteVertexShader,
-} from '../shaders/index.js';
+import type { Texture } from '../texture.js';
 
-// Mock WebGLTexture constructor for instanceof checks in Material.bind
-globalThis.WebGLTexture = class WebGLTexture {};
+const texture = { width: 32, height: 32 } as Texture;
 
 describe('createImageSprite', () => {
-  let canvas: HTMLCanvasElement;
-  let mockGl: WebGL2RenderingContext;
-  let renderContext: RenderContext;
-  let image: HTMLImageElement;
-  let emissiveImage: HTMLImageElement;
-  let emissiveTextureLocation: WebGLUniformLocation;
-  let emissiveColorLocation: WebGLUniformLocation;
-  let emissiveIntensityLocation: WebGLUniformLocation;
+  it('draws the texture, with every other option at its default', () => {
+    const sprite = createImageSprite(texture);
 
-  beforeEach(() => {
-    canvas = document.createElement('canvas');
-    canvas.width = 800;
-    canvas.height = 600;
-
-    image = { width: 32, height: 32 } as HTMLImageElement;
-    emissiveImage = { width: 32, height: 32 } as HTMLImageElement;
-    emissiveTextureLocation = {};
-    emissiveColorLocation = {};
-    emissiveIntensityLocation = {};
-
-    mockGl = {
-      VERTEX_SHADER: 'VERTEX_SHADER',
-      FRAGMENT_SHADER: 'FRAGMENT_SHADER',
-      COMPILE_STATUS: 'COMPILE_STATUS',
-      LINK_STATUS: 'LINK_STATUS',
-      ACTIVE_UNIFORMS: 'ACTIVE_UNIFORMS',
-      TEXTURE0: 0,
-      TEXTURE_2D: 'TEXTURE_2D',
-      ARRAY_BUFFER: 'ARRAY_BUFFER',
-      STATIC_DRAW: 'STATIC_DRAW',
-      CLAMP_TO_EDGE: 'CLAMP_TO_EDGE',
-      TEXTURE_WRAP_S: 'TEXTURE_WRAP_S',
-      TEXTURE_WRAP_T: 'TEXTURE_WRAP_T',
-      TEXTURE_MIN_FILTER: 'TEXTURE_MIN_FILTER',
-      TEXTURE_MAG_FILTER: 'TEXTURE_MAG_FILTER',
-      NEAREST: 'NEAREST',
-      RGBA: 'RGBA',
-      UNSIGNED_BYTE: 'UNSIGNED_BYTE',
-
-      createBuffer: vi.fn().mockReturnValue({}),
-      bindBuffer: vi.fn(),
-      bufferData: vi.fn(),
-
-      createTexture: vi.fn().mockImplementation(() => new WebGLTexture()),
-      bindTexture: vi.fn(),
-      texParameteri: vi.fn(),
-      texImage2D: vi.fn(),
-
-      createShader: vi.fn().mockReturnValue({}),
-      shaderSource: vi.fn(),
-      compileShader: vi.fn(),
-      getShaderParameter: vi.fn().mockReturnValue(true),
-      getShaderInfoLog: vi.fn().mockReturnValue(''),
-
-      createProgram: vi.fn().mockReturnValue({}),
-      attachShader: vi.fn(),
-      linkProgram: vi.fn(),
-      getProgramParameter: vi
-        .fn()
-        .mockImplementation((_program: unknown, pname: unknown) =>
-          pname === 'ACTIVE_UNIFORMS' ? 4 : true,
-        ),
-      getProgramInfoLog: vi.fn().mockReturnValue(''),
-
-      getActiveUniform: vi.fn().mockImplementation(
-        (_program, index: number) =>
-          [
-            { name: 'u_texture', type: 0x8b5e /* SAMPLER_2D */, size: 1 },
-            {
-              name: 'u_emissiveTexture',
-              type: 0x8b5e /* SAMPLER_2D */,
-              size: 1,
-            },
-            { name: 'u_emissiveColor', type: 0x8b52 /* FLOAT_VEC4 */, size: 1 },
-            { name: 'u_emissiveIntensity', type: 0x1406 /* FLOAT */, size: 1 },
-          ][index] ?? null,
-      ),
-      getUniformLocation: vi
-        .fn()
-        .mockImplementation((_program, name: string) => {
-          if (name === 'u_emissiveTexture') {
-            return emissiveTextureLocation;
-          }
-
-          if (name === 'u_emissiveColor') {
-            return emissiveColorLocation;
-          }
-
-          if (name === 'u_emissiveIntensity') {
-            return emissiveIntensityLocation;
-          }
-
-          return {} as WebGLUniformLocation;
-        }),
-      useProgram: vi.fn(),
-      uniform1i: vi.fn(),
-      uniform1f: vi.fn(),
-      uniform4fv: vi.fn(),
-      activeTexture: vi.fn(),
-    } as unknown as WebGL2RenderingContext;
-
-    vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
-
-    const shaderCache = new ShaderCache([])
-      .addShader(new ForgeShaderSource(spriteVertexShader))
-      .addShader(new ForgeShaderSource(spriteFragmentShader));
-
-    renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);
+    expect(sprite).toEqual({
+      texture,
+      width: 0.32,
+      height: 0.32,
+      pivot: { x: 0.5, y: 0.5 },
+      tintColor: Color.white,
+      uvOffset: { x: 0, y: 0 },
+      uvScale: { x: 1, y: 1 },
+      emissive: null,
+      material: null,
+      category: 1,
+      enabled: true,
+      layer: 0,
+      slices: undefined,
+    });
   });
 
-  it('binds zero emissive intensity when no emissive map is given', () => {
-    const sprite = createImageSprite(image, renderContext);
-
-    sprite.renderable.material.bind(mockGl);
-
-    const intensityCalls = (mockGl.uniform1f as Mock).mock.calls.filter(
-      ([location]) => location === emissiveIntensityLocation,
-    );
-
-    expect(intensityCalls).toHaveLength(1);
-    expect(intensityCalls[0][1]).toBe(0);
-  });
-
-  it('binds the same shared black placeholder texture across sprites with no emissive map', () => {
-    const spriteA = createImageSprite(image, renderContext);
-    const spriteB = createImageSprite(image, renderContext);
-
-    spriteA.renderable.material.bind(mockGl);
-    const [, spriteAEmissiveTexture] = (mockGl.bindTexture as Mock).mock
-      .calls[1] as [unknown, WebGLTexture];
-
-    (mockGl.bindTexture as Mock).mockClear();
-    spriteB.renderable.material.bind(mockGl);
-    const [, spriteBEmissiveTexture] = (mockGl.bindTexture as Mock).mock
-      .calls[1] as [unknown, WebGLTexture];
-
-    expect(spriteAEmissiveTexture).toBe(spriteBEmissiveTexture);
-  });
-
-  it('sets the configured emissive intensity when an emissive map is given', () => {
-    const sprite = createImageSprite(image, renderContext, {
-      emissiveMap: {
-        image: emissiveImage,
-        intensity: 3,
-      },
+  it("sets uvScale to one frame's share of the texture when frameDimensions is given", () => {
+    const sprite = createImageSprite({ width: 64, height: 32 } as Texture, {
+      frameDimensions: { x: 16, y: 16 },
     });
 
-    sprite.renderable.material.bind(mockGl);
-
-    const intensityCalls = (mockGl.uniform1f as Mock).mock.calls.filter(
-      ([location]) => location === emissiveIntensityLocation,
-    );
-
-    expect(intensityCalls).toHaveLength(1);
-    expect(intensityCalls[0][1]).toBe(3);
+    expect(sprite.uvScale).toEqual({ x: 0.25, y: 0.5 });
   });
 
-  it('defaults emissive intensity to 1 when an emissive map is given without an explicit intensity', () => {
-    const sprite = createImageSprite(image, renderContext, {
-      emissiveMap: {
-        image: emissiveImage,
-      },
-    });
-
-    sprite.renderable.material.bind(mockGl);
-
-    const intensityCalls = (mockGl.uniform1f as Mock).mock.calls.filter(
-      ([location]) => location === emissiveIntensityLocation,
+  it('returns fresh vectors on every call', () => {
+    expect(createImageSprite(texture).uvScale).not.toBe(
+      createImageSprite(texture).uvScale,
     );
-
-    expect(intensityCalls[0][1]).toBe(1);
-  });
-
-  it('does not throw when creating a sprite without an emissive map', () => {
-    expect(() => createImageSprite(image, renderContext)).not.toThrow();
-  });
-
-  it('defaults the emissive color to white when an emissive map is given without an explicit color', () => {
-    const sprite = createImageSprite(image, renderContext, {
-      emissiveMap: {
-        image: emissiveImage,
-      },
-    });
-
-    sprite.renderable.material.bind(mockGl);
-
-    const colorCalls = (mockGl.uniform4fv as Mock).mock.calls.filter(
-      ([location]) => location === emissiveColorLocation,
-    );
-
-    expect(colorCalls).toHaveLength(1);
-    expect(Array.from(colorCalls[0][1] as Float32Array)).toEqual([1, 1, 1, 1]);
-  });
-
-  it('sets the configured emissive color when given', () => {
-    const sprite = createImageSprite(image, renderContext, {
-      emissiveMap: {
-        image: emissiveImage,
-        color: new Color(1, 0.5, 0.1),
-      },
-    });
-
-    sprite.renderable.material.bind(mockGl);
-
-    const colorCalls = (mockGl.uniform4fv as Mock).mock.calls.filter(
-      ([location]) => location === emissiveColorLocation,
-    );
-
-    expect(Array.from(colorCalls[0][1] as Float32Array)).toEqual(
-      Array.from(new Float32Array([1, 0.5, 0.1, 1])),
-    );
-  });
-
-  it('sets the emissive color to white when no emissive map is given', () => {
-    const sprite = createImageSprite(image, renderContext);
-
-    sprite.renderable.material.bind(mockGl);
-
-    const colorCalls = (mockGl.uniform4fv as Mock).mock.calls.filter(
-      ([location]) => location === emissiveColorLocation,
-    );
-
-    expect(Array.from(colorCalls[0][1] as Float32Array)).toEqual([1, 1, 1, 1]);
   });
 
   it('defaults pixelsPerUnit to 100 when omitted', () => {
-    const sprite = createImageSprite(image, renderContext);
+    const sprite = createImageSprite(texture);
 
     expect(sprite.width).toBeCloseTo(0.32);
     expect(sprite.height).toBeCloseTo(0.32);
   });
 
   it('sizes the sprite in world units using pixelsPerUnit when given', () => {
-    const sprite = createImageSprite(image, renderContext, {
+    const sprite = createImageSprite(texture, {
       pixelsPerUnit: 16,
     });
 
@@ -257,7 +57,7 @@ describe('createImageSprite', () => {
   });
 
   it('sizes the sprite directly from its pixel dimensions when pixelsPerUnit is 1', () => {
-    const sprite = createImageSprite(image, renderContext, {
+    const sprite = createImageSprite(texture, {
       pixelsPerUnit: 1,
     });
 
@@ -265,8 +65,8 @@ describe('createImageSprite', () => {
     expect(sprite.height).toBe(32);
   });
 
-  it('applies pixelsPerUnit to frameDimensions instead of the full image size', () => {
-    const sprite = createImageSprite(image, renderContext, {
+  it('applies pixelsPerUnit to frameDimensions instead of the full texture size', () => {
+    const sprite = createImageSprite(texture, {
       frameDimensions: { x: 16, y: 8 },
       pixelsPerUnit: 4,
     });
@@ -276,7 +76,7 @@ describe('createImageSprite', () => {
   });
 
   it('defaults an omitted nine-slice native size to the imported world size', () => {
-    const sprite = createImageSprite(image, renderContext, {
+    const sprite = createImageSprite(texture, {
       pixelsPerUnit: 1,
       slices: { left: 8, right: 8, top: 8, bottom: 8 },
     });
@@ -292,7 +92,7 @@ describe('createImageSprite', () => {
   });
 
   it('applies pixelsPerUnit and frameDimensions to the default nine-slice native size', () => {
-    const sprite = createImageSprite(image, renderContext, {
+    const sprite = createImageSprite(texture, {
       frameDimensions: { x: 16, y: 8 },
       pixelsPerUnit: 4,
       slices: { left: 1, right: 1, top: 1, bottom: 1 },
@@ -302,7 +102,7 @@ describe('createImageSprite', () => {
   });
 
   it('keeps an explicit nine-slice native size', () => {
-    const sprite = createImageSprite(image, renderContext, {
+    const sprite = createImageSprite(texture, {
       pixelsPerUnit: 1,
       slices: {
         left: 8,
@@ -318,7 +118,7 @@ describe('createImageSprite', () => {
   });
 
   it('leaves slices undefined when none are given', () => {
-    const sprite = createImageSprite(image, renderContext);
+    const sprite = createImageSprite(texture);
 
     expect(sprite.slices).toBeUndefined();
   });

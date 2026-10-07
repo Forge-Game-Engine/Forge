@@ -10,28 +10,23 @@ type Hooks = GamepadInputSceneHandle;
 type Page = import('@playwright/test').Page;
 
 // Unlike the keyboard/mouse specs' `captureState`, this one does *not* also
-// call `step()` - it only reads. `GamepadInputSource` only re-dispatches an
-// action when its *own* polled value changes since the previous poll (see
-// its class doc comment), so an extra, unaccounted-for poll (as an
-// always-steps `captureState` would add here) changes which frame the
-// "stuck at zero" scenario below lands on. Every `step()` in this spec is
-// therefore explicit, and `readState` is always called either with no step
-// in between (to inspect the result of the last explicit step) or paired
-// 1:1 with exactly one `step()`.
+// call `step()` - it only reads. `GamepadInputSource` polls the gamepad in
+// `step()`, so keeping every poll explicit makes it obvious which frame
+// first sees a change to the fake gamepad: `readState` is always called
+// either with no step in between (to inspect the result of the last
+// explicit step) or paired 1:1 with exactly one `step()`.
 const readState = (page: Page) =>
   page.evaluate(
-    ({ blue, yellow, cyan, green, orange, magenta }) => {
+    ({ blue, cyan, green, orange, magenta }) => {
       const scene = window.__forgeTestHooks as unknown as Hooks;
 
       return {
         stickPosition: scene.stickPosition,
-        brokenStickPosition: scene.brokenStickPosition,
         menuStickPosition: scene.menuStickPosition,
         verticalPosition: scene.verticalPosition,
         isShooting: scene.isShooting,
         restartCount: scene.restartCount,
         stickBounds: scene.measureBounds(blue),
-        brokenBounds: scene.measureBounds(yellow),
         menuStickBounds: scene.measureBounds(cyan),
         verticalBounds: scene.measureBounds(green),
         holdBounds: scene.measureBounds(orange),
@@ -40,7 +35,6 @@ const readState = (page: Page) =>
     },
     {
       blue: inputSceneColors.blue,
-      yellow: inputSceneColors.yellow,
       cyan: inputSceneColors.cyan,
       green: inputSceneColors.green,
       orange: inputSceneColors.orange,
@@ -129,7 +123,7 @@ test.describe('gamepad input', () => {
     });
   });
 
-  test('Axis1dAction with noReset tracks a held stick deflection and ignores deadzone drift', async ({
+  test('Axis1dAction tracks a held stick deflection and ignores deadzone drift', async ({
     page,
   }) => {
     const before = await test.step('capture the starting state', () =>
@@ -174,9 +168,8 @@ test.describe('gamepad input', () => {
       await test.step('capture the state after holding the deflection', () =>
         readState(page));
 
-    // The action's own value should be stable while the stick reading is
-    // unchanged - this is about the *action*, not the polling-skip
-    // optimization under test elsewhere in this file.
+    // The gamepad reports the same deflection every poll, so the action
+    // keeps reading it for as long as the stick is held.
     expect(stillDeflected.stickPosition.x).toBe(deflected.stickPosition.x);
 
     await test.step('release the stick back to center', () =>
@@ -189,59 +182,7 @@ test.describe('gamepad input', () => {
     expect(released.stickPosition.x).toBe(before.stickPosition.x);
   });
 
-  test('Axis1dAction with the default zero reset reads correctly for one frame, then gets stuck at zero', async ({
-    page,
-  }) => {
-    const before = await test.step('capture the starting state', () =>
-      stepAndReadState(page));
-
-    await test.step('deflect the stick', () => setStickX(page, 0.8));
-
-    const afterFirstFrame =
-      await test.step('capture the state right after the first polled frame with the new deflection', () =>
-        stepAndReadState(page));
-
-    expect(afterFirstFrame.brokenStickPosition.x).toBeGreaterThan(
-      before.brokenStickPosition.x,
-    );
-
-    const stillDeflected =
-      await test.step('advance one more frame without changing the stick reading', () =>
-        stepAndReadState(page));
-
-    // This is the documented pitfall (gamepad.md's "Gotchas"): the default
-    // `actionResetTypes.zero` resets the value to 0 every frame, but the
-    // source only re-dispatches when its own reading of the stick changes.
-    // Since the stick's raw reading hasn't changed since the previous poll,
-    // the source never notices the value was reset out from under it, so
-    // the action stays stuck at 0 - snapped back to its base position -
-    // even though the stick is still fully deflected.
-    expect(stillDeflected.brokenStickPosition.x).toBe(
-      before.brokenStickPosition.x,
-    );
-
-    await test.step('keep holding the same deflection over several more frames', () =>
-      animateFrames(page, 5));
-
-    const remainsStuck =
-      await test.step('capture the state after holding the deflection further', () =>
-        readState(page));
-
-    await test.step('assert the broken square visibly stayed snapped to its base position', () => {
-      expect(before.brokenBounds).not.toBeNull();
-      expect(remainsStuck.brokenBounds).not.toBeNull();
-
-      const centerBefore =
-        (before.brokenBounds!.left + before.brokenBounds!.right) / 2;
-      const centerRemainsStuck =
-        (remainsStuck.brokenBounds!.left + remainsStuck.brokenBounds!.right) /
-        2;
-
-      expect(centerRemainsStuck).toBeCloseTo(centerBefore, -1);
-    });
-  });
-
-  test('input groups gate which Axis1dAction a shared stick axis dispatches to', async ({
+  test('input groups gate which Axis1dAction a shared stick axis drives', async ({
     page,
   }) => {
     const initial = await test.step('capture the starting state', () =>
@@ -275,8 +216,8 @@ test.describe('gamepad input', () => {
         stepAndReadState(page));
 
     // The "game" action is released as soon as its group is deactivated,
-    // and must not have picked up the new deflection either - it's gated,
-    // not just quiet because nothing changed.
+    // and must not have picked up the new deflection either, even though
+    // the gamepad reports it for both actions every poll.
     expect(afterMenuDeflection.stickPosition.x).toBe(initial.stickPosition.x);
     expect(afterMenuDeflection.menuStickPosition.x).toBeLessThan(
       afterGameDeflection.menuStickPosition.x,
@@ -317,6 +258,7 @@ test.describe('gamepad input', () => {
       initial.menuStickPosition.x,
     );
   });
+
   test('a GamepadHoldBinding holds its HoldAction for exactly as long as the button is pressed', async ({
     page,
   }) => {
@@ -485,8 +427,8 @@ test.describe('gamepad input', () => {
       await test.step('capture the state after unplugging', () =>
         stepAndReadState(page));
 
-    // The stick's action is `noReset`, so without the release it would stay
-    // deflected forever.
+    // Axes hold their sources' last report, so without the release the
+    // stick's action would stay deflected forever.
     expect(unplugged.stickPosition.x).toBe(before.stickPosition.x);
     expect(unplugged.isShooting).toBe(false);
 

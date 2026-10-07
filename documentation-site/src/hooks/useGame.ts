@@ -2,31 +2,48 @@ import { Game } from '@forge-game-engine/forge/utilities';
 import { useEffect, useRef } from 'react';
 
 /**
- * Creates a demo's game. `signal` is aborted when the demo unmounts, after
- * the game has been stopped, so a demo can release anything `Game.stop()`
- * doesn't own (for example its sound mixer). Register the abort listener
- * before the first `await`: an unmount during loading aborts the signal
- * before the returned promise settles.
+ * Something a demo creates alongside its game that has to be stopped when
+ * the demo unmounts, such as a sound mixer.
  */
-export type CreateDemoGame = (signal: AbortSignal) => Promise<Game>;
+export interface DemoResource {
+  stop(): void | Promise<void>;
+}
+
+/**
+ * Creates a demo's game. Anything passed to `stopWithGame` is stopped
+ * after the game when the demo unmounts, including when it unmounts before
+ * the game has finished being created.
+ */
+export type CreateDemoGame = (
+  stopWithGame: (resource: DemoResource) => void,
+) => Promise<Game>;
 
 type UseGameHook = (createGame: CreateDemoGame) => Game | undefined;
+
+const stopResources = (resources: readonly DemoResource[]): void => {
+  for (const resource of resources) {
+    Promise.resolve(resource.stop()).catch((error: unknown) => {
+      console.error('Failed to stop a demo resource:', error);
+    });
+  }
+};
 
 export const useGame: UseGameHook = (createGame) => {
   const gameRef = useRef<Game | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
-    // Created per effect run, so React StrictMode's double mount gives the
-    // second run a signal the first run's cleanup didn't abort.
-    const abortController = new AbortController();
+    const resources: DemoResource[] = [];
 
     const startGame = async () => {
-      const game = await createGame(abortController.signal);
+      const game = await createGame((resource) => {
+        resources.push(resource);
+      });
 
       if (cancelled) {
         game.stop();
         game.container.querySelector('canvas')?.remove();
+        stopResources(resources);
 
         return;
       }
@@ -44,9 +61,8 @@ export const useGame: UseGameHook = (createGame) => {
         gameRef.current.stop();
         gameRef.current.container.querySelector('canvas')?.remove();
         gameRef.current = undefined;
+        stopResources(resources);
       }
-
-      abortController.abort();
     };
   }, [createGame]);
 

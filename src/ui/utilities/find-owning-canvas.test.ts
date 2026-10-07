@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { findOwningCanvas } from './find-owning-canvas.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { addCameraComponent } from '../../rendering/index.js';
 import { addCanvasComponent } from '../components/canvas-component.js';
@@ -37,10 +34,10 @@ describe('findOwningCanvas', () => {
     const canvas = createCanvasEntity(world);
 
     const panel = world.createEntity();
-    addParentComponent(world, panel, { parent: canvas });
+    world.setParent(panel, canvas);
 
     const label = world.createEntity();
-    addParentComponent(world, label, { parent: panel });
+    world.setParent(label, panel);
 
     expect(findOwningCanvas(world, panel)).toBe(canvas);
     expect(findOwningCanvas(world, label)).toBe(canvas);
@@ -51,16 +48,5 @@ describe('findOwningCanvas', () => {
     const orphan = world.createEntity();
 
     expect(findOwningCanvas(world, orphan)).toBeNull();
-  });
-
-  it('returns null instead of looping forever on a parent cycle', () => {
-    const world = new EcsWorld();
-    const a = world.createEntity();
-    const b = world.createEntity();
-
-    addParentComponent(world, a, { parent: b });
-    addParentComponent(world, b, { parent: a });
-
-    expect(findOwningCanvas(world, a)).toBeNull();
   });
 });

@@ -12,7 +12,7 @@ interface AudioControlsProps {
 
 /**
  * Sliders and a mute toggle for the space-shooter demo's sound, writing
- * straight into the mixer's buses (see `_create-audio.ts`): the music and
+ * straight into the mixer's buses (see `_create-game.ts`): the music and
  * sound effect buses' `volume`, and the master bus's `muted`.
  */
 export const AudioControls: FC<AudioControlsProps> = ({

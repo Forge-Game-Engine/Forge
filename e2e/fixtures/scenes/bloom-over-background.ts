@@ -17,7 +17,6 @@ import {
   createRenderTarget,
   spriteId,
 } from '../../../src/rendering/index.js';
-import { createSquareImage } from './create-square-image.js';
 import { CreateScene, SceneHandle } from './scene.js';
 
 const defaultStepDeltaMilliseconds = 16.6666;
@@ -82,9 +81,9 @@ export interface BloomOverBackgroundSceneHandle extends SceneHandle {
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
-export const createScene: CreateScene = async (
+export const createScene: CreateScene = (
   container: HTMLElement,
-): Promise<BloomOverBackgroundSceneHandle> => {
+): BloomOverBackgroundSceneHandle => {
   const time = new Time();
   const world = new EcsWorld();
   const canvas = createCanvas(container);
@@ -122,11 +121,10 @@ export const createScene: CreateScene = async (
   });
   addBloomComponent(world, glowCameraEntity, bloomSettings);
 
-  const squareImage = await createSquareImage('#fff');
-  const sprite = createImageSprite(squareImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: glowRenderCategory,
-  });
+  const sprite = {
+    ...createImageSprite(renderContext.whiteTexture),
+    category: glowRenderCategory,
+  };
   const spriteEntity = world.createEntity();
 
   addPositionComponent(world, spriteEntity);

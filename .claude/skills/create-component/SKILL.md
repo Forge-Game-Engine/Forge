@@ -134,9 +134,17 @@ Notes:
     defaulted ones into a `<PascalCaseName>DefaultedOptions` interface so
     `default<PascalCaseName>Options` can be typed as that (not the whole
     component, which would wrongly force the required fields into the
-    defaults object too) — see `sound-component.ts`, `lifetime-component.ts`,
-    or `sprite-animation-component.ts`. `sprite-component.ts` shows the same
+    defaults object too) — see `lifetime-component.ts` or
+    `sprite-animation-component.ts`. `sprite-component.ts` shows the same
     shape with more fields.
+  - **Has an output field that a system writes** (e.g. `hasFinished` on
+    `SoundEcsComponent`, which only `createSoundEcsSystem` writes): leave it
+    out of the factory's options, so a caller can't set it and become its
+    second writer. Type `options` as
+    `<PascalCaseName>RequiredOptions & Partial<<PascalCaseName>DefaultedOptions>`
+    and set the output field's starting value in the factory after
+    spreading the options (see `sound-component.ts`). Document the field as
+    output, written only by its system.
   - **Has no required fields, only defaulted fields**: no interface split
     needed at all — type `default<PascalCaseName>Options` as the full
     `<PascalCaseName>EcsComponent` directly, as in the template above (see

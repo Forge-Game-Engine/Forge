@@ -22,7 +22,7 @@ import {
   FontAtlasCache,
 } from '@forge-game-engine/forge/text';
 
-const fontAtlasCache = new FontAtlasCache();
+const fontAtlasCache = new FontAtlasCache(renderContext);
 const fontAtlas = await fontAtlasCache.getOrLoad({
   metricsUrl: 'assets/fonts/body.json',
   imageUrl: 'assets/fonts/body.png',
@@ -37,7 +37,7 @@ addTextComponent(world, label, {
 });
 
 world.addSystem(createTransformEcsSystem());
-world.addSystem(createTextShapingEcsSystem(renderContext));
+world.addSystem(createTextShapingEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
 ```
 
@@ -206,7 +206,20 @@ an error, since text often comes from players or translations:
 - a closing tag with no matching open tag
 
 A tag that's never closed runs to the end of the string. There's no escape
-syntax, so the exact text `<b>` can't be displayed.
+syntax inside tagged text. To draw a string exactly as written, tags
+included, set `richText: false`:
+
+```ts
+addTextComponent(world, label, {
+  text: playerName,
+  fontAtlas,
+  size: 24,
+  richText: false,
+});
+```
+
+A [text field](../ui/text-input.md)'s labels have `richText` set to
+`false`.
 
 ## Positioning and scale
 
@@ -225,12 +238,10 @@ world-space signage) until this is addressed in a later phase.
 
 ## Batching
 
-Every `TextEcsComponent` sharing the same `FontAtlas` shares one
-[`Renderable`](/Forge/docs/api/classes/Renderable), built and cached the
-first time `createTextShapingEcsSystem` sees that atlas. Any number of text
-entities drawing from the same atlas, plus every glyph within each of them,
-batch into a single instanced draw call per camera, the same way sprites
-sharing a texture do.
+Glyphs drawn from the same `FontAtlas` share its texture, so glyphs that
+are consecutive in a camera's draw order batch into one instanced draw
+call, across any number of text entities, the same way
+[sprites with the same texture](../rendering/sprites.md#batching) do.
 
 ## Outline and soft-shadow effects
 

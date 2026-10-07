@@ -31,8 +31,8 @@ export const createGunEcsSystem = (
   time: Time,
   world: EcsWorld,
   shootAction: HoldAction,
-  laserSound: SoundAsset,
   sfxBus: MixerBus,
+  laserSound: SoundAsset,
 ): EcsSystem<[GunEcsComponent, PositionEcsComponent]> => {
   return {
     query: [gunId, positionId],
@@ -57,7 +57,9 @@ export const createGunEcsSystem = (
           x: -20,
           y: 20,
         });
-        playSound(sfxBus, laserSound, { volume: 0.3 });
+
+        // One sound per volley; both bullets fire together.
+        playSound(sfxBus, laserSound, { volume: 0.4 });
 
         gunComponent.nextAllowedShotTime =
           time.timeInSeconds + gunComponent.timeBetweenShots;

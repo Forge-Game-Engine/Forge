@@ -1,261 +1,44 @@
-import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
-import { Geometry } from './geometry/geometry.js';
-import { Material } from './materials/material.js';
-import { InstanceComponents, Renderable } from './renderable.js';
+import { describe, expect, it, vi } from 'vitest';
+import type { Material } from './materials/material.js';
+import type { RenderCommand } from './render-command.js';
+import { Renderable } from './renderable.js';
 
 describe('Renderable', () => {
-  let mockGeometry: Geometry;
-  let mockMaterial: Material;
-  let mockGl: WebGL2RenderingContext;
-  let mockProgram: WebGLProgram;
+  it('holds its material, instance layout and batch binding', () => {
+    const material = { program: {} } as Material;
+    const bindInstanceData = vi.fn();
+    const setupInstanceAttributes = vi.fn();
+    const bindBatch = vi.fn();
 
-  const mockBindInstanceData = vi.fn();
-  const mockSetupInstanceAttributes = vi.fn();
-
-  beforeEach(() => {
-    // Create mock geometry with bind method
-    mockGeometry = {
-      bind: vi.fn(),
-    } as unknown as Geometry;
-
-    // Create mock program
-    mockProgram = {};
-
-    // Create mock material with bind method and program property
-    mockMaterial = {
-      bind: vi.fn(),
-      program: mockProgram,
-    } as unknown as Material;
-
-    // Create mock WebGL context
-    mockGl = {} as WebGL2RenderingContext;
-
-    // Reset mocks
-    mockBindInstanceData.mockReset();
-    mockSetupInstanceAttributes.mockReset();
-  });
-
-  describe('constructor', () => {
-    it('should initialize with provided geometry', () => {
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        10,
-        0,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
-
-      expect(renderable.geometry).toBe(mockGeometry);
-    });
-
-    it('should initialize with provided material', () => {
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        10,
-        0,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
-
-      expect(renderable.material).toBe(mockMaterial);
-    });
-
-    it('should initialize with provided camera entity', () => {
-      const layer = 5;
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        10,
-        layer,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
-
-      expect(renderable.category).toBe(layer);
-    });
-
-    it('should initialize with provided floatsPerInstance', () => {
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        17,
-        0,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
-
-      expect(renderable.floatsPerInstance).toBe(17);
-    });
-
-    it('should initialize with provided bindInstanceData callback', () => {
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        10,
-        0,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
-
-      expect(renderable.bindInstanceData).toBe(mockBindInstanceData);
-    });
-
-    it('should initialize with provided setupInstanceAttributes callback', () => {
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        10,
-        0,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
-
-      expect(renderable.setupInstanceAttributes).toBe(
-        mockSetupInstanceAttributes,
-      );
-    });
-
-    it('should initialize all properties correctly', () => {
-      const floatsPerInstance = 15;
-      const layer = 3;
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        floatsPerInstance,
-        layer,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
-
-      expect(renderable.geometry).toBe(mockGeometry);
-      expect(renderable.material).toBe(mockMaterial);
-      expect(renderable.category).toBe(layer);
-      expect(renderable.floatsPerInstance).toBe(floatsPerInstance);
-      expect(renderable.bindInstanceData).toBe(mockBindInstanceData);
-      expect(renderable.setupInstanceAttributes).toBe(
-        mockSetupInstanceAttributes,
-      );
-    });
-  });
-
-  describe('bind', () => {
-    it('should call material.bind with gl context', () => {
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        10,
-        0,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
-
-      renderable.bind(mockGl);
-
-      expect(mockMaterial.bind).toHaveBeenCalledWith(mockGl);
-    });
-
-    it('should call geometry.bind with gl context and material program', () => {
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        10,
-        0,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
-
-      renderable.bind(mockGl);
-
-      expect(mockGeometry.bind).toHaveBeenCalledWith(mockGl, mockProgram);
-    });
-
-    it('should bind material before geometry', () => {
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        10,
-        0,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
-
-      const callOrder: string[] = [];
-      (mockMaterial.bind as Mock).mockImplementation(() => {
-        callOrder.push('material');
-      });
-      (mockGeometry.bind as Mock).mockImplementation(() => {
-        callOrder.push('geometry');
-      });
-
-      renderable.bind(mockGl);
-
-      expect(callOrder).toEqual(['material', 'geometry']);
-    });
-  });
-
-  describe('callbacks', () => {
-    it('should allow bindInstanceData callback to be called', () => {
-      const components = {} as InstanceComponents;
-      const buffer = new Float32Array(10);
-      const offset = 5;
-
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        10,
-        0,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
-
-      renderable.bindInstanceData(components, buffer, offset);
-
-      expect(mockBindInstanceData).toHaveBeenCalledWith(
-        components,
-        buffer,
-        offset,
-      );
-    });
-
-    it('should allow setupInstanceAttributes callback to be called', () => {
-      const renderable = new Renderable(
-        mockGeometry,
-        mockMaterial,
-        10,
-        0,
-        mockBindInstanceData,
-        mockSetupInstanceAttributes,
-      );
-
-      renderable.setupInstanceAttributes(mockGl, renderable);
-
-      expect(mockSetupInstanceAttributes).toHaveBeenCalledWith(
-        mockGl,
-        renderable,
-      );
-    });
-  });
-
-  describe('properties immutability', () => {
-    it.each<keyof Renderable>(['geometry', 'material', 'floatsPerInstance'])(
-      'should have readonly %s property',
-      (propertyName) => {
-        const renderable = new Renderable(
-          mockGeometry,
-          mockMaterial,
-          10,
-          0,
-          mockBindInstanceData,
-          mockSetupInstanceAttributes,
-        );
-
-        // TypeScript will prevent this at compile time, but we can verify the property exists
-        expect(
-          Object.getOwnPropertyDescriptor(renderable, propertyName),
-        ).toBeDefined();
-      },
+    const renderable = new Renderable(
+      material,
+      20,
+      bindInstanceData,
+      setupInstanceAttributes,
+      bindBatch,
     );
+
+    expect(renderable.material).toBe(material);
+    expect(renderable.floatsPerInstance).toBe(20);
+    expect(renderable.bindInstanceData).toBe(bindInstanceData);
+    expect(renderable.setupInstanceAttributes).toBe(setupInstanceAttributes);
+    expect(renderable.bindBatch).toBe(bindBatch);
+  });
+
+  it('passes the gl context and the batch command to bindBatch', () => {
+    const bindBatch = vi.fn();
+    const renderable = new Renderable(
+      { program: {} } as Material,
+      20,
+      vi.fn(),
+      vi.fn(),
+      bindBatch,
+    );
+    const gl = {} as WebGL2RenderingContext;
+    const command = {} as RenderCommand;
+
+    renderable.bindBatch(gl, command);
+
+    expect(bindBatch).toHaveBeenCalledWith(gl, command);
   });
 });

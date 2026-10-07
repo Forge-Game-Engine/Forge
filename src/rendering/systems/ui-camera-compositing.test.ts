@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createRenderEcsSystem } from './render-system';
 import { createPresentEcsSystem } from './present-system';
 import { EcsWorld } from '../../ecs';
@@ -7,12 +7,11 @@ import { addPositionComponent } from '../../common';
 import { Vec2 } from '../../math';
 import { addCameraComponent, CameraEcsComponent } from '../components';
 import { addSpriteComponent } from '../components';
-import { Renderable } from '../renderable';
 import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
 import { Color } from '../color';
-import { Geometry } from '../geometry/geometry';
-import { Material } from '../materials/material';
+import type { SpriteMaterial } from '../materials/sprite-material';
+import { Texture } from '../texture';
 import { ImageCache } from '../../asset-loading';
 import {
   ForgeShaderSource,
@@ -20,9 +19,6 @@ import {
   passthroughVertexShader,
   ShaderCache,
 } from '../shaders';
-
-// Mock WebGLTexture constructor for instanceof checks in Material.bind
-globalThis.WebGLTexture = class WebGLTexture {};
 
 /**
  * Item 0.5 (§8, Phase 0): confirm that a UI camera drawing into its own
@@ -74,6 +70,7 @@ describe('UI-camera compositing over the world camera', () => {
       drawArraysInstanced: vi.fn(),
 
       createShader: vi.fn().mockReturnValue({}),
+      deleteShader: vi.fn(),
       shaderSource: vi.fn(),
       compileShader: vi.fn(),
       getShaderParameter: vi.fn().mockReturnValue(true),
@@ -99,6 +96,10 @@ describe('UI-camera compositing over the world camera', () => {
       uniform1i: vi.fn(),
       activeTexture: vi.fn(),
       bindTexture: vi.fn(),
+      createTexture: vi.fn().mockImplementation(() => ({})),
+      texParameteri: vi.fn(),
+      texImage2D: vi.fn(),
+      vertexAttribDivisor: vi.fn(),
 
       createVertexArray: vi.fn().mockReturnValue({}),
       bindVertexArray: vi.fn(),
@@ -125,14 +126,14 @@ describe('UI-camera compositing over the world camera', () => {
     world.addSystem(createPresentEcsSystem(renderContext));
 
     worldTarget = {
-      colorTexture: new WebGLTexture(),
+      colorTexture: new Texture(mockGl),
       framebuffer: {},
       width: 800,
       height: 600,
     } as RenderTarget;
 
     uiTarget = {
-      colorTexture: new WebGLTexture(),
+      colorTexture: new Texture(mockGl),
       framebuffer: {},
       width: 800,
       height: 600,
@@ -173,17 +174,18 @@ describe('UI-camera compositing over the world camera', () => {
     addCameraEntity(worldTarget, 0, Color.black);
     addCameraEntity(uiTarget, 1, Color.transparent);
 
+    (mockGl.bindTexture as Mock).mockClear();
     world.update();
 
     expect(mockGl.bindTexture).toHaveBeenNthCalledWith(
       1,
       mockGl.TEXTURE_2D,
-      worldTarget.colorTexture,
+      worldTarget.colorTexture.glTexture,
     );
     expect(mockGl.bindTexture).toHaveBeenNthCalledWith(
       2,
       mockGl.TEXTURE_2D,
-      uiTarget.colorTexture,
+      uiTarget.colorTexture.glTexture,
     );
 
     // The present pass disables blending before the first (replacing) draw
@@ -214,7 +216,7 @@ describe('UI-camera compositing over the world camera', () => {
 
     expect(mockGl.bindTexture).toHaveBeenCalledWith(
       mockGl.TEXTURE_2D,
-      uiTarget.colorTexture,
+      uiTarget.colorTexture.glTexture,
     );
     expect(mockGl.blendFunc).toHaveBeenCalledWith(
       mockGl.ONE,
@@ -227,20 +229,11 @@ describe('UI-camera compositing over the world camera', () => {
     addCameraEntity(worldTarget, 0, Color.black);
     addCameraEntity(uiTarget, 1, Color.transparent);
 
-    const geometry = { bind: vi.fn() } as unknown as Geometry;
     const material = {
-      bind: vi.fn(),
+      bindSprites: vi.fn(),
       setUniform: vi.fn(),
       program: {} as WebGLProgram,
-    } as unknown as Material;
-    const renderable = new Renderable(
-      geometry,
-      material,
-      4,
-      0b0001,
-      vi.fn(),
-      vi.fn(),
-    );
+    } as unknown as SpriteMaterial;
 
     // Both cameras share `cullingMask: 0xffffffff` here for simplicity, so
     // this sprite is drawn by both - what matters is that each camera draws
@@ -252,7 +245,8 @@ describe('UI-camera compositing over the world camera', () => {
       width: 10,
       height: 10,
       pivot: Vec2.zero,
-      renderable,
+      texture: new Texture(mockGl),
+      material,
     });
 
     world.update();

@@ -1,11 +1,11 @@
 ---
-sidebar_position: 7
+sidebar_position: 6
 ---
 
 # Material Uniforms
 
-A [`Material`](/Forge/docs/api/classes/Material) pairs a compiled shader
-program with the values of its uniforms. Set a uniform with
+A [`Material`](/Forge/docs/api/classes/Material) pairs a shader program with
+the values of its uniforms. Set a uniform with
 [`setUniform`](/Forge/docs/api/classes/Material#setuniform); the value is
 uploaded every time the material is bound for drawing, so set it once for a
 constant and again whenever it changes (for example, each frame for a time
@@ -13,6 +13,7 @@ uniform).
 
 ```ts
 import {
+  createTexture,
   ForgeShaderSource,
   Material,
   RenderContext,
@@ -23,7 +24,7 @@ const shockwaveShader = `#version 300 es
 
 precision highp float;
 
-uniform sampler2D u_texture;
+uniform sampler2D u_distortion;
 uniform float u_time;
 uniform vec4 u_waves[4]; // xy = center, z = radius, w = strength
 
@@ -32,25 +33,49 @@ uniform vec4 u_waves[4]; // xy = center, z = radius, w = strength
 
 const createShockwaveMaterial = (
   renderContext: RenderContext,
-  texture: WebGLTexture,
+  distortionImage: HTMLImageElement,
 ): Material => {
-  const { shaderCache, gl } = renderContext;
+  const { shaderCache } = renderContext;
 
   shaderCache.addShader(new ForgeShaderSource(shockwaveShader));
 
   const material = new Material(
-    shaderCache.getShader('sprite.vert'),
+    renderContext,
+    shaderCache.getShader('passthrough.vert'),
     shaderCache.getShader('shockwave.frag'),
-    gl,
   );
 
-  material.setUniform('u_texture', texture);
+  material.setUniform(
+    'u_distortion',
+    createTexture(renderContext, distortionImage),
+  );
   material.setUniform('u_time', 0);
   material.setUniform('u_waves', new Float32Array(16));
 
   return material;
 };
 ```
+
+A material that draws sprites is created with `createSpriteMaterial`
+instead, which pairs a fragment shader with the sprite vertex shader (see
+[Drawing sprites with a custom shader](./sprites.md#drawing-sprites-with-a-custom-shader)).
+Its uniforms are set the same way.
+
+## Materials that share shaders
+
+Materials created from the same two shaders share one linked WebGL program:
+the render context compiles and links a shader pair the first time a
+material uses it, and every later material with the same pair reuses it.
+Creating a material is cheap, so create one material per set of uniform
+values (one per enemy color, say) rather than changing one material's
+values between draws.
+
+Each material keeps its own values. Binding a material gives every uniform
+the program kept a value: the one the material set, or a default if it set
+none. The default is zero for numbers, vectors and matrices, and the render
+context's [`blackTexture`](./textures.md#the-white-and-black-textures) for
+samplers. A material never draws with values another material set on the
+shared program.
 
 ## Which uniforms you can set
 
@@ -71,12 +96,14 @@ Setting a name that neither shader declares throws, listing the declared
 uniforms and naming both shaders, so a typo fails on the first call:
 
 ```txt
-Uniform "u_tme" is not declared in material "sprite.vert" + "shockwave.frag".
-Declared uniforms: u_projection, u_texture, u_time, u_waves.
+Uniform "u_tme" is not declared in material "passthrough.vert" + "shockwave.frag".
+Declared uniforms: u_distortion, u_time, u_waves.
 ```
 
-To check whether a uniform actually reaches the GPU while debugging a
-shader, ask the program for its location:
+[`hasUniform`](/Forge/docs/api/classes/Material#hasuniform) returns whether
+a material's shaders declare a uniform, without throwing. To check whether a
+uniform actually reaches the GPU while debugging a shader, ask the program
+for its location:
 
 ```ts
 const isActive = gl.getUniformLocation(material.program, 'u_time') !== null;
@@ -104,23 +131,28 @@ read it.
 The upload is chosen from the type the uniform is declared with in GLSL, so
 the value has to fit that type:
 
-| GLSL type                                          | Value                                                              |
-| -------------------------------------------------- | ------------------------------------------------------------------ |
-| `float`                                            | `number` or `Float32Array` of length 1                             |
-| `vec2`                                             | `Vector2` or `Float32Array` of length 2                            |
-| `vec3`, `vec4`                                     | `Float32Array` of length 3 or 4                                    |
-| `mat3`                                             | `Matrix3x3` or `Float32Array` of length 9                          |
-| `mat2`, `mat4`, `matNxM`                           | `Float32Array` of length 4, 16, or N × M                           |
-| `int`                                              | `number`, `boolean`, or `Int32Array` of length 1                   |
-| `ivec2`, `ivec3`, `ivec4`                          | `Int32Array` of length 2, 3, or 4                                  |
-| `uint` / `uvec2`, `uvec3`, `uvec4`                 | `number` (`uint` only) or `Uint32Array` of length 1, 2, 3, or 4    |
-| `bool` / `bvec2`, `bvec3`, `bvec4`                 | `boolean` (`bool` only) or `Int32Array` of length 1, 2, 3, or 4    |
-| `sampler2D`, `sampler3D`, `samplerCube`, and so on | `WebGLTexture`, bound to the texture target the sampler type reads |
+| GLSL type                          | Value                                                           |
+| ---------------------------------- | --------------------------------------------------------------- |
+| `float`                            | `number` or `Float32Array` of length 1                          |
+| `vec2`                             | `Vector2` or `Float32Array` of length 2                         |
+| `vec3`, `vec4`                     | `Float32Array` of length 3 or 4                                 |
+| `mat3`                             | `Matrix3x3` or `Float32Array` of length 9                       |
+| `mat2`, `mat4`, `matNxM`           | `Float32Array` of length 4, 16, or N × M                        |
+| `int`                              | `number`, `boolean`, or `Int32Array` of length 1                |
+| `ivec2`, `ivec3`, `ivec4`          | `Int32Array` of length 2, 3, or 4                               |
+| `uint` / `uvec2`, `uvec3`, `uvec4` | `number` (`uint` only) or `Uint32Array` of length 1, 2, 3, or 4 |
+| `bool` / `bvec2`, `bvec3`, `bvec4` | `boolean` (`bool` only) or `Int32Array` of length 1, 2, 3, or 4 |
+| `sampler2D`                        | [`Texture`](./textures.md)                                      |
 
 [`setColorUniform`](/Forge/docs/api/classes/Material#setcoloruniform) fills a
 `vec4`, and
 [`setVectorUniform`](/Forge/docs/api/classes/Material#setvectoruniform) fills
 a `vec2` or `vec3`, depending on whether the vector has a `z`.
+
+`sampler2D` is the only sampler type a material supports. A shader that
+declares any other sampler (`sampler3D`, `samplerCube`, `isampler2D`, and so
+on) throws when its program is linked, which is when the first material
+using it is created.
 
 `setUniform` throws when the value doesn't fit, naming the declared type,
 what it accepts, and what it received. A `Float32Array` of 16 floats is a
@@ -145,19 +177,23 @@ material.setUniform('u_waves', waves);
 
 The array's length must be a whole number of elements, and no more than the
 declared size. A shorter array updates only the leading elements; the rest
-keep whatever was last uploaded to them. To clear trailing elements, upload
-the full length with zeros in them.
+keep whatever was last uploaded to the program, which can be another
+material's values when materials share shaders. To control every element,
+upload the full length.
 
 Sampler arrays (`uniform sampler2D u_textures[4]`) can't be set through a
 `Material`. Declare one sampler uniform per texture instead.
 
-## Gotchas
+## When values are uploaded
 
-- **Values are read when the material is bound, not when they're set.** A
-  `Float32Array`, `Matrix3x3`, or `Vector2` you keep and mutate after
-  `setUniform` uploads its current contents on the next draw. That lets you
-  update one array in place each frame instead of allocating a new one, but
-  it also means mutating an array you passed to one material changes what
-  that material draws.
-- **Textures take consecutive texture units** in the order their uniforms
-  appear in the program, starting at unit 0 each time the material is bound.
+Values are read when the material is bound, not when they're set. A
+`Float32Array`, `Matrix3x3`, or `Vector2` you keep and mutate after
+`setUniform` uploads its current contents on the next draw. That lets you
+update one array in place each frame instead of allocating a new one, and
+it means mutating an array you passed to a material changes what that
+material draws.
+
+Textures are bound to consecutive texture units in the order their uniforms
+appear in the program, starting at unit 0 each time the material is bound.
+A texture that has been [disposed](./textures.md#disposing-a-texture)
+throws when the material is bound.

@@ -159,6 +159,13 @@ export const demos: Demo[] = [
     categories: ['rendering'],
   },
   {
+    slug: 'masks',
+    title: 'Masks',
+    description:
+      'Clips a scrolling list to a rect, and reveals a nine-slice bar and an arc gauge with linear and radial masks.',
+    categories: ['rendering', 'ui'],
+  },
+  {
     slug: 'texture-filtering',
     title: 'Texture Filtering',
     description:
@@ -184,6 +191,13 @@ export const demos: Demo[] = [
     title: 'UI Nested Resize',
     description:
       'A moving, resizing window with four levels of nested anchored children.',
+    categories: ['ui'],
+  },
+  {
+    slug: 'ui-text-input',
+    title: 'UI Text Input',
+    description:
+      'A name entry form: typing, filtering, submit and cancel in text fields.',
     categories: ['ui'],
   },
   {
@@ -225,7 +239,7 @@ export const demos: Demo[] = [
     slug: 'ui-progress-bar',
     title: 'UI Progress Bar',
     description:
-      'A read-only progress bar driven by a value that changes over time.',
+      'Read-only linear and radial progress bars driven by values that change over time.',
     categories: ['ui'],
   },
   {

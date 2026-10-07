@@ -16,7 +16,13 @@ import {
   RENDER_TARGET_FORMAT,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { createSoundEcsSystem } from '@forge-game-engine/forge/audio';
+import {
+  createSoundEcsSystem,
+  createSoundMixer,
+  MixerBus,
+  SoundAssetCache,
+  SoundMixer,
+} from '@forge-game-engine/forge/audio';
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   createLifetimeTrackingEcsSystem,
@@ -30,6 +36,8 @@ import {
   createNarrowPhaseEcsSystem,
 } from '@forge-game-engine/forge/physics';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
+import { getAssetUrl } from '@site/src/utils/get-asset-url';
+import type { DemoResource } from '@site/src/hooks/useGame';
 import { createMovementEcsSystem } from './_movement.system';
 import { createBackground } from './_create-background';
 import { createBackgroundEcsSystem } from './_background.system';
@@ -40,7 +48,6 @@ import {
 import { createCameraShakeEcsSystem } from './_camera-shake.system';
 import { createExplosionSpawner } from './_create-explosions';
 import { createMusic } from './_create-music';
-import { createAudio, loadSounds, SpaceShooterAudio } from './_create-audio';
 import { createInputs } from './_create-inputs';
 import { createPlayer, spawnPlayer } from './_create-player';
 import { createBulletEcsSystem } from './_bullet.system';
@@ -73,24 +80,39 @@ export const blurDefaults: GaussianBlurEcsComponent = {
   intensity: 0.6,
 };
 
+/** The mixer and buses the demo page's volume and mute controls write to. */
+export interface SpaceShooterAudio {
+  mixer: SoundMixer;
+  musicBus: MixerBus;
+  sfxBus: MixerBus;
+}
+
 export const createSpaceShooterGame = async (
-  signal: AbortSignal,
+  stopWithGame: (resource: DemoResource) => void,
   onBloomReady?: (bloom: BloomEcsComponent) => void,
   onBlurReady?: (blur: GaussianBlurEcsComponent) => void,
   onAudioReady?: (audio: SpaceShooterAudio) => void,
 ): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  // The mixer owns the page's AudioContext, which `game.stop()` doesn't
-  // close, so it's stopped when the page is left. The listener is added
-  // before the first `await`, so leaving while assets load also stops it.
-  const audio = createAudio();
+  // One mixer for the whole game, stopped when the demo page closes. Music
+  // and sound effects get their own buses, so each gets its own volume
+  // slider on the demo page.
+  const mixer = createSoundMixer();
 
-  signal.addEventListener('abort', () => {
-    void audio.mixer.stop();
-  });
+  stopWithGame(mixer);
 
-  onAudioReady?.(audio);
+  const musicBus = mixer.createBus('music');
+  const sfxBus = mixer.createBus('sfx');
+
+  onAudioReady?.({ mixer, musicBus, sfxBus });
+
+  const sounds = new SoundAssetCache(mixer);
+  const [musicSound, laserSound, explosionSound] = await Promise.all([
+    sounds.getOrLoad(getAssetUrl('audio/background-space-music.mp3')),
+    sounds.getOrLoad(getAssetUrl('audio/laser.mp3')),
+    sounds.getOrLoad(getAssetUrl('audio/explosion.mp3')),
+  ]);
 
   // Background and foreground each get their own off-screen target, so the
   // blur post-process pass can affect the background only: the present
@@ -193,15 +215,14 @@ export const createSpaceShooterGame = async (
     renderContext,
     renderLayers.foreground,
   );
-  const sounds = await loadSounds(audio.sounds);
   const explosionSpawner = await createExplosionSpawner(
     renderContext,
     renderLayers.foreground,
     triggerCameraShake,
-    sounds.explosion,
-    audio.sfxBus,
+    sfxBus,
+    explosionSound,
   );
-  createMusic(world, sounds.music, audio.musicBus);
+  createMusic(world, musicBus, musicSound);
 
   const gameOverEntity = world.createEntity();
   const gameOverMessageElement = document.createElement('div');
@@ -264,7 +285,7 @@ export const createSpaceShooterGame = async (
   world.addSystem(createLifetimeTrackingEcsSystem(time));
   world.addSystem(createRemoveFromWorldEcsSystem());
   world.addSystem(
-    createGunEcsSystem(time, world, shootInput, sounds.laser, audio.sfxBus),
+    createGunEcsSystem(time, world, shootInput, sfxBus, laserSound),
   );
   world.addSystem(createBulletEcsSystem(time));
   world.addSystem(createAsteroidSpawnerEcsSystem(time, random));

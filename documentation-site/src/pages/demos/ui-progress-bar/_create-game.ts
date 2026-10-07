@@ -12,6 +12,7 @@ import {
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
+  createTexture,
   getCameraView,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
@@ -44,13 +45,10 @@ async function createBackdrop(
   camera: number,
   renderContext: RenderContext,
 ): Promise<void> {
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-  const backdropSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.world,
-  });
+  const backdropSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.world,
+  };
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
 
   const { x: width, y: height } = getCameraView(
@@ -69,11 +67,40 @@ async function createBackdrop(
 }
 
 /**
- * Builds the progress bar demo: a single `createProgressBar` health bar,
- * driven purely by a `value` write from `_pulse.system.ts` (not by any
- * player input, since a progress bar reports state rather than accepting
- * it) - `createUiProgressBarEcsSystem` picks up the write the same frame
- * it's made, unlike a slider, which has no such guarantee.
+ * Draws a white ring on a transparent canvas, for the cooldown's track and
+ * fill.
+ * @returns The canvas to upload as a texture.
+ */
+function drawRing(): HTMLCanvasElement {
+  const size = 256;
+  const source = document.createElement('canvas');
+
+  source.width = size;
+  source.height = size;
+
+  const context = source.getContext('2d');
+
+  if (!context) {
+    throw new Error('2D canvas context not available');
+  }
+
+  context.strokeStyle = '#ffffff';
+  context.lineWidth = size * 0.14;
+  context.beginPath();
+  context.arc(size / 2, size / 2, size * 0.4, 0, Math.PI * 2);
+  context.stroke();
+
+  return source;
+}
+
+/**
+ * Builds the progress bar demo: a linear health bar and a radial cooldown
+ * ring from `createProgressBar`, driven purely by `value` writes from
+ * `_pulse.system.ts` (not by any player input, since a progress bar reports
+ * state rather than accepting it) - `createUiProgressBarEcsSystem` picks up
+ * a write the same frame it's made, unlike a slider, which has no such
+ * guarantee. Each fill keeps its full size; a mask reveals the part the
+ * value covers.
  * @returns The created game.
  */
 export const createProgressBarGame = async (): Promise<Game> => {
@@ -87,7 +114,7 @@ export const createProgressBarGame = async (): Promise<Game> => {
 
   await createBackdrop(world, camera, renderContext);
 
-  const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
+  const fontAtlasCache = new FontAtlasCache(renderContext);
   const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
     // Importing the JSON would give its parsed contents, so `new URL` asks
     // webpack for its URL instead.
@@ -105,17 +132,14 @@ export const createProgressBarGame = async (): Promise<Game> => {
     referenceResolution: { x: 1920, y: 1080 },
   });
 
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
   const healthFillImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/Burn_Gradient.png'),
   );
 
-  const trackSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const trackSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
   trackSprite.tintColor = new Color(0.85, 0.85, 0.88, 1);
 
   createLabel(world, canvas, {
@@ -131,10 +155,12 @@ export const createProgressBarGame = async (): Promise<Game> => {
 
   const health = createProgressBar(world, canvas, {
     trackSprite,
-    fillSprite: createImageSprite(healthFillImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayers.ui,
-    }),
+    fillSprite: {
+      ...createImageSprite(createTexture(renderContext, healthFillImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayers.ui,
+    },
     anchor: UiAnchor.center({ x: 460, y: 28 }),
     anchoredPosition: { x: 0, y: 0 },
     minValue: 0,
@@ -148,9 +174,44 @@ export const createProgressBarGame = async (): Promise<Game> => {
     speed: 0.15,
   });
 
+  const ringTexture = createTexture(renderContext, drawRing());
+  const ringSprite = {
+    ...createImageSprite(ringTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
+
+  createLabel(world, canvas, {
+    text: 'Cooldown',
+    fontAtlas,
+    size: 28,
+    anchor: UiAnchor.center(),
+    anchoredPosition: { x: -205, y: -150 },
+    verticalAlign: textVerticalAlignments.middle,
+    color: Color.white,
+    category: renderLayers.ui,
+  });
+
+  // A radial fill: the ring fills clockwise from its top as the value rises.
+  const cooldown = createProgressBar(world, canvas, {
+    trackSprite: { ...ringSprite, tintColor: new Color(1, 1, 1, 0.15) },
+    fillSprite: { ...ringSprite, tintColor: new Color(0.35, 0.8, 1, 1) },
+    fillShape: { kind: 'radial', startAngle: Math.PI / 2, sweep: -2 * Math.PI },
+    anchor: UiAnchor.center({ x: 160, y: 160 }),
+    anchoredPosition: { x: 0, y: -150 },
+    minValue: 0,
+    maxValue: 1,
+    value: 0,
+  });
+
+  world.addComponent(cooldown.entity, pulseId, {
+    minValue: 0,
+    maxValue: 1,
+    speed: 0.25,
+  });
+
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createTextShapingEcsSystem(renderContext));
+  world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createPulseEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));

@@ -1,5 +1,4 @@
 import {
-  addParentComponent,
   addPositionComponent,
   addRotationComponent,
   createTransformEcsSystem,
@@ -37,7 +36,6 @@ import {
 } from '@forge-game-engine/forge/ui';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
-import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 // A world-space canvas draws through the same camera as everything else -
 // there's no dedicated UI camera/cullingMask to isolate it with, unlike
@@ -55,13 +53,10 @@ async function createBackdrop(
   camera: number,
   renderContext: RenderContext,
 ): Promise<void> {
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-  const backdropSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.world,
-  });
+  const backdropSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.world,
+  };
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
   // Unlike every other demo's backdrop, this scene draws bare world
   // sprites (the enemies) in the same layer/camera pass instead of routing
@@ -92,7 +87,7 @@ async function createBackdrop(
  * marker, so the rotation is visually obvious) at `x`, and a world-space
  * health-bar canvas above it.
  * @param attachment - `'parent'` attaches the canvas with
- * `addParentComponent`, so it inherits the enemy's full world transform and
+ * `world.setParent`, so it inherits the enemy's full world transform and
  * visibly spins and swings around as the enemy rotates. `'position'` leaves
  * the canvas without a parent and puts it above the enemy with its
  * `anchoredPosition` instead, so it stays upright no matter which way the
@@ -108,14 +103,10 @@ async function createSpinningEnemyWithHealthBar(
   x: number,
   attachment: 'parent' | 'position',
 ): Promise<void> {
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-
-  const enemySprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.world,
-  });
+  const enemySprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.world,
+  };
 
   enemySprite.tintColor = new Color(0.3, 0.5, 0.9, 1);
   enemySprite.width = 100;
@@ -130,10 +121,10 @@ async function createSpinningEnemyWithHealthBar(
   // A small facing marker offset from center, so the enemy's own rotation
   // is visible even though the square body itself looks the same at any
   // angle.
-  const markerSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.world,
-  });
+  const markerSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.world,
+  };
 
   markerSprite.tintColor = new Color(1, 0.85, 0.2, 1);
   markerSprite.width = 16;
@@ -142,7 +133,7 @@ async function createSpinningEnemyWithHealthBar(
   const marker = world.createEntity();
 
   addPositionComponent(world, marker, { local: { x: 36, y: 0 } });
-  addParentComponent(world, marker, { parent: enemy });
+  world.setParent(marker, enemy);
   addSpriteComponent(world, marker, markerSprite);
 
   // 80 units above the enemy: relative to the enemy when parented, and in
@@ -160,13 +151,13 @@ async function createSpinningEnemyWithHealthBar(
   });
 
   if (attachment === 'parent') {
-    addParentComponent(world, healthBarCanvas, { parent: enemy });
+    world.setParent(healthBarCanvas, enemy);
   }
 
-  const barBackgroundSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.world,
-  });
+  const barBackgroundSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.world,
+  };
   barBackgroundSprite.tintColor = new Color(0.15, 0.15, 0.18, 1);
 
   createPanel(world, healthBarCanvas, {
@@ -174,10 +165,10 @@ async function createSpinningEnemyWithHealthBar(
     anchor: UiAnchor.stretchAll(),
   });
 
-  const barFillSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.world,
-  });
+  const barFillSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.world,
+  };
   barFillSprite.tintColor = new Color(0.25, 0.85, 0.35, 1);
 
   createPanel(world, healthBarCanvas, {
@@ -188,7 +179,7 @@ async function createSpinningEnemyWithHealthBar(
   });
 
   createLabel(world, healthBarCanvas, {
-    text: attachment === 'parent' ? 'addParentComponent' : 'anchoredPosition',
+    text: attachment === 'parent' ? 'setParent' : 'anchoredPosition',
     fontAtlas,
     size: 20,
     anchor: UiAnchor.center({ x: 260, y: 32 }),
@@ -217,7 +208,7 @@ function createSpinEcsSystem(time: Time): EcsSystem<[RotationEcsComponent]> {
  * Builds the world-space canvas demo: two identical spinning "enemies",
  * each with a diegetic health-bar canvas (`renderMode: 'worldSpace'`)
  * attached to it. The left enemy's health bar is attached with the
- * ordinary `addParentComponent` and visibly spins and swings around with
+ * ordinary `world.setParent` and visibly spins and swings around with
  * the enemy. The right enemy's has no parent and is placed above it with its
  * `anchoredPosition`, so it stays upright regardless of which way the enemy
  * is facing.
@@ -234,7 +225,7 @@ export const createWorldSpaceCanvasGame = async (): Promise<Game> => {
 
   await createBackdrop(world, worldCamera, renderContext);
 
-  const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
+  const fontAtlasCache = new FontAtlasCache(renderContext);
   const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
     // Importing the JSON would give its parsed contents, so `new URL` asks
     // webpack for its URL instead.
@@ -272,7 +263,7 @@ export const createWorldSpaceCanvasGame = async (): Promise<Game> => {
   world.addSystem(createSpinEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createTextShapingEcsSystem(renderContext));
+  world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

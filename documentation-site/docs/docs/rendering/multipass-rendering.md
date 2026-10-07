@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 7
 ---
 
 # Multipass Rendering
@@ -144,8 +144,8 @@ alpha. You only need to know this if you write your own shaders or passes:
 
 - **Sprite and text shaders output straight (non-premultiplied) alpha**, as
   usual. `createRenderEcsSystem` premultiplies color as it blends it into
-  the destination, so a custom `Material` used for sprites doesn't need to
-  do anything differently.
+  the destination, so a [sprite material](./sprites.md#drawing-sprites-with-a-custom-shader)
+  doesn't need to do anything differently.
 - **Anything that reads a render target's `colorTexture` gets
   premultiplied color.** A full-screen pass that filters or mixes it
   (blurring, cross-fading) works on it as-is. A pass that needs the
@@ -271,3 +271,7 @@ time a post-processing pass runs on the target. Read them when drawing,
 not once at setup: a material that keeps a target's `colorTexture` from an
 earlier frame samples the wrong buffer.
 :::
+
+The render target owns its color textures and frees them in its `dispose`.
+Calling `update` or `dispose` on a target's `colorTexture` throws (see
+[Disposing a texture](./textures.md#disposing-a-texture)).

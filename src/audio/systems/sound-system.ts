@@ -1,121 +1,178 @@
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { SoundEcsComponent, soundId } from '../components/index.js';
-import { toAudioBus } from '../audio-bus.js';
-import { SoundPlayback } from '../sound-playback.js';
+import {
+  canStartOneShot,
+  getBusInternals,
+} from '../internal/audio-internals.js';
+import { SoundInstance } from '../internal/sound-instance.js';
+import type { MixerBus } from '../mixer-bus.js';
+import type { SoundAsset } from '../sound-asset.js';
 
 /**
- * Creates an ECS system that plays every entity's {@link SoundEcsComponent}.
+ * What the system last applied for one component, to tell what the game
+ * has changed since.
+ */
+interface TrackedSound {
+  /** The playing instance, or `null` while paused or not yet started. */
+  instance: SoundInstance | null;
+  sound: SoundAsset;
+  bus: MixerBus;
+  volume: number;
+  rate: number;
+  loop: boolean;
+  /** Where to resume from, in seconds into the sound. */
+  positionSeconds: number;
+  /** The last update the component was found in, to notice its removal. */
+  lastSeenUpdate: number;
+}
+
+const createTrackedSound = (component: SoundEcsComponent): TrackedSound => ({
+  instance: null,
+  sound: component.sound,
+  bus: component.bus,
+  volume: component.volume,
+  rate: component.rate,
+  loop: component.loop,
+  positionSeconds: 0,
+  lastSeenUpdate: 0,
+});
+
+const start = (component: SoundEcsComponent, tracked: TrackedSound): void => {
+  const bus = getBusInternals(component.bus);
+
+  if (!component.loop && !canStartOneShot(bus.mixer)) {
+    component.hasFinished = true;
+
+    return;
+  }
+
+  tracked.instance = new SoundInstance(bus, component.sound, {
+    volume: component.volume,
+    rate: component.rate,
+    loop: component.loop,
+    offsetSeconds: tracked.positionSeconds,
+  });
+  tracked.bus = component.bus;
+  tracked.volume = component.volume;
+  tracked.rate = component.rate;
+  tracked.loop = component.loop;
+};
+
+const applyChanges = (
+  component: SoundEcsComponent,
+  tracked: TrackedSound,
+  instance: SoundInstance,
+): void => {
+  if (component.volume !== tracked.volume) {
+    instance.setVolume(component.volume);
+    tracked.volume = component.volume;
+  }
+
+  if (component.rate !== tracked.rate) {
+    instance.setRate(component.rate);
+    tracked.rate = component.rate;
+  }
+
+  if (component.loop !== tracked.loop) {
+    instance.setLoop(component.loop);
+    tracked.loop = component.loop;
+  }
+
+  if (component.bus !== tracked.bus) {
+    instance.setBus(getBusInternals(component.bus));
+    tracked.bus = component.bus;
+  }
+};
+
+const reconcile = (
+  component: SoundEcsComponent,
+  tracked: TrackedSound,
+): void => {
+  if (component.hasFinished) {
+    return;
+  }
+
+  // The system only lets go of instances it stops itself, so one that has
+  // ended played to its end, or its mixer was stopped.
+  if (tracked.instance?.hasEnded) {
+    tracked.instance = null;
+    component.hasFinished = true;
+
+    return;
+  }
+
+  if (component.sound !== tracked.sound) {
+    tracked.instance?.stop();
+    tracked.instance = null;
+    tracked.sound = component.sound;
+    tracked.positionSeconds = 0;
+  }
+
+  if (component.paused) {
+    if (tracked.instance) {
+      tracked.positionSeconds = tracked.instance.positionSeconds;
+      tracked.instance.stop();
+      tracked.instance = null;
+    }
+
+    return;
+  }
+
+  if (!tracked.instance) {
+    start(component, tracked);
+
+    return;
+  }
+
+  applyChanges(component, tracked, tracked.instance);
+};
+
+/**
+ * Creates a system that plays each entity's {@link SoundEcsComponent}.
  *
- * Each tick, for each component:
- * - a component that hasn't started, isn't `paused` and hasn't finished
- *   starts its sound;
- * - setting `paused` pauses the sound at its position, and clearing it
- *   resumes from there;
- * - changes to `volume`, `rate`, `loop` and `bus` apply to the playing
- *   sound, and a new `sound` starts from the beginning;
- * - a non-looping sound that played to its end sets `hasFinished`.
- *
- * A sound whose component or entity has been removed since the last tick
- * is stopped. When the world stops, every sound the system started is
- * stopped. Sound assets are left alone, so the same assets play again in a
- * restarted world.
+ * Every update it starts sounds that haven't started, pauses and resumes
+ * them as `paused` changes, applies changes to `volume`, `rate`, `loop`,
+ * `bus` and `sound` to the playing sound, sets `hasFinished` once a
+ * non-looping sound has played to its end, and stops the sound of any
+ * component or entity removed since the last update. When the world stops,
+ * every sound it started is stopped. Sound assets are left alone, so a new
+ * world can play them again.
  * @returns The ECS system.
  */
 export const createSoundEcsSystem = (): EcsSystem<[SoundEcsComponent]> => {
-  const playbacks = new Map<SoundEcsComponent, SoundPlayback>();
-
-  const createPlayback = (component: SoundEcsComponent): SoundPlayback =>
-    new SoundPlayback(toAudioBus(component.bus), component.sound, component);
-
-  const reconcile = (
-    component: SoundEcsComponent,
-    playback: SoundPlayback,
-  ): SoundPlayback => {
-    if (playback.sound !== component.sound) {
-      playback.stop();
-
-      const replacement = createPlayback(component);
-
-      if (!component.paused) {
-        replacement.start();
-      }
-
-      return replacement;
-    }
-
-    const bus = toAudioBus(component.bus);
-
-    if (playback.bus !== bus) {
-      playback.bus = bus;
-    }
-
-    if (playback.volume !== component.volume) {
-      playback.volume = component.volume;
-    }
-
-    if (playback.rate !== component.rate) {
-      playback.rate = component.rate;
-    }
-
-    if (playback.loop !== component.loop) {
-      playback.loop = component.loop;
-    }
-
-    if (component.paused) {
-      playback.pause();
-    } else {
-      playback.resume();
-    }
-
-    return playback;
-  };
+  const trackedSounds = new Map<SoundEcsComponent, TrackedSound>();
+  let updateCount = 0;
 
   return {
     query: [soundId],
     update: (_world, { components: [soundComponents] }) => {
-      const present = new Set(soundComponents);
-
-      for (const [component, playback] of playbacks) {
-        if (!present.has(component)) {
-          playback.stop();
-          playbacks.delete(component);
-        }
-      }
+      updateCount++;
 
       for (const component of soundComponents) {
-        if (component.hasFinished) {
-          continue;
+        let tracked = trackedSounds.get(component);
+
+        if (!tracked) {
+          tracked = createTrackedSound(component);
+          trackedSounds.set(component, tracked);
         }
 
-        const existing = playbacks.get(component);
-        let playback: SoundPlayback;
+        tracked.lastSeenUpdate = updateCount;
+        reconcile(component, tracked);
+      }
 
-        if (existing) {
-          playback = reconcile(component, existing);
-        } else {
-          playback = createPlayback(component);
-
-          if (!component.paused) {
-            playback.start();
-          }
+      for (const [component, tracked] of trackedSounds) {
+        if (tracked.lastSeenUpdate !== updateCount) {
+          tracked.instance?.stop();
+          trackedSounds.delete(component);
         }
-
-        if (playback.hasEnded) {
-          component.hasFinished = true;
-          playbacks.delete(component);
-
-          continue;
-        }
-
-        playbacks.set(component, playback);
       }
     },
     cleanup: () => {
-      for (const playback of playbacks.values()) {
-        playback.stop();
+      for (const tracked of trackedSounds.values()) {
+        tracked.instance?.stop();
       }
 
-      playbacks.clear();
+      trackedSounds.clear();
     },
   };
 };

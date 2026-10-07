@@ -13,10 +13,7 @@ export const createBackgroundEcsSystem = (
   tags: [backgroundId],
   update: (_world, { components: [spriteComponents] }) => {
     for (const spriteComponent of spriteComponents) {
-      spriteComponent.renderable.material.setUniform(
-        'u_time',
-        time.timeInSeconds,
-      );
+      spriteComponent.material?.setUniform('u_time', time.timeInSeconds);
     }
   },
 });

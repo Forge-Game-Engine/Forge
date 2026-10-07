@@ -17,6 +17,7 @@ import {
   createImageSprite,
   createPresentEcsSystem,
   createRenderEcsSystem,
+  createTexture,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 import {
@@ -45,14 +46,13 @@ async function createBackdrop(
   world: EcsWorld,
   renderContext: RenderContext,
 ): Promise<void> {
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
-  const backdropSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.world,
-  });
+  const backdropSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.world,
+  };
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
+  backdropSprite.width = 512;
+  backdropSprite.height = 512;
 
   const backdrop = world.createEntity();
 
@@ -86,7 +86,7 @@ export const createSliderGame = async (): Promise<Game> => {
 
   await createBackdrop(world, renderContext);
 
-  const fontAtlasCache = new FontAtlasCache(renderContext.imageCache);
+  const fontAtlasCache = new FontAtlasCache(renderContext);
   const fontAtlas: FontAtlas = await fontAtlasCache.getOrLoad({
     // Importing the JSON would give its parsed contents, so `new URL` asks
     // webpack for its URL instead.
@@ -108,9 +108,6 @@ export const createSliderGame = async (): Promise<Game> => {
     referenceResolution: { x: 1920, y: 1080 },
   });
 
-  const whiteImage = await renderContext.imageCache.getOrLoad(
-    getAssetUrl('img/White.png'),
-  );
   const handleImage = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/kenney_ui-pack/PNG/Blue/Default/button_round_gloss.png'),
   );
@@ -118,16 +115,16 @@ export const createSliderGame = async (): Promise<Game> => {
   const trackColor = new Color(0.85, 0.85, 0.88, 1);
   const accentColor = new Color(0.75, 0.75, 0.15, 1);
 
-  const trackSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const trackSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
   trackSprite.tintColor = trackColor;
 
-  const fillSprite = createImageSprite(whiteImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayers.ui,
-  });
+  const fillSprite = {
+    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
+    category: renderLayers.ui,
+  };
   fillSprite.tintColor = accentColor;
 
   const trackTransition = {
@@ -162,10 +159,12 @@ export const createSliderGame = async (): Promise<Game> => {
 
   const slider = createSlider(world, canvas, {
     trackSprite,
-    handleSprite: createImageSprite(handleImage, renderContext, {
-      pixelsPerUnit: 1,
-      layer: renderLayers.ui,
-    }),
+    handleSprite: {
+      ...createImageSprite(createTexture(renderContext, handleImage), {
+        pixelsPerUnit: 1,
+      }),
+      category: renderLayers.ui,
+    },
     handleSize: { x: 56, y: 56 },
     fillSprite,
     anchor: UiAnchor.center({ x: 500, y: 28 }),
@@ -183,7 +182,7 @@ export const createSliderGame = async (): Promise<Game> => {
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createTextShapingEcsSystem(renderContext));
+  world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

@@ -1,20 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { createProgressBar } from './create-progress-bar.js';
-import { parentId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, Renderable, spriteId } from '../../rendering/index.js';
+import { Color, maskId, spriteId, Texture } from '../../rendering/index.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { uiProgressBarId } from '../components/ui-progress-bar-component.js';
-import { uiAxisValue, UiStretchAxis } from '../types/ui-axis.js';
+import { UiAnchor } from '../types/ui-anchor.js';
+import { uiAxisValue } from '../types/ui-axis.js';
 
 const buildSprite = () => ({
   width: 1,
   height: 1,
-  renderable: {} as Renderable,
+  texture: {} as Texture,
   pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
   uvOffset: { x: 0, y: 0 },
   uvScale: { x: 1, y: 1 },
+  emissive: null,
+  material: null,
+  category: 1,
   enabled: true,
   layer: 0,
 });
@@ -29,19 +32,15 @@ describe('createProgressBar', () => {
       fillSprite: buildSprite(),
     });
 
-    expect(world.getComponent(progressBar.entity, parentId)).toEqual({
-      parent,
-    });
+    expect(world.getParent(progressBar.entity)).toBe(parent);
     expect(world.getComponent(progressBar.entity, uiProgressBarId)).toBe(
       progressBar.progressBar,
     );
-    expect(world.getComponent(progressBar.fill, parentId)).toEqual({
-      parent: progressBar.entity,
-    });
+    expect(world.getParent(progressBar.fill)).toBe(progressBar.entity);
     expect(world.getComponent(progressBar.fill, spriteId)).not.toBeNull();
   });
 
-  it('anchors the fill to the initial value', () => {
+  it('covers the whole bar with the fill and reveals the initial value with a linear mask from the left', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -53,12 +52,33 @@ describe('createProgressBar', () => {
       value: 3,
     });
 
-    expect(
-      (
-        world.getComponent(progressBar.fill, rectTransformId)!
-          .x as UiStretchAxis
-      ).anchorMax,
-    ).toBeCloseTo(0.75);
+    expect(world.getComponent(progressBar.fill, rectTransformId)!.x).toEqual(
+      UiAnchor.stretchAll().x,
+    );
+    expect(world.getComponent(progressBar.fill, maskId)!.shape).toEqual({
+      kind: 'linear',
+      origin: 'left',
+      amount: 0.75,
+    });
+  });
+
+  it('reveals the fill with fillShape', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const progressBar = createProgressBar(world, parent, {
+      trackSprite: buildSprite(),
+      fillSprite: buildSprite(),
+      value: 0.5,
+      fillShape: { kind: 'radial', startAngle: Math.PI / 2, sweep: -Math.PI },
+    });
+
+    expect(world.getComponent(progressBar.fill, maskId)!.shape).toEqual({
+      kind: 'radial',
+      startAngle: Math.PI / 2,
+      sweep: -Math.PI,
+      amount: 0.5,
+    });
   });
 
   it('passes through anchoredPosition', () => {

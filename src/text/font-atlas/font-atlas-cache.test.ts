@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ImageCache } from '../../asset-loading/index.js';
+import type { RenderContext } from '../../rendering/render-context.js';
+import { Texture } from '../../rendering/texture.js';
 import { CURRENT_FONT_ATLAS_FORMAT_VERSION } from './font-atlas-data.js';
 import type { FontAtlasFileData } from './font-atlas-file-data.js';
 import { FontAtlasCache } from './font-atlas-cache.js';
@@ -55,13 +57,26 @@ function createImageCache(image = createImage()): ImageCache {
   return imageCache;
 }
 
+function createRenderContext(
+  imageCache: ImageCache = createImageCache(),
+): RenderContext {
+  const gl = {
+    createTexture: vi.fn(() => ({})),
+    bindTexture: vi.fn(),
+    texParameteri: vi.fn(),
+    texImage2D: vi.fn(),
+  } as unknown as WebGL2RenderingContext;
+
+  return { imageCache, gl } as unknown as RenderContext;
+}
+
 describe('FontAtlasCache', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
   it('should throw when getting a font atlas that has not been loaded', () => {
-    const fontAtlasCache = new FontAtlasCache();
+    const fontAtlasCache = new FontAtlasCache(createRenderContext());
 
     expect(() => fontAtlasCache.get('assets/fonts/my-font.json')).toThrow(
       'Font atlas with metrics URL "assets/fonts/my-font.json" not found in store.',
@@ -73,14 +88,16 @@ describe('FontAtlasCache', () => {
 
     const image = createImage();
     const imageCache = createImageCache(image);
-    const fontAtlasCache = new FontAtlasCache(imageCache);
+    const fontAtlasCache = new FontAtlasCache(createRenderContext(imageCache));
     const fontAtlas = await fontAtlasCache.getOrLoad(urls);
 
     expect(fetch).toHaveBeenCalledWith('assets/fonts/my-font.json');
     expect(imageCache.getOrLoad).toHaveBeenCalledWith(
       'assets/fonts/my-font.png',
     );
-    expect(fontAtlas.image).toBe(image);
+    expect(fontAtlas.texture).toBeInstanceOf(Texture);
+    expect(fontAtlas.texture.filter).toBe('linear');
+    expect(fontAtlas.texture.width).toBe(512);
     expect(fontAtlas.data.glyphs.get(65)?.advance).toBeCloseTo(0.6);
     expect(fontAtlasCache.get('assets/fonts/my-font.json')).toBe(fontAtlas);
   });
@@ -102,7 +119,9 @@ describe('FontAtlasCache', () => {
       mockFetchJsonResponse(buildValidJson());
 
       const imageCache = createImageCache();
-      const fontAtlasCache = new FontAtlasCache(imageCache);
+      const fontAtlasCache = new FontAtlasCache(
+        createRenderContext(imageCache),
+      );
       await fontAtlasCache.getOrLoad({ metricsUrl, imageUrl });
 
       expect(fetch).toHaveBeenCalledWith(metricsUrl);
@@ -114,7 +133,7 @@ describe('FontAtlasCache', () => {
     mockFetchJsonResponse({ ...buildValidJson(), atlasImage: 'other.png' });
 
     const imageCache = createImageCache();
-    const fontAtlasCache = new FontAtlasCache(imageCache);
+    const fontAtlasCache = new FontAtlasCache(createRenderContext(imageCache));
     await fontAtlasCache.getOrLoad(urls);
 
     expect(imageCache.getOrLoad).toHaveBeenCalledWith(
@@ -125,7 +144,9 @@ describe('FontAtlasCache', () => {
   it('should not re-fetch a font atlas that is already cached', async () => {
     mockFetchJsonResponse(buildValidJson());
 
-    const fontAtlasCache = new FontAtlasCache(createImageCache());
+    const fontAtlasCache = new FontAtlasCache(
+      createRenderContext(createImageCache()),
+    );
     const first = await fontAtlasCache.getOrLoad(urls);
     const second = await fontAtlasCache.getOrLoad(urls);
 
@@ -137,7 +158,7 @@ describe('FontAtlasCache', () => {
     mockFetchJsonResponse(buildValidJson());
 
     const imageCache = createImageCache();
-    const fontAtlasCache = new FontAtlasCache(imageCache);
+    const fontAtlasCache = new FontAtlasCache(createRenderContext(imageCache));
     const [first, second] = await Promise.all([
       fontAtlasCache.getOrLoad(urls),
       fontAtlasCache.getOrLoad({ ...urls }),
@@ -151,7 +172,9 @@ describe('FontAtlasCache', () => {
   it('should throw when a loading atlas is requested with a different image', async () => {
     mockFetchJsonResponse(buildValidJson());
 
-    const fontAtlasCache = new FontAtlasCache(createImageCache());
+    const fontAtlasCache = new FontAtlasCache(
+      createRenderContext(createImageCache()),
+    );
     const firstLoad = fontAtlasCache.getOrLoad(urls);
 
     await expect(
@@ -165,7 +188,9 @@ describe('FontAtlasCache', () => {
   it('should throw when a loaded atlas is requested with a different image', async () => {
     mockFetchJsonResponse(buildValidJson());
 
-    const fontAtlasCache = new FontAtlasCache(createImageCache());
+    const fontAtlasCache = new FontAtlasCache(
+      createRenderContext(createImageCache()),
+    );
     await fontAtlasCache.getOrLoad(urls);
 
     await expect(
@@ -177,7 +202,7 @@ describe('FontAtlasCache', () => {
     mockFetchJsonResponse(buildValidJson());
 
     const fontAtlasCache = new FontAtlasCache(
-      createImageCache(createImage(256, 512)),
+      createRenderContext(createImageCache(createImage(256, 512))),
     );
 
     await expect(fontAtlasCache.getOrLoad(urls)).rejects.toThrow(
@@ -191,7 +216,9 @@ describe('FontAtlasCache', () => {
   it('should load again after a failed load', async () => {
     mockFetchJsonResponse({}, false);
 
-    const fontAtlasCache = new FontAtlasCache(createImageCache());
+    const fontAtlasCache = new FontAtlasCache(
+      createRenderContext(createImageCache()),
+    );
 
     await expect(fontAtlasCache.getOrLoad(urls)).rejects.toThrow(
       /Failed to load font atlas JSON/,
@@ -205,7 +232,9 @@ describe('FontAtlasCache', () => {
   it('should throw a descriptive error when the JSON fetch fails', async () => {
     mockFetchJsonResponse({}, false);
 
-    const fontAtlasCache = new FontAtlasCache(createImageCache());
+    const fontAtlasCache = new FontAtlasCache(
+      createRenderContext(createImageCache()),
+    );
 
     await expect(
       fontAtlasCache.getOrLoad({
@@ -220,7 +249,9 @@ describe('FontAtlasCache', () => {
   it('should throw a descriptive error when the JSON is malformed', async () => {
     mockFetchJsonResponse({ formatVersion: 999 });
 
-    const fontAtlasCache = new FontAtlasCache(createImageCache());
+    const fontAtlasCache = new FontAtlasCache(
+      createRenderContext(createImageCache()),
+    );
 
     await expect(fontAtlasCache.getOrLoad(urls)).rejects.toThrow(
       /unsupported formatVersion "999"/,

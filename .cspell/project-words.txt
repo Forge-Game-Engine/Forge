@@ -48,6 +48,7 @@ devicerestored
 diegetic
 dppx
 eamodio
+enterkeyhint
 Erdokovy
 esbenp
 evented
@@ -83,6 +84,7 @@ implementability
 impluse
 Infima
 inigo
+inputmode
 interactable
 interactables
 isampler
@@ -101,6 +103,7 @@ letterboxing
 lifecycles
 lowp
 matterjs
+maxlength
 mediump
 Menlo
 mesher
@@ -147,7 +150,10 @@ reimplementation
 reinhard
 Renderable
 renderables
+reparent
+reparented
 reparenting
+reparents
 requizits
 resettables
 resizables
@@ -196,7 +202,10 @@ undersamples
 unedit
 unflipped
 unmarks
+unmuting
 unnegated
+unparent
+unparented
 unrepresentable
 unrotated
 unshifted

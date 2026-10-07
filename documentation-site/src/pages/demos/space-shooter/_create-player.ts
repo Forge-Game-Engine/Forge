@@ -4,6 +4,7 @@ import {
   addSpriteComponent,
   Color,
   createImageSprite,
+  createTexture,
   getCameraView,
   RenderContext,
   SpriteEcsComponent,
@@ -36,13 +37,15 @@ export async function loadPlayerSprites(
   renderContext: RenderContext,
   renderLayer: number,
 ): Promise<PlayerSprites> {
-  const playerSprite = createImageSprite(
-    await renderContext.imageCache.getOrLoad(
-      getAssetUrl('img/space-shooter/Spaceship_6.png'),
-    ),
-    renderContext,
-    { pixelsPerUnit: 1, layer: renderLayer },
+  const playerImage = await renderContext.imageCache.getOrLoad(
+    getAssetUrl('img/space-shooter/Spaceship_6.png'),
   );
+  const playerSprite = {
+    ...createImageSprite(createTexture(renderContext, playerImage), {
+      pixelsPerUnit: 1,
+    }),
+    category: renderLayer,
+  };
 
   // bullet-yellow.png is a solid, opaque comet shape (its own alpha
   // channel no longer fades to near-zero across the visible glow, which
@@ -62,15 +65,16 @@ export async function loadPlayerSprites(
     getAssetUrl('img/space-shooter/bullet_emission.png'),
   );
 
-  const bulletSprite = createImageSprite(bulletImage, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-    emissiveMap: {
-      image: bulletEmission,
-      color: new Color(1, 0.65, 0.15),
-      intensity: 2,
+  const bulletSprite = {
+    ...createImageSprite(createTexture(renderContext, bulletImage), {
+      pixelsPerUnit: 1,
+    }),
+    emissive: {
+      texture: createTexture(renderContext, bulletEmission),
+      color: new Color(2, 1.3, 0.3),
     },
-  });
+    category: renderLayer,
+  };
 
   return { playerSprite, bulletSprite };
 }

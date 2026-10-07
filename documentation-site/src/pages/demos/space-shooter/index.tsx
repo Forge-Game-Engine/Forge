@@ -7,11 +7,11 @@ import {
   bloomDefaults,
   blurDefaults,
   createSpaceShooterGame,
+  SpaceShooterAudio,
 } from './_create-game';
+import { AudioControls } from './_AudioControls';
 import { BloomControls } from './_BloomControls';
 import { GaussianBlurControls } from './_GaussianBlurControls';
-import { AudioControls } from './_AudioControls';
-import { SpaceShooterAudio } from './_create-audio';
 import gameCode from '!!raw-loader!./_create-game';
 import playerComponentCode from '!!raw-loader!./_player.component';
 import movementSystemCode from '!!raw-loader!./_movement.system';
@@ -23,7 +23,6 @@ import backgroundSystemCode from '!!raw-loader!./_background.system';
 import backgroundComponentCode from '!!raw-loader!./_background.component';
 import backgroundShaderCode from '!!raw-loader!./_background.shader';
 import createMusicCode from '!!raw-loader!./_create-music';
-import createAudioCode from '!!raw-loader!./_create-audio';
 import createInputsCode from '!!raw-loader!./_create-inputs';
 import createPlayerCode from '!!raw-loader!./_create-player';
 import bulletComponentCode from '!!raw-loader!./_bullet.component';
@@ -41,6 +40,7 @@ import gameOverComponentCode from '!!raw-loader!./_game-over.component';
 import gameOverSystemCode from '!!raw-loader!./_game-over.system';
 
 import { Demo } from '@site/src/components/Demo';
+import type { CreateDemoGame } from '@site/src/hooks/useGame';
 import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
 import { KeyboardKey } from '@site/src/components/_KeyboardKey';
 
@@ -61,10 +61,10 @@ export default function Rendering(): JSX.Element {
   const [sfxVolume, setSfxVolume] = useState(1);
   const [muted, setMuted] = useState(false);
 
-  const createGame = useCallback(
-    (signal: AbortSignal) =>
+  const createGame = useCallback<CreateDemoGame>(
+    (stopWithGame) =>
       createSpaceShooterGame(
-        signal,
+        stopWithGame,
         (bloom) => {
           bloomRef.current = bloom;
         },
@@ -178,10 +178,6 @@ export default function Rendering(): JSX.Element {
         {
           name: 'game.ts',
           content: gameCode,
-        },
-        {
-          name: 'create-audio.ts',
-          content: createAudioCode,
         },
         {
           name: 'asteroid-spawner.component.ts',

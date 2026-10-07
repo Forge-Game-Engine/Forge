@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createToggle } from './create-toggle.js';
-import { parentId, positionId } from '../../common/index.js';
+import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, Renderable, spriteId } from '../../rendering/index.js';
+import { Color, spriteId, Texture } from '../../rendering/index.js';
 import { uiColorTransitionId } from '../components/ui-color-transition-component.js';
 import { uiInteractableId } from '../components/ui-interactable-component.js';
 import { uiToggleId } from '../components/ui-toggle-component.js';
@@ -13,11 +13,14 @@ import { uiAxisValue } from '../types/ui-axis.js';
 const buildSprite = () => ({
   width: 1,
   height: 1,
-  renderable: {} as Renderable,
+  texture: {} as Texture,
   pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
   uvOffset: { x: 0, y: 0 },
   uvScale: { x: 1, y: 1 },
+  emissive: null,
+  material: null,
+  category: 1,
   enabled: true,
   layer: 0,
 });
@@ -34,13 +37,13 @@ describe('createToggle', () => {
       checkmarkSprite,
     });
 
-    expect(world.getComponent(toggle.entity, parentId)).toEqual({ parent });
+    expect(world.getParent(toggle.entity)).toBe(parent);
     expect(world.getComponent(toggle.entity, positionId)).not.toBeNull();
     expect(world.getComponent(toggle.entity, rectTransformId)!.x).toEqual(
       UiAnchor.center({ x: 32, y: 32 }).x,
     );
-    expect(world.getComponent(toggle.entity, spriteId)!.renderable).toBe(
-      sprite.renderable,
+    expect(world.getComponent(toggle.entity, spriteId)!.texture).toBe(
+      sprite.texture,
     );
     expect(world.getComponent(toggle.entity, uiInteractableId)).toBe(
       toggle.interactable,
@@ -50,9 +53,7 @@ describe('createToggle', () => {
     ).not.toBeNull();
     expect(world.getComponent(toggle.entity, uiToggleId)).toBe(toggle.toggle);
 
-    expect(world.getComponent(toggle.checkmark, parentId)).toEqual({
-      parent: toggle.entity,
-    });
+    expect(world.getParent(toggle.checkmark)).toBe(toggle.entity);
     expect(world.getComponent(toggle.checkmark, spriteId)!.enabled).toBe(false);
   });
 

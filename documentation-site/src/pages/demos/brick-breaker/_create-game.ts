@@ -17,7 +17,6 @@ import {
 } from '@forge-game-engine/forge/physics';
 import { Random } from '@forge-game-engine/forge/math';
 import {
-  actionResetTypes,
   Axis1dAction,
   gamepadAxes,
   gamepadButtons,
@@ -72,11 +71,7 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
     renderLayers.background,
   );
 
-  const moveInput = new Axis1dAction(
-    'paddleMove',
-    null,
-    actionResetTypes.noReset,
-  );
+  const moveInput = new Axis1dAction('paddleMove');
 
   const inputManager = registerInputs(world, time, {
     axis1dActions: [moveInput],

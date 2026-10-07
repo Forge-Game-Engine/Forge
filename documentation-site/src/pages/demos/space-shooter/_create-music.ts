@@ -5,15 +5,15 @@ import {
   SoundAsset,
 } from '@forge-game-engine/forge/audio';
 
+// The music belongs to its own entity, so it plays for as long as the
+// entity has its sound component and stops when the world does.
 export function createMusic(
   world: EcsWorld,
-  music: SoundAsset,
   musicBus: MixerBus,
+  music: SoundAsset,
 ): void {
   const musicEntity = world.createEntity();
 
-  // Looping, so it starts even before the player has pressed a key, and is
-  // heard as soon as the browser lets the page play audio.
   addSoundComponent(world, musicEntity, {
     sound: music,
     bus: musicBus,

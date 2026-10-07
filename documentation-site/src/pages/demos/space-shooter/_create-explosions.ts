@@ -24,6 +24,7 @@ import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addSpriteComponent,
   createImageSprite,
+  createTexture,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 
@@ -47,27 +48,25 @@ export async function createExplosionSpawner(
   renderContext: RenderContext,
   renderLayer: number,
   triggerCameraShake: () => void,
-  explosionSound: SoundAsset,
   sfxBus: MixerBus,
+  explosionSound: SoundAsset,
 ): Promise<ExplosionSpawner> {
   const image = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/space-shooter/Effect_Explosion_1_517x517.png'),
   );
 
-  const explosionSprite = createImageSprite(image, renderContext, {
-    pixelsPerUnit: 1,
-    layer: renderLayer,
-    frameDimensions: {
-      x: image.width / explosionColumns,
-      y: image.height / explosionRows,
-    },
-  });
+  const explosionSprite = {
+    ...createImageSprite(createTexture(renderContext, image), {
+      pixelsPerUnit: 1,
+      frameDimensions: {
+        x: image.width / explosionColumns,
+        y: image.height / explosionRows,
+      },
+    }),
+    category: renderLayer,
+  };
 
   const spriteSheet = createSpriteSheet(image, explosionRows, explosionColumns);
-
-  // clone: the frame's own dimensions object is shared spritesheet data, not
-  // disposable to hand off as the sprite's live uvScale.
-  explosionSprite.uvScale = Vec2.clone(spriteSheet.frames[0][0].dimensions);
 
   const animationClip = new AnimationClip(
     selectAnimationFrames(
@@ -90,10 +89,7 @@ export async function createExplosionSpawner(
 
       const explosionEntity = world.createEntity();
 
-      addSpriteComponent(world, explosionEntity, {
-        ...explosionSprite,
-        uvOffset: { x: 0, y: 0 },
-      });
+      addSpriteComponent(world, explosionEntity, explosionSprite);
 
       addPositionComponent(world, explosionEntity, {
         local: Vec2.clone(position),
@@ -116,8 +112,8 @@ export async function createExplosionSpawner(
 
       world.addTag(explosionEntity, RemoveFromWorldLifetimeStrategyId);
 
-      // The sound outlasts the sprite animation, so it's played on its own
-      // rather than tied to the explosion entity.
+      // The sound outlasts the sprite animation, and needs no entity of its
+      // own: it plays to its end on the sfx bus.
       playSound(sfxBus, explosionSound, { volume: 0.6 });
     },
   };

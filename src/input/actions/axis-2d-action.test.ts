@@ -1,97 +1,30 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Axis2dAction } from './axis-2d-action';
-import { actionResetTypes } from '../constants';
+import { describe, expect, it, vi } from 'vitest';
+import { Axis2dAction, setAxis2dActionValue } from './axis-2d-action';
 
-describe('InputAxis2d', () => {
-  let action: Axis2dAction;
+describe('Axis2dAction', () => {
+  it('should initialize with the given name and group, and a value of 0', () => {
+    const action = new Axis2dAction('pan', 'default');
 
-  beforeEach(() => {
-    action = new Axis2dAction('pan', 'default');
-  });
-
-  it('should initialize with the given name', () => {
     expect(action.name).toBe('pan');
-  });
-
-  it('should initialize with given group', () => {
     expect(action.inputGroup).toBe('default');
-  });
-
-  it('should initialize value to 0', () => {
-    expect(action.value.x).toBe(0);
-    expect(action.value.y).toBe(0);
-  });
-
-  it('should set value correctly', () => {
-    action.set(0.5, 0.5);
-    expect(action.value.x).toBe(0.5);
-    expect(action.value.y).toBe(0.5);
-
-    action.set(-1, -1);
-    expect(action.value.x).toBe(-1);
-    expect(action.value.y).toBe(-1);
-  });
-
-  it('should reset value to 0', () => {
-    action.set(1, 1);
-    expect(action.value.x).toBe(1);
-    expect(action.value.y).toBe(1);
-
-    action.reset();
-    expect(action.value.x).toBe(0);
-    expect(action.value.y).toBe(0);
+    expect(action.value).toEqual({ x: 0, y: 0 });
   });
 
   it('should default the input group to "game" when not provided', () => {
-    const defaultGroupAction = new Axis2dAction('pan');
-    expect(defaultGroupAction.inputGroup).toBe('game');
+    expect(new Axis2dAction('pan').inputGroup).toBe('game');
   });
 
-  it('should not reset the value when the reset type is noReset', () => {
-    const noResetAction = new Axis2dAction(
-      'pan',
-      'default',
-      actionResetTypes.noReset,
-    );
-
-    noResetAction.set(1, 1);
-    noResetAction.reset();
-
-    expect(noResetAction.value.x).toBe(1);
-    expect(noResetAction.value.y).toBe(1);
-  });
-
-  it('should raise valueChangeEvent when the value changes', () => {
+  it('should raise valueChangeEvent only when the value changes', () => {
+    const action = new Axis2dAction('pan');
     const listener = vi.fn();
 
     action.valueChangeEvent.registerListener(listener);
-    action.set(1, 2);
 
+    setAxis2dActionValue(action, 1, 2);
+    setAxis2dActionValue(action, 1, 2);
+
+    expect(listener).toHaveBeenCalledTimes(1);
     expect(listener).toHaveBeenCalledWith(action.value);
-    expect(action.value.x).toBe(1);
-    expect(action.value.y).toBe(2);
-  });
-
-  it('should not raise valueChangeEvent when set to the same value', () => {
-    action.set(1, 2);
-
-    const listener = vi.fn();
-
-    action.valueChangeEvent.registerListener(listener);
-    action.set(1, 2);
-
-    expect(listener).not.toHaveBeenCalled();
-  });
-
-  it('should expose its reset type', () => {
-    expect(action.actionResetType).toBe(actionResetTypes.zero);
-
-    const noResetAction = new Axis2dAction(
-      'pan',
-      'default',
-      actionResetTypes.noReset,
-    );
-
-    expect(noResetAction.actionResetType).toBe(actionResetTypes.noReset);
+    expect(action.value).toEqual({ x: 1, y: 2 });
   });
 });

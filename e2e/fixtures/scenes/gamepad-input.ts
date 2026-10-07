@@ -1,5 +1,4 @@
 import {
-  actionResetTypes,
   addPositionComponent,
   Axis1dAction,
   buttonMoments,
@@ -28,7 +27,6 @@ import {
   Time,
   TriggerAction,
 } from '../../../src/index.js';
-import { createSquareImage } from './create-square-image.js';
 import { inputSceneColors } from './input-scene-colors.js';
 import {
   matchesColor,
@@ -127,10 +125,8 @@ function installFakeGamepad(): {
 
 /** The handle `gamepad-input.spec.ts` drives and asserts against. */
 export interface GamepadInputSceneHandle extends SceneHandle {
-  /** The correctly-configured (`noReset`) stick square's local position. */
+  /** The `'game'`-group stick square's local position. */
   readonly stickPosition: { x: number; y: number };
-  /** The incorrectly-configured (default `zero` reset) stick square's local position. */
-  readonly brokenStickPosition: { x: number; y: number };
   /** The `'menu'`-group stick square's local position. */
   readonly menuStickPosition: { x: number; y: number };
   /** The up-is-positive vertical square's local position. */
@@ -168,15 +164,9 @@ export interface GamepadInputSceneHandle extends SceneHandle {
 
 /**
  * Builds a scene exercising `GamepadInputSource` against a fake, polled
- * gamepad (see `installFakeGamepad`): a correctly-configured
- * `actionResetTypes.noReset` stick axis that moves continuously while
- * deflected (and ignores small deadzone drift), a second stick axis left at
- * the default `actionResetTypes.zero` to demonstrate the documented pitfall
- * (`gamepad.md`'s "Gotchas") of combining a polled source's
- * only-dispatch-on-change optimization with a reset type that zeroes the
- * action every frame - the value reads correctly for exactly one frame,
- * then gets stuck at `0` even though the stick stays deflected - and a
- * third stick binding on a `'menu'`-group action, to prove `InputManager`'s
+ * gamepad (see `installFakeGamepad`): a stick axis that reads the stick's
+ * deflection for as long as it's held (and ignores small deadzone drift),
+ * and a second stick binding on a `'menu'`-group action, to prove `InputManager`'s
  * active-group gating applies to a polled source the same way it does to
  * event-driven keyboard/mouse sources. It also exercises button-driven
  * hold and trigger bindings, a stick Y axis sharing an
@@ -185,9 +175,9 @@ export interface GamepadInputSceneHandle extends SceneHandle {
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
-export const createScene: CreateScene = async (
+export const createScene: CreateScene = (
   container: HTMLElement,
-): Promise<GamepadInputSceneHandle> => {
+): GamepadInputSceneHandle => {
   const fakeGamepad = installFakeGamepad();
 
   const time = new Time();
@@ -197,37 +187,17 @@ export const createScene: CreateScene = async (
     preserveDrawingBuffer: true,
   });
 
-  const stickAction = new Axis1dAction(
-    'stick',
-    'game',
-    actionResetTypes.noReset,
-  );
-  // Default `actionResetTypes.zero`, deliberately - see the scene doc
-  // comment above for the "stuck at zero" pitfall this demonstrates.
-  const brokenStickAction = new Axis1dAction('brokenStick', 'game');
-  const menuStickAction = new Axis1dAction(
-    'menuStick',
-    'menu',
-    actionResetTypes.noReset,
-  );
+  const stickAction = new Axis1dAction('stick', 'game');
+  const menuStickAction = new Axis1dAction('menuStick', 'menu');
 
   // Up is positive, the same convention as
   // `KeyboardAxis1dBinding(action, keyCodes.w, keyCodes.s)`.
-  const verticalAction = new Axis1dAction(
-    'vertical',
-    'game',
-    actionResetTypes.noReset,
-  );
+  const verticalAction = new Axis1dAction('vertical', 'game');
   const shootAction = new HoldAction('shoot', 'game');
   const restartAction = new TriggerAction('restart', 'game');
 
   const inputManager = registerInputs(world, time, {
-    axis1dActions: [
-      stickAction,
-      brokenStickAction,
-      menuStickAction,
-      verticalAction,
-    ],
+    axis1dActions: [stickAction, menuStickAction, verticalAction],
     holdActions: [shootAction],
     triggerActions: [restartAction],
   });
@@ -236,11 +206,6 @@ export const createScene: CreateScene = async (
 
   gamepadInputSource.axis1dBindings.add(
     new GamepadAxis1dBinding(stickAction, {
-      axisIndex: gamepadAxes.leftStickX,
-    }),
-  );
-  gamepadInputSource.axis1dBindings.add(
-    new GamepadAxis1dBinding(brokenStickAction, {
       axisIndex: gamepadAxes.leftStickX,
     }),
   );
@@ -278,10 +243,7 @@ export const createScene: CreateScene = async (
     verticalWorldUnits: canvas.height,
   });
 
-  const squareImage = await createSquareImage('#fff');
-  const squareSprite = createImageSprite(squareImage, renderContext, {
-    pixelsPerUnit: 1,
-  });
+  const squareSprite = createImageSprite(renderContext.whiteTexture);
 
   function createSquare(
     x: number,
@@ -305,7 +267,6 @@ export const createScene: CreateScene = async (
   }
 
   const stickBase = { x: 0, y: -200 };
-  const brokenBase = { x: 0, y: 0 };
   const menuStickBase = { x: 0, y: 200 };
 
   const stick = createSquare(
@@ -313,18 +274,13 @@ export const createScene: CreateScene = async (
     stickBase.y,
     toColor(inputSceneColors.blue),
   );
-  const broken = createSquare(
-    brokenBase.x,
-    brokenBase.y,
-    toColor(inputSceneColors.yellow),
-  );
   const menuStick = createSquare(
     menuStickBase.x,
     menuStickBase.y,
     toColor(inputSceneColors.cyan),
   );
 
-  // Placed clear of the three stick rows above, and of each other, so no
+  // Placed clear of the two stick rows above, and of each other, so no
   // landmark ever occludes another.
   const verticalBase = { x: 340, y: 0 };
   const vertical = createSquare(
@@ -356,17 +312,14 @@ export const createScene: CreateScene = async (
   // Each square's offset from its base position is a direct mapping of its
   // action's *current* value (like a joystick-controlled reticle), not an
   // accumulation, so a square's position always reflects exactly what its
-  // action currently holds - including staying frozen at its base position
-  // once "stuck at zero" (see `brokenStickAction`), or returning to its base
-  // position once its input group is deactivated (which releases its
-  // action), instead of drifting.
+  // action currently holds - including returning to its base position once
+  // its input group is deactivated (which releases its action), instead of
+  // drifting.
   const inputConsumerSystem: EcsSystem<[PositionEcsComponent]> = {
     query: [positionId],
     update: () => {
       stick.position.local.x =
         stickBase.x + stickAction.value * stickRangeInWorldUnits;
-      broken.position.local.x =
-        brokenBase.x + brokenStickAction.value * stickRangeInWorldUnits;
       menuStick.position.local.x =
         menuStickBase.x + menuStickAction.value * stickRangeInWorldUnits;
       vertical.position.local.y =
@@ -404,10 +357,6 @@ export const createScene: CreateScene = async (
 
     get stickPosition(): { x: number; y: number } {
       return { x: stick.position.local.x, y: stick.position.local.y };
-    },
-
-    get brokenStickPosition(): { x: number; y: number } {
-      return { x: broken.position.local.x, y: broken.position.local.y };
     },
 
     get menuStickPosition(): { x: number; y: number } {

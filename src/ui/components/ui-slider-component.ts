@@ -34,9 +34,9 @@ export interface UiSliderDefaultedOptions {
   wholeNumbers: boolean;
 
   /**
-   * The entity id of an optional fill visual - a child `RectTransformEcsComponent`
-   * stretch-anchored from the track's left edge, whose `anchorMax.x`
-   * `createUiSliderEcsSystem` drives to track `value` every tick.
+   * The entity id of an optional fill visual: a child covering the track
+   * with a linear `MaskEcsComponent` from the left, whose `shape.amount`
+   * `createUiSliderEcsSystem` sets from `value` every tick.
    */
   fill?: number;
 }
@@ -103,7 +103,7 @@ export function addUiSliderComponent(
 /**
  * Normalizes `slider.value` to a `0`-`1` fraction of the way from `minValue`
  * to `maxValue` - the anchor fraction `createUiSliderEcsSystem` drives the
- * handle/fill visuals with.
+ * handle with, and the fill's mask amount.
  * @param slider - The slider's `value`/`minValue`/`maxValue`.
  * @returns The normalized fraction, clamped to `[0, 1]`. `0` if `minValue`
  * and `maxValue` coincide (a zero-length range has no meaningful fraction).

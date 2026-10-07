@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { MouseInputSource } from './mouse-input-source';
 import { buttonMoments, cursorValueTypes, mouseButtons } from '../../constants';
 import { InputManager } from '../../input-manager';
-import { actionResetTypes } from '../../constants';
 import {
   Axis1dAction,
   Axis2dAction,
@@ -46,8 +45,8 @@ describe('MouseInputSource', () => {
     clickUpAction = new TriggerAction('clickUpAction', group);
     holdAction = new HoldAction('holdAction', group);
 
-    inputManager.addResettable(clickDownAction);
-    inputManager.addResettable(clickUpAction);
+    inputManager.addTriggerActions(clickDownAction, clickUpAction);
+    inputManager.addHoldActions(holdAction);
 
     source.triggerBindings.add(
       new MouseTriggerBinding(
@@ -83,6 +82,9 @@ describe('MouseInputSource', () => {
   });
 
   it('dispatches mouse up trigger actions', () => {
+    container.dispatchEvent(
+      new MouseEvent('mousedown', { button: mouseButtons.left }),
+    );
     expect(clickUpAction.isTriggered).toBe(false);
 
     container.dispatchEvent(
@@ -97,7 +99,7 @@ describe('MouseInputSource', () => {
   it('does not dispatch mouse down triggers for a group other than the active group', () => {
     const menuAction = new TriggerAction('menuAction', 'menu');
 
-    inputManager.addResettable(menuAction);
+    inputManager.addTriggerActions(menuAction);
     source.triggerBindings.add(
       new MouseTriggerBinding(
         menuAction,
@@ -131,6 +133,8 @@ describe('MouseInputSource', () => {
   it('does not dispatch mouse hold start actions for a group other than the active group', () => {
     const menuHoldAction = new HoldAction('menuHoldAction', 'menu');
 
+    inputManager.addHoldActions(menuHoldAction);
+
     source.holdBindings.add(
       new MouseHoldBinding(menuHoldAction, mouseButtons.right),
     );
@@ -143,18 +147,49 @@ describe('MouseInputSource', () => {
     expect(menuHoldAction.isHeld).toBe(false);
   });
 
-  it('dispatches wheel events to axis1d bindings', () => {
+  it('sums a frame of wheel events into axis1d bindings, and withdraws them at the end of the frame', () => {
     const scrollAction = new Axis1dAction('scrollAction', group);
+
+    inputManager.addAxis1dActions(scrollAction);
 
     source.axis1dBindings.add(new MouseAxis1dBinding(scrollAction));
 
     container.dispatchEvent(new WheelEvent('wheel', { deltaY: 50 }));
-
     expect(scrollAction.value).toBe(0.5);
+
+    container.dispatchEvent(new WheelEvent('wheel', { deltaY: 20 }));
+    expect(scrollAction.value).toBeCloseTo(0.7);
+
+    inputManager.reset();
+    expect(scrollAction.value).toBe(0);
+  });
+
+  it('holds an action while any of its buttons is held', () => {
+    source.holdBindings.add(
+      new MouseHoldBinding(holdAction, mouseButtons.left),
+    );
+
+    container.dispatchEvent(
+      new MouseEvent('mousedown', { button: mouseButtons.right }),
+    );
+    container.dispatchEvent(
+      new MouseEvent('mousedown', { button: mouseButtons.left }),
+    );
+    container.dispatchEvent(
+      new MouseEvent('mouseup', { button: mouseButtons.right }),
+    );
+    expect(holdAction.isHeld).toBe(true);
+
+    container.dispatchEvent(
+      new MouseEvent('mouseup', { button: mouseButtons.left }),
+    );
+    expect(holdAction.isHeld).toBe(false);
   });
 
   it('dispatches mouse move events to axis2d bindings using ratio values by default', () => {
     const moveAction = new Axis2dAction('moveAction', group);
+
+    inputManager.addAxis2dActions(moveAction);
 
     source.axis2dBindings.add(new MouseAxis2dBinding(moveAction));
 
@@ -178,6 +213,8 @@ describe('MouseInputSource', () => {
 
   it('dispatches mouse move events to axis2d bindings using absolute values', () => {
     const moveAction = new Axis2dAction('moveAction', group);
+
+    inputManager.addAxis2dActions(moveAction);
 
     source.axis2dBindings.add(
       new MouseAxis2dBinding(moveAction, {
@@ -203,6 +240,8 @@ describe('MouseInputSource', () => {
 
   it('throws when a binding has an unsupported cursor value type', () => {
     const moveAction = new Axis2dAction('moveAction', group);
+
+    inputManager.addAxis2dActions(moveAction);
     const binding = new MouseAxis2dBinding(moveAction);
 
     // @ts-expect-error deliberately assigning an invalid cursor value type
@@ -224,13 +263,11 @@ describe('MouseInputSource', () => {
     ).toThrow('Unsupported cursor value type: unsupported');
   });
 
-  it('clears button state on reset', () => {
+  it('clears isTriggered at the end of the frame', () => {
     container.dispatchEvent(
       new MouseEvent('mousedown', { button: mouseButtons.left }),
     );
     expect(clickDownAction.isTriggered).toBe(true);
-
-    source.reset();
 
     inputManager.reset();
     expect(clickDownAction.isTriggered).toBe(false);
@@ -323,8 +360,12 @@ describe('MouseInputSource', () => {
     expect(source.buttonsUp.has(mouseButtons.left)).toBe(true);
   });
 
-  it('stops dispatching after stop is called', () => {
+  it('releases what it was holding and stops dispatching after stop is called', () => {
+    container.dispatchEvent(
+      new MouseEvent('mousedown', { button: mouseButtons.right }),
+    );
     source.stop();
+    expect(holdAction.isHeld).toBe(false);
 
     container.dispatchEvent(
       new MouseEvent('mousedown', { button: mouseButtons.left }),
@@ -336,6 +377,8 @@ describe('MouseInputSource', () => {
   it('does not dispatch wheel events to axis1d bindings for a group other than the active group', () => {
     const menuScrollAction = new Axis1dAction('menuScrollAction', 'menu');
 
+    inputManager.addAxis1dActions(menuScrollAction);
+
     source.axis1dBindings.add(new MouseAxis1dBinding(menuScrollAction));
 
     container.dispatchEvent(new WheelEvent('wheel', { deltaY: 50 }));
@@ -344,11 +387,9 @@ describe('MouseInputSource', () => {
   });
 
   it('applies the latest cursor position to an axis2d binding once its group becomes active', () => {
-    const menuPointerAction = new Axis2dAction(
-      'menuPointerAction',
-      'menu',
-      actionResetTypes.noReset,
-    );
+    const menuPointerAction = new Axis2dAction('menuPointerAction', 'menu');
+
+    inputManager.addAxis2dActions(menuPointerAction);
 
     source.axis2dBindings.add(new MouseAxis2dBinding(menuPointerAction));
 

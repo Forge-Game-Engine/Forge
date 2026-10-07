@@ -1,222 +1,244 @@
-import { AudioBus, MixerState, toAudioBus } from './audio-bus.js';
+import { createMixerBus } from './internal/create-mixer-bus.js';
+import {
+  getBusInternals,
+  MixerInternals,
+  registerMixerInternals,
+} from './internal/audio-internals.js';
 import type { MixerBus } from './mixer-bus.js';
-import type { SoundPlayback } from './sound-playback.js';
 
 /**
- * The state of a {@link SoundMixer}'s `AudioContext`. `'interrupted'` is
- * reported by Safari while another app or a call has taken the audio
- * output.
+ * The state of a {@link SoundMixer}'s audio. `'interrupted'` is reported by
+ * Safari while another app (or a phone call) has taken over audio.
  */
-export type SoundMixerState =
-  'suspended' | 'running' | 'interrupted' | 'closed';
+export type SoundMixerState = AudioContextState | 'interrupted';
 
 /**
- * Owns a game's browser `AudioContext` and the tree of {@link MixerBus}es
- * every sound plays through. Create one per game with
+ * Owns a game's audio output: the browser's `AudioContext` and a tree of
+ * {@link MixerBus | buses} under a `master` bus. Create one per game with
  * {@link createSoundMixer}.
  */
 export interface SoundMixer {
-  /** The root bus. Every other bus feeds it, directly or through its parent. */
+  /** The root bus. Every other bus, and so every sound, ends up here. */
   readonly master: MixerBus;
 
-  /** The state of the mixer's `AudioContext`. */
+  /**
+   * The state of the mixer's audio. Browsers start audio `'suspended'`
+   * until the player interacts with the page; the mixer resumes it on the
+   * first click, tap or key press.
+   */
   readonly state: SoundMixerState;
 
   /**
-   * Creates a bus that feeds `parent`.
+   * Creates a bus that feeds into `parent`.
    * @param name - The bus's name, unique within this mixer.
-   * @param parent - The bus to feed. Defaults to `master`.
-   * @returns The new bus, at volume `1` and not muted.
-   * @throws An error if a bus named `name` already exists, or `parent`
-   * belongs to a different mixer.
+   * @param parent - The bus to feed into. Defaults to `master`.
+   * @returns The new bus.
+   * @throws If a bus named `name` already exists, or `parent` belongs to a different mixer.
    */
   createBus(name: string, parent?: MixerBus): MixerBus;
 
   /**
-   * Returns the bus named `name`.
-   * @param name - The bus's name.
+   * Gets a bus by name.
+   * @param name - The bus's name. `'master'` returns the master bus.
    * @returns The bus.
-   * @throws An error if this mixer has no bus named `name`.
+   * @throws If this mixer has no bus named `name`.
    */
   getBus(name: string): MixerBus;
 
   /**
-   * Suspends the `AudioContext`: every sound holds its position and is
-   * silent until {@link SoundMixer.resume}. While suspended this way, user
-   * input doesn't resume it.
-   * @returns A promise that resolves once the context is suspended.
+   * Pauses all audio, for example while the game is paused or its tab is
+   * hidden. Sounds continue from the same place on {@link SoundMixer.resume}.
+   * The mixer doesn't resume on its own while suspended this way.
+   * @returns A promise that resolves once audio is suspended.
    */
   suspend(): Promise<void>;
 
   /**
-   * Resumes the `AudioContext` after {@link SoundMixer.suspend}.
-   * @returns A promise that resolves once the context is running. The
-   * browser keeps it pending until the page has had user input.
+   * Resumes audio after {@link SoundMixer.suspend}.
+   * @returns A promise that resolves once audio is running.
    */
   resume(): Promise<void>;
 
   /**
-   * Stops every sound, stops listening for user input and closes the
-   * `AudioContext`. The mixer and its buses can't be used afterwards.
+   * Stops every sound, closes the `AudioContext` and stops listening for
+   * user gestures. The mixer can't play sounds afterwards. Does nothing if
+   * the mixer is already stopped.
    * @returns A promise that resolves once the context is closed.
    */
   stop(): Promise<void>;
 }
 
-/**
- * The events that count as user activation, which browsers require before
- * they let an `AudioContext` start. A touch activates on its end, not its
- * start.
- */
-const unlockEvents = ['pointerup', 'touchend', 'click', 'keydown'] as const;
+// The events that can unlock audio. Per the HTML specification a touch
+// activates the page on release (`pointerup`/`touchend`), not on press, and
+// Escape doesn't count as a key press for this.
+const gestureEvents = ['pointerup', 'touchend', 'click', 'keydown'] as const;
+
+const gestureListenerOptions: AddEventListenerOptions = {
+  capture: true,
+  passive: true,
+};
 
 /**
  * Creates a {@link SoundMixer} with a `master` bus.
  *
- * Browsers keep audio suspended until the page has had user input. The
- * mixer listens on `window` for `pointerup`, `touchend`, `click` and
- * `keydown`, and resumes the context on each one until it's running. It
- * listens again whenever the context is suspended or interrupted by
- * anything other than {@link SoundMixer.suspend}, for example Safari
- * during a phone call.
- * @param context - The `AudioContext` to play through. Defaults to a new
- * one.
+ * Browsers don't play audio until the player has interacted with the page.
+ * The mixer listens for the first click, tap or key press and resumes audio
+ * then, and again whenever audio stops without the game asking (Safari
+ * interrupts it for calls and other apps). Stop the mixer with
+ * {@link SoundMixer.stop} when the game is torn down.
+ * @param context - The audio context to play through. Defaults to a new `AudioContext`.
  * @returns The mixer.
  */
 export function createSoundMixer(
   context: AudioContext = new AudioContext(),
 ): SoundMixer {
-  const playbacks = new Set<SoundPlayback>();
-  const buses = new Map<string, AudioBus>();
-  let isSuspendedByGame = false;
-  let isListening = false;
-
-  const state: MixerState = {
+  const internals: MixerInternals = {
     context,
-    playbacks,
-    // The browser's own record of whether the page has had user
-    // activation (the same "sticky activation" its autoplay policy
-    // checks), so a sound triggered by the input that unlocks audio plays,
-    // even though the context only reports `'running'` once its
-    // asynchronous resume finishes.
-    isUnlocked: () =>
-      navigator.userActivation.hasBeenActive || context.state === 'running',
+    instances: new Set(),
+    hasHadGesture: false,
+    isStopped: false,
   };
 
-  const onUserInput = (event: Event): void => {
-    // Escape doesn't count as user activation, so resuming from it fails.
+  const buses = new Map<string, MixerBus>();
+  let isSuspendedByGame = false;
+  let isListeningForGestures = false;
+
+  const master = createMixerBus(internals, 'master', null, context.destination);
+
+  buses.set(master.name, master);
+
+  const getState = (): SoundMixerState => context.state;
+
+  const handleGesture = (event: Event): void => {
     if (event instanceof KeyboardEvent && event.key === 'Escape') {
       return;
     }
 
-    // A resume from an event the browser doesn't count as activation
-    // rejects; the next event tries again.
-    context.resume().catch(() => {});
+    internals.hasHadGesture = true;
+
+    if (!isSuspendedByGame && getState() !== 'running') {
+      // A resume from an event the browser doesn't count as a gesture fails;
+      // the listeners stay until audio actually runs.
+      context.resume().catch(() => {});
+    }
   };
 
-  const listen = (): void => {
-    if (isListening) {
+  const startListening = (): void => {
+    if (isListeningForGestures) {
       return;
     }
 
-    isListening = true;
+    isListeningForGestures = true;
 
-    for (const type of unlockEvents) {
-      window.addEventListener(type, onUserInput, { capture: true });
+    for (const type of gestureEvents) {
+      window.addEventListener(type, handleGesture, gestureListenerOptions);
     }
   };
 
   const stopListening = (): void => {
-    if (!isListening) {
+    if (!isListeningForGestures) {
       return;
     }
 
-    isListening = false;
+    isListeningForGestures = false;
 
-    for (const type of unlockEvents) {
-      window.removeEventListener(type, onUserInput, { capture: true });
+    for (const type of gestureEvents) {
+      window.removeEventListener(type, handleGesture, gestureListenerOptions);
     }
   };
 
-  const onStateChange = (): void => {
-    const contextState: SoundMixerState = context.state;
+  const handleStateChange = (): void => {
+    const state = getState();
 
-    if (contextState === 'running') {
+    if (state === 'running') {
       stopListening();
 
       return;
     }
 
-    if (contextState === 'closed' || isSuspendedByGame) {
-      return;
+    if (state !== 'closed' && !isSuspendedByGame) {
+      startListening();
     }
-
-    listen();
   };
 
-  context.addEventListener('statechange', onStateChange);
-  onStateChange();
+  const assertNotStopped = (action: string): void => {
+    if (internals.isStopped) {
+      throw new Error(`Unable to ${action}: the sound mixer has been stopped.`);
+    }
+  };
 
-  const master = new AudioBus('master', null, state);
+  context.addEventListener('statechange', handleStateChange);
+  handleStateChange();
 
-  buses.set(master.name, master);
-
-  return {
+  const mixer: SoundMixer = {
     master,
     get state(): SoundMixerState {
-      return context.state;
+      return getState();
     },
-    createBus: (name, parent = master) => {
+    createBus(name: string, parent: MixerBus = master): MixerBus {
+      assertNotStopped(`create the bus "${name}"`);
+
       if (buses.has(name)) {
         throw new Error(
-          `Unable to create bus "${name}", the mixer already has a bus with that name.`,
+          `Unable to create the bus "${name}": the mixer already has a bus with that name.`,
         );
       }
 
-      const parentBus = toAudioBus(parent);
+      const parentInternals = getBusInternals(parent);
 
-      if (parentBus.mixer !== state) {
+      if (parentInternals.mixer !== internals) {
         throw new Error(
-          `Unable to create bus "${name}" under bus "${parent.name}", the parent belongs to a different mixer.`,
+          `Unable to create the bus "${name}": its parent "${parent.name}" belongs to a different sound mixer.`,
         );
       }
 
-      const bus = new AudioBus(name, parentBus, state);
+      const bus = createMixerBus(internals, name, parent, parentInternals.gain);
 
       buses.set(name, bus);
 
       return bus;
     },
-    getBus: (name) => {
+    getBus(name: string): MixerBus {
       const bus = buses.get(name);
 
       if (!bus) {
-        throw new Error(`The mixer has no bus named "${name}".`);
+        throw new Error(`The sound mixer has no bus named "${name}".`);
       }
 
       return bus;
     },
-    suspend: async () => {
+    suspend: async (): Promise<void> => {
+      assertNotStopped('suspend audio');
       isSuspendedByGame = true;
       stopListening();
       await context.suspend();
     },
-    resume: async () => {
+    resume: async (): Promise<void> => {
+      assertNotStopped('resume audio');
       isSuspendedByGame = false;
-      onStateChange();
+      handleStateChange();
       await context.resume();
     },
-    stop: async () => {
-      for (const playback of [...playbacks]) {
-        playback.stop();
+    stop: async (): Promise<void> => {
+      if (internals.isStopped) {
+        return;
       }
 
+      internals.isStopped = true;
       stopListening();
-      context.removeEventListener('statechange', onStateChange);
+      context.removeEventListener('statechange', handleStateChange);
 
-      if (context.state !== 'closed') {
+      for (const instance of [...internals.instances]) {
+        instance.stopImmediately();
+      }
+
+      if (getState() !== 'closed') {
         await context.close();
       }
     },
   };
+
+  registerMixerInternals(mixer, internals);
+
+  return mixer;
 }

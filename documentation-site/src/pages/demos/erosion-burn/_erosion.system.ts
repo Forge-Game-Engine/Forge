@@ -24,7 +24,7 @@ export const createErosionEcsSystem = (
     for (const sprite of sprites) {
       const wave = (Math.sin(time.timeInSeconds * cycleSpeed) + 1) / 2;
 
-      sprite.renderable.material.setUniform(
+      sprite.material?.setUniform(
         'u_burnProgress',
         wave * burnRange + burnOffset,
       );

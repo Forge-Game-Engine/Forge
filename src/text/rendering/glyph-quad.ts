@@ -10,12 +10,34 @@ import { Vec2 } from '../../math/index.js';
 import { SpriteEcsComponent } from '../../rendering/components/sprite-component.js';
 import { RenderCommand } from '../../rendering/render-command.js';
 import { TextEffectsInstanceData } from '../../rendering/renderable.js';
+import type {
+  InstanceMask,
+  InstanceMaskResolver,
+} from '../../rendering/utilities/resolve-instance-mask.js';
+import type { TextRenderables } from './create-text-renderables.js';
 import { matchesMask } from '../../utilities/matches-mask.js';
 import { TextEcsComponent } from '../components/text-component.js';
 import {
   GlyphQuad,
   TextMeshEcsComponent,
 } from '../components/text-mesh-component.js';
+
+/**
+ * The transform a text entity's glyphs are placed with.
+ */
+export interface TextTransform {
+  /** The entity's position; each glyph is offset from it. */
+  position: PositionEcsComponent;
+
+  /** The entity's rotation, if it has one. */
+  rotation: RotationEcsComponent | null;
+
+  /** The entity's scale, if it has one. */
+  scale: ScaleEcsComponent | null;
+
+  /** The masks the entity's glyphs are drawn through, or `null` for none. */
+  mask: InstanceMask | null;
+}
 
 /**
  * Builds the glyph-centered position offset from `entityPosition` shared by
@@ -46,29 +68,30 @@ function buildGlyphPosition(
  * @param commands - The render command buffer to push into.
  * @param textComponent - The entity's `TextEcsComponent` (for `layer` and effect fields).
  * @param textMesh - The entity's shaped glyph quads to push commands for.
- * @param entityPosition - The entity's position; each glyph is offset from it.
- * @param rotationComponent - The entity's rotation, if it has one.
- * @param scaleComponent - The entity's scale, if it has one.
+ * @param renderables - The renderables glyphs draw with (see `createTextRenderables`).
+ * @param transform - The entity's position (each glyph is offset from it), rotation and scale.
  * @param pixelRatio - Device pixels per CSS pixel the destination is rendered at (see `RenderContext.pixelRatio`).
  */
 function pushTextEffectsRenderCommands(
   commands: RenderCommand[],
   textComponent: TextEcsComponent,
   textMesh: TextMeshEcsComponent,
-  entityPosition: PositionEcsComponent,
-  rotationComponent: RotationEcsComponent | null,
-  scaleComponent: ScaleEcsComponent | null,
+  renderables: TextRenderables,
+  transform: TextTransform,
   pixelRatio: number,
 ): void {
-  const { effectsRenderable } = textMesh;
+  const { effectsRenderable } = renderables;
   const {
     layer,
+    category,
+    fontAtlas,
     outlineColor,
     outlineWidth,
     shadowColor,
     shadowOffset,
     shadowSoftness,
   } = textComponent;
+  const { position: entityPosition, rotation, scale, mask } = transform;
   const depth = textComponent.sortDepth ?? entityPosition.world.y;
 
   // Uniform across every glyph in this entity, so built once rather than
@@ -95,7 +118,10 @@ function pushTextEffectsRenderCommands(
       // colors it actually draws with come from `textEffects` below - but
       // `SpriteEcsComponent.tintColor` still has to be a `Color`.
       tintColor: outlineColor,
-      renderable: effectsRenderable,
+      texture: fontAtlas.texture,
+      emissive: null,
+      material: null,
+      category,
       enabled: true,
       layer,
     };
@@ -104,12 +130,16 @@ function pushTextEffectsRenderCommands(
       layer,
       depth,
       renderable: effectsRenderable,
+      texture: fontAtlas.texture,
+      emissiveTexture: null,
+      fontAtlas,
       components: {
         position: buildGlyphPosition(entityPosition, glyph),
-        rotation: rotationComponent,
-        scale: scaleComponent,
+        rotation,
+        scale,
         sprite: glyphSprite,
         flip: null,
+        mask,
         textEffects,
         textEmbolden: glyph.embolden,
       },
@@ -125,20 +155,19 @@ function pushTextEffectsRenderCommands(
  * @param commands - The render command buffer to push into.
  * @param textComponent - The entity's `TextEcsComponent` (for `layer`, and `color` for glyphs outside a `<color>` tag).
  * @param textMesh - The entity's shaped glyph quads to push commands for.
- * @param entityPosition - The entity's position; each glyph is offset from it.
- * @param rotationComponent - The entity's rotation, if it has one.
- * @param scaleComponent - The entity's scale, if it has one.
+ * @param renderables - The renderables glyphs draw with (see `createTextRenderables`).
+ * @param transform - The entity's position (each glyph is offset from it), rotation and scale.
  */
 function pushTextFillRenderCommands(
   commands: RenderCommand[],
   textComponent: TextEcsComponent,
   textMesh: TextMeshEcsComponent,
-  entityPosition: PositionEcsComponent,
-  rotationComponent: RotationEcsComponent | null,
-  scaleComponent: ScaleEcsComponent | null,
+  renderables: TextRenderables,
+  transform: TextTransform,
 ): void {
-  const { fillRenderable } = textMesh;
-  const { layer, color } = textComponent;
+  const { fillRenderable } = renderables;
+  const { layer, category, fontAtlas, color } = textComponent;
+  const { position: entityPosition, rotation, scale, mask } = transform;
   const depth = textComponent.sortDepth ?? entityPosition.world.y;
 
   for (const glyph of textMesh.glyphs) {
@@ -150,7 +179,10 @@ function pushTextFillRenderCommands(
       uvScale: glyph.uvScale,
       tintColor: glyph.color ?? color,
       opacityMultiplier: textComponent.opacityMultiplier,
-      renderable: fillRenderable,
+      texture: fontAtlas.texture,
+      emissive: null,
+      material: null,
+      category,
       enabled: true,
       layer,
     };
@@ -159,12 +191,16 @@ function pushTextFillRenderCommands(
       layer,
       depth,
       renderable: fillRenderable,
+      texture: fontAtlas.texture,
+      emissiveTexture: null,
+      fontAtlas,
       components: {
         position: buildGlyphPosition(entityPosition, glyph),
-        rotation: rotationComponent,
-        scale: scaleComponent,
+        rotation,
+        scale,
         sprite: glyphSprite,
         flip: null,
+        mask,
         textEmbolden: glyph.embolden,
       },
     });
@@ -174,7 +210,7 @@ function pushTextFillRenderCommands(
 /**
  * Pushes the render commands for every visible glyph in `textMesh`, as two
  * ordered passes: outline/shadow ("effects") first, then fill - see
- * `createTextRenderable`'s doc comment for why. The effects pass is skipped
+ * `createTextRenderables`' doc comment for why. The effects pass is skipped
  * entirely when neither an outline nor a shadow is actually configured (the
  * common case), so plain text costs exactly what it did before this split.
  * Both passes share the same `layer`/`depth` per glyph, so the render
@@ -184,18 +220,16 @@ function pushTextFillRenderCommands(
  * @param commands - The render command buffer to push into.
  * @param textComponent - The entity's `TextEcsComponent` (for `layer`, `color`, and effect fields).
  * @param textMesh - The entity's shaped glyph quads to push commands for.
- * @param entityPosition - The entity's position; each glyph is offset from it.
- * @param rotationComponent - The entity's rotation, if it has one.
- * @param scaleComponent - The entity's scale, if it has one.
+ * @param renderables - The renderables glyphs draw with (see `createTextRenderables`).
+ * @param transform - The entity's position (each glyph is offset from it), rotation and scale.
  * @param pixelRatio - Device pixels per CSS pixel the destination is rendered at (see `RenderContext.pixelRatio`), which the outline/shadow sizes are scaled by (default: 1).
  */
 export function pushTextRenderCommands(
   commands: RenderCommand[],
   textComponent: TextEcsComponent,
   textMesh: TextMeshEcsComponent,
-  entityPosition: PositionEcsComponent,
-  rotationComponent: RotationEcsComponent | null,
-  scaleComponent: ScaleEcsComponent | null,
+  renderables: TextRenderables,
+  transform: TextTransform,
   pixelRatio: number = 1,
 ): void {
   const { outlineWidth, shadowColor } = textComponent;
@@ -206,9 +240,8 @@ export function pushTextRenderCommands(
       commands,
       textComponent,
       textMesh,
-      entityPosition,
-      rotationComponent,
-      scaleComponent,
+      renderables,
+      transform,
       pixelRatio,
     );
   }
@@ -217,23 +250,26 @@ export function pushTextRenderCommands(
     commands,
     textComponent,
     textMesh,
-    entityPosition,
-    rotationComponent,
-    scaleComponent,
+    renderables,
+    transform,
   );
 }
 
 /**
  * Builds render commands for every visible text entity a camera should
  * draw, mirroring `render-system.ts`'s own `buildCameraCommands` for
- * sprites: skips disabled text and text whose mesh renderable category
- * doesn't match `cullingMask`, then delegates to `pushTextRenderCommands`.
+ * sprites: skips disabled text and text whose `category` doesn't match
+ * `cullingMask`, then delegates to `pushTextRenderCommands`.
  * @param world - The ECS world, used to look up each entity's optional
  * rotation/scale components.
  * @param textQuery - The text entities to draw, and each one's
  * `TextEcsComponent`, `TextMeshEcsComponent` and `PositionEcsComponent`.
  * @param cullingMask - The camera's culling mask.
  * @param commands - The render command buffer to push into.
+ * @param getRenderables - Returns the renderables glyphs draw with; only
+ * called when there's text to draw.
+ * @param getMask - Returns the masks an entity's glyphs are drawn through;
+ * text hidden entirely by its masks is skipped.
  * @param pixelRatio - Device pixels per CSS pixel the destination is rendered at (see `RenderContext.pixelRatio`), which the outline/shadow sizes are scaled by (default: 1).
  */
 export function buildTextCameraCommands(
@@ -243,6 +279,8 @@ export function buildTextCameraCommands(
   >,
   cullingMask: number,
   commands: RenderCommand[],
+  getRenderables: () => TextRenderables,
+  getMask: InstanceMaskResolver,
   pixelRatio: number = 1,
 ): void {
   const {
@@ -257,25 +295,34 @@ export function buildTextCameraCommands(
       continue;
     }
 
-    const textMesh = textMeshes[t];
-
-    // Both renderables always share one category (see
-    // `createTextRenderable`'s `TEXT_RENDER_CATEGORY`), so checking either
-    // one is sufficient.
-    if (!matchesMask(textMesh.fillRenderable.category, cullingMask)) {
+    if (!matchesMask(textComponent.category, cullingMask)) {
       continue;
     }
 
+    const textMesh = textMeshes[t];
+
     const textEntity = textEntities[t];
     const entityPosition = textPositions[t];
+    const mask = getMask(textEntity);
+
+    if (mask && !mask.visible) {
+      continue;
+    }
 
     pushTextRenderCommands(
       commands,
       textComponent,
       textMesh,
-      entityPosition,
-      world.getComponent<RotationEcsComponent>(textEntity, rotationId),
-      world.getComponent<ScaleEcsComponent>(textEntity, scaleId),
+      getRenderables(),
+      {
+        position: entityPosition,
+        rotation: world.getComponent<RotationEcsComponent>(
+          textEntity,
+          rotationId,
+        ),
+        scale: world.getComponent<ScaleEcsComponent>(textEntity, scaleId),
+        mask,
+      },
       pixelRatio,
     );
   }

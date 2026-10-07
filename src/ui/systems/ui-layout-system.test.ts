@@ -1,19 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { createUiLayoutEcsSystem } from './ui-layout-system.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-  positionId,
-} from '../../common/index.js';
+import { addPositionComponent, positionId } from '../../common/index.js';
 import { createTransformEcsSystem } from '../../common/systems/transform-system.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   addCameraComponent,
+  addMaskComponent,
   addSpriteComponent,
   cameraId,
-  Renderable,
+  maskId,
   RenderContext,
   spriteId,
+  Texture,
 } from '../../rendering/index.js';
 import { addTextComponent, textId } from '../../text/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
@@ -40,7 +38,7 @@ const buildRenderContext = (width: number, height: number): RenderContext =>
     pixelRatio: 1,
   }) as RenderContext;
 
-const buildRenderable = (): Renderable => ({}) as Renderable;
+const buildTexture = (): Texture => ({}) as Texture;
 
 /** Creates a canvas entity (`CanvasEcsComponent` + `RectTransformEcsComponent` + `PositionEcsComponent`) with a UI camera, without going through `createUiCanvas`, so the layout system can be tested in isolation. */
 const createTestCanvas = (
@@ -199,7 +197,7 @@ describe('createUiLayoutEcsSystem', () => {
     const enemy = world.createEntity();
 
     addPositionComponent(world, enemy, { local: { x: 100, y: 200 } });
-    addParentComponent(world, canvas, { parent: enemy });
+    world.setParent(canvas, enemy);
 
     world.addSystem(createUiLayoutEcsSystem(renderContext));
     world.addSystem(createTransformEcsSystem());
@@ -316,7 +314,7 @@ describe('createUiLayoutEcsSystem', () => {
     const panel = world.createEntity();
 
     addPositionComponent(world, panel);
-    addParentComponent(world, panel, { parent: canvas });
+    world.setParent(panel, canvas);
     addRectTransformComponent(
       world,
       panel,
@@ -346,7 +344,7 @@ describe('createUiLayoutEcsSystem', () => {
     const sidebar = world.createEntity();
 
     addPositionComponent(world, sidebar);
-    addParentComponent(world, sidebar, { parent: canvas });
+    world.setParent(sidebar, canvas);
     addRectTransformComponent(world, sidebar, {
       x: UiAxis.point(0, { pivot: 0, size: 200, sizeUnit: 'screenPixels' }),
       y: UiAxis.stretch({ min: 0, max: 1 }),
@@ -391,7 +389,7 @@ describe('createUiLayoutEcsSystem', () => {
     const sidebar = world.createEntity();
 
     addPositionComponent(world, sidebar);
-    addParentComponent(world, sidebar, { parent: canvas });
+    world.setParent(sidebar, canvas);
     addRectTransformComponent(world, sidebar, {
       x: UiAxis.point(0, { pivot: 0, size: 200, sizeUnit: 'screenPixels' }),
       y: UiAxis.stretch({ min: 0, max: 1 }),
@@ -425,7 +423,7 @@ describe('createUiLayoutEcsSystem', () => {
     const label = world.createEntity();
 
     addPositionComponent(world, label);
-    addParentComponent(world, label, { parent: canvas });
+    world.setParent(label, canvas);
     addRectTransformComponent(world, label, {
       x: UiAxis.point(0, { pivot: 0, size: 216, sizeUnit: 'screenPixels' }),
       y: UiAxis.stretch({ min: 0, max: 1 }),
@@ -472,7 +470,7 @@ describe('createUiLayoutEcsSystem', () => {
     const topBar = world.createEntity();
 
     addPositionComponent(world, topBar);
-    addParentComponent(world, topBar, { parent: canvas });
+    world.setParent(topBar, canvas);
     addRectTransformComponent(
       world,
       topBar,
@@ -496,7 +494,7 @@ describe('createUiLayoutEcsSystem', () => {
     const panel = world.createEntity();
 
     addPositionComponent(world, panel);
-    addParentComponent(world, panel, { parent: canvas });
+    world.setParent(panel, canvas);
     addRectTransformComponent(
       world,
       panel,
@@ -505,18 +503,18 @@ describe('createUiLayoutEcsSystem', () => {
     addSpriteComponent(world, panel, {
       width: 1,
       height: 1,
-      renderable: buildRenderable(),
+      texture: buildTexture(),
     });
 
     const label = world.createEntity();
 
     addPositionComponent(world, label);
-    addParentComponent(world, label, { parent: panel });
+    world.setParent(label, panel);
     addRectTransformComponent(world, label, UiAnchor.stretchAll());
     addSpriteComponent(world, label, {
       width: 1,
       height: 1,
-      renderable: buildRenderable(),
+      texture: buildTexture(),
     });
 
     world.addSystem(createUiLayoutEcsSystem(renderContext));
@@ -538,6 +536,31 @@ describe('createUiLayoutEcsSystem', () => {
     expect(world.getComponent(label, rectTransformId)!.sortDepth).toBe(2);
   });
 
+  it("writes a MaskEcsComponent's width/height/pivot from the element's rect", () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const { canvas } = createTestCanvas(world);
+    const panel = world.createEntity();
+
+    addPositionComponent(world, panel);
+    world.setParent(panel, canvas);
+    addRectTransformComponent(
+      world,
+      panel,
+      UiAnchor.topLeft({ x: 300, y: 150 }),
+    );
+    addMaskComponent(world, panel, { width: 1, height: 1 });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    const mask = world.getComponent(panel, maskId)!;
+
+    expect(mask.width).toBe(300);
+    expect(mask.height).toBe(150);
+    expect(mask.pivot).toEqual({ x: 0, y: 1 });
+  });
+
   it('writes RectTransformEcsComponent.sortDepth even for elements with no sprite or text', () => {
     const world = new EcsWorld();
     const renderContext = buildRenderContext(1920, 1080);
@@ -546,7 +569,7 @@ describe('createUiLayoutEcsSystem', () => {
     const hitRegion = world.createEntity();
 
     addPositionComponent(world, hitRegion);
-    addParentComponent(world, hitRegion, { parent: canvas });
+    world.setParent(hitRegion, canvas);
     addRectTransformComponent(world, hitRegion, UiAnchor.stretchAll());
 
     world.addSystem(createUiLayoutEcsSystem(renderContext));
@@ -566,7 +589,7 @@ describe('createUiLayoutEcsSystem', () => {
     const panel = world.createEntity();
 
     addPositionComponent(world, panel);
-    addParentComponent(world, panel, { parent: canvas });
+    world.setParent(panel, canvas);
     addRectTransformComponent(
       world,
       panel,
@@ -575,13 +598,13 @@ describe('createUiLayoutEcsSystem', () => {
     addSpriteComponent(world, panel, {
       width: 1,
       height: 1,
-      renderable: buildRenderable(),
+      texture: buildTexture(),
     });
 
     const label = world.createEntity();
 
     addPositionComponent(world, label);
-    addParentComponent(world, label, { parent: panel });
+    world.setParent(label, panel);
     addRectTransformComponent(world, label, UiAnchor.center());
     addTextComponent(world, label, {
       text: 'Title',
@@ -606,7 +629,7 @@ describe('createUiLayoutEcsSystem', () => {
     const topBar = world.createEntity();
 
     addPositionComponent(world, topBar);
-    addParentComponent(world, topBar, { parent: canvas });
+    world.setParent(topBar, canvas);
     addRectTransformComponent(
       world,
       topBar,
@@ -616,7 +639,7 @@ describe('createUiLayoutEcsSystem', () => {
     const stretchedLabel = world.createEntity();
 
     addPositionComponent(world, stretchedLabel);
-    addParentComponent(world, stretchedLabel, { parent: topBar });
+    world.setParent(stretchedLabel, topBar);
     addRectTransformComponent(
       world,
       stretchedLabel,
@@ -631,7 +654,7 @@ describe('createUiLayoutEcsSystem', () => {
     const pointLabel = world.createEntity();
 
     addPositionComponent(world, pointLabel);
-    addParentComponent(world, pointLabel, { parent: topBar });
+    world.setParent(pointLabel, topBar);
     addRectTransformComponent(world, pointLabel, UiAnchor.center());
     addTextComponent(world, pointLabel, {
       text: 'Title',
@@ -657,7 +680,7 @@ describe('createUiLayoutEcsSystem', () => {
     const centerPivotLabel = world.createEntity();
 
     addPositionComponent(world, centerPivotLabel);
-    addParentComponent(world, centerPivotLabel, { parent: canvas });
+    world.setParent(centerPivotLabel, canvas);
     addRectTransformComponent(world, centerPivotLabel, UiAnchor.stretchAll());
     addTextComponent(world, centerPivotLabel, {
       text: 'Title',
@@ -668,7 +691,7 @@ describe('createUiLayoutEcsSystem', () => {
     const leftPivotLabel = world.createEntity();
 
     addPositionComponent(world, leftPivotLabel);
-    addParentComponent(world, leftPivotLabel, { parent: canvas });
+    world.setParent(leftPivotLabel, canvas);
     addRectTransformComponent(
       world,
       leftPivotLabel,
@@ -683,7 +706,7 @@ describe('createUiLayoutEcsSystem', () => {
     const pointLabel = world.createEntity();
 
     addPositionComponent(world, pointLabel);
-    addParentComponent(world, pointLabel, { parent: canvas });
+    world.setParent(pointLabel, canvas);
     addRectTransformComponent(world, pointLabel, UiAnchor.center());
     addTextComponent(world, pointLabel, {
       text: 'Title',
@@ -715,7 +738,7 @@ describe('createUiLayoutEcsSystem', () => {
     const panel = world.createEntity();
 
     addPositionComponent(world, panel);
-    addParentComponent(world, panel, { parent: canvas });
+    world.setParent(panel, canvas);
     addRectTransformComponent(
       world,
       panel,
@@ -725,7 +748,7 @@ describe('createUiLayoutEcsSystem', () => {
     const label = world.createEntity();
 
     addPositionComponent(world, label);
-    addParentComponent(world, label, { parent: panel });
+    world.setParent(label, panel);
     addRectTransformComponent(world, label, UiAnchor.center({ x: 40, y: 20 }));
 
     world.addSystem(createUiLayoutEcsSystem(renderContext));

@@ -1,54 +1,53 @@
 /**
- * Decoded audio, ready to play any number of times, on any number of buses
- * at once. Load one with a {@link SoundAssetCache}, or build one from
- * samples with {@link createSoundAsset}.
+ * Decoded audio, ready to play any number of times, on any bus, at once.
+ * Load sounds from files with a `SoundAssetCache`, or make one from samples
+ * with {@link createSoundAsset}.
  */
 export interface SoundAsset {
   /** The decoded samples. */
   readonly buffer: AudioBuffer;
 
-  /** The sound's length, in seconds, at a playback rate of `1`. */
+  /** How long the sound lasts at a playback rate of 1, in seconds. */
   readonly durationSeconds: number;
 }
 
 /**
- * Samples to build a {@link SoundAsset} from.
+ * Samples to make a {@link SoundAsset} from.
  */
-export interface SoundSamples {
+export interface SoundAssetSamples {
   /** Samples per second, e.g. `44100`. */
   sampleRate: number;
 
   /**
    * One array of samples per channel (one for mono, two for stereo), each
-   * value in `[-1, 1]`. Every channel must have the same length.
+   * in the range -1 to 1, and all the same length.
    */
-  channels: readonly Float32Array[];
+  channels: readonly Float32Array<ArrayBuffer>[];
 }
 
 /**
- * Creates a sound from samples, for audio synthesized or generated at
- * runtime. No file, decoding or `AudioContext` is involved.
+ * Makes a {@link SoundAsset} from samples, for sounds synthesized or
+ * generated at runtime.
  * @param samples - The sample rate and the samples of each channel.
- * @returns The sound asset.
- * @throws An error if there are no channels, a channel is empty, or the
- * channels differ in length.
+ * @returns The sound.
+ * @throws If there are no channels, the channels are empty, or they differ in length.
  */
-export function createSoundAsset(samples: SoundSamples): SoundAsset {
+export function createSoundAsset(samples: SoundAssetSamples): SoundAsset {
   const { sampleRate, channels } = samples;
 
   if (channels.length === 0) {
-    throw new Error('Unable to create a sound asset with no channels.');
+    throw new Error('Unable to create a sound asset without any channels.');
   }
 
-  const length = channels[0].length;
+  const { length } = channels[0];
 
   if (length === 0) {
-    throw new Error('Unable to create a sound asset with no samples.');
+    throw new Error('Unable to create a sound asset from empty channels.');
   }
 
   if (channels.some((channel) => channel.length !== length)) {
     throw new Error(
-      'Unable to create a sound asset, its channels have different lengths.',
+      'Unable to create a sound asset: every channel must have the same number of samples.',
     );
   }
 
@@ -59,10 +58,7 @@ export function createSoundAsset(samples: SoundSamples): SoundAsset {
   });
 
   channels.forEach((channel, index) => {
-    // Copied through a fresh array: `copyToChannel` requires an
-    // ArrayBuffer-backed array, and a caller's samples may be backed by a
-    // SharedArrayBuffer.
-    buffer.copyToChannel(new Float32Array(channel), index);
+    buffer.copyToChannel(channel, index);
   });
 
   return { buffer, durationSeconds: buffer.duration };

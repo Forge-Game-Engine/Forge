@@ -1,4 +1,5 @@
 import { Matrix3x3, Vec2 } from '../../math/index.js';
+import { Texture } from '../texture.js';
 import type {
   SamplerUniformType,
   UniformArrayUpload,
@@ -129,23 +130,71 @@ const createSamplerUpload = (
   uniformType: SamplerUniformType,
   value: UniformValue,
 ): UniformUpload => {
-  if (declaration.size > 1) {
-    throw new Error(
-      `Uniform "${declaration.name}" is declared as ${describeDeclaration(declaration, uniformType)}, but Material does not support sampler arrays. Declare one sampler uniform per texture instead.`,
-    );
-  }
-
-  if (!(value instanceof WebGLTexture)) {
+  if (!(value instanceof Texture)) {
     throw createMismatchError(declaration, uniformType, value);
   }
 
-  return (gl, location, textureUnit) => {
+  return createTextureUpload(value);
+};
+
+/**
+ * Builds an upload that binds `texture` to the next free texture unit and
+ * points a `sampler2D` uniform at it.
+ * @param texture - The texture to bind.
+ * @returns The upload.
+ */
+export const createTextureUpload =
+  (texture: Texture): UniformUpload =>
+  (gl, location, textureUnit) => {
     gl.activeTexture(gl.TEXTURE0 + textureUnit);
-    gl.bindTexture(uniformType.textureTarget(gl), value);
+    gl.bindTexture(gl.TEXTURE_2D, texture.glTexture);
     gl.uniform1i(location, textureUnit);
 
     return textureUnit + 1;
   };
+
+/**
+ * Builds the upload for a uniform a material hasn't set: zero for numbers,
+ * vectors and matrices, and `blackTexture` for a `sampler2D`. Every uniform
+ * of a shared program gets a value on every bind, so one material never
+ * draws with a value another material set.
+ * @param declaration - The uniform to upload to.
+ * @param blackTexture - The texture an unset sampler samples.
+ * @returns The upload, or `null` for a uniform whose type can't be
+ * uploaded.
+ */
+export const createDefaultUniformUpload = (
+  declaration: UniformDeclaration,
+  blackTexture: () => Texture,
+): UniformUpload | null => {
+  const { uniformType, size } = declaration;
+
+  if (uniformType === null) {
+    return null;
+  }
+
+  if (uniformType.kind === 'sampler') {
+    return (gl, location, textureUnit) =>
+      createTextureUpload(blackTexture())(gl, location, textureUnit);
+  }
+
+  const length = uniformType.componentCount * size;
+
+  if (uniformType.kind === 'float') {
+    const zeros = new Float32Array(length);
+
+    return createTypedArrayUpload(uniformType.upload, () => zeros);
+  }
+
+  if (uniformType.kind === 'uint') {
+    const zeros = new Uint32Array(length);
+
+    return createTypedArrayUpload(uniformType.upload, () => zeros);
+  }
+
+  const zeros = new Int32Array(length);
+
+  return createTypedArrayUpload(uniformType.upload, () => zeros);
 };
 
 const createArrayUpload = (
@@ -250,7 +299,7 @@ const describeExpectedValue = (
   uniformType: UniformType,
 ): string => {
   if (uniformType.kind === 'sampler') {
-    return 'a WebGLTexture';
+    return 'a Texture';
   }
 
   const { kind, componentCount } = uniformType;
@@ -326,5 +375,5 @@ const describeValue = (value: UniformValue): string => {
     return 'a Vector2';
   }
 
-  return 'a WebGLTexture';
+  return value instanceof Texture ? 'a Texture' : 'an unsupported value';
 };

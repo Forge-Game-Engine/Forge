@@ -1,18 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSoundAsset } from './sound-asset.js';
-
-class FakeAudioBuffer {
-  public readonly duration: number;
-  public readonly copied: Float32Array[] = [];
-
-  constructor(public readonly options: AudioBufferOptions) {
-    this.duration = options.length / options.sampleRate;
-  }
-
-  public copyToChannel(source: Float32Array, channel: number): void {
-    this.copied[channel] = source;
-  }
-}
+import { FakeAudioBuffer } from './test-helpers/fake-audio-context.js';
 
 describe('createSoundAsset', () => {
   beforeEach(() => {
@@ -23,32 +11,37 @@ describe('createSoundAsset', () => {
     vi.unstubAllGlobals();
   });
 
-  it('builds a buffer from each channel', () => {
+  it('copies each channel into a buffer', () => {
     const left = new Float32Array([0, 0.5, -0.5, 1]);
-    const right = new Float32Array([1, -1, 0, 0]);
+    const right = new Float32Array([1, -1, 0.25, 0]);
 
     const sound = createSoundAsset({ sampleRate: 4, channels: [left, right] });
     const buffer = sound.buffer as unknown as FakeAudioBuffer;
 
-    expect(buffer.options).toEqual({
-      length: 4,
-      numberOfChannels: 2,
-      sampleRate: 4,
-    });
-    expect(buffer.copied).toEqual([left, right]);
+    expect(buffer.sampleRate).toBe(4);
+    expect(buffer.numberOfChannels).toBe(2);
+    expect(buffer.channels).toEqual([left, right]);
     expect(sound.durationSeconds).toBe(1);
   });
 
-  it('throws for no channels, no samples or uneven channels', () => {
-    expect(() => createSoundAsset({ sampleRate: 4, channels: [] })).toThrow();
+  it('throws without channels', () => {
+    expect(() => createSoundAsset({ sampleRate: 44100, channels: [] })).toThrow(
+      /without any channels/,
+    );
+  });
+
+  it('throws for empty channels', () => {
     expect(() =>
-      createSoundAsset({ sampleRate: 4, channels: [new Float32Array(0)] }),
-    ).toThrow();
+      createSoundAsset({ sampleRate: 44100, channels: [new Float32Array(0)] }),
+    ).toThrow(/empty channels/);
+  });
+
+  it('throws when the channels differ in length', () => {
     expect(() =>
       createSoundAsset({
-        sampleRate: 4,
-        channels: [new Float32Array(2), new Float32Array(3)],
+        sampleRate: 44100,
+        channels: [new Float32Array(3), new Float32Array(4)],
       }),
-    ).toThrow();
+    ).toThrow(/same number of samples/);
   });
 });

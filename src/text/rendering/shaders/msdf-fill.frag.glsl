@@ -13,6 +13,8 @@ in vec4 v_tint;
 in float v_embolden;
 out vec4 fragColor;
 
+#pragma forge include(spriteMask)
+
 float median(float r, float g, float b) {
   return max(min(r, g), min(max(r, g), b));
 }
@@ -53,5 +55,5 @@ void main() {
   float emboldenPx = min(v_embolden * screenPxRange, atlasSafeDistance);
 
   float glyphAlpha = clamp(screenPxDistance + emboldenPx + 0.5, 0.0, 1.0);
-  fragColor = vec4(v_tint.rgb, v_tint.a * glyphAlpha);
+  fragColor = vec4(v_tint.rgb, v_tint.a * glyphAlpha * spriteMaskCoverage());
 }

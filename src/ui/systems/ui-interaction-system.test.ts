@@ -3,10 +3,7 @@ import { createUiInteractionEcsSystem } from './ui-interaction-system.js';
 import { createUiLayoutEcsSystem } from './ui-layout-system.js';
 import { createUiNavigationEcsSystem } from './ui-navigation-system.js';
 import { createUiRaycastEcsSystem } from './ui-raycast-system.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   MouseButton,
@@ -74,7 +71,7 @@ const createInteractablePanel = (
   const entity = world.createEntity();
 
   addPositionComponent(world, entity);
-  addParentComponent(world, entity, { parent });
+  world.setParent(entity, parent);
   addRectTransformComponent(world, entity, UiAnchor.center(size));
   addUiInteractableComponent(world, entity, overrides);
 
@@ -279,7 +276,7 @@ describe('createUiInteractionEcsSystem', () => {
     const otherElement = world.createEntity();
 
     addPositionComponent(world, otherElement);
-    addParentComponent(world, otherElement, { parent: canvas });
+    world.setParent(otherElement, canvas);
     addRectTransformComponent(
       world,
       otherElement,

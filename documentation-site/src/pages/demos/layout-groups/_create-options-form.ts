@@ -1,11 +1,9 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '@forge-game-engine/forge/common';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   Color,
   createImageSprite,
+  createTexture,
   RenderContext,
   SpriteEcsComponent,
 } from '@forge-game-engine/forge/rendering';
@@ -62,10 +60,12 @@ async function loadControlSprites(
       getAssetUrl(assetPath),
     );
 
-    return createImageSprite(image, renderContext, {
-      pixelsPerUnit: 1,
-      layer: uiCategory,
-    });
+    return {
+      ...createImageSprite(createTexture(renderContext, image), {
+        pixelsPerUnit: 1,
+      }),
+      category: uiCategory,
+    };
   };
 
   return {
@@ -113,7 +113,7 @@ export async function createOptionsForm(
   const group = world.createEntity();
 
   addPositionComponent(world, group);
-  addParentComponent(world, group, { parent: canvas });
+  world.setParent(group, canvas);
   addRectTransformComponent(world, group, {
     ...UiAnchor.bottomRight({
       x: width,

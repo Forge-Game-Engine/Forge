@@ -35,7 +35,7 @@ and each needs review before it's implemented.
 | #   | Design                                                            | Kind               | What the demo works around                                                                                           | Cause in Forge                                                                                                |
 | --- | ----------------------------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | 1   | [Shader uniform declarations](./shader-uniform-declarations.md)   | Defect             | Keeps uniforms alive with `highp` so `setUniform` doesn't throw on mobile                                            | Materials only know the uniforms the driver kept                                                              |
-| 2   | [Sound mixer](./audio-mixer.md)                                   | Feature            | Its own mixer, buses, one-shots on entities with guessed lifetimes, synthesized WAVs as data URLs, a Howl per system | No buses, volumes, one-shots or procedural sounds; removal doesn't stop sounds; no completion report          |
+| 2   | Sound mixer (implemented)                                         | Feature            | Its own mixer, buses, one-shots on entities with guessed lifetimes, synthesized WAVs as data URLs, a Howl per system | No buses, volumes, one-shots or procedural sounds; removal doesn't stop sounds; no completion report          |
 | 3   | [Text input field](./text-input-field.md)                         | Feature            | Its own text field on a hidden DOM input, keys swallowed while typing                                                | No text field; the keyboard source reads keys typed into inputs                                               |
 | 4   | Generational entity ids (implemented)                             | Defect             | "Id can be reused" checks, `removed`/`usedBullets` sets                                                              | Ids reused immediately with no generation; double removal; removing the last component removes the entity     |
 | 5   | [Hierarchy removal](./hierarchy-removal.md)                       | Defect             | Orphaned flame cleanup; `removeWithHealthBar`, `removePowerUp`                                                       | Removing a parent leaves its children; no children index                                                      |
@@ -165,8 +165,8 @@ Some of the demo's workarounds guard against behavior Forge doesn't have
   already a new object. (Its nested vectors are still shared; that part is
   in [sprite textures](./sprite-textures.md).)
 - **The explosion sound on its own entity**, so it outlives the
-  explosion. Removing an entity never stopped its sound; the real problem
-  is in the [sound mixer](./audio-mixer.md) design.
+  explosion. Removing an entity never stopped its sound; the sound mixer
+  (implemented) fixed that.
 
 ---
 

@@ -17,6 +17,7 @@ function buildComponents(sprite: SpriteEcsComponent): InstanceComponents {
     scale: null,
     sprite,
     flip: null,
+    mask: null,
   };
 }
 
@@ -36,7 +37,10 @@ describe('spriteInstanceDataSegment.bindInstanceData', () => {
         uvScale: { x: 1, y: 1 },
         enabled: true,
         layer: 0,
-        renderable: undefined as never,
+        texture: undefined as never,
+        emissive: null,
+        material: null,
+        category: 1,
       }),
       buffer,
       0,
@@ -61,7 +65,10 @@ describe('spriteInstanceDataSegment.bindInstanceData', () => {
         uvScale: { x: 1, y: 1 },
         enabled: true,
         layer: 0,
-        renderable: undefined as never,
+        texture: undefined as never,
+        emissive: null,
+        material: null,
+        category: 1,
       }),
       buffer,
       0,
@@ -83,7 +90,10 @@ describe('computeSpriteInstanceBounds', () => {
     uvScale: { x: 1, y: 1 },
     enabled: true,
     layer: 0,
-    renderable: undefined as never,
+    texture: undefined as never,
+    emissive: null,
+    material: null,
+    category: 1,
     ...overrides,
   });
 
@@ -97,7 +107,7 @@ describe('computeSpriteInstanceBounds', () => {
 
     spriteInstanceDataSegment.bindInstanceData(components, data, 0);
 
-    const [x, y, rotation, scaleX, scaleY, width, height, pivotX, pivotY] =
+    const [x, y, scaleX, scaleY, rotation, width, height, pivotX, pivotY] =
       data;
     const pivot = { x: (pivotX - 0.5) * 2, y: -(pivotY - 0.5) * 2 };
     const corners = [
@@ -192,6 +202,7 @@ describe('computeSpriteInstanceBounds', () => {
         scale: { local: scale, world: scale },
         sprite: buildSprite({ pivot: { x: 0.2, y: 0.9 } }),
         flip: null,
+        mask: null,
       };
 
       expectRectCloseTo(
@@ -208,6 +219,7 @@ describe('computeSpriteInstanceBounds', () => {
       scale: null,
       sprite: buildSprite({ pivot: { x: 0, y: 1 } }),
       flip: { flipX: true, flipY: true },
+      mask: null,
     };
 
     expectRectCloseTo(
