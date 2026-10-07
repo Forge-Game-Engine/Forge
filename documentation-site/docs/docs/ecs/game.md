@@ -4,123 +4,107 @@ sidebar_position: 1
 
 # Game
 
-A `Game` instance manages the game loop: a `Time` instance and one or more
-`EcsWorld`s, driven by `requestAnimationFrame`. Use `Game` when you want a
-continuous frame-driven update for systems that should run each frame.
+[`Game`](/Forge/docs/api/classes/Game) runs the game loop. Every animation
+frame (`requestAnimationFrame`), it updates its [`Time`](../common/time.md)
+and calls `update()` on each of its [worlds](world.md), so their systems run
+once per frame. It doesn't render or resize anything itself.
 
-`Game` is a simple loop orchestrator - it has no notion of rendering or
-resizing, and doesn't depend on `RenderContext` at all. It takes an array of
-worlds rather than a single one, so a single game can drive more than one,
-e.g. a gameplay world alongside a separate UI overlay world.
+## Creating a game
 
-Why use `Game` instead of only an `EcsWorld`?
-
-- `EcsWorld` is solely a container for entities, components, and systems. It exposes `update()` which runs registered systems for a single tick.
-- `Game` wraps a `Time` and one or more worlds, calling `update()` on each of them every animation frame, and handles starting and stopping the loop.
-- For tests, server-side logic, or single-step updates you can call `world.update()` directly without a `Game` instance.
-
-`Game` also exposes `container`: the HTML element associated with the game
-(e.g. the one containing its canvas), for consumers that need a DOM anchor -
-an input source, an overlay element appended alongside the canvas, etc.
-`Game` itself does nothing with it.
-
-## Resizing
-
-Keeping a canvas sized to its container isn't `Game`'s job - it's a separate,
-optional concern handled by
-[`createContainerResizeSync`](/Forge/docs/api/functions/createContainerResizeSync),
-which `createGame` wires up automatically for the `RenderContext` it creates.
-
-`createContainerResizeSync(container, resizables)` watches `container` with a
-`ResizeObserver` and calls `resize()` on every resizable (typically a
-`RenderContext`) whenever the container's size changes. It also watches the
-display's `devicePixelRatio` (via a `matchMedia('(resolution: …dppx)')`
-query) and resizes again whenever that changes - browser zoom, or dragging
-the window onto a monitor with a different scale factor - even when the
-container's CSS size stays the same, so the canvas keeps rendering at the
-display's native resolution (see
-[High-DPI displays](../rendering/world-units-and-cameras.md#high-dpi-displays)).
-This means a
-game embedded in a resizable page - or one whose container changes size for
-any other reason, like a fullscreen toggle - stays correctly sized without
-you writing your own resize handling, and without restarting the game (which
-would reset all engine and game state). Since the camera's projection matrix
-and the UI layout system already read `RenderContext.width`/`height` fresh
-every frame, both follow the resize automatically.
-
-Watching starts immediately when `createContainerResizeSync` is called, and
-runs independently of whether the `Game` it's paired with is running or even
-exists - it's plain DOM observation, nothing more. Call the returned
-`stop()` to disconnect it early, e.g. when switching to a headless mode with
-no canvas left to keep sized. It's safe to never call `stop()` at all if
-`container` is simply removed from the DOM: browsers silently drop a
-`ResizeObserver`'s registration for a target once nothing else references
-it, so it won't keep the container alive.
-
-The actual resize happens on the next animation frame after the
-`ResizeObserver` notification, not synchronously inside its callback:
-resizing the canvas is itself a layout-affecting DOM mutation, and doing
-that directly in response to a resize notification is what triggers the
-browser's `ResizeObserver loop completed with undelivered notifications`
-error. This adds at most one frame of latency before the canvas catches up,
-which isn't visible in practice.
-
-This only resizes the canvas and the default framebuffer's viewport. Two
-things it does *not* do for you, since the engine has no way to know they're
-meant to track the canvas:
-
-- A camera's own [`RenderTarget`](/Forge/docs/api/classes/RenderTarget) (used
-  for multi-pass effects like bloom or blur) is a fixed-size texture that
-  stays exactly as it was created - see the caution in
-  [Multipass Rendering](../rendering/multipass-rendering.md) for how to keep
-  one in sync.
-- Anything you sized once from a camera's view (`getCameraView(...).size`)
-  or `RenderContext.width`/`height` at startup (a background quad meant to
-  always fill the camera's view, a shader uniform driven by the canvas
-  resolution) needs to be
-  recomputed by your own system each time those dimensions change, the same
-  way `createUiLayoutEcsSystem` already does for UI.
-
-:::tip
-Use the [`createGame`](/Forge/docs/api/functions/createGame) helper for quick setup.
-:::
-
-Using the helper:
+[`createGame`](/Forge/docs/api/functions/createGame) creates a `Game` with
+one `EcsWorld`, a `Time`, a canvas appended to the element with the given
+id, a [`RenderContext`](/Forge/docs/api/classes/RenderContext) for that
+canvas, and a resize sync that keeps the canvas sized to the element:
 
 ```ts
-import { createGame } from '@forge-game-engine/forge/utilities/create-game';
+import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { game, world, time, renderContext, resizeSync } = createGame('game');
-
-// add systems, load assets, etc.
-
-game.run();
 ```
 
-`createGame` takes an optional second argument. Its `renderContext` field is
-forwarded to [`createRenderContext`](/Forge/docs/api/functions/createRenderContext),
-so you can, for example, cap the render resolution on high-DPI displays (see
-[High-DPI displays](../rendering/world-units-and-cameras.md#high-dpi-displays)):
+It throws if no element has the given id.
+
+### Creating a game manually
+
+The `Game` constructor takes a `Time`, an array of worlds and the HTML
+element the game belongs to, and creates no canvas or render context:
 
 ```ts
-const { game, renderContext } = createGame('game', {
-  renderContext: { maxPixelRatio: 1.5 },
-});
-```
+import { Time } from '@forge-game-engine/forge/common';
+import { EcsWorld } from '@forge-game-engine/forge/ecs';
+import { Game } from '@forge-game-engine/forge/utilities';
 
-Manual setup (when you need fine-grained control):
+const container = document.getElementById('game');
 
-```ts
-import { Time } from '@forge-game-engine/forge/common/time';
-import { Game } from '@forge-game-engine/forge/utilities/game';
-import { EcsWorld } from '@forge-game-engine/forge/ecs/ecs-world';
+if (!container) {
+  throw new Error('No element with id "game".');
+}
 
 const time = new Time();
-const world = new EcsWorld();
-const container = document.getElementById('game') as HTMLElement;
+const gameplayWorld = new EcsWorld();
+const uiWorld = new EcsWorld();
 
-const game = new Game(time, [world], container);
+const game = new Game(time, [gameplayWorld, uiWorld], container);
+```
 
-// add systems, load assets, etc.
+Each frame, the worlds are updated in array order. `game.container` is the
+element passed in, for code that needs a DOM element for the game, such as
+an input source or an overlay. `Game` doesn't use it.
+
+## Running the game
+
+`run()` starts the loop:
+
+```ts
 game.run();
 ```
+
+Each frame, `Time` is updated with `performance.now()`, then each world's
+`update()` runs. The first frame's delta time is measured from the
+`run()` call. Calling `run()` while the game is running does nothing.
+
+Without a `Game`, call `world.update()` directly to run one tick, for
+example in a unit test.
+
+## Keeping the canvas sized to its container {#resizing}
+
+[`createContainerResizeSync`](/Forge/docs/api/functions/createContainerResizeSync)
+calls `resize()` on each of its resizables (such as a `RenderContext`)
+whenever the container's size or the display's `devicePixelRatio` changes.
+`createGame` creates one for its `RenderContext`. With a manually created
+`Game`, create it yourself:
+
+```ts
+import { createContainerResizeSync } from '@forge-game-engine/forge/utilities';
+
+const resizeSync = createContainerResizeSync(container, [renderContext]);
+```
+
+The resize happens on the animation frame after the change. Resizing the
+`RenderContext` resizes its canvas, its viewport and the render targets
+created with the `'canvas'` size (see
+[Multipass Rendering](../rendering/multipass-rendering.md) and
+[High-DPI displays](../rendering/world-units-and-cameras.md#high-dpi-displays)).
+Camera projections and UI layout read the render context's size every
+frame, so they follow the resize.
+
+:::caution
+A value computed once from `RenderContext.width`/`height` or a camera's
+view, such as a quad sized to fill the view or a shader uniform set to
+the canvas resolution, isn't updated by a resize. Compute it in a system
+that runs every frame instead.
+:::
+
+## Stopping the game
+
+`stop()` cancels the next frame and calls `stop()` on each world, which
+runs every registered system's `cleanup` (see
+[Releasing resources](system.md#acquiring-and-releasing-resources)):
+
+```ts
+game.stop();
+resizeSync.stop();
+```
+
+`resizeSync.stop()` stops watching the container. The resize sync runs
+independently of the `Game`, so stopping the game doesn't stop it.

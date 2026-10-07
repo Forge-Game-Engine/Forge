@@ -4,80 +4,85 @@ sidebar_position: 4
 
 # Components
 
-A component is a plain data container (no logic) used to store state for
-entities. Components are stored by `EcsWorld` and associated with entity ids,
-components are not attached to entity objects.
+A component is plain data (no logic) that stores state for an entity.
+`EcsWorld` stores components by component key and entity handle; an entity
+doesn't hold its components.
 
-There are two kinds of components:
+## Component types
 
-- Standard components: typed objects that hold data.
-- Tags: boolean markers with no payload, used to distinguish entities.
+- Data components: typed objects, stored under a key created with
+  [`createComponentId`](/Forge/docs/api/functions/createComponentId).
+- Tags: markers with no data, stored under a key created with
+  [`createTagId`](/Forge/docs/api/functions/createTagId).
 
-## Standard components
+## Defining a component
 
-Standard components should be small and represent a single concept of state.
-Define a TypeScript interface for the shape of the component, then create a
-component id (key) that you use with the world APIs.
-
-Example:
+Define a TypeScript interface for the component's data, then create its key
+with `createComponentId`. The name passed to it is used in error messages.
 
 ```ts
-import { createComponentId, type Color } from '@forge-game-engine/forge/ecs';
+import { createComponentId } from '@forge-game-engine/forge/ecs';
 
-interface FireComponent {
-  temperature: number;
-  color: Color;
+interface VelocityEcsComponent {
+  x: number;
+  y: number;
 }
 
-const Fire = createComponentId<FireComponent>('fire');
+const velocityId = createComponentId<VelocityEcsComponent>('velocity');
 ```
 
-Add and read components via the world API:
+The key's type parameter types the data passed to and returned from the
+world's component methods for that key.
+
+Engine components come with an `add<Name>Component` function that builds
+the component from options and adds it to an entity, for example
+`addPositionComponent(world, entity, options)`.
+
+## Adding and reading a component
+
+`world.addComponent` attaches the data to an entity, and
+`world.getComponent` returns it, or `null` if the entity doesn't have it:
 
 ```ts
-world.addComponent(entity, Fire, { temperature: 100, color: Color.Red });
+world.addComponent(entity, velocityId, { x: 1, y: 0 });
 
-const fire = world.getComponent(entity, Fire);
+const velocity = world.getComponent(entity, velocityId);
 
-if (fire) {
-  fire.temperature += 10; // components are plain mutable data
-}
-```
-
-Keep components focused: prefer several small components over one large,
-monolithic component.
-
-### Reading the same component for many entities
-
-`getComponent` re-resolves `Fire`'s storage on every call, which is fine for
-a one-off lookup like the example above. A system that needs the same
-component for many entities in a loop - typically an optional one it can't
-add to its own `query`, since `query` excludes any entity missing a listed
-component - should resolve it once instead with `getComponentAccessor`:
-
-```ts
-const getFire = world.getComponentAccessor(Fire);
-
-for (const entity of entities) {
-  const fire = getFire(entity); // no per-call storage lookup
+if (velocity) {
+  velocity.x += 1;
 }
 ```
 
-See the System doc's ["Looking up optional components in a
-loop"](./system.md#looking-up-optional-components-in-a-loop) section for the
-full pattern and its semantics.
+Components are mutable objects: changing a field of the returned object
+changes the stored component. `world.getComponentRequired` returns the
+component or throws if the entity doesn't have it.
+
+A system reads the components of every matching entity through its
+`query` (see [System](system.md)). To read a component that only some of a
+system's entities have, see
+[Looking up optional components in a loop](system.md#looking-up-optional-components-in-a-loop).
 
 ## Tags
 
-Tags are marker components with no payload. Use them when you need to
-differentiate entities without adding data.
+A tag marks an entity without adding data:
 
 ```ts
 import { createTagId } from '@forge-game-engine/forge/ecs';
 
-const ai = createTagId('ai');
-world.addTag(enemyEntity, ai);
+const selectedTag = createTagId('selected');
+
+world.addTag(entity, selectedTag);
 ```
 
-Tags are commonly used in queries to select entities that should be processed
-by a particular system (for example, `AI` vs `player` entities).
+A system's `tags` limit it to entities that have every listed tag (see
+[System](system.md)).
+
+## Removing a component
+
+`world.removeComponent` removes a component or a tag from an entity. The
+entity stays alive (see [World](world.md#removing-a-component-from-the-entity)):
+
+```ts
+world.removeComponent(entity, velocityId);
+world.removeComponent(entity, selectedTag);
+```

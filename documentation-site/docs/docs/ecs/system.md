@@ -4,13 +4,25 @@ sidebar_position: 5
 
 # System
 
-A system is a plain object that declares a `query` (an array of component keys), an optional set of `tags`, and an `update` method. `update` is called once per tick with every entity currently matching `query` (and `tags`), batched together: an `entities` array of matched entity ids, and a `components` array holding one array per queried component type (in query order), so `components[0][i]` is the component at `query[0]` for `entities[i]`.
+A system is a plain object that implements
+[`EcsSystem`](/Forge/docs/api/interfaces/EcsSystem): a `query` (an array of
+component keys), optional `tags`, and an `update` function. Each tick, the
+world calls `update` once with every entity that has all of the `query`
+components and all of the `tags`.
 
-Example:
+## Defining a system
+
+`update(world, queryResult)` receives the tick's matches in one batch:
+`queryResult.entities` holds the matched entity handles, and
+`queryResult.components` holds one array per key in `query`, in `query`
+order, so `components[0][i]` is the `query[0]` component of `entities[i]`.
 
 ```ts
-const movementSystem = {
-  query: [Position, Velocity] as const,
+import { EcsSystem } from '@forge-game-engine/forge/ecs';
+
+const movementSystem: EcsSystem<[Position, Velocity]> = {
+  name: 'movement',
+  query: [positionId, velocityId],
   update(world, { entities, components: [positions, velocities] }) {
     for (let i = 0; i < entities.length; i++) {
       positions[i].x += velocities[i].x;
@@ -18,62 +30,53 @@ const movementSystem = {
     }
   },
 };
+```
 
+`update` is called once per tick whether zero, one or many entities match,
+so work that runs once per tick, or that needs every match at once (sorting,
+spatial partitioning, batching), goes directly in `update`. `name` is
+optional and identifies the system in error messages.
+
+## Registering a system
+
+`world.addSystem` registers a system, and every later `world.update()`
+runs it:
+
+```ts
 world.addSystem(movementSystem);
 ```
 
-## Batching, not per-entity dispatch
-
-Unlike some ECS designs, `update` is a single call per tick, not one call per matched entity - the system is responsible for iterating `entities`/`components` itself. This makes cross-entity work (spatial partitioning, sorting, batching draw calls, or anything else that needs to see the whole tick's matches together) straightforward, since there's no separate "preprocess" or "postprocess" hook to reach for: it all happens in the body of `update`.
-
-For example, the render system gathers every camera's sprite commands and computes its projection matrix in the same `update` call that ultimately issues that camera's draw calls, once all of the tick's cameras are known:
-
-```ts
-const system: EcsSystem<[Camera]> = {
-  query: [Camera],
-  update(world, { components: [cameras] }) {
-    for (const camera of cameras) {
-      // ...compute this camera's pass and issue its draw calls...
-    }
-  },
-};
-```
-
-If a system needs to run some logic exactly once per tick regardless of how many entities match (or even when nothing matches), just do that work directly in `update` rather than per matched entity - `update` already runs exactly once per tick, whether `entities` has zero, one, or many ids in it.
+[World](world.md#adding-a-system) covers ordering systems with
+`before`/`after`, system groups, and removing a system.
 
 ## Looking up optional components in a loop
 
-`query` only matches entities that have *every* listed component, so a
-component only some matched entities have (for example, a sprite's optional
-rotation) can't just be added to `query` - doing so would silently exclude
-every entity that lacks it. The usual fix is to call `world.getComponent`
-for it inside the loop over `entities`:
+`query` only matches entities that have every listed component, so a
+component that only some of the entities have can't be in `query`. Read it
+with `world.getComponent` inside the loop:
 
 ```ts
 const system: EcsSystem<[Sprite]> = {
-  query: [Sprite],
+  query: [spriteId],
   update(world, { entities, components: [sprites] }) {
     for (let i = 0; i < entities.length; i++) {
-      const rotation = world.getComponent(entities[i], Rotation);
-      // ...use sprites[i] and rotation...
+      const rotation = world.getComponent(entities[i], rotationId);
+      // ...use sprites[i] and rotation, which is null if entities[i] has none...
     }
   },
 };
 ```
 
-This is fine for most systems, but `getComponent` re-resolves `Rotation`'s
-storage on every single call. For a system whose matched entity count runs
-into the tens of thousands or more (draw calls, particles), that per-call
-resolution adds up. `world.getComponentAccessor(componentKey)` resolves the
-storage once and returns a plain `entity => component | null` function,
-which is cheaper to call repeatedly in a tight loop - resolve it once at the
-top of `update`, not per entity:
+`getComponent` looks up the component's storage on every call.
+`world.getComponentAccessor(componentKey)` looks it up once and returns an
+`entity => component | null` function. Call it once at the top of `update`,
+not once per entity:
 
 ```ts
 const system: EcsSystem<[Sprite]> = {
-  query: [Sprite],
+  query: [spriteId],
   update(world, { entities, components: [sprites] }) {
-    const getRotation = world.getComponentAccessor(Rotation);
+    const getRotation = world.getComponentAccessor(rotationId);
 
     for (let i = 0; i < entities.length; i++) {
       const rotation = getRotation(entities[i]);
@@ -82,9 +85,6 @@ const system: EcsSystem<[Sprite]> = {
   },
 };
 ```
-
-`createRenderEcsSystem` uses this for a sprite's optional rotation, scale,
-and flip components.
 
 ## Run conditions
 
@@ -112,51 +112,67 @@ when the system is removed or the world stops, whatever its run condition.
 `inState`, `onEnter` and `onExit` create run conditions from a
 [game state](../states/index.md).
 
-## Atomicity
+## Changing the world from a system
 
-Treat each call to `update(world, queryResult)` as a single, focused update for the tick's batch of matched entities. Systems should perform short, deterministic operations and avoid long-running or blocking work inside `update`.
+`queryResult.entities` and `queryResult.components` are computed before
+`update` is called, so a system can add or remove components and entities
+while it loops over them: the arrays don't change. The changes take effect
+immediately, so later systems in the same tick read them.
 
-`queryResult.entities` and `queryResult.components` are snapshots computed before `update` is called, so it's safe to mutate world state (adding/removing components or entities) while iterating them - the arrays you're looping over won't change out from under you. Mutations still take effect immediately and may be visible to subsequent systems this same tick or on later iterations. Because of this, do not rely on the position a system happens to occupy in your setup code for coordination; when one system's `update` genuinely needs to run before or after another's, declare it explicitly with `addSystem`'s `before`/`after` options (see [World](./world.md#ordering-systems-with-beforeafter)) rather than relying on registration order, and prefer explicit events or deferred work when systems need to coordinate complex state changes.
+Removing an entity also removes its descendants, which can appear later in
+the same arrays. Check `world.isAlive` before acting on an entity in a loop
+that removes entities (see
+[Removing an entity from the world](world.md#removing-an-entity-from-the-world)).
 
-## Releasing resources: cleanup
+When one system must run before or after another, order them with
+`addSystem`'s `before`/`after` options (see
+[Ordering systems](world.md#ordering-systems-with-beforeafter)).
 
-Systems may implement an optional `cleanup(world)` method. It runs once - not per entity - both when the system is removed via `EcsWorld.removeSystem` and when the owning world is stopped via `EcsWorld.stop` (most commonly because a [`Game`](./game.md) was stopped). It's the place to release resources the system itself acquired, resources that a component's own lifecycle doesn't already handle.
+## Acquiring and releasing resources
 
-Since `cleanup` doesn't receive a query result, a system that needs to release a resource per matched entity should track what it acquired itself (for example in a `Map` keyed by entity id) rather than re-querying the world:
+A system can implement two optional hooks:
+
+- `onRegister(world)` runs once, when `world.addSystem` registers the
+  system.
+- `cleanup(world)` runs once, when the system is removed with
+  `world.removeSystem`, and when the world is stopped with `world.stop()`
+  (which [`Game.stop()`](game.md#stopping-the-game) calls).
+
+Use them for resources the system acquires itself, outside of any
+component, such as DOM elements or GPU render targets. `cleanup` doesn't
+receive a query result, so a system that acquires a resource per entity
+keeps track of what it acquired:
 
 ```ts
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 
-// Shows each player's name in an HTML label over the game.
-const createNameplateEcsSystem = (
+const createLabelEcsSystem = (
   container: HTMLElement,
-): EcsSystem<[NameplateEcsComponent]> => {
-  const labels = new Map<number, HTMLElement>();
+): EcsSystem<[LabelEcsComponent]> => {
+  const elements = new Map<number, HTMLElement>();
 
   return {
-    query: [nameplateId],
-    update(_world, { entities, components: [nameplates] }) {
+    query: [labelId],
+    update(_world, { entities, components: [labels] }) {
       for (let i = 0; i < entities.length; i++) {
-        let label = labels.get(entities[i]);
+        let element = elements.get(entities[i]);
 
-        if (!label) {
-          label = document.createElement('div');
-          container.appendChild(label);
-          labels.set(entities[i], label);
+        if (!element) {
+          element = document.createElement('div');
+          container.appendChild(element);
+          elements.set(entities[i], element);
         }
 
-        label.textContent = nameplates[i].name;
+        element.textContent = labels[i].text;
       }
     },
     cleanup() {
-      for (const label of labels.values()) {
-        label.remove();
+      for (const element of elements.values()) {
+        element.remove();
       }
 
-      labels.clear();
+      elements.clear();
     },
   };
 };
 ```
-
-Other systems use `cleanup` to remove physics bodies/joints from the physics world (tracking a `Map<entity, RigidBody>` of what they registered, so `cleanup` only has to iterate that map), or to dispose scratch GPU render targets that a system allocates outside of any component (see the gaussian blur system for an example of the latter). If a system doesn't acquire any resources beyond its components, leave `cleanup` off.
