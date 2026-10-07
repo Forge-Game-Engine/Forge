@@ -504,7 +504,9 @@ describe('MyClass', () => {
   `0x8b5e /* SAMPLER_2D */`, `0x1406 /* FLOAT */`) and array `size` for
   what it does return, since undeclared active uniforms (struct members)
   are typed from it. Sampler values are `Texture`s (`new Texture(mockGl)`),
-  and `bindTexture` receives `texture.glTexture`
+  and `bindTexture` receives `texture.glTexture`. A `SpriteMaterial`'s fragment
+  shader must include `spriteMask` (`createSpriteMaterial` throws
+  otherwise), so a test's sprite fragment shader includes it too
 - Fakes shared by several test files go in a `test-helpers/` folder inside
   the module (e.g. `src/audio/test-helpers/fake-audio-context.ts`, a
   stand-in for the Web Audio API, which jsdom lacks). `tsconfig.build.json`

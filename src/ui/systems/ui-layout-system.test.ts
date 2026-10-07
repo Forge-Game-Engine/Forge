@@ -5,8 +5,10 @@ import { createTransformEcsSystem } from '../../common/systems/transform-system.
 import { EcsWorld } from '../../ecs/index.js';
 import {
   addCameraComponent,
+  addMaskComponent,
   addSpriteComponent,
   cameraId,
+  maskId,
   RenderContext,
   spriteId,
   Texture,
@@ -532,6 +534,31 @@ describe('createUiLayoutEcsSystem', () => {
     expect(labelSprite.sortDepth).toBe(2);
     expect(world.getComponent(panel, rectTransformId)!.sortDepth).toBe(1);
     expect(world.getComponent(label, rectTransformId)!.sortDepth).toBe(2);
+  });
+
+  it("writes a MaskEcsComponent's width/height/pivot from the element's rect", () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const { canvas } = createTestCanvas(world);
+    const panel = world.createEntity();
+
+    addPositionComponent(world, panel);
+    world.setParent(panel, canvas);
+    addRectTransformComponent(
+      world,
+      panel,
+      UiAnchor.topLeft({ x: 300, y: 150 }),
+    );
+    addMaskComponent(world, panel, { width: 1, height: 1 });
+
+    world.addSystem(createUiLayoutEcsSystem(renderContext));
+    world.update();
+
+    const mask = world.getComponent(panel, maskId)!;
+
+    expect(mask.width).toBe(300);
+    expect(mask.height).toBe(150);
+    expect(mask.pivot).toEqual({ x: 0, y: 1 });
   });
 
   it('writes RectTransformEcsComponent.sortDepth even for elements with no sprite or text', () => {
