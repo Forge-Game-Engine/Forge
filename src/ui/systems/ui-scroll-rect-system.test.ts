@@ -133,6 +133,8 @@ const setUp = (scrollRectOptions = {}, withScrollbar = false) => {
   return {
     world,
     pointer,
+    time,
+    canvasEntity: canvas,
     canvas: world.getComponent<CanvasEcsComponent>(canvas, canvasId)!,
     scrollView,
     items,
@@ -345,6 +347,111 @@ describe('createUiScrollRectEcsSystem', () => {
     tick();
 
     expect(values).toEqual([50]);
+  });
+
+  it('stops coasting clamped content at its edge', () => {
+    const { scrollView, tick } = setUp({ movementType: 'clamped' });
+
+    scrollView.scrollRect.offset.y = 690;
+    scrollView.scrollRect.velocity.y = 3000;
+    tick();
+
+    expect(scrollView.scrollRect.offset.y).toBe(700);
+    expect(scrollView.scrollRect.velocity.y).toBe(0);
+  });
+
+  it('leaves released content where it is on a tick with no elapsed time', () => {
+    const context = setUp();
+    const { pointer, scrollView, tick, time } = context;
+
+    drag(context, 540, 500);
+
+    const released = scrollView.scrollRect.offset.y;
+
+    (time as { deltaTimeInSeconds: number }).deltaTimeInSeconds = 0;
+    pointer.buttonsUp.add(mouseButtons.left);
+    tick();
+
+    expect(scrollView.scrollRect.offset.y).toBe(released);
+  });
+
+  it('does not scroll when focus moves to a control outside the scroll view', () => {
+    const { world, canvas, canvasEntity, scrollView, tick } = setUp();
+    const outside = world.createEntity();
+
+    addPositionComponent(world, outside);
+    world.setParent(outside, canvasEntity);
+    addRectTransformComponent(
+      world,
+      outside,
+      UiAnchor.bottomCenter({ x: 100, y: 50 }),
+    );
+    addUiInteractableComponent(world, outside);
+    tick();
+
+    setUiFocus(world, canvas, outside);
+    tick();
+
+    expect(scrollView.scrollRect.offset.y).toBe(0);
+  });
+
+  it('lets only the innermost scroll view under the pointer take the wheel', () => {
+    const { world, pointer, canvas, scrollView, tick } = setUp();
+    const inner = createScrollView(world, scrollView.content, {
+      anchor: UiAnchor.center({ x: 100, y: 100 }),
+    });
+
+    tick(3);
+
+    // The inner scroll view is the eleventh item, so the content is now
+    // 1100 tall and the inner view is below the viewport until the list is
+    // scrolled to the bottom.
+    scrollView.scrollRect.offset.y = 800;
+    tick(2);
+
+    const innerRect = world.getComponent(inner.entity, rectTransformId)!.rect;
+
+    pointer.position = {
+      x: 960 + (innerRect.min.x + innerRect.max.x) / 2,
+      y: 540 - (innerRect.min.y + innerRect.max.y) / 2,
+    };
+    tick();
+
+    expect(canvas.hoveredEntity).toBe(inner.entity);
+
+    pointer.scroll = { x: 0, y: -100 };
+    tick();
+
+    expect(scrollView.scrollRect.offset.y).toBe(800);
+  });
+
+  it('ignores a scrollbar press while the content fits', () => {
+    const { pointer, scrollView, tick } = setUp({ vertical: false }, true);
+
+    pointer.position = { x: 960 + 192, y: 540 + 140 };
+    pointer.buttonsDown.add(mouseButtons.left);
+    tick();
+
+    expect(scrollView.scrollRect.offset.y).toBe(0);
+  });
+
+  it('throws for content that is not a direct child of the scroll rect', () => {
+    const { world, canvasEntity, scrollView, tick } = setUp();
+
+    world.setParent(scrollView.content, canvasEntity);
+
+    expect(() => tick()).toThrow(/direct child/);
+  });
+
+  it('throws for a scrollbar handle that is not stretched along its scrollbar', () => {
+    const { world, scrollView, tick } = setUp({}, true);
+
+    world.getComponent(
+      scrollView.verticalScrollbar!.handle,
+      rectTransformId,
+    )!.y = UiAxis.point(0.5);
+
+    expect(() => tick()).toThrow(/stretched along/);
   });
 
   it('throws for content not anchored at its top-left corner', () => {
