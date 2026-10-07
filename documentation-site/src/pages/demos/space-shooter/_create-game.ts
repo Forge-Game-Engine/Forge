@@ -16,7 +16,11 @@ import {
   RENDER_TARGET_FORMAT,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { createAudioEcsSystem } from '@forge-game-engine/forge/audio';
+import {
+  createSoundEcsSystem,
+  createSoundMixer,
+  SoundAssetCache,
+} from '@forge-game-engine/forge/audio';
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   createLifetimeTrackingEcsSystem,
@@ -30,6 +34,8 @@ import {
   createNarrowPhaseEcsSystem,
 } from '@forge-game-engine/forge/physics';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
+import { getAssetUrl } from '@site/src/utils/get-asset-url';
+import type { DemoResource } from '@site/src/hooks/useGame';
 import { createMovementEcsSystem } from './_movement.system';
 import { createBackground } from './_create-background';
 import { createBackgroundEcsSystem } from './_background.system';
@@ -73,10 +79,27 @@ export const blurDefaults: GaussianBlurEcsComponent = {
 };
 
 export const createSpaceShooterGame = async (
+  stopWithGame: (resource: DemoResource) => void,
   onBloomReady?: (bloom: BloomEcsComponent) => void,
   onBlurReady?: (blur: GaussianBlurEcsComponent) => void,
 ): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
+
+  // One mixer for the whole game, stopped when the demo page closes. Music
+  // and sound effects get their own buses, so each could get its own
+  // volume slider.
+  const mixer = createSoundMixer();
+
+  stopWithGame(mixer);
+
+  const musicBus = mixer.createBus('music');
+  const sfxBus = mixer.createBus('sfx');
+  const sounds = new SoundAssetCache(mixer);
+  const [musicSound, laserSound, explosionSound] = await Promise.all([
+    sounds.getOrLoad(getAssetUrl('audio/background-space-music.mp3')),
+    sounds.getOrLoad(getAssetUrl('audio/laser.mp3')),
+    sounds.getOrLoad(getAssetUrl('audio/explosion.mp3')),
+  ]);
 
   // Background and foreground each get their own off-screen target, so the
   // blur post-process pass can affect the background only: the present
@@ -183,8 +206,10 @@ export const createSpaceShooterGame = async (
     renderContext,
     renderLayers.foreground,
     triggerCameraShake,
+    sfxBus,
+    explosionSound,
   );
-  createMusic(world);
+  createMusic(world, musicBus, musicSound);
 
   const gameOverEntity = world.createEntity();
   const gameOverMessageElement = document.createElement('div');
@@ -243,10 +268,12 @@ export const createSpaceShooterGame = async (
   world.addSystem(
     createBackgroundEcsSystem(time, backgroundCameraEntity, renderContext),
   );
-  world.addSystem(createAudioEcsSystem());
+  world.addSystem(createSoundEcsSystem());
   world.addSystem(createLifetimeTrackingEcsSystem(time));
   world.addSystem(createRemoveFromWorldEcsSystem());
-  world.addSystem(createGunEcsSystem(time, world, shootInput));
+  world.addSystem(
+    createGunEcsSystem(time, world, shootInput, sfxBus, laserSound),
+  );
   world.addSystem(createBulletEcsSystem(time));
   world.addSystem(createAsteroidSpawnerEcsSystem(time, random));
   world.addSystem(createAsteroidEcsSystem(time));

@@ -27,7 +27,7 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
 - **ECS (Entity-Component-System)**: Core architecture pattern
 - **Rendering**: WebGL2-based rendering system
 - **Physics**: Native 2D physics engine (rigid bodies, collision detection/resolution, gravity)
-- **Audio**: Sound management via Howler.js
+- **Audio**: Web Audio mixer with buses, sound assets, one-shot playback and entity-bound sounds
 - **Animations**: Robust animation system
 - **Input**: Keyboard, mouse, and gamepad input handling
 - **Particles**: Particle system
@@ -505,6 +505,11 @@ describe('MyClass', () => {
   what it does return, since undeclared active uniforms (struct members)
   are typed from it. Sampler values are `Texture`s (`new Texture(mockGl)`),
   and `bindTexture` receives `texture.glTexture`
+- Fakes shared by several test files go in a `test-helpers/` folder inside
+  the module (e.g. `src/audio/test-helpers/fake-audio-context.ts`, a
+  stand-in for the Web Audio API, which jsdom lacks). `tsconfig.build.json`
+  and the coverage config exclude `**/test-helpers/**`, so they never ship
+  in `/dist`
 
 ### Coverage
 
@@ -568,6 +573,15 @@ vite.config.e2e.js          # dev server for fixtures/, rooted like vite.config.
    deterministically (it drives `Time.update`/`EcsWorld.update` directly,
    not `Game.run()`'s `requestAnimationFrame` loop), instead of waiting on
    real time. This is what keeps the suite flake-free.
+
+**Audio scenes and user activation**: Playwright runs every `page.evaluate`
+(including `waitForFunction`'s polling) as a user gesture, and recording a
+trace does the same when it snapshots the page. Either one before a scene
+creates its `AudioContext` lets the browser start audio unlocked, so a test
+of the first-gesture behavior passes for the wrong reason or fails.
+`audio-mixer.spec.ts` turns tracing off with `test.use({ trace: 'off' })`
+and waits for a console message from the scene, not for
+`window.__forgeTestHooks`, before it evaluates anything.
 
 **Node vs. browser split**: `e2e/specs/*.spec.ts` files run under Node
 (Playwright's own TS loader), not through Vite - they can `import type` from
@@ -989,7 +1003,7 @@ export class Entity {
 
 ### Dependencies
 
-- Peer dependencies: `howler`
+- Peer dependencies: `msdf-bmfont-xml` (optional, only for generating font atlases)
 - Keep dependencies minimal and well-maintained
 
 ## Additional Resources

@@ -3,11 +3,10 @@ import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import { useLocation } from '@docusaurus/router';
 import clsx from 'clsx';
-import { useGame } from '@site/src/hooks/useGame';
+import { CreateDemoGame, useGame } from '@site/src/hooks/useGame';
 import { useFullscreen } from '@site/src/hooks/useFullscreen';
 import { demoCategories } from '@site/src/data/demo-categories';
 import styles from './_Demo.module.css';
-import { Game } from '@forge-game-engine/forge/utilities';
 import { CodeSelector } from './_CodeSelector';
 
 interface CodeFile {
@@ -23,7 +22,7 @@ interface DemoProps {
   interactions?: ReactNode;
   header: string;
   blurb: string;
-  createGame: () => Promise<Game>;
+  createGame: CreateDemoGame;
   codeFiles: CodeFile[];
 }
 
