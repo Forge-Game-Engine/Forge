@@ -94,6 +94,8 @@ test.describe('high-DPI canvas', () => {
         clientWidth: containerCssWidth,
         clientHeight: containerCssHeight,
         pixelRatio: deviceScaleFactor,
+        renderTargetWidth: containerCssWidth * deviceScaleFactor,
+        renderTargetHeight: containerCssHeight * deviceScaleFactor,
       });
     });
 
@@ -204,6 +206,8 @@ test.describe('high-DPI canvas', () => {
         clientWidth: containerCssWidth,
         clientHeight: containerCssHeight,
         pixelRatio: 1,
+        renderTargetWidth: containerCssWidth,
+        renderTargetHeight: containerCssHeight,
       });
     });
 
@@ -218,6 +222,115 @@ test.describe('high-DPI canvas', () => {
       const expectedWidthAfter =
         widthBefore *
         (after.canvasMetrics.pixelRatio / before.canvasMetrics.pixelRatio);
+
+      expect(widthAfter).toBeGreaterThan(expectedWidthAfter * 0.9);
+      expect(widthAfter).toBeLessThan(expectedWidthAfter * 1.1);
+    });
+  });
+
+  test('keeps a canvas-sized camera target matched to the canvas when its container resizes', async ({
+    page,
+  }) => {
+    const resizedCssWidth = 600;
+    const resizedCssHeight = 400;
+
+    const before = await test.step('capture the starting state', () =>
+      captureState(page));
+
+    await test.step('resize the container', async () => {
+      await page.evaluate(
+        ({ width, height }) => {
+          const container = document.getElementById('app');
+
+          if (!container) {
+            throw new Error('The fixture has no #app container.');
+          }
+
+          container.style.width = `${width}px`;
+          container.style.height = `${height}px`;
+        },
+        { width: resizedCssWidth, height: resizedCssHeight },
+      );
+
+      await page.waitForFunction(
+        (drawingBufferWidth) =>
+          (window.__forgeTestHooks as unknown as Hooks).canvasMetrics
+            .drawingBufferWidth === drawingBufferWidth,
+        resizedCssWidth * deviceScaleFactor,
+      );
+    });
+
+    const after = await test.step('capture the state after the resize', () =>
+      captureState(page));
+
+    await test.step('assert the render target followed the drawing buffer', () => {
+      expect(after.canvasMetrics.renderTargetWidth).toBe(
+        resizedCssWidth * deviceScaleFactor,
+      );
+      expect(after.canvasMetrics.renderTargetHeight).toBe(
+        resizedCssHeight * deviceScaleFactor,
+      );
+    });
+
+    await test.step('assert the square shrank with the canvas height', () => {
+      expect(before.squareBounds).not.toBeNull();
+      expect(after.squareBounds).not.toBeNull();
+
+      // The camera shows a fixed number of world units vertically, so the
+      // square's on-screen size scales with the canvas's height.
+      const widthBefore =
+        before.squareBounds!.right - before.squareBounds!.left + 1;
+      const widthAfter =
+        after.squareBounds!.right - after.squareBounds!.left + 1;
+      const expectedWidthAfter =
+        widthBefore * (resizedCssHeight / containerCssHeight);
+
+      expect(widthAfter).toBeGreaterThan(expectedWidthAfter * 0.9);
+      expect(widthAfter).toBeLessThan(expectedWidthAfter * 1.1);
+    });
+  });
+
+  test('re-renders at a lower resolution when maxPixelRatio is lowered at runtime', async ({
+    page,
+  }) => {
+    const before = await test.step('capture the starting state', () =>
+      captureState(page));
+
+    const after =
+      await test.step('cap the pixel ratio at 1 and capture the next frame', () =>
+        page.evaluate((green) => {
+          const scene = window.__forgeTestHooks as unknown as Hooks;
+
+          scene.setMaxPixelRatio(1);
+          scene.step();
+
+          return {
+            canvasMetrics: scene.canvasMetrics,
+            squareBounds: scene.measureBounds(green),
+          };
+        }, inputSceneColors.green));
+
+    await test.step('assert the canvas and its render target dropped to CSS resolution', () => {
+      expect(after.canvasMetrics).toEqual({
+        drawingBufferWidth: containerCssWidth,
+        drawingBufferHeight: containerCssHeight,
+        clientWidth: containerCssWidth,
+        clientHeight: containerCssHeight,
+        pixelRatio: 1,
+        renderTargetWidth: containerCssWidth,
+        renderTargetHeight: containerCssHeight,
+      });
+    });
+
+    await test.step('assert the square is rendered across half as many pixels', () => {
+      expect(before.squareBounds).not.toBeNull();
+      expect(after.squareBounds).not.toBeNull();
+
+      const widthBefore =
+        before.squareBounds!.right - before.squareBounds!.left + 1;
+      const widthAfter =
+        after.squareBounds!.right - after.squareBounds!.left + 1;
+      const expectedWidthAfter = widthBefore / deviceScaleFactor;
 
       expect(widthAfter).toBeGreaterThan(expectedWidthAfter * 0.9);
       expect(widthAfter).toBeLessThan(expectedWidthAfter * 1.1);

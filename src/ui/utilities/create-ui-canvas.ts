@@ -160,11 +160,10 @@ export function createUiCanvas(
       layer = 1000,
     } = options;
 
-    const renderTarget = createRenderTarget(
-      renderContext.gl,
-      renderContext.width,
-      renderContext.height,
-    );
+    // Canvas-sized: the render context resizes it along with the canvas,
+    // so the UI's target never drifts out of sync with the destination
+    // it's composited onto.
+    const renderTarget = createRenderTarget(renderContext, 'canvas');
 
     const camera = createCamera(world, {
       isStatic: true,

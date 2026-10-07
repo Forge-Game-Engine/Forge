@@ -154,11 +154,7 @@ export const createScene: CreateScene = async (
     preserveDrawingBuffer: true,
   });
 
-  const worldTarget = createRenderTarget(
-    renderContext.gl,
-    canvas.width,
-    canvas.height,
-  );
+  const worldTarget = createRenderTarget(renderContext, 'canvas');
 
   const worldCameraEntity = world.createEntity();
 

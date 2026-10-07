@@ -85,10 +85,14 @@ export const createGaussianBlurEcsSystem = (
     }
 
     if (existing) {
-      existing.dispose(gl);
+      existing.dispose();
     }
 
-    const pingPong = new PingPongTarget(gl, width, height, target.format);
+    const pingPong = new PingPongTarget(
+      renderContext,
+      { width, height },
+      target.format,
+    );
 
     pingPongByTarget.set(target, pingPong);
 
@@ -281,7 +285,7 @@ export const createGaussianBlurEcsSystem = (
           continue;
         }
 
-        pingPongByTarget.get(renderTarget)?.dispose(gl);
+        pingPongByTarget.get(renderTarget)?.dispose();
         pingPongByTarget.delete(renderTarget);
       }
     },

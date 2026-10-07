@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createUiLayoutEcsSystem } from './ui-layout-system.js';
 import {
   addParentComponent,
@@ -13,7 +13,6 @@ import {
   cameraId,
   Renderable,
   RenderContext,
-  RenderTarget,
   spriteId,
 } from '../../rendering/index.js';
 import { addTextComponent, textId } from '../../text/index.js';
@@ -47,12 +46,11 @@ const buildRenderable = (): Renderable => ({}) as Renderable;
 const createTestCanvas = (
   world: EcsWorld,
   options: ScreenSpaceCanvasFields | WorldSpaceCanvasFields = {},
-  renderTarget?: RenderTarget,
 ): { canvas: number; camera: number } => {
   const camera = world.createEntity();
 
   addPositionComponent(world, camera);
-  addCameraComponent(world, camera, { renderTarget });
+  addCameraComponent(world, camera);
 
   const canvas = world.createEntity();
 
@@ -155,48 +153,14 @@ describe('createUiLayoutEcsSystem', () => {
       y: 540,
     });
 
-    renderContext.width = 960;
-    renderContext.height = 1080;
+    // The render context's sizes are read-only; the mock stands in for
+    // a `resize`.
+    Object.assign(renderContext, { width: 960, height: 1080 });
     world.update();
 
     expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
       min: { x: -480, y: -540 },
       max: { x: 480, y: 540 },
-    });
-  });
-
-  it("resizes the camera's render target to match renderContext when they drift out of sync", () => {
-    const world = new EcsWorld();
-    const gl = {} as WebGL2RenderingContext;
-    const renderContext = {
-      width: 1920,
-      height: 1080,
-      cssWidth: 1920,
-      cssHeight: 1080,
-      pixelRatio: 1,
-      gl,
-    } as RenderContext;
-    const resize = vi.fn();
-    const renderTarget = {
-      width: 1920,
-      height: 1080,
-      resize,
-    } as unknown as RenderTarget;
-    const { canvas } = createTestCanvas(world, {}, renderTarget);
-
-    world.addSystem(createUiLayoutEcsSystem(renderContext));
-    world.update();
-
-    expect(resize).not.toHaveBeenCalled();
-
-    renderContext.width = 800;
-    renderContext.height = 600;
-    world.update();
-
-    expect(resize).toHaveBeenCalledWith(gl, 800, 600);
-    expect(world.getComponent(canvas, rectTransformId)!.rect).toEqual({
-      min: { x: -720, y: -540 },
-      max: { x: 720, y: 540 },
     });
   });
 
@@ -404,10 +368,14 @@ describe('createUiLayoutEcsSystem', () => {
     // actual pixel size) at half the physical resolution halves
     // pixelsPerUnit to 0.5 - so the sidebar's reference-pixel width must
     // double to keep covering the same 200 *screen* pixels.
-    renderContext.width = 960;
-    renderContext.height = 540;
-    renderContext.cssWidth = 960;
-    renderContext.cssHeight = 540;
+    // The render context's sizes are read-only; the mock stands in for
+    // a `resize`.
+    Object.assign(renderContext, {
+      width: 960,
+      height: 540,
+      cssWidth: 960,
+      cssHeight: 540,
+    });
     world.update();
 
     rect = world.getComponent(sidebar, rectTransformId)!.rect;
@@ -433,9 +401,9 @@ describe('createUiLayoutEcsSystem', () => {
 
     // The same 1920x1080 CSS-pixel canvas on a 2x display: twice the
     // drawing-buffer pixels, but the same CSS size.
-    renderContext.width = 3840;
-    renderContext.height = 2160;
-    renderContext.pixelRatio = 2;
+    // The render context's sizes are read-only; the mock stands in for
+    // a `resize`.
+    Object.assign(renderContext, { width: 3840, height: 2160, pixelRatio: 2 });
     world.update();
 
     const { rect } = world.getComponent(sidebar, rectTransformId)!;
