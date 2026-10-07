@@ -1,5 +1,6 @@
 {
   "label": "Common",
+  "position": 16,
   "link": {
     "type": "doc",
     "id": "docs/common/index"
