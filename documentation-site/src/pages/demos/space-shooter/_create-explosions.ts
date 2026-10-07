@@ -1,4 +1,3 @@
-import { Howl } from 'howler';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
@@ -8,7 +7,11 @@ import {
   selectAnimationFrames,
 } from '@forge-game-engine/forge/animations';
 import { AssetRegistry } from '@forge-game-engine/forge/asset-loading';
-import { addAudioComponent } from '@forge-game-engine/forge/audio';
+import {
+  MixerBus,
+  playSound,
+  SoundAsset,
+} from '@forge-game-engine/forge/audio';
 import {
   addPositionComponent,
   addScaleComponent,
@@ -32,10 +35,6 @@ const explosionFrameCount = 26;
 const explosionFrameDurationMilliseconds = 20;
 const explosionScale = 0.4;
 
-// explosion.mp3 runs ~5.5s, much longer than the sprite animation, so its
-// playback is tracked on its own entity instead of the short-lived visual one.
-const explosionSoundDurationSeconds = 6;
-
 export interface ExplosionSpawner {
   animationRegistry: AssetRegistry<AnimationClip>;
   spawn: (
@@ -49,6 +48,8 @@ export async function createExplosionSpawner(
   renderContext: RenderContext,
   renderLayer: number,
   triggerCameraShake: () => void,
+  sfxBus: MixerBus,
+  explosionSound: SoundAsset,
 ): Promise<ExplosionSpawner> {
   const image = await renderContext.imageCache.getOrLoad(
     getAssetUrl('img/space-shooter/Effect_Explosion_1_517x517.png'),
@@ -111,21 +112,9 @@ export async function createExplosionSpawner(
 
       world.addTag(explosionEntity, RemoveFromWorldLifetimeStrategyId);
 
-      const explosionSoundEntity = world.createEntity();
-
-      addAudioComponent(world, explosionSoundEntity, {
-        sound: new Howl({
-          src: getAssetUrl('audio/explosion.mp3'),
-          volume: 0.6,
-        }),
-        playSound: true,
-      });
-
-      addLifetimeComponent(world, explosionSoundEntity, {
-        durationSeconds: explosionSoundDurationSeconds,
-      });
-
-      world.addTag(explosionSoundEntity, RemoveFromWorldLifetimeStrategyId);
+      // The sound outlasts the sprite animation, and needs no entity of its
+      // own: it plays to its end on the sfx bus.
+      playSound(sfxBus, explosionSound, { volume: 0.6 });
     },
   };
 }

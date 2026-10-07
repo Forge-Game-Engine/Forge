@@ -1,4 +1,3 @@
-import { Howl } from 'howler';
 import { EcsSystem, EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addPositionComponent,
@@ -15,7 +14,11 @@ import {
   addLifetimeComponent,
   RemoveFromWorldLifetimeStrategyId,
 } from '@forge-game-engine/forge/lifecycle';
-import { addAudioComponent } from '@forge-game-engine/forge/audio';
+import {
+  MixerBus,
+  playSound,
+  SoundAsset,
+} from '@forge-game-engine/forge/audio';
 import {
   addColliderComponent,
   CircleCollider,
@@ -23,21 +26,14 @@ import {
 import { bulletId } from './_bullet.component';
 import { asteroidCategory, bulletCategory } from './_collision-categories';
 import { GunEcsComponent, gunId } from './_gun.component';
-import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 export const createGunEcsSystem = (
   time: Time,
   world: EcsWorld,
   shootAction: HoldAction,
+  sfxBus: MixerBus,
+  laserSound: SoundAsset,
 ): EcsSystem<[GunEcsComponent, PositionEcsComponent]> => {
-  // Created per system instance (rather than at module scope) so each game
-  // restart gets its own Howl, since the audio system unloads any sound
-  // still playing when the world stops.
-  const sound = new Howl({
-    src: getAssetUrl('audio/laser.mp3'),
-    volume: 0.2,
-  });
-
   return {
     query: [gunId, positionId],
     update: (_world, { components: [gunComponents, positionComponents] }) => {
@@ -53,20 +49,17 @@ export const createGunEcsSystem = (
           continue;
         }
 
-        createBulletWithOffset(
-          world,
-          gunComponent,
-          positionComponent,
-          { x: 20, y: 20 },
-          sound,
-        );
-        createBulletWithOffset(
-          world,
-          gunComponent,
-          positionComponent,
-          { x: -20, y: 20 },
-          sound,
-        );
+        createBulletWithOffset(world, gunComponent, positionComponent, {
+          x: 20,
+          y: 20,
+        });
+        createBulletWithOffset(world, gunComponent, positionComponent, {
+          x: -20,
+          y: 20,
+        });
+
+        // One sound per volley; both bullets fire together.
+        playSound(sfxBus, laserSound, { volume: 0.4 });
 
         gunComponent.nextAllowedShotTime =
           time.timeInSeconds + gunComponent.timeBetweenShots;
@@ -80,7 +73,6 @@ function createBulletWithOffset(
   gunComponent: GunEcsComponent,
   positionComponent: PositionEcsComponent,
   offset: Vector2,
-  sound: Howl,
 ) {
   const bullet = world.createEntity();
   const bulletScale = 0.15;
@@ -111,11 +103,6 @@ function createBulletWithOffset(
   });
 
   world.addTag(bullet, RemoveFromWorldLifetimeStrategyId);
-
-  addAudioComponent(world, bullet, {
-    playSound: true,
-    sound,
-  });
 
   const bulletRadius =
     (gunComponent.bulletSprite.width * bulletScale +

@@ -6,18 +6,20 @@ sidebar_position: 5
 
 Asset loading covers fetching external files (images, sprite sheets,
 sounds, data) and turning them into objects your game can use, then caching
-the results so the same file is never fetched twice. Forge ships two
-concrete caches today, [`ImageCache`](/Forge/docs/api/classes/ImageCache)
-and [`FontAtlasCache`](/Forge/docs/api/classes/FontAtlasCache) (see
-[Text](../text/index.md)), plus two supporting building blocks:
+the results so the same file is never fetched twice. Forge ships three
+concrete caches today, [`ImageCache`](/Forge/docs/api/classes/ImageCache),
+[`FontAtlasCache`](/Forge/docs/api/classes/FontAtlasCache) (see
+[Text](../text/index.md)) and
+[`SoundAssetCache`](/Forge/docs/api/classes/SoundAssetCache) (see
+[Audio](../audio/index.md)), plus two supporting building blocks:
 
 - [`AssetCache`](/Forge/docs/api/interfaces/AssetCache): the common
   `get` / `load` / `getOrLoad` contract for caches that load an asset from
-  a single URL, such as `ImageCache`. If you add a cache for another
-  single-file asset type (audio buffers, arbitrary JSON data), implement
-  this interface so it behaves consistently with the rest of the engine.
-  `FontAtlasCache` loads each atlas from two URLs, so it has its own
-  `getOrLoad({ metricsUrl, imageUrl })` instead.
+  a single URL, such as `ImageCache` and `SoundAssetCache`. If you add a
+  cache for another single-file asset type (arbitrary JSON data, for
+  example), implement this interface so it behaves consistently with the
+  rest of the engine. `FontAtlasCache` loads each atlas from two URLs, so it
+  has its own `getOrLoad({ metricsUrl, imageUrl })` instead.
 - [`AssetRegistry`](/Forge/docs/api/classes/AssetRegistry): maps
   human-readable string IDs to compact numeric IDs, so hot-path code (like a
   per-frame animation system) can look up an asset by index instead of by

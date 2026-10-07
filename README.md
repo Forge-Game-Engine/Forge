@@ -63,6 +63,5 @@ You can make a separate folder or package outside of the engine.
 
 ## Acknowledgements
 
-- [Howler.js](https://howlerjs.com/)
 - [Vite](https://vite.dev/)
 - [Kenny](https://www.kenney.nl/)

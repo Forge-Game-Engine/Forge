@@ -1,17 +1,23 @@
-import { Howl } from 'howler';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { addAudioComponent } from '@forge-game-engine/forge/audio';
-import { getAssetUrl } from '@site/src/utils/get-asset-url';
+import {
+  addSoundComponent,
+  MixerBus,
+  SoundAsset,
+} from '@forge-game-engine/forge/audio';
 
-export function createMusic(world: EcsWorld): void {
+// The music belongs to its own entity, so it plays for as long as the
+// entity has its sound component and stops when the world does.
+export function createMusic(
+  world: EcsWorld,
+  musicBus: MixerBus,
+  music: SoundAsset,
+): void {
   const musicEntity = world.createEntity();
 
-  addAudioComponent(world, musicEntity, {
-    sound: new Howl({
-      src: getAssetUrl('audio/background-space-music.mp3'),
-      loop: true,
-      volume: 0.3,
-    }),
-    playSound: true,
+  addSoundComponent(world, musicEntity, {
+    sound: music,
+    bus: musicBus,
+    loop: true,
+    volume: 0.3,
   });
 }
