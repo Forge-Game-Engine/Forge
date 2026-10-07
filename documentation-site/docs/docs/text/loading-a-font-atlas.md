@@ -6,7 +6,8 @@ sidebar_position: 2
 
 [`FontAtlasCache`](/Forge/docs/api/classes/FontAtlasCache) loads a
 generated atlas's metrics JSON and PNG image into a
-[`FontAtlas`](/Forge/docs/api/interfaces/FontAtlas). Pass it the URL of
+[`FontAtlas`](/Forge/docs/api/interfaces/FontAtlas). Pass
+[`getOrLoad`](/Forge/docs/api/classes/FontAtlasCache#getorload) the URL of
 each file:
 
 ```ts
@@ -22,16 +23,26 @@ const fontAtlas = await fontAtlasCache.getOrLoad({
 The two URLs are independent: the image doesn't have to be in the same
 directory as the JSON, or keep its original file name.
 
-The cache loads each image through the render context's `imageCache` and
-uploads it to a linear-filtered [texture](../rendering/textures.md),
-`fontAtlas.texture`. The cache owns that texture, so don't update or
-dispose it.
+The cache loads the image through the render context's
+[`imageCache`](../asset-loading/loading-images.md) and uploads it to a
+linear-filtered [texture](../rendering/textures.md), `fontAtlas.texture`.
+The cache owns that texture, so don't update or dispose it.
+
+`getOrLoad` rejects if either file fails to load, if the JSON isn't a
+supported atlas, or if the image's size doesn't match the JSON's
+`atlasSize`.
+
+:::caution
+Load the JSON and PNG from the same generator run. Two atlases generated
+at the same texture size pass the size check, and text drawn from a
+mismatched pair shows the wrong glyphs.
+:::
 
 ## Importing atlases through a bundler
 
-Bundlers rename the assets they emit (`my-font.png` becomes something like
+Bundlers rename the files they emit (`my-font.png` becomes something like
 `my-font-3f2a9c.png`), so import both files and pass the URLs the bundler
-gives you rather than writing paths by hand.
+gives you instead of writing paths by hand.
 
 With Vite, import the PNG directly and the JSON with `?url`, which gives
 its URL instead of its parsed contents:
@@ -58,101 +69,67 @@ const fontAtlas = await fontAtlasCache.getOrLoad({
 });
 ```
 
+:::caution
 If your webpack config runs `file-loader` or `url-loader` on images
 (Docusaurus does), those loaders also process `new URL` image requests, and
 the emitted `.png` contains JavaScript instead of the image, so it fails to
 load. Import the PNG instead (`import myFontImageUrl from
 './fonts/my-font.png'`) and keep `new URL` for the JSON.
+:::
 
-The engine's default font (see [Text](./index.md)'s Quick start) is
-imported the same way, from the package's `fonts/default` exports:
+The package's default font is imported the same way, from its
+`fonts/default` exports (see [Text](./index.md#the-default-font)).
+
+## Getting a loaded atlas
+
+The cache is keyed by `metricsUrl`. Calling `getOrLoad` again with the same
+`metricsUrl` returns the same `FontAtlas`, and calls made while it's still
+loading share that load, so each file is fetched once.
+[`get(metricsUrl)`](/Forge/docs/api/classes/FontAtlasCache#get) returns an
+atlas that has finished loading, and throws for one that hasn't.
 
 ```ts
-import defaultFontMetricsUrl from '@forge-game-engine/forge/fonts/default/default.json?url';
-import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
+const fontAtlas = fontAtlasCache.get('assets/fonts/my-font.json');
 ```
 
-## Gotchas
-
-- **Keep the JSON and PNG from the same generator run.** `getOrLoad`
-  rejects if the image's size doesn't match the JSON's `atlasSize`. Two
-  different atlases generated at the same texture size still pass that
-  check, and render garbled glyphs, so regenerate and replace both files
-  together.
-- **One image per metrics URL.** The cache is keyed by `metricsUrl`.
-  Requesting the same `metricsUrl` with a different `imageUrl` rejects.
-- **Requesting an atlas again doesn't reload it.** Repeated and concurrent
-  `getOrLoad` calls for the same `metricsUrl` share one load, so the
-  `Promise.all` pattern in the worked example below fetches each file once.
+Calling `getOrLoad` with a `metricsUrl` that was already requested with a
+different `imageUrl` rejects.
 
 ## Reading glyph metrics
 
-`fontAtlas.data.glyphs` is a `Map<number, GlyphMetrics>` keyed by Unicode
+`fontAtlas.data.glyphs` is a `Map` of
+[`GlyphMetrics`](/Forge/docs/api/interfaces/GlyphMetrics) keyed by Unicode
 code point:
 
 ```ts
-const glyph = fontAtlas.data.glyphs.get('A'.codePointAt(0)!);
+const glyph = fontAtlas.data.glyphs.get(0x41); // 'A'
 ```
 
-- `advance`, `planeBounds`, and the font-level `metrics` (`lineHeight`,
-  `ascender`, `descender`, `capHeight`) are all in **em units**: multiply by
-  your desired render size to get world/screen units. `planeBounds` is
-  **Y-up**, relative to the glyph's baseline, matching the rest of Forge's
-  Y-up conventions.
-- `planeBounds` include the distance field's padding around the glyph's
-  ink (half the `distanceRange`), because outlines and glows draw into
-  it. `ascender` and `descender` are measured from those padded bounds, so
-  they're safe outer bounds for everything a glyph renders. `capHeight` is
-  measured on the letter itself (a flat capital like "H"), without the
-  padding.
-- `atlasBounds` is the glyph's texture rect, normalized `0` to `1`, with
-  `top` closer to the top of the atlas image than `bottom`.
-- Both `planeBounds` and `atlasBounds` are `null` for glyphs with no visible
-  ink, like space, there's nothing to draw for them.
-- A code point outside the atlas's generated charset simply isn't in the
-  map; `glyphs.get(...)` returns `undefined` rather than throwing, so check
-  for that if you're looking up characters you can't guarantee were
-  included when the atlas was generated.
+- `advance`, `planeBounds` and the font-level `fontAtlas.data.metrics`
+  (`lineHeight`, `ascender`, `descender`, `capHeight`) are in **em
+  units**: multiply them by the text's `size` to get world units.
+  `planeBounds` is Y-up, relative to the glyph's origin on the baseline.
+- `planeBounds` includes the distance field's padding around the glyph's
+  ink (half of `distanceRange`, in atlas pixels), which outlines and
+  shadows draw into. `ascender` and `descender` are measured from those
+  padded bounds; `capHeight` is measured on a flat capital (such as "H")
+  without the padding.
+- `atlasBounds` is the glyph's rectangle in the texture, normalized from
+  `0` to `1`.
+- `planeBounds` and `atlasBounds` are `null` for a glyph with no visible
+  ink, such as space.
+- `glyphs.get` returns `undefined` for a code point that isn't in the
+  atlas's charset.
 
-## Kerning lookups
+## Reading kerning
 
-`fontAtlas.data.kerning` is a `Map<string, number>` keyed by
+`fontAtlas.data.kerning` is a `Map` of kerning adjustments, in em units,
+keyed by
 [`getKerningPairKey(leftCodePoint, rightCodePoint)`](/Forge/docs/api/functions/getKerningPairKey).
-A pair with no explicit entry kerns by `0`, so a lookup miss is the normal,
-expected case for most glyph pairs, not an error condition:
+A pair with no entry kerns by `0`:
 
 ```ts
 import { getKerningPairKey } from '@forge-game-engine/forge/text';
 
-const kern =
-  fontAtlas.data.kerning.get(
-    getKerningPairKey('A'.codePointAt(0)!, 'V'.codePointAt(0)!),
-  ) ?? 0;
-```
-
-## Worked example
-
-```ts
-import { FontAtlasCache } from '@forge-game-engine/forge/text';
-
-const fontAtlasCache = new FontAtlasCache(renderContext);
-
-const [headingAtlas, bodyAtlas] = await Promise.all([
-  fontAtlasCache.getOrLoad({
-    metricsUrl: 'assets/fonts/heading.json',
-    imageUrl: 'assets/fonts/heading.png',
-  }),
-  fontAtlasCache.getOrLoad({
-    metricsUrl: 'assets/fonts/body.json',
-    imageUrl: 'assets/fonts/body.png',
-  }),
-]);
-
-const capitalA = bodyAtlas.data.glyphs.get('A'.codePointAt(0)!);
-
-if (capitalA?.planeBounds) {
-  const renderSize = 32;
-  const glyphWidthInPixels =
-    (capitalA.planeBounds.right - capitalA.planeBounds.left) * renderSize;
-}
+const kerning = fontAtlas.data.kerning.get(getKerningPairKey(0x41, 0x56)) ?? 0; // 'A', 'V'
 ```
