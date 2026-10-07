@@ -114,7 +114,6 @@ function pushTextEffectsRenderCommands(
       emissive: null,
       material: null,
       category,
-      enabled: true,
       layer,
     };
 
@@ -172,7 +171,6 @@ function pushTextFillRenderCommands(
       emissive: null,
       material: null,
       category,
-      enabled: true,
       layer,
     };
 

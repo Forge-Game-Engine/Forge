@@ -1,7 +1,11 @@
 import { ImageCache } from '../asset-loading/index.js';
 import { Resizable } from '../common/index.js';
+import { ForgeEvent } from '../events/index.js';
 import { Color } from './color.js';
 import { CLEAR_STRATEGY, CLEAR_STRATEGY_KEYS } from './enums/index.js';
+import { createQuadGeometry } from './geometry/create-quad-geometry.js';
+import type { Geometry } from './geometry/geometry.js';
+import { rebuildGpuResources } from './gpu-resource-registry.js';
 import { ShaderProgram } from './materials/shader-program.js';
 import { SpriteMaterial } from './materials/sprite-material.js';
 import { UniformValue } from './materials/uniform-value.js';
@@ -39,7 +43,12 @@ function assertValidPixelRatio(name: string, value: number): void {
  * The rendering context.
  */
 export class RenderContext implements Resizable {
-  /** The strategy for clearing the render context. */
+  /**
+   * Whether `clear` clears the bound destination. `CLEAR_STRATEGY.blank`
+   * (the default) clears it; `CLEAR_STRATEGY.none` makes `clear` do
+   * nothing, so cameras and full-screen passes draw over what the
+   * destination already holds.
+   */
   public clearStrategy: CLEAR_STRATEGY_KEYS;
 
   /**
@@ -58,15 +67,39 @@ export class RenderContext implements Resizable {
   /** The WebGL2 rendering context. */
   public readonly gl: WebGL2RenderingContext;
 
-  public instanceBuffer: WebGLBuffer;
+  /**
+   * Raised when the browser takes the WebGL context away (after a GPU
+   * reset, or when the device runs low on memory), once
+   * {@link RenderContext.isContextLost} is `true`. Nothing is drawn until
+   * the context is restored, but the game keeps running, and creating
+   * materials, textures, render targets and geometry keeps working. A game
+   * that wants to recover with cheaper settings lowers them here (e.g.
+   * {@link RenderContext.maxPixelRatio}).
+   */
+  public readonly onContextLost: ForgeEvent;
+
+  /**
+   * Raised once the WebGL context is back and every GPU resource the
+   * engine created (programs, textures, render targets, geometry) has been
+   * rebuilt, and {@link RenderContext.isContextLost} is `false` again. The
+   * next frame draws normally. A game that created raw WebGL objects of its
+   * own recreates them here.
+   */
+  public readonly onContextRestored: ForgeEvent;
 
   private readonly _globalUniformValues: Map<string, UniformValue>;
-  private readonly _shaderPrograms = new WeakMap<
+  // Strong, like the GPU resource registry: every program the render
+  // context links is linked again when a lost context is restored.
+  private readonly _shaderPrograms = new Map<
     ForgeShaderSource,
-    WeakMap<ForgeShaderSource, ShaderProgram>
+    Map<ForgeShaderSource, ShaderProgram>
   >();
+  private _instanceBuffer: WebGLBuffer;
+  private _supportsHdrRenderTargets: boolean;
+  private _isContextLost: boolean;
   private _whiteTexture: OwnedTexture | null = null;
   private _blackTexture: OwnedTexture | null = null;
+  private _quadGeometry: Geometry | null = null;
   private _spriteMaterial: SpriteMaterial | null = null;
   private _width: number;
   private _height: number;
@@ -127,8 +160,65 @@ export class RenderContext implements Resizable {
     }
 
     this.gl = context;
-    this.instanceBuffer = context.createBuffer();
+    this.onContextLost = new ForgeEvent('contextLost');
+    this.onContextRestored = new ForgeEvent('contextRestored');
+    this._instanceBuffer = context.createBuffer();
+    this._supportsHdrRenderTargets = this._requestExtensions();
+    this._isContextLost = false;
     this._globalUniformValues = new Map<string, UniformValue>();
+
+    canvas.addEventListener('webglcontextlost', (event) => {
+      // Without this the browser never gives the context back.
+      event.preventDefault();
+      this._isContextLost = true;
+      this.onContextLost.raise();
+    });
+
+    canvas.addEventListener('webglcontextrestored', () => {
+      this._restore();
+    });
+  }
+
+  /**
+   * Whether the WebGL context is lost: `true` from the moment the browser
+   * takes it away until the engine has rebuilt its GPU resources after the
+   * browser gives it back (just before `onContextRestored` is raised).
+   *
+   * While it's lost nothing is drawn, and creating or resizing a material,
+   * texture, render target or geometry records what to create and touches
+   * no WebGL state; the restore creates it.
+   */
+  get isContextLost(): boolean {
+    return this._isContextLost || this.gl.isContextLost();
+  }
+
+  /**
+   * Whether render targets can store HDR (half-float) color, which needs
+   * the `EXT_color_buffer_float` extension. A render target that asks for
+   * `RENDER_TARGET_FORMAT.hdr` without it falls back to `ldr`.
+   */
+  get supportsHdrRenderTargets(): boolean {
+    return this._supportsHdrRenderTargets;
+  }
+
+  /**
+   * The buffer the render system streams each batch's per-instance data
+   * into. Owned by the render context, and recreated when a lost context is
+   * restored, so read it when drawing rather than keeping it.
+   */
+  get instanceBuffer(): WebGLBuffer {
+    return this._instanceBuffer;
+  }
+
+  /**
+   * A quad covering clip space (`-1` to `1`) with texture coordinates from
+   * `0` to `1`, as `a_position` and `a_texCoord`: what every sprite instance
+   * and every full-screen pass is drawn from. Owned by the render context.
+   */
+  get quadGeometry(): Geometry {
+    this._quadGeometry ??= createQuadGeometry(this);
+
+    return this._quadGeometry;
   }
 
   /**
@@ -323,7 +413,7 @@ export class RenderContext implements Resizable {
    */
   get whiteTexture(): Texture {
     this._whiteTexture ??= OwnedTexture.createSolidColor(
-      this.gl,
+      this,
       [255, 255, 255, 255],
     );
 
@@ -336,10 +426,7 @@ export class RenderContext implements Resizable {
    * render context.
    */
   get blackTexture(): Texture {
-    this._blackTexture ??= OwnedTexture.createSolidColor(
-      this.gl,
-      [0, 0, 0, 255],
-    );
+    this._blackTexture ??= OwnedTexture.createSolidColor(this, [0, 0, 0, 255]);
 
     return this._blackTexture;
   }
@@ -357,7 +444,9 @@ export class RenderContext implements Resizable {
   /**
    * Returns the linked program for a vertex and fragment shader pair,
    * compiling and linking it the first time the pair is asked for. Every
-   * `Material` made from the same two shader sources shares it.
+   * `Material` made from the same two shader sources shares it. Asked for
+   * while the context is lost, the program is linked when the context is
+   * restored.
    * @param vertexShaderSource - The vertex shader source.
    * @param fragmentShaderSource - The fragment shader source.
    * @returns The shared program.
@@ -372,7 +461,7 @@ export class RenderContext implements Resizable {
     let programsByFragment = this._shaderPrograms.get(vertexShaderSource);
 
     if (!programsByFragment) {
-      programsByFragment = new WeakMap();
+      programsByFragment = new Map();
       this._shaderPrograms.set(vertexShaderSource, programsByFragment);
     }
 
@@ -380,10 +469,9 @@ export class RenderContext implements Resizable {
 
     if (!shaderProgram) {
       shaderProgram = new ShaderProgram(
-        this.gl,
+        this,
         vertexShaderSource,
         fragmentShaderSource,
-        () => this.blackTexture,
       );
       programsByFragment.set(fragmentShaderSource, shaderProgram);
     }
@@ -402,13 +490,82 @@ export class RenderContext implements Resizable {
 
     return this._globalUniformValues.get(name)!;
   }
+
+  /**
+   * Re-requests the extensions the context lost with it, links every
+   * program, rebuilds every other GPU resource, then raises
+   * `onContextRestored`. A resource that fails to rebuild doesn't stop the
+   * rest: the event is still raised, and the failures are thrown together
+   * afterwards.
+   */
+  private _restore(): void {
+    // Cleared first, so the rebuild runs against a live context with its
+    // compile, link and framebuffer checks on. Nothing else runs until the
+    // rebuild is done, so no one sees the flag cleared early.
+    this._isContextLost = false;
+    this._supportsHdrRenderTargets = this._requestExtensions();
+    this._instanceBuffer = this.gl.createBuffer();
+
+    const errors: unknown[] = [];
+
+    for (const programsByFragment of this._shaderPrograms.values()) {
+      for (const shaderProgram of programsByFragment.values()) {
+        try {
+          shaderProgram.link();
+        } catch (error) {
+          errors.push(error);
+        }
+      }
+    }
+
+    errors.push(...rebuildGpuResources(this));
+
+    this.onContextRestored.raise();
+
+    if (errors.length > 0) {
+      throw new AggregateError(
+        errors,
+        'Some GPU resources could not be rebuilt after the WebGL context was restored.',
+      );
+    }
+  }
+
+  /**
+   * Requests the extensions the engine uses. Extensions are lost with the
+   * context, so this runs again on every restore.
+   * @returns Whether `EXT_color_buffer_float` is available.
+   */
+  private _requestExtensions(): boolean {
+    return this.gl.getExtension('EXT_color_buffer_float') !== null;
+  }
 }
 
+/**
+ * Options for {@link createRenderContext}.
+ */
 export interface RenderContextOptions {
+  /**
+   * The shader cache materials get their shaders from (default: a new
+   * `createShaderCache()`, holding the engine's shaders and includes).
+   */
   shaderCache?: ShaderCache;
+
+  /** The cache images are loaded through (default: a new `ImageCache`). */
   imageCache?: ImageCache;
+
+  /**
+   * Whether `clear` clears the bound destination (default:
+   * `CLEAR_STRATEGY.blank`). See `RenderContext.clearStrategy`.
+   */
   clearStrategy?: CLEAR_STRATEGY_KEYS;
+
+  /**
+   * Whether the canvas keeps its drawing buffer after a frame is presented
+   * (default: `false`), which reading the canvas's pixels back (e.g.
+   * `toDataURL`) after the frame needs.
+   */
   preserveDrawingBuffer?: boolean;
+
   /**
    * The highest pixel ratio to render at, however dense the display is
    * (default: no limit). See `RenderContext.maxPixelRatio`.
@@ -416,6 +573,15 @@ export interface RenderContextOptions {
   maxPixelRatio?: number;
 }
 
+/**
+ * Creates a render context that draws into `canvas` with WebGL2.
+ * `createGame` creates one for its game.
+ * @param canvas - The canvas to draw into.
+ * @param options - Options for the render context.
+ * @returns The render context.
+ * @throws An error if the canvas has no WebGL2 context, or if
+ * `maxPixelRatio` isn't a positive number.
+ */
 export function createRenderContext(
   canvas: HTMLCanvasElement,
   options: RenderContextOptions = {},

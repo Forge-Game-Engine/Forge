@@ -40,7 +40,6 @@ import {
   radixSortByKeys,
   writeSortableFloat64,
 } from '../draw-order.js';
-import { createQuadGeometry, Geometry } from '../geometry/index.js';
 import { SpriteMaterial } from '../materials/sprite-material.js';
 import { RenderContext } from '../render-context.js';
 import { RenderTarget } from '../render-target.js';
@@ -91,12 +90,11 @@ function createSpriteRenderable(
 }
 
 /**
- * The GPU resources one render system draws with, created on its first
- * frame: the quad every instance is drawn from, a renderable per sprite
- * material, and the text renderables.
+ * The renderables one render system draws with, created on its first
+ * frame: one per sprite material, and the text renderables. Every instance
+ * is drawn from the render context's `quadGeometry`.
  */
 interface RenderResources {
-  quad: Geometry;
   getSpriteRenderable: (material: SpriteMaterial) => Renderable;
   getTextRenderables: () => TextRenderables;
 }
@@ -106,7 +104,6 @@ function createRenderResources(renderContext: RenderContext): RenderResources {
   let textRenderables: TextRenderables | null = null;
 
   return {
-    quad: createQuadGeometry(renderContext.gl),
     getSpriteRenderable: (material) => {
       let renderable = spriteRenderables.get(material);
 
@@ -166,7 +163,6 @@ function ensureInstanceDataBufferCapacity(size: number): Float32Array {
 
 function includeBatch(
   renderContext: RenderContext,
-  quad: Geometry,
   projectionMatrix: Matrix3x3,
   commands: RenderCommand[],
   batchStart: number,
@@ -179,7 +175,7 @@ function includeBatch(
 
   renderable.material.setUniform('u_projection', projectionMatrix);
   renderable.bindBatch(gl, firstCommand);
-  quad.bind(gl, renderable.material.program);
+  renderContext.quadGeometry.bind(renderable.material);
 
   const requiredBatchSize = batchLength * renderable.floatsPerInstance;
   const buffer = ensureInstanceDataBufferCapacity(requiredBatchSize);
@@ -335,10 +331,15 @@ function isSameBatch(a: RenderCommand, b: RenderCommand): boolean {
 
 function flushBatches(
   renderContext: RenderContext,
-  quad: Geometry,
   projectionMatrix: Matrix3x3,
   commands: RenderCommand[],
 ): void {
+  // Nothing can be drawn until the context is restored, and a material
+  // created while it's lost has no program to look attributes up in yet.
+  if (renderContext.isContextLost) {
+    return;
+  }
+
   let batchStart = 0;
 
   for (let i = 1; i <= commands.length; i++) {
@@ -346,14 +347,7 @@ function flushBatches(
       i === commands.length || !isSameBatch(commands[i], commands[batchStart]);
 
     if (isBatchBoundary) {
-      includeBatch(
-        renderContext,
-        quad,
-        projectionMatrix,
-        commands,
-        batchStart,
-        i,
-      );
+      includeBatch(renderContext, projectionMatrix, commands, batchStart, i);
       batchStart = i;
     }
   }
@@ -434,11 +428,12 @@ function setDrawItem(
 }
 
 /**
- * Collects one draw item per enabled sprite and text, in no particular
- * order.
+ * Collects one draw item per sprite and text visible in the hierarchy (see
+ * `VisibilityEcsComponent`), in no particular order.
  * @returns The number of draw items.
  */
 function collectDrawItems(
+  resolver: DrawOrderResolver,
   spriteQuery: QueryResult<[SpriteEcsComponent, PositionEcsComponent]>,
   textQuery: QueryResult<
     [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
@@ -455,15 +450,13 @@ function collectDrawItems(
   let count = 0;
 
   for (let s = 0; s < spriteEntities.length; s++) {
-    const sprite = sprites[s];
-
-    if (sprite.enabled) {
+    if (resolver.isVisible(spriteEntities[s])) {
       setDrawItem(
         count++,
         spriteEntities[s],
-        sprite.category,
+        sprites[s].category,
         spritePositions[s],
-        sprite,
+        sprites[s],
         null,
         null,
       );
@@ -471,16 +464,14 @@ function collectDrawItems(
   }
 
   for (let t = 0; t < textEntities.length; t++) {
-    const text = texts[t];
-
-    if (text.enabled) {
+    if (resolver.isVisible(textEntities[t])) {
       setDrawItem(
         count++,
         textEntities[t],
-        text.category,
+        texts[t].category,
         textPositions[t],
         null,
-        text,
+        texts[t],
         textMeshes[t],
       );
     }
@@ -586,7 +577,8 @@ const drawOrderResolver = createDrawOrderResolver();
  * and glyphs whose quads are outside that view are skipped before anything
  * is uploaded.
  *
- * Sprites and text draw by `layer`, then by world order (see
+ * Sprites and text hidden in the hierarchy (see `VisibilityEcsComponent`)
+ * aren't drawn. The rest draw by `layer`, then by world order (see
  * `DrawOrderEcsComponent`), then, for a camera with `ySort`, by their root
  * entity's Y (higher first), then in hierarchy order: root entities in
  * creation order, each followed by its subtree in pre-order. That's a total
@@ -614,13 +606,18 @@ export const createRenderEcsSystem = (
         [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
       >([textId, textMeshId, positionId]);
 
-      const itemCount = collectDrawItems(spriteQuery, textQuery);
-
       drawOrderResolver.resolve(
         world,
         spriteQuery.entities,
         textQuery.entities,
       );
+
+      const itemCount = collectDrawItems(
+        drawOrderResolver,
+        spriteQuery,
+        textQuery,
+      );
+
       writeSortKeys(drawOrderResolver, itemCount);
 
       const hierarchyOrder = radixSortByKeys(
@@ -714,7 +711,7 @@ export const createRenderEcsSystem = (
           clearedDestinationsThisFrame.add(target);
         }
 
-        flushBatches(renderContext, resources.quad, projectionMatrix, commands);
+        flushBatches(renderContext, projectionMatrix, commands);
       }
 
       renderContext.gl.disable(renderContext.gl.BLEND);

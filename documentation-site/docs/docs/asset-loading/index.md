@@ -4,54 +4,29 @@ sidebar_position: 5
 
 # Asset Loading
 
-Asset loading covers fetching external files (images, sprite sheets,
-sounds, data) and turning them into objects your game can use, then caching
-the results so the same file is never fetched twice. Forge ships three
-concrete caches today, [`ImageCache`](/Forge/docs/api/classes/ImageCache),
-[`FontAtlasCache`](/Forge/docs/api/classes/FontAtlasCache) (see
-[Text](../text/index.md)) and
-[`SoundAssetCache`](/Forge/docs/api/classes/SoundAssetCache) (see
-[Audio](../audio/index.md)), plus two supporting building blocks:
+Asset loading fetches external files (images, sounds, font atlases) and
+turns them into objects a game uses, keeping each loaded asset in a cache
+keyed by its URL so later requests return it without loading it again.
 
-- [`AssetCache`](/Forge/docs/api/interfaces/AssetCache): the common
-  `get` / `load` / `getOrLoad` contract for caches that load an asset from
-  a single URL, such as `ImageCache` and `SoundAssetCache`. If you add a
-  cache for another single-file asset type (arbitrary JSON data, for
-  example), implement this interface so it behaves consistently with the
-  rest of the engine. `FontAtlasCache` loads each atlas from two URLs, so it
-  has its own `getOrLoad({ metricsUrl, imageUrl })` instead.
-- [`AssetRegistry`](/Forge/docs/api/classes/AssetRegistry): maps
-  human-readable string IDs to compact numeric IDs, so hot-path code (like a
-  per-frame animation system) can look up an asset by index instead of by
-  string.
+The module's parts:
 
-Guides in this section:
+- [`AssetCache`](/Forge/docs/api/interfaces/AssetCache): the `get`,
+  `load` and `getOrLoad` methods and `assets` map shared by caches that
+  load an asset from one URL. Implement it for a cache of another asset type,
+  such as JSON data.
+- [`ImageCache`](/Forge/docs/api/classes/ImageCache): an `AssetCache` of
+  `HTMLImageElement`s. Every
+  [`RenderContext`](/Forge/docs/api/classes/RenderContext) has one, as
+  `imageCache`. See [Loading and Caching Images](./loading-images.md).
+- [`AssetRegistry`](/Forge/docs/api/classes/AssetRegistry): assigns
+  numeric IDs to assets registered under string names, so code that runs
+  every frame looks an asset up by array index instead of by string. See
+  [Asset Registries](./asset-registry.md).
 
-- [Loading and Caching Images](./loading-images.md): using `ImageCache` to
-  load images and turn them into sprites.
-- [Asset Registries](./asset-registry.md): registering assets under string
-  names and looking them up by numeric handle.
-
-## Quick Start
-
-The most common case is loading images through the
-[`RenderContext`](/Forge/docs/api/classes/RenderContext)'s built-in
-`imageCache`:
-
-```ts
-import {
-  createImageSprite,
-  createTexture,
-} from '@forge-game-engine/forge/rendering';
-import { createGame } from '@forge-game-engine/forge/utilities';
-
-const { renderContext } = createGame('game-container');
-const { imageCache } = renderContext;
-
-const playerImage = await imageCache.getOrLoad('player.png');
-const playerTexture = createTexture(renderContext, playerImage);
-const playerSprite = createImageSprite(playerTexture);
-```
-
-See [Loading and Caching Images](./loading-images.md) for how `getOrLoad`
-caching behaves and how to preload assets up front.
+Other modules have their own caches.
+[`SoundAssetCache`](/Forge/docs/api/classes/SoundAssetCache) is an
+`AssetCache` of decoded sounds (see
+[Loading Sounds](../audio/loading-sounds.md)).
+[`FontAtlasCache`](/Forge/docs/api/classes/FontAtlasCache) loads each font
+atlas from two URLs, so it has its own `getOrLoad({ metricsUrl, imageUrl })`
+instead (see [Loading a Font Atlas](../text/loading-a-font-atlas.md)).

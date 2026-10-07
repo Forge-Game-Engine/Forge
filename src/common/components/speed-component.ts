@@ -5,6 +5,7 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
  * ECS-style component interface for speed.
  */
 export interface SpeedEcsComponent {
+  /** The speed value. No engine system reads it; game systems define its unit. */
   speed: number;
 }
 

@@ -7,6 +7,7 @@ export * from './ui-navigation-system.js';
 export * from './ui-progress-bar-system.js';
 export * from './ui-raycast-system.js';
 export * from './ui-safe-area-system.js';
+export * from './ui-scroll-rect-system.js';
 export * from './ui-slider-system.js';
 export * from './ui-text-input-system.js';
 export * from './ui-toggle-system.js';

@@ -2,17 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { createUiTooltipEcsSystem } from './ui-tooltip-system.js';
 import { Time } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import {
-  addSpriteComponent,
-  spriteId,
-  Texture,
-} from '../../rendering/index.js';
-import { addTextComponent, textId } from '../../text/index.js';
-import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
+import { addVisibilityComponent, visibilityId } from '../../rendering/index.js';
 import { addTooltipComponent } from '../components/tooltip-component.js';
 import { addUiInteractableComponent } from '../components/ui-interactable-component.js';
-
-const buildTexture = (): Texture => ({}) as Texture;
 
 const buildTime = (deltaTimeInMilliseconds: number): Time =>
   ({ deltaTimeInMilliseconds }) as Time;
@@ -23,57 +15,41 @@ function buildScene(world: EcsWorld) {
 
   const panel = world.createEntity();
 
-  addSpriteComponent(world, panel, {
-    width: 10,
-    height: 10,
-    texture: buildTexture(),
-  });
-
-  const label = world.createEntity();
-
-  addTextComponent(world, label, {
-    text: 'hi',
-    fontAtlas: {} as FontAtlas,
-    size: 16,
-  });
-
+  addVisibilityComponent(world, panel, { visible: false });
   addTooltipComponent(world, source, {
     panel,
-    label,
     showDelayMilliseconds: 100,
   });
 
-  return { source, interactable, panel, label };
+  return { source, interactable, panel };
 }
 
 describe('createUiTooltipEcsSystem', () => {
   it('starts hidden', () => {
     const world = new EcsWorld();
-    const { panel, label } = buildScene(world);
+    const { panel } = buildScene(world);
 
     world.addSystem(createUiTooltipEcsSystem(buildTime(16)));
     world.update();
 
-    expect(world.getComponent(panel, spriteId)!.enabled).toBe(false);
-    expect(world.getComponent(label, textId)!.enabled).toBe(false);
+    expect(world.getComponent(panel, visibilityId)!.visible).toBe(false);
   });
 
   it('stays hidden while hovered for less than showDelayMilliseconds', () => {
     const world = new EcsWorld();
-    const { interactable, panel, label } = buildScene(world);
+    const { interactable, panel } = buildScene(world);
 
     interactable.isHovered = true;
 
     world.addSystem(createUiTooltipEcsSystem(buildTime(50)));
     world.update();
 
-    expect(world.getComponent(panel, spriteId)!.enabled).toBe(false);
-    expect(world.getComponent(label, textId)!.enabled).toBe(false);
+    expect(world.getComponent(panel, visibilityId)!.visible).toBe(false);
   });
 
   it('shows once hovered continuously for at least showDelayMilliseconds', () => {
     const world = new EcsWorld();
-    const { interactable, panel, label } = buildScene(world);
+    const { interactable, panel } = buildScene(world);
 
     interactable.isHovered = true;
 
@@ -83,13 +59,12 @@ describe('createUiTooltipEcsSystem', () => {
     world.update();
     world.update();
 
-    expect(world.getComponent(panel, spriteId)!.enabled).toBe(true);
-    expect(world.getComponent(label, textId)!.enabled).toBe(true);
+    expect(world.getComponent(panel, visibilityId)!.visible).toBe(true);
   });
 
   it('shows while focused too (source-agnostic, matching the rest of the module)', () => {
     const world = new EcsWorld();
-    const { interactable, panel, label } = buildScene(world);
+    const { interactable, panel } = buildScene(world);
 
     interactable.isFocused = true;
 
@@ -98,13 +73,12 @@ describe('createUiTooltipEcsSystem', () => {
     world.addSystem(system);
     world.update();
 
-    expect(world.getComponent(panel, spriteId)!.enabled).toBe(true);
-    expect(world.getComponent(label, textId)!.enabled).toBe(true);
+    expect(world.getComponent(panel, visibilityId)!.visible).toBe(true);
   });
 
   it('hides immediately once hover ends, resetting the elapsed timer', () => {
     const world = new EcsWorld();
-    const { interactable, panel, label } = buildScene(world);
+    const { interactable, panel } = buildScene(world);
 
     interactable.isHovered = true;
 
@@ -113,18 +87,17 @@ describe('createUiTooltipEcsSystem', () => {
     world.addSystem(system);
     world.update();
 
-    expect(world.getComponent(panel, spriteId)!.enabled).toBe(true);
+    expect(world.getComponent(panel, visibilityId)!.visible).toBe(true);
 
     interactable.isHovered = false;
     world.update();
 
-    expect(world.getComponent(panel, spriteId)!.enabled).toBe(false);
-    expect(world.getComponent(label, textId)!.enabled).toBe(false);
+    expect(world.getComponent(panel, visibilityId)!.visible).toBe(false);
   });
 
   it('never shows while disabled (interactable: false)', () => {
     const world = new EcsWorld();
-    const { interactable, panel, label } = buildScene(world);
+    const { interactable, panel } = buildScene(world);
 
     interactable.interactable = false;
     interactable.isHovered = true;
@@ -134,32 +107,17 @@ describe('createUiTooltipEcsSystem', () => {
     world.addSystem(system);
     world.update();
 
-    expect(world.getComponent(panel, spriteId)!.enabled).toBe(false);
-    expect(world.getComponent(label, textId)!.enabled).toBe(false);
+    expect(world.getComponent(panel, visibilityId)!.visible).toBe(false);
   });
 
-  it('tolerates a panel/label that no longer carries a sprite/text component', () => {
+  it('throws when the panel has no VisibilityEcsComponent', () => {
     const world = new EcsWorld();
     const source = world.createEntity();
-    const interactable = addUiInteractableComponent(world, source);
 
-    const panel = world.createEntity();
-    const label = world.createEntity();
+    addUiInteractableComponent(world, source);
+    addTooltipComponent(world, source, { panel: world.createEntity() });
+    world.addSystem(createUiTooltipEcsSystem(buildTime(16)));
 
-    addTooltipComponent(world, source, {
-      panel,
-      label,
-      showDelayMilliseconds: 0,
-    });
-
-    interactable.isHovered = true;
-
-    const system = createUiTooltipEcsSystem(buildTime(16));
-
-    world.addSystem(system);
-
-    expect(() => world.update()).not.toThrow();
-    expect(world.getComponent(panel, spriteId)).toBeNull();
-    expect(world.getComponent(label, textId)).toBeNull();
+    expect(() => world.update()).toThrow(/visibility/);
   });
 });

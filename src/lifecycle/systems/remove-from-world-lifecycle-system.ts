@@ -7,7 +7,11 @@ import { RemoveFromWorldLifetimeStrategyId } from '../strategies/remove-from-wor
 import { EcsSystem } from '../../ecs/ecs-system.js';
 
 /**
- * Creates an ECS system to handle removing expired entities from the world.
+ * Creates an ECS system that removes every entity tagged with
+ * `RemoveFromWorldLifetimeStrategyId` whose {@link LifetimeEcsComponent}
+ * has expired. Register it after `createLifetimeTrackingEcsSystem`, so an
+ * entity is removed on the tick it expires.
+ * @returns The ECS system.
  */
 export const createRemoveFromWorldEcsSystem = (): EcsSystem<
   [LifetimeEcsComponent]

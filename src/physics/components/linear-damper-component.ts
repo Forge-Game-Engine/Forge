@@ -8,14 +8,16 @@ import { Vec2, Vector2 } from '../../math/index.js';
  * callers may omit these.
  */
 export interface LinearDamperDefaultedOptions {
-  /** Anchor point, in `entityA`'s local space. */
+  /** Anchor point, in `entityA`'s local space. Defaults to its origin. */
   localAnchorA: Vector2;
-  /** Anchor point, in `entityB`'s local space. */
+  /** Anchor point, in `entityB`'s local space. Defaults to its origin. */
   localAnchorB: Vector2;
 }
 
 export interface LinearDamperRequiredOptions {
+  /** The first connected entity. */
   entityA: number;
+  /** The second connected entity. */
   entityB: number;
   /** The damper's coefficient, in newton-seconds/unit. */
   dampingCoefficient: number;
@@ -41,6 +43,7 @@ export const linearDamperId =
  * @param entity - The (dedicated) entity to attach the damper component to.
  * @param options - Options for configuring the damper.
  * @returns The attached component, for further tuning or runtime changes.
+ * @throws An error if `dampingCoefficient` is negative.
  */
 export function addLinearDamperComponent(
   world: EcsWorld,

@@ -4,153 +4,132 @@ sidebar_position: 2
 
 # Applying Forces
 
-The engine gives you several ways to make bodies move: a per-entity
-`GravityEcsComponent` applied every tick, a free `applyImpulse` function for
-instantaneous hits, a free `applyTorque` function for continuous or one-shot
-spin, and a free `applyExplosiveForce` function for area-effect blasts.
-Picking the right one (and tuning its magnitude relative to body mass) is
-the difference between a satisfying jump/explosion and bodies that barely
-twitch or fly off the screen.
+A force changes a dynamic body's `velocity` or `angularVelocity`. Kinematic
+and static bodies are never affected by forces (see
+[Body types](./rigid-bodies.md#body-types)). The physics module has these
+kinds of force:
 
-## Gravity: continuous acceleration
+- **Gravity**: a constant acceleration applied every tick, by a
+  [`GravityEcsComponent`](/Forge/docs/api/type-aliases/GravityEcsComponent).
+- **Impulses**: an instant change of velocity, by
+  [`applyImpulse`](/Forge/docs/api/functions/applyImpulse).
+- **Torque**: a change of angular velocity, by
+  [`applyTorque`](/Forge/docs/api/functions/applyTorque).
+- **Angular velocity motors**: torque that turns a body towards a target
+  angular velocity every tick, by an
+  [`AngularVelocityMotorEcsComponent`](/Forge/docs/api/interfaces/AngularVelocityMotorEcsComponent).
+- **Springs and dampers**: forces between two bodies' anchor points every
+  tick, by a
+  [`LinearSpringEcsComponent`](/Forge/docs/api/interfaces/LinearSpringEcsComponent)
+  or a
+  [`LinearDamperEcsComponent`](/Forge/docs/api/interfaces/LinearDamperEcsComponent).
+- **Explosions**: an impulse away from a point, applied to every body near
+  it, by [`applyExplosiveForce`](/Forge/docs/api/functions/applyExplosiveForce).
 
-`GravityEcsComponent`, attached via `addGravityComponent` and applied every
-tick by `createGravityEcsSystem`, is the right tool for any constant,
-per-entity pull. Set `amount` once when attaching, or change it at runtime,
-for example to flip gravity for a puzzle mechanic:
+How far a force moves a body depends on the body's mass and moment of
+inertia, which come from its collider (see
+[Mass and center of mass](./rigid-bodies.md#mass-and-center-of-mass)).
+
+## Gravity
+
+Add a `GravityEcsComponent` to a body with `addGravityComponent`, and
+register [`createGravityEcsSystem`](/Forge/docs/api/functions/createGravityEcsSystem).
+Every tick, the system adds `amount` times the tick's duration to the
+body's velocity:
 
 ```ts
 import {
   addGravityComponent,
   createGravityEcsSystem,
-  gravityId,
 } from '@forge-game-engine/forge/physics';
-import { Vec2 } from '@forge-game-engine/forge/math';
 
-addGravityComponent(world, playerEntity, { amount: { x: 0, y: -600 } });
+const gravity = addGravityComponent(world, body, {
+  amount: { x: 0, y: -600 },
+});
 
-// Must run before whatever system resolves collisions
-// (createCollisionResolutionEcsSystem), so this tick's gravity is reflected
-// in this tick's contact/joint solve.
 world.addSystem(createGravityEcsSystem(time));
-
-// Later, e.g. to flip gravity:
-const gravity = world.getComponent(playerEntity, gravityId);
-
-if (gravity !== null) {
-  Vec2.negate(gravity.amount);
-}
 ```
 
-## Impulses: instantaneous pushes
-
-`applyImpulse(world, entity, impulse, worldPoint)` changes an entity's
-`RigidBodyEcsComponent` velocity immediately, and its angular velocity too
-unless `worldPoint` is the body's center of mass. It finds the center of
-mass from the entity's collider and current transform (see
-[Mass and center of mass](./rigid-bodies.md#mass-and-center-of-mass)). Use
-it for jumps, recoil, and reactions to a single event:
+Gravity is per entity, so each body can have a different `amount`, or none.
+`amount` can be changed at any time, for example to reverse gravity:
 
 ```ts
-import { applyImpulse } from '@forge-game-engine/forge/physics';
-import { positionId } from '@forge-game-engine/forge/common';
+gravity.amount.y = 600;
+```
 
-const position = world.getComponent(playerEntity, positionId);
+Register `createGravityEcsSystem` before `createCollisionResolutionEcsSystem`,
+so collision resolution works with the velocity gravity changed this tick.
+
+## Impulses
+
+`applyImpulse(world, entity, impulse, worldPoint)` applies `impulse` at a
+world-space point. It changes the body's velocity by `impulse / mass`. An
+impulse applied anywhere other than the body's center of mass also changes
+its angular velocity.
+
+```ts
+import { positionId } from '@forge-game-engine/forge/common';
+import { applyImpulse } from '@forge-game-engine/forge/physics';
+
+const position = world.getComponent(body, positionId);
 
 if (position !== null) {
-  // The player's collider is centered on its position, so this jump
-  // passes through its center of mass: no spin.
-  applyImpulse(world, playerEntity, { x: 0, y: 500 }, position.world);
+  // For a collider centered on the entity's origin, the position is the
+  // center of mass, so the body doesn't start to turn.
+  applyImpulse(world, body, { x: 0, y: 500 }, position.world);
 }
 ```
 
-The velocity change is `impulse / mass`, with the mass of the entity's
-collider, so the same impulse
-moves a light, low-density body much further than a heavy one. If a jump
-feels too weak or too strong after changing a body's density, that's
-usually why; tune the impulse magnitude alongside density rather than in
-isolation.
-
-:::caution
-There's no continuous "apply force" helper, only impulses and gravity. For a
-continuous linear push like wind or thrust, scale the impulse by
-`deltaTimeInSeconds` and apply it every tick, the same way gravity is
-integrated:
+An impulse is a single change, for something that happens once, such as a
+jump or a hit. For a push that lasts over time, such as wind or thrust,
+apply the force times the tick's duration every tick:
 
 ```ts
+import { Vec2 } from '@forge-game-engine/forge/math';
+
 applyImpulse(
   world,
-  entity,
-  Vec2.multiply(Vec2.clone(wind), deltaTimeInSeconds),
+  body,
+  Vec2.multiply(Vec2.clone(force), time.deltaTimeInSeconds),
   position.world,
 );
 ```
 
-Calling `applyImpulse` with the same vector every frame without scaling by
-`deltaTimeInSeconds` makes the push frame-rate dependent, the same bug
-`deltaTime` exists to avoid elsewhere. Rotation has a dedicated continuous
-API, `applyTorque`, covered next; you don't need this impulse-scaling
-workaround for spin.
+:::caution
+An impulse applied every tick without being multiplied by the tick's
+duration pushes a body further at a higher frame rate.
 :::
 
-## Torque: spinning a body
+## Torque
 
-`applyTorque(world, entity, torque, deltaTimeInSeconds)` changes an
-entity's `RigidBodyEcsComponent` `angularVelocity` by `torque /
-momentOfInertia * deltaTimeInSeconds`, with the moment of inertia of the
-entity's collider, the rotational equivalent of
-gravity's linear acceleration. Unlike `applyImpulse`, it already takes
-`deltaTimeInSeconds`, so call it every tick with the same torque value for
-a continuous spin (a thruster, a fan, a car engine), or once for an
-instantaneous twist:
+`applyTorque(world, entity, torque, deltaTimeInSeconds)` changes a body's
+angular velocity by `torque / momentOfInertia * deltaTimeInSeconds`. A
+positive torque turns the body counter-clockwise. Call it every tick for a
+continuous torque:
 
 ```ts
 import { applyTorque } from '@forge-game-engine/forge/physics';
 
-// A continuous thruster torque, called every tick while held.
-applyTorque(world, spaceshipEntity, 50, deltaTimeInSeconds);
+applyTorque(world, body, 50, time.deltaTimeInSeconds);
 ```
 
-The angular velocity change is `torque / momentOfInertia`, scaled by time,
-so a body with a large moment of inertia (a big or dense shape) spins up
-more slowly than a small one under the same torque.
+Call it from a system registered before `createEulerIntegrationEcsSystem`,
+so the change moves the body in the same tick.
 
-By default a spinning body keeps its `angularVelocity` forever once nothing
-is driving it anymore, exactly like gravity-free linear motion. Set
-`angularDrag` (`0` by default) on `RigidBodyEcsComponent` to have
-`createEulerIntegrationEcsSystem` damp `angularVelocity` towards `0` every
-tick instead, useful for anything that should coast to a stop rather than
-spin indefinitely, like a thruster-spun wheel with some friction in its
-bearing:
+A body keeps its angular velocity when nothing turns it. A
+`RigidBodyEcsComponent`'s `angularDrag` (`0` by default) reduces
+`angularVelocity` towards `0` every tick, in proportion to its value:
 
 ```ts
-addRigidBodyComponent(world, wheelEntity, {
-  angularDrag: 1.5,
-});
+addRigidBodyComponent(world, wheel, { angularDrag: 1.5 });
 ```
 
-### ECS integration: `AngularVelocityMotorEcsComponent`
+## Angular velocity motors
 
-For a one-shot or player-driven torque, there's no dedicated ECS component:
-write a small system for it in your own game code, querying for whatever
-component identifies the entity (a `ThrusterEcsComponent`, a tag, ...)
-alongside `RigidBodyEcsComponent`, and call `applyTorque` directly. This
-mirrors `applyImpulse`, which also has no ECS component of its own; see the
-Torque and Motors demo's `ThrusterEcsComponent`/`createThrusterEcsSystem`
-for a worked example.
-
-For holding a target rotation speed, use
-`AngularVelocityMotorEcsComponent`
-(attached via `addAngularVelocityMotorComponent`) instead: it drives the
-body towards a `targetVelocity` (rad/s), spending no more than `maxTorque`
-(N·m) per tick to get there. This one _is_ a built-in engine component,
-since the torque-to-reach-target-velocity calculation is non-trivial and
-broadly reusable (a fan settling at its rated RPM, a car wheel matching
-throttle input), unlike a one-shot or manually-driven torque, which is just
-a direct `applyTorque` call away. Unlike a joint, it's recomputed fresh from
-the body's current angular velocity every tick rather than warm-started, so
-it automatically recovers after an external disturbance (a collision, a
-gust knocking the body off course).
+An `AngularVelocityMotorEcsComponent` turns a body towards a
+`targetVelocity`, in radians per second, with a torque of at most
+`maxTorque`. Add one with `addAngularVelocityMotorComponent`, and register
+[`createAngularVelocityMotorEcsSystem`](/Forge/docs/api/functions/createAngularVelocityMotorEcsSystem):
 
 ```ts
 import {
@@ -158,173 +137,96 @@ import {
   createAngularVelocityMotorEcsSystem,
 } from '@forge-game-engine/forge/physics';
 
-// A fan blade that spins up to 8 rad/s, limited to 40 N·m of torque.
-addAngularVelocityMotorComponent(world, fanEntity, {
+const motor = addAngularVelocityMotorComponent(world, body, {
   targetVelocity: 8,
   maxTorque: 40,
 });
 
-// Must run before whatever system integrates velocity into position
-// (createEulerIntegrationEcsSystem).
 world.addSystem(createAngularVelocityMotorEcsSystem(time));
 ```
 
-:::caution[Registration order]
-`createAngularVelocityMotorEcsSystem` (and any custom torque-applying
-system you write) must run before whatever system integrates velocity into
-position (`createEulerIntegrationEcsSystem`). Registering it after means
-torque applied this tick isn't reflected until the next one.
-:::
+The system computes the torque every tick from the body's current angular
+velocity, so after a collision or another torque changes it, the motor
+turns the body back towards `targetVelocity`. Change `targetVelocity` or
+`maxTorque` on the component at any time. Register the system before
+`createEulerIntegrationEcsSystem`.
 
-## Springs and dampers: soft connections between two bodies
+## Springs and dampers
 
-`LinearSpringEcsComponent`
+A `LinearSpringEcsComponent` pushes or pulls two bodies' anchor points
+towards `restLength` apart, with a force of `stiffness` times the
+difference. A `LinearDamperEcsComponent` resists the anchor points moving
+towards or away from each other, with a force of `dampingCoefficient`
+times that speed. A spring on its own keeps oscillating, so it is usually
+paired with a damper between the same anchor points, for example in a
+vehicle's suspension.
+
+Add them to an entity of their own, which references the two bodies as
+`entityA` and `entityB`, and register
+[`createLinearSpringEcsSystem`](/Forge/docs/api/functions/createLinearSpringEcsSystem)
 and
-`LinearDamperEcsComponent`
-are continuous, position/velocity-based forces connecting two bodies'
-anchor points, rather than a single body driven towards a target. Reach for
-these for anything that should behave like a soft connection instead of a
-rigid one, most commonly vehicle suspension: a spring supports the
-chassis's weight and pushes a wheel back down after it hits a bump, while a
-damper (the shock absorber) dissipates the spring's energy so the wheel
-doesn't bounce forever.
-
-A `LinearSpringEcsComponent` follows Hooke's Law, `F = -k * x`: the further
-its two anchors are from `restLength` apart, the harder it pulls (if
-stretched) or pushes (if compressed) them back towards it. `stiffness` is
-`k`. Attach one with
-`addLinearSpringComponent`,
-then register
-`createLinearSpringEcsSystem`
-to have the force applied every tick:
-
-```ts
-import {
-  addLinearSpringComponent,
-  createLinearSpringEcsSystem,
-} from '@forge-game-engine/forge/physics';
-
-const suspensionEntity = world.createEntity();
-
-// chassis and wheel are entities with their own PositionEcsComponent,
-// RotationEcsComponent, and RigidBodyEcsComponent, created the same way as
-// in Bodies and Shapes.
-addLinearSpringComponent(world, suspensionEntity, {
-  entityA: chassis,
-  entityB: wheel,
-  restLength: 40,
-  stiffness: 800,
-});
-
-// Must run before whatever system resolves collisions
-// (createCollisionResolutionEcsSystem), the same as gravity.
-world.addSystem(createLinearSpringEcsSystem(time));
-```
-
-A `LinearDamperEcsComponent` follows `F = -c * v`, where `v` is the anchors'
-relative speed along the line between them (their compression/extension
-speed, not their full relative velocity), and `dampingCoefficient` is `c`. A
-spring alone oscillates indefinitely once disturbed; pair it with a damper
-sharing the same entities (and usually the same anchors) to bleed off that
-energy. Attach one with
-`addLinearDamperComponent`,
-then register
-`createLinearDamperEcsSystem`:
+[`createLinearDamperEcsSystem`](/Forge/docs/api/functions/createLinearDamperEcsSystem):
 
 ```ts
 import {
   addLinearDamperComponent,
+  addLinearSpringComponent,
   createLinearDamperEcsSystem,
+  createLinearSpringEcsSystem,
 } from '@forge-game-engine/forge/physics';
 
-addLinearDamperComponent(world, suspensionEntity, {
-  entityA: chassis,
-  entityB: wheel,
+const connection = world.createEntity();
+
+addLinearSpringComponent(world, connection, {
+  entityA: bodyA,
+  entityB: bodyB,
+  restLength: 40,
+  stiffness: 800,
+});
+addLinearDamperComponent(world, connection, {
+  entityA: bodyA,
+  entityB: bodyB,
   dampingCoefficient: 40,
 });
 
-// Must run before whatever system resolves collisions, same as the spring
-// system.
+world.addSystem(createLinearSpringEcsSystem(time));
 world.addSystem(createLinearDamperEcsSystem(time));
 ```
 
-Both default `restLength` (spring only) to the distance between the anchors
-at attach time and `localAnchorA`/`localAnchorB` to each entity's own
-origin, the same conventions the prismatic joint uses (see
-[Choosing an axis and anchors](./joints.md#choosing-an-axis-and-anchors)).
-Neither is a hard constraint solved iteratively the way a joint is; their
-systems compute and apply the force directly every tick via `applyImpulse`,
-scaled by `deltaTimeInSeconds`, the same continuous-force-via-scaled-impulse
-pattern used for wind above - and, like gravity, they have no warm-start
-state of their own.
+The anchor points `localAnchorA` and `localAnchorB` are in each body's
+local space, and default to the bodies' origins. A spring without a
+`restLength` uses the distance between its anchor points when it is added.
+An entity in `entityA` or `entityB` without a `RigidBodyEcsComponent` is
+static.
 
-Like a jointed entity, the spring/damper entity itself doesn't need
-position/rotation components; it only references `entityA`/`entityB`, which
-get their own entities.
+Register both systems before `createCollisionResolutionEcsSystem`, as for
+gravity.
 
-:::caution
-A spring and damper connecting the same two entities don't have to share
-anchors, but usually should. Mismatched anchors mean the spring's restoring
-force and the damper's resistance act along different lines, which reads as
-the suspension "fighting itself" rather than settling cleanly.
-:::
+## Explosions
 
-:::caution[Registration order]
-`createLinearSpringEcsSystem` and `createLinearDamperEcsSystem` must run
-before whatever system resolves collisions (`createCollisionResolutionEcsSystem`),
-the same as gravity, so the tick's contact/joint solve sees this tick's
-spring/damper force reflected in velocity. Registering them after means
-force applied this tick isn't reflected until the next one.
-:::
-
-## Explosions: area-effect impulses
-
-`applyExplosiveForce(world, center, force, radius)`
-applies a radial impulse to every entity with a `RigidBodyEcsComponent`
-within `radius` of `center`, strongest at `center` and falling off linearly
-to zero at `radius`. Distance is measured to each body's center of mass and
-the impulse passes through it, so it never imparts spin. Entities with no
-`RigidBodyEcsComponent` (static geometry), kinematic and static bodies, and
-bodies whose center of mass is at or beyond `radius` are untouched.
-
-A common use case is triggering an explosion at a clicked point. The physics
-demo converts the mouse position to world space through the camera's view
-(see [World Units and Cameras](../rendering/world-units-and-cameras.md)) and calls
-`applyExplosiveForce` on click:
+`applyExplosiveForce(world, center, force, radius)` applies an impulse
+away from `center` to every dynamic body whose center of mass is within
+`radius` of it. The impulse is `force` at `center` and falls off linearly
+to `0` at `radius`. It is applied at each body's center of mass, so it
+doesn't turn the body.
 
 ```ts
-import { getCameraView } from '@forge-game-engine/forge/rendering';
 import { applyExplosiveForce } from '@forge-game-engine/forge/physics';
 
-// world and renderContext come from your game setup; camera is the entity
-// createCamera returned.
-renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
-  const canvasBounds = renderContext.canvas.getBoundingClientRect();
-
-  const viewportPosition = {
-    x: event.clientX - canvasBounds.left,
-    y: event.clientY - canvasBounds.top,
-  };
-
-  const worldPosition = getCameraView(
-    world,
-    camera,
-    renderContext,
-  ).viewportToWorld(viewportPosition);
-
-  applyExplosiveForce(world, worldPosition, 1_000_000, 600);
-});
+applyExplosiveForce(world, { x: 0, y: 0 }, 1_000_000, 600);
 ```
 
-Because the impulse scales with both `force` and proximity to `center`,
-treat `force` and `radius` as a pair to tune together for your world's
-scale; the values above suit a world using pixel-scale coordinates with
-gravity around `-300`.
+`center` is in world space. To place an explosion at a point on the
+screen, convert the point with the camera's view (see
+[World Units and Cameras](../rendering/world-units-and-cameras.md)).
 
-:::caution
-`applyExplosiveForce` queries every entity with a `RigidBodyEcsComponent` to
-check its distance from `center`, regardless of `radius`. An occasional
-explosion triggered by player input is cheap even with hundreds of bodies,
-but calling it every frame, or from many simultaneous sources, adds an
-O(bodies) cost per call on top of the regular simulation step.
-:::
+`applyExplosiveForce` measures the distance to every entity with a
+`RigidBodyEcsComponent` and a `PositionEcsComponent`, whatever the
+`radius`.
+
+## Removing a force
+
+Remove a `GravityEcsComponent` or `AngularVelocityMotorEcsComponent` from
+its body, and a `LinearSpringEcsComponent` or `LinearDamperEcsComponent`
+from its entity, with `world.removeComponent`. A body keeps the velocity a
+force gave it.

@@ -17,6 +17,13 @@ import {
 } from '../../input-sources/index.js';
 
 /** Represents a mouse input source with associated bindings. */
+/**
+ * The CSS pixels a wheel event reported in lines scrolls per line: the line
+ * height common wheel normalizers (React's, Facebook's `normalizeWheel`)
+ * use.
+ */
+const wheelLineHeight = 40;
+
 export class MouseInputSource
   implements
     TriggerInputSource<MouseTriggerBinding>,
@@ -46,7 +53,7 @@ export class MouseInputSource
 
   private readonly _pointerPosition = Vec2.zero;
   private readonly _pointerDelta = Vec2.zero;
-  private _pointerScroll = 0;
+  private readonly _pointerScroll = Vec2.zero;
   private _wheelInput = 0;
 
   /** Constructs a new MouseInputSource.
@@ -89,10 +96,12 @@ export class MouseInputSource
   }
 
   /**
-   * Accumulated wheel scroll delta (`WheelEvent.deltaY`) since the last
-   * `reset()`.
+   * Accumulated wheel scroll delta since the last `reset()`, in CSS pixels:
+   * `WheelEvent.deltaX`/`deltaY`, so `x` is positive scrolling right and
+   * `y` positive scrolling down (Y-down, like `position`). Wheels that
+   * report lines or pages are converted to pixels.
    */
-  get scroll(): number {
+  get scroll(): Vector2 {
     return this._pointerScroll;
   }
 
@@ -121,7 +130,8 @@ export class MouseInputSource
     this._mouseButtonUps.clear();
     this._pointerDelta.x = 0;
     this._pointerDelta.y = 0;
-    this._pointerScroll = 0;
+    this._pointerScroll.x = 0;
+    this._pointerScroll.y = 0;
 
     if (this._wheelInput !== 0) {
       this._wheelInput = 0;
@@ -158,12 +168,38 @@ export class MouseInputSource
   };
 
   private readonly _onWheelHandler = (event: WheelEvent) => {
-    this._pointerScroll += event.deltaY;
+    // Read the deltas before `deltaMode`: Firefox reports lines only to
+    // pages that read `deltaMode` first, and pixels otherwise.
+    const { deltaX, deltaY } = event;
+    const scale = this._wheelDeltaModeScale(event.deltaMode);
+
+    this._pointerScroll.x += deltaX * scale.x;
+    this._pointerScroll.y += deltaY * scale.y;
     // Every wheel event in a frame adds up, and `reset` withdraws the total
     // at the end of the frame.
-    this._wheelInput += event.deltaY / 100;
+    this._wheelInput += (deltaY * scale.y) / 100;
     this._reportWheel();
   };
+
+  /**
+   * The CSS pixels one unit of a wheel event's delta stands for: `1` for
+   * pixels, {@link wheelLineHeight} for lines, and the container's size for
+   * pages.
+   */
+  private _wheelDeltaModeScale(deltaMode: number): Vector2 {
+    if (deltaMode === WheelEvent.DOM_DELTA_LINE) {
+      return { x: wheelLineHeight, y: wheelLineHeight };
+    }
+
+    if (deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+      return {
+        x: this._container.clientWidth,
+        y: this._container.clientHeight,
+      };
+    }
+
+    return { x: 1, y: 1 };
+  }
 
   private _reportButton(button: MouseButton, isDown: boolean): void {
     for (const binding of this.triggerBindings) {

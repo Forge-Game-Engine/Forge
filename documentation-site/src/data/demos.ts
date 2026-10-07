@@ -159,6 +159,13 @@ export const demos: Demo[] = [
     categories: ['rendering'],
   },
   {
+    slug: 'context-loss',
+    title: 'Context Loss',
+    description:
+      'Losing and restoring the WebGL context without reloading the page.',
+    categories: ['rendering'],
+  },
+  {
     slug: 'masks',
     title: 'Masks',
     description:
@@ -236,6 +243,13 @@ export const demos: Demo[] = [
     categories: ['ui'],
   },
   {
+    slug: 'ui-scroll-view',
+    title: 'UI Scroll View',
+    description:
+      'A clipped list scrolled by dragging, the mouse wheel, a scrollbar and focus, with inertia and elastic edges.',
+    categories: ['ui'],
+  },
+  {
     slug: 'ui-progress-bar',
     title: 'UI Progress Bar',
     description:
@@ -262,6 +276,13 @@ export const demos: Demo[] = [
     description:
       'A CanvasGroup fades and disables an entire nested UI subtree at once.',
     categories: ['ui'],
+  },
+  {
+    slug: 'visibility',
+    title: 'Visibility',
+    description:
+      'Hiding an entity hides everything under it: drawing, UI layout, input and particle emitters.',
+    categories: ['ui', 'rendering'],
   },
   {
     slug: 'ui-world-space-canvas',

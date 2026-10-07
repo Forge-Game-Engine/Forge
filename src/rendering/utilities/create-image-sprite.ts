@@ -79,7 +79,6 @@ export function createImageSprite(
     emissive: null,
     material: null,
     category: 1,
-    enabled: true,
     layer: 0,
     slices:
       slices && resolveNineSliceNativeSize(slices, worldWidth, worldHeight),

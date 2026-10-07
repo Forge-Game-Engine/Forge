@@ -112,6 +112,8 @@ describe('UI-camera compositing over the world camera', () => {
       clearColor: vi.fn(),
       clear: vi.fn(),
       drawArrays: vi.fn(),
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
@@ -126,14 +128,14 @@ describe('UI-camera compositing over the world camera', () => {
     world.addSystem(createPresentEcsSystem(renderContext));
 
     worldTarget = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 800,
       height: 600,
     } as RenderTarget;
 
     uiTarget = {
-      colorTexture: new Texture(mockGl),
+      colorTexture: new Texture(renderContext),
       framebuffer: {},
       width: 800,
       height: 600,
@@ -245,7 +247,7 @@ describe('UI-camera compositing over the world camera', () => {
       width: 10,
       height: 10,
       pivot: Vec2.zero,
-      texture: new Texture(mockGl),
+      texture: new Texture(renderContext),
       material,
     });
 

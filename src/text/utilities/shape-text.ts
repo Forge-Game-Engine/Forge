@@ -70,9 +70,7 @@ export interface ShapeTextOptions {
    * `horizontalAlign`'s alignment box measured from the wrong point: e.g. a
    * `'center'`-aligned single line under a center pivot would end up
    * offset by half its own alignment box, since `x = 0` would land at the
-   * box's center rather than its left edge. Defaults to `0` because that's
-   * the shape every existing caller before this field was added already
-   * assumed.
+   * box's center rather than its left edge. Defaults to `0`.
    */
   horizontalAlignPivot?: number;
 
@@ -668,7 +666,6 @@ function getVerticalAlignOffset(
  * @param fontAtlasData - The font atlas metrics to shape against.
  * @param options - Shaping options.
  * @returns The shaped glyph quads and the block's bounds.
- * @throws An error if `text` contains a malformed tag (see {@link parseRichText}).
  */
 export function shapeText(
   text: string,

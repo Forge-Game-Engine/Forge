@@ -11,7 +11,7 @@ Input sources (a [`KeyboardInputSource`](/Forge/docs/api/classes/KeyboardInputSo
 what their bound keys, buttons and sticks are doing, and the
 [`InputManager`](/Forge/docs/api/classes/InputManager) derives each action's
 state from those reports and the active input group. Game code reads the
-action, not the key or button that drives it.
+action, not the keys or buttons bound to it.
 
 ## Action types
 
@@ -106,8 +106,9 @@ state.
 [`registerInputs`](/Forge/docs/api/functions/registerInputs) adds a system
 that calls [`inputManager.reset()`](/Forge/docs/api/classes/InputManager#reset)
 after the game's systems run. It sets every `TriggerAction`'s `isTriggered`
-back to `false`, and lets each source withdraw input that only lasts one
-frame, such as a mouse wheel turn.
+back to `false`, and calls `reset` on each source added with
+`inputManager.addResettable`. A source's `reset` reports `0` for input that
+only lasts one frame, such as a mouse wheel turn.
 
 ## Combining input from several sources
 
@@ -120,8 +121,8 @@ bindings are summed and clamped, and a hold is down while any of its
 buttons is. The `InputManager` then combines the sources:
 
 - **Axes** read the report with the largest magnitude (for an
-  `Axis2dAction`, the largest vector length). On a tie, the source already
-  driving the axis keeps it. Releasing one source's input leaves the axis
+  `Axis2dAction`, the largest vector length). On a tie, the axis keeps reading
+  the source it already reads. Releasing one source's input leaves the axis
   reading the others.
 - **Holds** are held while any source holds them. `holdStartEvent` is
   raised once when the first source starts the hold, and `holdEndEvent`

@@ -4,41 +4,49 @@ sidebar_position: 2
 
 # Property Animations
 
-Property animations interpolate a single number over time and report
-progress through a callback every tick. Use them for anything you can
-express as a number: position, scale, rotation, opacity, a health bar's
-fill amount, and so on.
+A property animation moves a number from a start value to an end value over
+a duration and passes the current value to a callback on every update. The
+callback writes the value wherever it's needed, such as a position, a scale
+or an opacity.
 
-## Adding an animated property
+## Animated properties
 
-Animated properties live in the `animations` array of the
-[`animation`](/Forge/docs/api/variables/animationId) component
-([`AnimationEcsComponent`](/Forge/docs/api/interfaces/AnimationEcsComponent)).
-Build each entry with
-[`createAnimatedProperty`](/Forge/docs/api/functions/createAnimatedProperty),
-which fills in defaults
-([`animationDefaults`](/Forge/docs/api/variables/animationDefaults)) for any
-[`AnimatedProperty`](/Forge/docs/api/interfaces/AnimatedProperty) field you
-don't specify, then register
+An [`AnimatedProperty`](/Forge/docs/api/interfaces/AnimatedProperty) has:
+
+- `startValue` and `endValue`: the values the animation moves between.
+- `duration`: the length of one iteration, in milliseconds.
+- `easing`: a function that maps the elapsed fraction of `duration` (`0` to
+  `1`) to the fraction of the way from `startValue` to `endValue`.
+- `updateCallback`: called with the current value.
+- `loop`, `loopCount` and `finishedCallback`: what happens when the
+  animation reaches `endValue`.
+
+An entity's [`AnimationEcsComponent`](/Forge/docs/api/interfaces/AnimationEcsComponent)
+holds its running animated properties in `animations`. On every update,
 [`createAnimationEcsSystem`](/Forge/docs/api/functions/createAnimationEcsSystem)
-to advance them every tick:
+adds `time.deltaTimeInMilliseconds` to each one's `elapsed` and calls its
+`updateCallback` with `startValue + (endValue - startValue) * easing(elapsed / duration)`.
+Because it advances by the [Time](../common/time.md)'s delta time,
+animations follow its `timeScale`.
+
+## Adding an animation
+
+[`createAnimatedProperty`](/Forge/docs/api/functions/createAnimatedProperty)
+fills in the defaults for the fields you leave out. Add the result to an
+`AnimationEcsComponent` with
+[`addAnimationComponent`](/Forge/docs/api/functions/addAnimationComponent),
+and register the animation system:
 
 ```ts
 import {
-  addPositionComponent,
-  positionId,
-} from '@forge-game-engine/forge/common';
-import {
   addAnimationComponent,
-  animationId,
   createAnimatedProperty,
   createAnimationEcsSystem,
-  easeInOutSine,
 } from '@forge-game-engine/forge/animations';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 
 const entity = world.createEntity();
-
-addPositionComponent(world, entity);
+const position = addPositionComponent(world, entity);
 
 addAnimationComponent(world, entity, {
   animations: [
@@ -46,13 +54,8 @@ addAnimationComponent(world, entity, {
       startValue: 0,
       endValue: 100,
       duration: 400,
-      easing: easeInOutSine,
       updateCallback: (x) => {
-        const position = world.getComponent(entity, positionId);
-
-        if (position) {
-          position.local.x = x;
-        }
+        position.local.x = x;
       },
     }),
   ],
@@ -61,93 +64,122 @@ addAnimationComponent(world, entity, {
 world.addSystem(createAnimationEcsSystem(time));
 ```
 
-Every `world.update()`, the system adds `deltaTimeInMilliseconds` to each
-animation's `elapsed`, runs `elapsed / duration` through `easing`, and calls
-`updateCallback` with the result mapped between `startValue` and `endValue`.
-When `elapsed >= duration`, `updateCallback` is called once more with the
-exact `endValue` so the animation always lands precisely on target, then
-`finishedCallback` runs and the entry is removed from `animations` (unless
-it's looping, see below).
+## Starting an animation on an existing entity
 
-## Triggering animations at runtime
-
-`animations` is a plain array, so you can push new entries onto it whenever
-something happens in your game, for example fading out a sprite when an
-entity is defeated:
+`animations` is an array, so push a new animated property onto it:
 
 ```ts
-import { Color, spriteId } from '@forge-game-engine/forge/rendering';
+import {
+  animationId,
+  createAnimatedProperty,
+} from '@forge-game-engine/forge/animations';
 
-const animationComponent = world.getComponent(entity, animationId);
+const animation = world.getComponentRequired(entity, animationId);
 
-animationComponent?.animations.push(
+animation.animations.push(
   createAnimatedProperty({
     startValue: 1,
-    endValue: 0,
+    endValue: 2,
     duration: 200,
-    updateCallback: (alpha) => {
-      const sprite = world.getComponent(entity, spriteId);
-
-      if (sprite) {
-        sprite.tintColor = new Color(1, 1, 1, alpha);
-      }
+    updateCallback: (value) => {
+      scale.local.x = value;
+      scale.local.y = value;
     },
-    finishedCallback: () => world.removeEntity(entity),
   }),
 );
 ```
 
 ## Easing
 
-Pick an easing function that matches the motion you want:
-[`linear`](/Forge/docs/api/functions/linear),
-[`easeInOutSine`](/Forge/docs/api/functions/easeInOutSine),
+`easing` defaults to [`linear`](/Forge/docs/api/functions/linear). The
+module also has [`easeInOutSine`](/Forge/docs/api/functions/easeInOutSine),
 [`easeInOutQuint`](/Forge/docs/api/functions/easeInOutQuint),
 [`easeInBack`](/Forge/docs/api/functions/easeInBack),
-[`easeInOutBack`](/Forge/docs/api/functions/easeInOutBack), and
-[`easeInOutElastic`](/Forge/docs/api/functions/easeInOutElastic).
+[`easeInOutBack`](/Forge/docs/api/functions/easeInOutBack) and
+[`easeInOutElastic`](/Forge/docs/api/functions/easeInOutElastic). Any
+function from a number to a number can be used:
 
-:::tip
-The "back" and "elastic" easing functions overshoot, producing values below 0
-or above 1 partway through the animation (a wind-up or bounce). If
-`updateCallback` can't handle values outside `[startValue, endValue]`
-(for example, clamped properties like alpha), pick a non-overshooting easing
-function such as `easeInOutSine` or `easeInOutQuint` instead.
-:::
+```ts
+import {
+  createAnimatedProperty,
+  easeInOutSine,
+} from '@forge-game-engine/forge/animations';
 
-## Looping and ping-pong
-
-Set `loop` to `'loop'` or `'pingpong'` (the default is `'none'`) to repeat
-the animation, and `loopCount` to control how many times (`-1`, the default,
-loops forever):
-
-- `'loop'` resets `elapsed` to `0` and jumps back to `startValue`, then plays
-  forward to `endValue` again.
-- `'pingpong'` resets `elapsed` to `0` and swaps `startValue` and `endValue`,
-  so the next iteration plays in reverse. Each iteration swaps them again,
-  producing a back-and-forth motion.
-
-Each iteration after the first decrements `loopCount` (if it's `0` or
-greater). Once `loopCount` reaches `0`, the animation is removed and
-`finishedCallback` runs.
+createAnimatedProperty({
+  duration: 400,
+  easing: easeInOutSine,
+  updateCallback: (value) => {
+    /* ... */
+  },
+});
+```
 
 :::caution
-With `'pingpong'`, `startValue` and `endValue` are swapped in place on the
-`AnimatedProperty` object every iteration. Don't rely on either field holding
-its original value after the first loop; keep a separate copy of the
-original bounds if you need them.
+The back and elastic functions return values below `0` or above `1` partway
+through, so `updateCallback` receives values outside the range from
+`startValue` to `endValue`. Use another easing function for a value that
+must stay in that range, such as an opacity.
 :::
 
-## Notes and troubleshooting
+## Looping an animation
 
-- A `duration` of `0` (or any value `elapsed` already exceeds) completes the
-  animation on its very first tick: `updateCallback` runs with `endValue`
-  immediately and `finishedCallback` fires right away.
-- `updateCallback` can run twice in the tick where an animation finishes,
-  once with the eased value and once with the exact `endValue`. If your
-  callback has side effects beyond setting a value (playing a sound,
-  incrementing a counter), guard against double-firing or move that logic
-  into `finishedCallback`.
-- `finishedCallback` only runs when the animation is fully removed. For
-  looping animations, that's after `loopCount` reaches `0`, not after every
-  individual iteration.
+Set `loop` to repeat the animation when it reaches `endValue`:
+
+- `'loop'` restarts it from `startValue`.
+- `'pingpong'` swaps `startValue` and `endValue` on the animated property,
+  so the next iteration plays in reverse.
+
+`loopCount` is the number of times it plays again after the first
+iteration. It defaults to `-1`, which loops until the animation is removed.
+
+```ts
+createAnimatedProperty({
+  startValue: 0,
+  endValue: 10,
+  duration: 500,
+  loop: 'pingpong',
+  loopCount: 3,
+  updateCallback: (y) => {
+    position.local.y = y;
+  },
+});
+```
+
+## Reacting to the end of an animation
+
+When an animation completes and doesn't loop again, the animation system
+calls its `finishedCallback` and removes it from `animations`:
+
+```ts
+createAnimatedProperty({
+  duration: 200,
+  updateCallback: (value) => {
+    /* ... */
+  },
+  finishedCallback: () => {
+    world.removeEntity(entity);
+  },
+});
+```
+
+:::caution
+On the update that completes an iteration, `updateCallback` is called a
+second time with exactly `endValue`, and, when the animation loops, a third
+time with the next iteration's `startValue`. Put work that must happen once,
+such as playing a sound, in `finishedCallback`.
+:::
+
+## Stopping an animation
+
+Remove the animated property from `animations` to stop it. Its
+`finishedCallback` isn't called:
+
+```ts
+const index = animation.animations.indexOf(animatedProperty);
+
+if (index !== -1) {
+  animation.animations.splice(index, 1);
+}
+```
+
+Removing the `AnimationEcsComponent` stops all of the entity's animations.

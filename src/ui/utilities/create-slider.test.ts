@@ -20,7 +20,6 @@ const buildSprite = () => ({
   emissive: null,
   material: null,
   category: 1,
-  enabled: true,
   layer: 0,
 });
 

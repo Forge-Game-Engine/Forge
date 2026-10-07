@@ -2,10 +2,9 @@ import { Stoppable, Time } from '../common/index.js';
 import { EcsWorld } from '../ecs/ecs-world.js';
 
 /**
- * Manages the game loop: a `Time` instance and one or more `EcsWorld`s,
- * driven by `requestAnimationFrame`. `Game` is a simple loop orchestrator -
- * it has no notion of rendering, resizing, or anything else beyond updating
- * its worlds once per frame and stopping them when told to.
+ * Runs the game loop: every `requestAnimationFrame` frame, it updates its
+ * `Time` with `performance.now()` and calls `update()` on each of its
+ * `EcsWorld`s, in array order. It doesn't render or resize anything.
  */
 export class Game implements Stoppable {
   /**
@@ -33,7 +32,8 @@ export class Game implements Stoppable {
   }
 
   /**
-   * Starts the game loop.
+   * Starts the game loop. The first frame's delta time is measured from
+   * this call. Does nothing if the game is already running.
    */
   public run(): void {
     if (this._isRunning) {
@@ -55,7 +55,8 @@ export class Game implements Stoppable {
   }
 
   /**
-   * Stops the game loop.
+   * Stops the game loop: cancels the next frame and calls `stop()` on each
+   * world, which runs every registered system's `cleanup`.
    */
   public stop(): void {
     this._isRunning = false;

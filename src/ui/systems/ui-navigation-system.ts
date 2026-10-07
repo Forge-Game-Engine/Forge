@@ -1,6 +1,7 @@
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Rect, Rects, Vec2, Vector2 } from '../../math/index.js';
+import { isVisibleInHierarchy } from '../../rendering/components/visibility-component.js';
 import {
   CanvasEcsComponent,
   canvasId,
@@ -67,11 +68,13 @@ function isFocusable(world: EcsWorld, entity: number): boolean {
 
   return (
     !!interactable?.interactable &&
-    resolveCanvasGroupState(world, entity).interactable
+    interactable.focusable &&
+    resolveCanvasGroupState(world, entity).interactable &&
+    isVisibleInHierarchy(world, entity)
   );
 }
 
-/** Groups every focusable candidate (own `interactable: true`, and not disabled by an ancestor `CanvasGroupEcsComponent`) into `interactableEntities`/`rectTransforms` by its owning canvas entity. */
+/** Groups every focusable candidate (own `interactable: true` and `focusable: true`, not disabled by an ancestor `CanvasGroupEcsComponent`, and visible in the hierarchy) into `interactableEntities`/`rectTransforms` by its owning canvas entity. */
 function groupFocusCandidatesByCanvas(
   world: EcsWorld,
   interactableEntities: readonly number[],
@@ -83,7 +86,9 @@ function groupFocusCandidatesByCanvas(
   for (let i = 0; i < interactableEntities.length; i++) {
     if (
       !interactables[i].interactable ||
-      !resolveCanvasGroupState(world, interactableEntities[i]).interactable
+      !interactables[i].focusable ||
+      !resolveCanvasGroupState(world, interactableEntities[i]).interactable ||
+      !isVisibleInHierarchy(world, interactableEntities[i])
     ) {
       continue;
     }
@@ -256,10 +261,7 @@ function applySubmitInput(world: EcsWorld, canvas: CanvasEcsComponent): void {
     uiInteractableId,
   );
 
-  if (
-    focused?.interactable &&
-    resolveCanvasGroupState(world, canvas.focusedEntity).interactable
-  ) {
+  if (focused && isFocusable(world, canvas.focusedEntity)) {
     focused.wasInvokedThisFrame = true;
     focused.onInvoke.raise();
   }
@@ -270,9 +272,10 @@ function applySubmitInput(world: EcsWorld, canvas: CanvasEcsComponent): void {
  * counterpart to pointer hover/click that lets a controller or keyboard
  * reach and invoke the same interactables.
  *
- * Every `interactable: true` `UiInteractableEcsComponent` - not disabled by
+ * Every `interactable: true`, `focusable: true` `UiInteractableEcsComponent` - not disabled by
  * an ancestor `CanvasGroupEcsComponent` either, see `resolveCanvasGroupState`
- * - is automatically focus-navigable: on the tick a canvas's `navigateInput`
+ * - and visible in the hierarchy (see `VisibilityEcsComponent`) is
+ * automatically focus-navigable: on the tick a canvas's `navigateInput`
  * magnitude first
  * crosses `navigationThreshold`, focus moves to the nearest candidate on
  * the same canvas in the dominant direction (a `UiFocusEcsComponent` on the
@@ -281,6 +284,13 @@ function applySubmitInput(world: EcsWorld, canvas: CanvasEcsComponent): void {
  * `cancelInput` clears focus - register your own listener on
  * `cancelInput.triggerEvent` for bespoke "close this menu" behavior.
  *
+ * When the focused element is hidden (it or an ancestor), focus is
+ * released rather than moved, so game code that focuses something else
+ * itself isn't overridden; with nothing focused, the next navigation step
+ * focuses the first-drawn candidate again. Losing `interactable` doesn't
+ * release focus: a disabled element stays on screen, where a player can
+ * still see what's focused.
+ *
  * Also resets every `UiInteractableEcsComponent.wasInvokedThisFrame` to
  * `false` at the start of its tick, before re-setting it for this tick's
  * submit invocation - the single point in the pipeline responsible for that
@@ -288,7 +298,7 @@ function applySubmitInput(world: EcsWorld, canvas: CanvasEcsComponent): void {
  * for the pointer path and relies on this system having already cleared
  * it this tick). Always register this system - even on a canvas with no
  * `submitInput`/`cancelInput`/`navigateInput` configured - or
- * `wasInvokedThisFrame` never clears; `createUiCanvas` does this for you.
+ * `wasInvokedThisFrame` never clears; `registerUiSystems` registers it.
  *
  * Must be registered after `createUiRaycastEcsSystem` (if present) and
  * before `createUiInteractionEcsSystem`.
@@ -323,7 +333,11 @@ export const createUiNavigationEcsSystem = (): EcsSystem<
       const canvasEntity = canvasEntities[c];
       const canvas = canvases[c];
 
-      if (canvas.cancelInput?.isTriggered) {
+      if (
+        canvas.cancelInput?.isTriggered ||
+        (canvas.focusedEntity !== null &&
+          !isVisibleInHierarchy(world, canvas.focusedEntity))
+      ) {
         setUiFocus(world, canvas, null);
       }
 

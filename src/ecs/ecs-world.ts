@@ -9,11 +9,24 @@ import { createEntityHandle, maxEntities } from './entity-layout.js';
 import { ParentEcsComponent, parentId } from './hierarchy.js';
 import { RunCondition } from './run-condition.js';
 
+/**
+ * The entities matching a query, and their components. Both are new arrays
+ * built when the query runs, so they don't change when the world does.
+ * @typeParam T - The queried component types, in query order.
+ */
 export interface QueryResult<T extends readonly unknown[]> {
+  /** The matching entities' handles. */
   entities: readonly number[];
+  /**
+   * One array per queried component key, in query order: `components[k][i]`
+   * is the component for key `k` of `entities[i]`.
+   */
   components: { [K in keyof T]: T[K][] };
 }
 
+/**
+ * Options for `EcsWorld.addSystem`.
+ */
 export interface AddSystemOptions {
   /**
    * Which group to register the system in. Defaults to the world's
@@ -41,6 +54,9 @@ export interface AddSystemOptions {
   runIf?: RunCondition;
 }
 
+/**
+ * Options for `EcsWorld.addSystemGroup`.
+ */
 export interface AddSystemGroupOptions {
   /**
    * Groups that must run before this one. Every referenced group must
@@ -67,6 +83,11 @@ const noChildren: readonly number[] = Object.freeze([]);
 // children index can't go stale.
 const isParentKey = (key: symbol): boolean => key === parentId;
 
+/**
+ * Holds a set of entities, their components and tags, and the systems that
+ * process them. Creates and removes entities, answers queries, and runs its
+ * systems once per `update()` call.
+ */
 export class EcsWorld implements Updatable, Stoppable {
   /**
    * Raised by `removeEntity` with the removed entity, once its components
@@ -159,6 +180,10 @@ export class EcsWorld implements Updatable, Stoppable {
     return this._defaultSystemGroup;
   }
 
+  /**
+   * Calls `cleanup` on every registered system, in the order they run. The
+   * systems stay registered. `Game.stop` calls it.
+   */
   public stop(): void {
     for (const system of this._getOrderedSystems()) {
       system.cleanup?.(this);
@@ -223,10 +248,16 @@ export class EcsWorld implements Updatable, Stoppable {
 
   /**
    * Registers a system, optionally ordering it relative to other systems in
-   * its group.
+   * its group, and calls its `onRegister`. Systems with no ordering
+   * constraint between them run in the order they were added. A system added
+   * while `update()` is running its systems first runs on the next tick.
    * @param system - The system to register.
-   * @param options - Which group to register the system in, and `before`/
-   * `after` systems (within that same group) to order it against.
+   * @param options - Which group to register the system in, `before`/
+   * `after` systems (within that same group) to order it against, and a
+   * `runIf` condition.
+   * @throws An error if `options.group` isn't registered, if a `before`/
+   * `after` system isn't registered in the same group, or if the ordering
+   * would create a cycle.
    */
   public addSystem<T extends readonly unknown[]>(
     system: EcsSystem<T>,
@@ -274,6 +305,12 @@ export class EcsWorld implements Updatable, Stoppable {
     system.onRegister?.(this);
   }
 
+  /**
+   * Unregisters a system and calls its `cleanup`. A system removed while
+   * `update()` is running its systems still runs in that tick, since the
+   * tick's list of systems is taken before the first one runs.
+   * @param system - The system to remove.
+   */
   public removeSystem<T extends readonly unknown[]>(
     system: EcsSystem<T>,
   ): void {
@@ -312,6 +349,15 @@ export class EcsWorld implements Updatable, Stoppable {
     }
   }
 
+  /**
+   * Finds the entities that have every component in `componentKeys` and
+   * every tag in `tags`. Builds new arrays on every call; for per-frame
+   * processing, register a system with a `query` instead.
+   * @param componentKeys - The components an entity must have. Their data is
+   * returned in this order.
+   * @param tags - The tags an entity must have.
+   * @returns The matching entities and their components.
+   */
   public query<T extends readonly unknown[]>(
     componentKeys: readonly ComponentKey<unknown>[],
     tags: readonly TagKey[] = [],

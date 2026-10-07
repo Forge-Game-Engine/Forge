@@ -67,7 +67,11 @@ export interface CameraDefaultedOptions {
   layer: number;
 
   /**
-   * The clear color
+   * The color, with straight (not premultiplied) alpha, this camera's
+   * destination (its `renderTarget`, or the canvas) is cleared to before
+   * anything is drawn. Each destination is cleared once per frame, by the
+   * first camera that draws into it, unless `RenderContext.clearStrategy`
+   * is `'none'`. Defaults to `Color.transparent`.
    */
   clearColor: Color;
 
@@ -91,6 +95,13 @@ export interface CameraDefaultedOptions {
   ySort: boolean;
 }
 
+/**
+ * Makes an entity a camera: `createRenderEcsSystem` draws the area of the
+ * world around the entity's `position.world` (see `computeCameraView`) onto
+ * the canvas, or into `renderTarget`. Add one with
+ * {@link addCameraComponent}, or create a camera entity with
+ * `createCamera`.
+ */
 export interface CameraEcsComponent extends CameraDefaultedOptions {
   /**
    * The 1D input action that drives `zoom` changes, if any. Ignored while
@@ -112,6 +123,7 @@ export interface CameraEcsComponent extends CameraDefaultedOptions {
   renderTarget?: RenderTarget;
 }
 
+/** The component key of {@link CameraEcsComponent}. */
 export const cameraId = createComponentId<CameraEcsComponent>('camera');
 
 const defaultCameraOptions: CameraDefaultedOptions = {

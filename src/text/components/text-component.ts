@@ -23,7 +23,10 @@ export const TEXT_RENDER_CATEGORY = 1;
  * always provide these.
  */
 export interface TextRequiredOptions {
-  /** The string to render. */
+  /**
+   * The string to render. A newline character doesn't start a new line;
+   * lines break only where `maxWidth` wraps them.
+   */
   text: string;
 
   /** The loaded font atlas glyphs are drawn from. */
@@ -128,9 +131,6 @@ export interface TextDefaultedOptions {
    */
   category: number;
 
-  /** Whether this text is drawn at all. */
-  enabled: boolean;
-
   /**
    * Outline color. `outlineWidth` of `0` (the default) draws no outline
    * regardless of this value.
@@ -177,6 +177,15 @@ export interface TextDefaultedOptions {
   shadowSoftness: number;
 }
 
+/**
+ * A string drawn from a `FontAtlas` at its entity's position.
+ * `createTextShapingEcsSystem` lays it out into a `TextMeshEcsComponent`,
+ * and the render system draws that mesh.
+ *
+ * A `ScaleEcsComponent` or `RotationEcsComponent` on the entity scales or
+ * turns each glyph about its own center, not the glyphs' positions
+ * relative to the entity, so change `size` to resize text.
+ */
 export interface TextEcsComponent
   extends TextRequiredOptions, TextDefaultedOptions {
   /**
@@ -191,6 +200,7 @@ export interface TextEcsComponent
   opacityMultiplier?: number;
 }
 
+/** The component key of {@link TextEcsComponent}. */
 export const textId = createComponentId<TextEcsComponent>('text');
 
 /**
@@ -216,7 +226,6 @@ export function addTextComponent(
     richText: true,
     layer: 0,
     category: TEXT_RENDER_CATEGORY,
-    enabled: true,
     outlineColor: Color.black,
     outlineWidth: 0,
     shadowColor: Color.transparent,

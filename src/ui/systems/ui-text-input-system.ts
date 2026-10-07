@@ -8,8 +8,8 @@ import {
   cameraId,
   computeCameraView,
   RenderContext,
-  SpriteEcsComponent,
-  spriteId,
+  VisibilityEcsComponent,
+  visibilityId,
 } from '../../rendering/index.js';
 import {
   TextEcsComponent,
@@ -124,15 +124,14 @@ function mirrorValue(
   textInput.onValueChanged.raise(filtered);
 }
 
-function setSpriteEnabled(
-  world: EcsWorld,
-  entity: number,
-  enabled: boolean,
-): void {
-  const sprite = world.getComponent<SpriteEcsComponent>(entity, spriteId);
+function setVisible(world: EcsWorld, entity: number, visible: boolean): void {
+  const visibility = world.getComponent<VisibilityEcsComponent>(
+    entity,
+    visibilityId,
+  );
 
-  if (sprite) {
-    sprite.enabled = enabled;
+  if (visibility) {
+    visibility.visible = visible;
   }
 }
 
@@ -409,14 +408,7 @@ export const createUiTextInputEcsSystem = (
 
     label.text = displayedText;
 
-    const placeholder = world.getComponent<TextEcsComponent>(
-      textInput.placeholderLabel,
-      textId,
-    );
-
-    if (placeholder) {
-      placeholder.enabled = displayedText.length === 0;
-    }
+    setVisible(world, textInput.placeholderLabel, displayedText.length === 0);
 
     const caretStops =
       world.getComponent<TextMeshEcsComponent>(textInput.textLabel, textMeshId)
@@ -438,7 +430,7 @@ export const createUiTextInputEcsSystem = (
       { x: caretStop.x, y: caretStop.y + lineBottom },
       { y: lineHeight },
     );
-    setSpriteEnabled(
+    setVisible(
       world,
       textInput.caret,
       textInput.isEditing &&
@@ -454,7 +446,7 @@ export const createUiTextInputEcsSystem = (
       { x: selectionStart.x, y: selectionStart.y + lineBottom },
       { x: stopAt(end).x - selectionStart.x, y: lineHeight },
     );
-    setSpriteEnabled(
+    setVisible(
       world,
       textInput.selection,
       textInput.isEditing && start !== end,
@@ -476,11 +468,7 @@ export const createUiTextInputEcsSystem = (
       );
     }
 
-    setSpriteEnabled(
-      world,
-      textInput.compositionUnderline,
-      composition !== null,
-    );
+    setVisible(world, textInput.compositionUnderline, composition !== null);
   };
 
   /** Advances the caret's blink, restarting it when anything it's drawn for changed. */

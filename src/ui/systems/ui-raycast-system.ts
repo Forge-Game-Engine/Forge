@@ -10,8 +10,8 @@ import { raycastUiCanvas } from '../utilities/raycast-ui-canvas.js';
 /**
  * Creates a system that, per `CanvasEcsComponent`, hit-tests the pointer
  * source's position against that canvas's `UiInteractableEcsComponent`s
- * with `raycastUiCanvas` (topmost first; `blocksRaycasts`, canvas groups
- * and camera culling respected - see its doc comment).
+ * with `raycastUiCanvas` (topmost first; `blocksRaycasts`, canvas groups,
+ * visibility and camera culling respected - see its doc comment).
  *
  * Writes `CanvasEcsComponent.hoveredEntity` (the topmost hit, or `null`) and
  * `isPointerOverUi` (`hoveredEntity !== null`) every tick - read by

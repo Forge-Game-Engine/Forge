@@ -114,6 +114,8 @@ describe('createTextRenderables', () => {
       activeTexture: vi.fn(),
 
       getAttribLocation: vi.fn().mockReturnValue(0),
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
@@ -142,7 +144,7 @@ describe('createTextRenderables', () => {
         glyphs: new Map(),
         kerning: new Map(),
       },
-      texture: new Texture(mockGl),
+      texture: new Texture(renderContext),
     };
   });
 
@@ -187,7 +189,7 @@ describe('createTextRenderables', () => {
     const { fillRenderable } = createTextRenderables(renderContext);
     const otherFontAtlas: FontAtlas = {
       data: { ...fontAtlas.data, distanceRange: 8 },
-      texture: new Texture(mockGl),
+      texture: new Texture(renderContext),
     };
 
     fillRenderable.bindBatch(mockGl, bindBatchFor(fontAtlas));

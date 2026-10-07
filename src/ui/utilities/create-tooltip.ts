@@ -1,10 +1,13 @@
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vector2 } from '../../math/index.js';
-import { Color, SpriteEcsComponent, spriteId } from '../../rendering/index.js';
+import {
+  addVisibilityComponent,
+  Color,
+  SpriteEcsComponent,
+} from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import {
   textHorizontalAlignments,
-  textId,
   textVerticalAlignments,
 } from '../../text/index.js';
 import { addTooltipComponent } from '../components/tooltip-component.js';
@@ -58,7 +61,7 @@ export interface CreateTooltipDefaultedOptions {
    * `createLabel`'s `category` option - the panel's own category comes
    * from `sprite.category` instead, unaffected by this. Pass
    * the same value you gave the tooltip's canvas's `cullingMask` (see
-   * `CreateUiCanvasDefaultedOptions.cullingMask`) so the label is actually
+   * `ScreenSpaceUiCanvasOptions.cullingMask`) so the label is actually
    * visible through it. Omitted, the label falls back to `TextEcsComponent`'s
    * own default (`TEXT_RENDER_CATEGORY`).
    */
@@ -85,15 +88,15 @@ export interface Tooltip {
  * to its top edge, pivoted at the panel's own bottom edge, so it floats
  * just above `source` and follows it automatically as an ordinary UI child
  * - `createUiTooltipEcsSystem` only ever toggles it visible/hidden, never
- * repositions it. Both the panel and its label start hidden
- * (`enabled: false`); `createUiTooltipEcsSystem` shows them once `source`
+ * repositions it. The panel starts hidden by its `VisibilityEcsComponent`,
+ * which hides the label parented under it too; `createUiTooltipEcsSystem`
+ * shows them once `source`
  * has been continuously hovered or focused for `showDelayMilliseconds`.
  *
- * A tooltip's draw order still follows hierarchy position like any other
- * UI element (see the UI doc's "Draw order" note) - for a tooltip that
- * must always render above every other element regardless of where its
- * source sits in the tree, create it last, after every other UI element on
- * the canvas.
+ * The panel is drawn in hierarchy order, right after `source`'s other
+ * children, so elements that come after `source` in hierarchy order (its
+ * later siblings, for example) draw over it. To draw the tooltip above
+ * them, add a `DrawOrderEcsComponent` with a positive `order` to `panel`.
  * @param world - The ECS world `source` belongs to.
  * @param source - The interactable entity the tooltip appears near. Must
  * already have a `UiInteractableEcsComponent`.
@@ -153,13 +156,10 @@ export function createTooltip(
     ...(category !== undefined && { category }),
   });
 
-  world.getComponentRequired<SpriteEcsComponent>(panel, spriteId).enabled =
-    false;
-  world.getComponentRequired(label, textId).enabled = false;
+  addVisibilityComponent(world, panel, { visible: false });
 
   addTooltipComponent(world, source, {
     panel,
-    label,
     showDelayMilliseconds,
   });
 

@@ -37,7 +37,6 @@ function buildTextComponent(
     richText: true,
     layer: 2,
     category: 1,
-    enabled: true,
     outlineColor: Color.black,
     outlineWidth: 0,
     shadowColor: Color.transparent,
@@ -128,7 +127,6 @@ describe('pushTextRenderCommands', () => {
       uvOffset: glyph.uvOffset,
       uvScale: glyph.uvScale,
       tintColor: color,
-      enabled: true,
       layer: 3,
     });
   });

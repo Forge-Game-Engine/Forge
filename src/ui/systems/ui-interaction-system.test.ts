@@ -10,7 +10,11 @@ import {
   mouseButtons,
   MouseInputSource,
 } from '../../input/index.js';
-import { addCameraComponent, RenderContext } from '../../rendering/index.js';
+import {
+  addCameraComponent,
+  addVisibilityComponent,
+  RenderContext,
+} from '../../rendering/index.js';
 import {
   addCanvasComponent,
   canvasId,
@@ -254,6 +258,59 @@ describe('createUiInteractionEcsSystem', () => {
     expect(interactable().isDragging).toBe(false);
   });
 
+  it('cancels a drag when the element is hidden: onEndDrag and onPointerUp, no onInvoke, and no more onDrag', () => {
+    const { world, panel, mouseInputSource, tick, interactable } = setUp();
+
+    const events: string[] = [];
+    interactable().onInvoke.registerListener(() => events.push('invoke'));
+    interactable().onDrag.registerListener(() => events.push('drag'));
+    interactable().onEndDrag.registerListener(() => events.push('endDrag'));
+    interactable().onPointerUp.registerListener(() => events.push('up'));
+    interactable().onPointerExit.registerListener(() => events.push('exit'));
+    interactable().dragThreshold = 10;
+
+    mouseInputSource.position = { x: 960, y: 540 };
+    mouseInputSource.buttonsDown.add(mouseButtons.left);
+    tick();
+    mouseInputSource.position = { x: 960, y: 500 };
+    tick();
+
+    expect(events).toEqual(['drag']);
+
+    const visibility = addVisibilityComponent(world, panel, {
+      visible: false,
+    });
+    tick();
+
+    expect(events).toEqual(['drag', 'exit', 'endDrag', 'up']);
+    expect(interactable().pressCapture).toBeNull();
+    expect(interactable().isDragging).toBe(false);
+    expect(interactable().isPressed).toBe(false);
+    expect(interactable().isHovered).toBe(false);
+
+    // Releasing later, even once shown again, resolves nothing.
+    visibility.visible = true;
+    mouseInputSource.buttonsUp.add(mouseButtons.left);
+    tick();
+
+    expect(events).toEqual(['drag', 'exit', 'endDrag', 'up']);
+  });
+
+  it("can't be pressed while hidden", () => {
+    const { world, panel, mouseInputSource, tick, interactable } = setUp();
+
+    let downs = 0;
+    interactable().onPointerDown.registerListener(() => (downs += 1));
+    addVisibilityComponent(world, panel, { visible: false });
+
+    mouseInputSource.position = { x: 960, y: 540 };
+    mouseInputSource.buttonsDown.add(mouseButtons.left);
+    tick();
+
+    expect(downs).toBe(0);
+    expect(interactable().pressCapture).toBeNull();
+  });
+
   it('focuses an interactable the pointer hovers, per canvas policy', () => {
     const { world, mouseInputSource, tick, canvas, panel, interactable } =
       setUp();
@@ -295,5 +352,125 @@ describe('createUiInteractionEcsSystem', () => {
     tick();
 
     expect(canvasComponent.focusedEntity).toBe(otherElement);
+  });
+
+  describe('drag handoff', () => {
+    const setUpNested = (buttonOverrides = {}) => {
+      const context = setUp();
+      const { world, panel } = context;
+
+      world.getComponent(panel, uiInteractableId)!.receivesDrag = true;
+
+      const button = createInteractablePanel(
+        world,
+        panel,
+        { x: 100, y: 50 },
+        buttonOverrides,
+      );
+
+      return {
+        ...context,
+        button: () => world.getComponent(button, uiInteractableId)!,
+      };
+    };
+
+    it('hands a drag that starts on a child to the ancestor that receives drags, without invoking the child', () => {
+      const { mouseInputSource, tick, interactable, button } = setUpNested();
+
+      const events: string[] = [];
+      button().onInvoke.registerListener(() => events.push('child invoke'));
+      button().onBeginDrag.registerListener(() => events.push('child drag'));
+      button().onPointerUp.registerListener(() => events.push('child up'));
+      interactable().onBeginDrag.registerListener(() =>
+        events.push('parent begin'),
+      );
+      interactable().onEndDrag.registerListener(() =>
+        events.push('parent end'),
+      );
+
+      mouseInputSource.position = { x: 960, y: 540 };
+      mouseInputSource.buttonsDown.add(mouseButtons.left);
+      tick();
+
+      expect(button().pressCapture).not.toBeNull();
+
+      mouseInputSource.position = { x: 960, y: 560 };
+      tick();
+
+      expect(button().pressCapture).toBeNull();
+      expect(interactable().isDragging).toBe(true);
+      expect(interactable().pressCapture?.originPosition).toEqual({
+        x: 0,
+        y: 0,
+      });
+
+      mouseInputSource.buttonsUp.add(mouseButtons.left);
+      tick();
+
+      expect(interactable().isDragging).toBe(false);
+      expect(events).toEqual(['child up', 'parent begin', 'parent end']);
+    });
+
+    it('ends the handed-off drag when the press, drag and release land in one tick', () => {
+      const { mouseInputSource, tick, interactable, button } = setUpNested();
+
+      let invoked = false;
+      button().onInvoke.registerListener(() => (invoked = true));
+
+      mouseInputSource.position = { x: 960, y: 540 };
+      mouseInputSource.buttonsDown.add(mouseButtons.left);
+      tick();
+
+      mouseInputSource.position = { x: 960, y: 600 };
+      mouseInputSource.buttonsUp.add(mouseButtons.left);
+      tick();
+
+      expect(invoked).toBe(false);
+      expect(interactable().pressCapture).toBeNull();
+      expect(interactable().isDragging).toBe(false);
+    });
+
+    it('keeps the drag on a child that receives drags itself', () => {
+      const { mouseInputSource, tick, interactable, button } = setUpNested({
+        receivesDrag: true,
+      });
+
+      mouseInputSource.position = { x: 960, y: 540 };
+      mouseInputSource.buttonsDown.add(mouseButtons.left);
+      tick();
+      mouseInputSource.position = { x: 960, y: 560 };
+      tick();
+
+      expect(button().isDragging).toBe(true);
+      expect(interactable().isDragging).toBe(false);
+    });
+
+    it('still clicks a child when the press stays under the drag threshold', () => {
+      const { mouseInputSource, tick, button } = setUpNested();
+
+      let invoked = false;
+      button().onInvoke.registerListener(() => (invoked = true));
+
+      mouseInputSource.position = { x: 960, y: 540 };
+      mouseInputSource.buttonsDown.add(mouseButtons.left);
+      tick();
+      mouseInputSource.position = { x: 962, y: 541 };
+      mouseInputSource.buttonsUp.add(mouseButtons.left);
+      tick();
+
+      expect(invoked).toBe(true);
+    });
+  });
+
+  it('does not focus a hovered element that is not focusable', () => {
+    const { world, mouseInputSource, canvas, tick, interactable } = setUp();
+
+    interactable().focusable = false;
+    mouseInputSource.position = { x: 960, y: 540 };
+    tick();
+
+    expect(interactable().isHovered).toBe(true);
+    expect(interactable().isFocused).toBe(false);
+    expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBeNull();
   });
 });

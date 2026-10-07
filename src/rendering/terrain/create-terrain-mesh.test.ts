@@ -122,6 +122,8 @@ describe('createTerrainMesh', () => {
       uniform2fv: vi.fn(),
       uniform4fv: vi.fn(),
       activeTexture: vi.fn(),
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
@@ -131,8 +133,8 @@ describe('createTerrainMesh', () => {
       .addShader(new ForgeShaderSource(terrainFragmentShader));
 
     renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);
-    fillTexture = new Texture(mockGl, { wrap: 'repeat' });
-    borderTexture = new Texture(mockGl, { wrap: 'repeat' });
+    fillTexture = new Texture(renderContext, { wrap: 'repeat' });
+    borderTexture = new Texture(renderContext, { wrap: 'repeat' });
   });
 
   it('does not throw when building a mesh', () => {
@@ -245,7 +247,7 @@ describe('createTerrainMesh', () => {
   it.each(['border', 'fill'] as const)(
     "throws when the %s texture doesn't wrap with repeat",
     (layer) => {
-      const clampedTexture = new Texture(mockGl, { wrap: 'clamp' });
+      const clampedTexture = new Texture(renderContext, { wrap: 'clamp' });
       const options = createOptions();
 
       expect(() =>

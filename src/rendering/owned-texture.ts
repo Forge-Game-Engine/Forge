@@ -2,6 +2,7 @@ import {
   RENDER_TARGET_FORMAT,
   RENDER_TARGET_FORMAT_KEYS,
 } from './enums/index.js';
+import type { RenderContext } from './render-context.js';
 import { Texture } from './texture.js';
 
 /**
@@ -16,31 +17,33 @@ export class OwnedTexture extends Texture {
 
   /**
    * Creates an empty, linear-filtered, edge-clamped texture.
-   * @param gl - The WebGL2 rendering context.
+   * @param renderContext - The render context to create the texture in.
    * @param owner - What owns the texture, for error messages.
    */
-  constructor(gl: WebGL2RenderingContext, owner: string) {
-    super(gl);
+  constructor(renderContext: RenderContext, owner: string) {
+    super(renderContext);
     this._owner = owner;
   }
 
   /**
    * Creates the color attachment of a render target.
-   * @param gl - The WebGL2 rendering context.
+   * @param renderContext - The render context to create the texture in.
    * @param width - The width, in texels.
    * @param height - The height, in texels.
    * @param format - The storage format, already resolved by
    * `resolveRenderTargetFormat` (never a format the context can't render
    * into).
-   * @returns The texture, with uninitialized contents.
+   * @returns The texture, with uninitialized contents (and empty again
+   * after a lost context is restored, until its target is drawn into).
    */
   public static createRenderTargetColor(
-    gl: WebGL2RenderingContext,
+    renderContext: RenderContext,
     width: number,
     height: number,
     format: RENDER_TARGET_FORMAT_KEYS,
   ): OwnedTexture {
-    const texture = new OwnedTexture(gl, 'its render target');
+    const { gl } = renderContext;
+    const texture = new OwnedTexture(renderContext, 'its render target');
     const isHdr = format === RENDER_TARGET_FORMAT.hdr;
 
     texture.allocateStorage(
@@ -55,15 +58,15 @@ export class OwnedTexture extends Texture {
 
   /**
    * Creates a 1x1 texture of one opaque color.
-   * @param gl - The WebGL2 rendering context.
+   * @param renderContext - The render context to create the texture in.
    * @param rgba - The texel, as four bytes.
    * @returns The texture.
    */
   public static createSolidColor(
-    gl: WebGL2RenderingContext,
+    renderContext: RenderContext,
     rgba: readonly [number, number, number, number],
   ): OwnedTexture {
-    const texture = new OwnedTexture(gl, 'the render context');
+    const texture = new OwnedTexture(renderContext, 'the render context');
 
     texture.uploadPixels(1, 1, new Uint8Array(rgba));
 

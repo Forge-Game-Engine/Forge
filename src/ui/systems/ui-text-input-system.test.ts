@@ -6,8 +6,8 @@ import {
   addCameraComponent,
   Color,
   RenderContext,
-  spriteId,
   Texture,
+  visibilityId,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { textId, TextMeshEcsComponent, textMeshId } from '../../text/index.js';
@@ -60,7 +60,6 @@ const buildSprite = () => ({
   emissive: null,
   material: null,
   category: 1,
-  enabled: true,
   layer: 0,
 });
 
@@ -195,7 +194,7 @@ describe('createUiTextInputEcsSystem', () => {
     expect(element.value).toBe('にa');
     expect(world.getComponent(field.textLabel, textId)!.text).toBe('にa');
     expect(
-      world.getComponent(textInput.compositionUnderline, spriteId)!.enabled,
+      world.getComponent(textInput.compositionUnderline, visibilityId)!.visible,
     ).toBe(true);
 
     element.dispatchEvent(new CompositionEvent('compositionend'));
@@ -306,16 +305,16 @@ describe('createUiTextInputEcsSystem', () => {
   it('shows the placeholder only while the field is empty', () => {
     world.update();
 
-    expect(world.getComponent(field.placeholderLabel, textId)!.enabled).toBe(
-      true,
-    );
+    expect(
+      world.getComponent(field.placeholderLabel, visibilityId)!.visible,
+    ).toBe(true);
 
     type('a');
     world.update();
 
-    expect(world.getComponent(field.placeholderLabel, textId)!.enabled).toBe(
-      false,
-    );
+    expect(
+      world.getComponent(field.placeholderLabel, visibilityId)!.visible,
+    ).toBe(false);
   });
 
   it('places the caret and selection from the text mesh caret stops', () => {
@@ -337,8 +336,10 @@ describe('createUiTextInputEcsSystem', () => {
     const caret = world.getComponent(textInput.caret, rectTransformId)!;
 
     expect(caret.anchoredPosition).toEqual({ x: 20, y: -4 });
-    expect(world.getComponent(textInput.caret, spriteId)!.enabled).toBe(true);
-    expect(world.getComponent(textInput.selection, spriteId)!.enabled).toBe(
+    expect(world.getComponent(textInput.caret, visibilityId)!.visible).toBe(
+      true,
+    );
+    expect(world.getComponent(textInput.selection, visibilityId)!.visible).toBe(
       false,
     );
 
@@ -349,25 +350,27 @@ describe('createUiTextInputEcsSystem', () => {
 
     expect(selection.anchoredPosition.x).toBe(10);
     expect(selection.x.kind === 'point' && selection.x.size).toBe(20);
-    expect(world.getComponent(textInput.selection, spriteId)!.enabled).toBe(
+    expect(world.getComponent(textInput.selection, visibilityId)!.visible).toBe(
       true,
     );
-    expect(world.getComponent(textInput.caret, spriteId)!.enabled).toBe(false);
+    expect(world.getComponent(textInput.caret, visibilityId)!.visible).toBe(
+      false,
+    );
   });
 
   it('blinks the caret', () => {
     editTextInput(world, field.entity);
     world.update();
 
-    const caretSprite = world.getComponent(textInput.caret, spriteId)!;
+    const caretVisibility = world.getComponent(textInput.caret, visibilityId)!;
 
-    expect(caretSprite.enabled).toBe(true);
+    expect(caretVisibility.visible).toBe(true);
 
     for (let i = 0; i < 40; i++) {
       world.update();
     }
 
-    expect(caretSprite.enabled).toBe(false);
+    expect(caretVisibility.visible).toBe(false);
   });
 
   it('places the hidden input over the field in CSS pixels', () => {

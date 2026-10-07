@@ -17,6 +17,12 @@ export interface UiPointerSource {
    */
   readonly position: Vector2;
 
+  /**
+   * The wheel scroll since the last reset, in CSS pixels: `x` positive
+   * scrolling right, `y` positive scrolling down (Y-down, like `position`).
+   */
+  readonly scroll: Vector2;
+
   /** Button codes that started being held down since the last reset. */
   readonly buttonsDown: ReadonlySet<number>;
 
