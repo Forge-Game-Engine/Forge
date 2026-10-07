@@ -48,6 +48,34 @@ export function beginFullscreenReplacePass(
 }
 
 /**
+ * Starts a post-processing pass over `target`: makes `target`'s other color
+ * buffer current (allocating it on first use), binds and clears it, disables
+ * blending, and returns the texture that was current before, holding
+ * `target`'s latest contents, for the pass to read.
+ *
+ * A full-screen pass can't sample the texture it draws into, so each pass
+ * reads one of the target's two buffers and writes the other, with no copy
+ * back afterwards. The pass must write every pixel of `target`: whatever it
+ * leaves unwritten is lost. Read the returned texture, never
+ * `target.colorTexture`, which is already the buffer being drawn into.
+ * @param renderContext - The rendering context.
+ * @param target - The render target to process, usually a camera's
+ * `renderTarget`.
+ * @returns The color texture holding `target`'s contents before this pass.
+ * @throws An error if the second buffer's framebuffer is not complete.
+ */
+export function beginPostProcessPass(
+  renderContext: RenderContext,
+  target: RenderTarget,
+): WebGLTexture {
+  const source = target.swapBuffers();
+
+  beginFullscreenReplacePass(renderContext, target);
+
+  return source;
+}
+
+/**
  * Draws a full-screen quad with `material`, whose uniforms must already be
  * set. Shared by every pass that samples a texture and draws it directly
  * (post-processing passes, presenting a render target onto the canvas):

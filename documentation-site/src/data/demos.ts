@@ -169,7 +169,7 @@ export const demos: Demo[] = [
     slug: 'text',
     title: 'Text Rendering',
     description:
-      'MSDF text rendering: alignment, line height, live reflow and outline/shadow effects.',
+      'MSDF text rendering: alignment, line height, live reflow, rich text tags and outline/shadow effects.',
     categories: ['rendering'],
   },
   {
@@ -205,6 +205,13 @@ export const demos: Demo[] = [
     title: 'UI Toggles',
     description:
       'A standalone toggle plus a grouped set that behaves like radio buttons.',
+    categories: ['ui'],
+  },
+  {
+    slug: 'persistent-state',
+    title: 'Persistent State',
+    description:
+      'A settings panel whose values are stored with createPersistentState and survive a reload.',
     categories: ['ui'],
   },
   {

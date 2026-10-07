@@ -10,9 +10,9 @@ import { CollisionBody } from '../types/collision-body.js';
 import { SweepHit } from '../types/sweep-hit.js';
 
 /**
- * Finds every point at which a circle moving in a straight line from
- * `start` to `end` first touches one feature (a face or a vertex) of a
- * target collider. Each feature contributes at most one hit.
+ * Finds every point at which a circle whose center moves in a straight line
+ * from `start` to `end` (world space) first touches one feature (a face or
+ * a vertex) of a target collider. Each feature contributes at most one hit.
  */
 export type CircleSweepHitsFinder = (
   circle: CircleCollider,
@@ -36,13 +36,10 @@ function createSweptCircle(
   start: Vector2,
   end: Vector2,
 ): SweptCircle {
-  // Clone before adding: `start`/`end` are the caller's own positions.
-  const startCenter = Vec2.add(Vec2.clone(start), circle.offset);
-  const endCenter = Vec2.add(Vec2.clone(end), circle.offset);
-
+  // Clone: `start`/`end` are the caller's own vectors.
   return {
-    start: startCenter,
-    translation: Vec2.subtract(endCenter, startCenter),
+    start: Vec2.clone(start),
+    translation: Vec2.subtract(Vec2.clone(end), start),
     radius: circle.radius,
   };
 }
@@ -191,9 +188,10 @@ export const findCircleCircleSweepHits: CircleSweepHitsFinder = (
   end,
 ) => {
   const target = targetBody.collider as CircleCollider;
-  // Clone before adding: `targetBody.position` is the entity's live world
-  // position.
-  const targetCenter = Vec2.add(Vec2.clone(targetBody.position), target.offset);
+  const targetCenter = target.getWorldCenter(
+    targetBody.position,
+    targetBody.rotation,
+  );
   const hits: SweepHit[] = [];
 
   pushHit(

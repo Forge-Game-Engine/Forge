@@ -92,7 +92,7 @@ describe('createToneMapEcsSystem', () => {
       bindBuffer: vi.fn(),
       bufferData: vi.fn(),
 
-      createFramebuffer: vi.fn().mockReturnValue({}),
+      createFramebuffer: vi.fn().mockImplementation(() => ({})),
       bindFramebuffer: vi.fn(),
       framebufferTexture2D: vi.fn(),
       checkFramebufferStatus: vi.fn().mockReturnValue(1),
@@ -101,7 +101,7 @@ describe('createToneMapEcsSystem', () => {
       deleteFramebuffer: vi.fn(),
       deleteTexture: vi.fn(),
 
-      createTexture: vi.fn().mockReturnValue(new WebGLTexture()),
+      createTexture: vi.fn().mockImplementation(() => new WebGLTexture()),
       bindTexture: vi.fn(),
       texParameteri: vi.fn(),
       texImage2D: vi.fn(),
@@ -178,7 +178,7 @@ describe('createToneMapEcsSystem', () => {
   });
 
   it('does nothing for a camera without a ToneMappingEcsComponent', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addCameraEntity(target);
 
@@ -195,18 +195,35 @@ describe('createToneMapEcsSystem', () => {
     expect(mockGl.drawArrays).not.toHaveBeenCalled();
   });
 
-  it('draws a tone-mapping pass followed by a copy-back pass', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+  it('draws a single tone-mapping pass, with no copy back', () => {
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addToneMappedCameraEntity(target);
 
     world.update();
 
-    expect(mockGl.drawArrays).toHaveBeenCalledTimes(2);
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(1);
+  });
+
+  it("samples the target's previous buffer and draws into its other one", () => {
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
+    const sceneTexture = target.colorTexture;
+
+    addToneMappedCameraEntity(target);
+
+    world.update();
+
+    expect(target.colorTexture).not.toBe(sceneTexture);
+    // The material binds its sampler last, after the second buffer's
+    // texture was created (and bound) for the swap.
+    expect((mockGl.bindTexture as Mock).mock.lastCall?.[1]).toBe(sceneTexture);
+    expect((mockGl.bindFramebuffer as Mock).mock.lastCall?.[1]).toBe(
+      target.framebuffer,
+    );
   });
 
   it('passes the configured exposure to the tone-mapping pass', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addToneMappedCameraEntity(target, { exposure: 2.5 });
 
@@ -221,7 +238,7 @@ describe('createToneMapEcsSystem', () => {
   });
 
   it('selects the aces operator by default', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addToneMappedCameraEntity(target);
 
@@ -236,7 +253,7 @@ describe('createToneMapEcsSystem', () => {
   });
 
   it('selects reinhard when configured', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addToneMappedCameraEntity(target, {
       operator: TONE_MAPPING_OPERATOR.reinhard,
@@ -252,7 +269,7 @@ describe('createToneMapEcsSystem', () => {
   });
 
   it('writes the final pass back into the camera render target', () => {
-    const target = new RenderTarget(mockGl, 256, 256);
+    const target = new RenderTarget(renderContext, { width: 256, height: 256 });
 
     addToneMappedCameraEntity(target);
 
@@ -265,49 +282,27 @@ describe('createToneMapEcsSystem', () => {
   });
 
   it('tone-maps a render target shared by multiple cameras only once', () => {
-    const sharedTarget = new RenderTarget(mockGl, 128, 128);
+    const sharedTarget = new RenderTarget(renderContext, {
+      width: 128,
+      height: 128,
+    });
 
     addToneMappedCameraEntity(sharedTarget);
     addToneMappedCameraEntity(sharedTarget);
 
     world.update();
 
-    expect(mockGl.drawArrays).toHaveBeenCalledTimes(2);
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(1);
   });
 
   it('tone-maps again on the next frame', () => {
-    const target = new RenderTarget(mockGl, 128, 128);
+    const target = new RenderTarget(renderContext, { width: 128, height: 128 });
 
     addToneMappedCameraEntity(target);
 
     world.update();
     world.update();
 
-    expect(mockGl.drawArrays).toHaveBeenCalledTimes(4);
-  });
-
-  describe('cleanup', () => {
-    it('disposes the scratch target when the world stops', () => {
-      const target = new RenderTarget(mockGl, 128, 128);
-
-      addToneMappedCameraEntity(target);
-
-      world.update();
-      (mockGl.deleteFramebuffer as Mock).mockClear();
-      (mockGl.deleteTexture as Mock).mockClear();
-
-      world.stop();
-
-      expect(mockGl.deleteFramebuffer).toHaveBeenCalledTimes(1);
-      expect(mockGl.deleteTexture).toHaveBeenCalledTimes(1);
-    });
-
-    it('does not throw for a tone-mapped camera that never got a render target', () => {
-      addToneMappedCameraEntity();
-
-      world.update();
-
-      expect(() => world.stop()).not.toThrow();
-    });
+    expect(mockGl.drawArrays).toHaveBeenCalledTimes(2);
   });
 });

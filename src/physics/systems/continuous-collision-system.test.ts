@@ -4,6 +4,7 @@ import {
   addRotationComponent,
   createTransformEcsSystem,
   PositionEcsComponent,
+  rotationId,
   Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
@@ -81,8 +82,6 @@ function addBody(
   });
 
   const rigidBody = addRigidBodyComponent(world, entity, {
-    mass: collider.mass,
-    momentOfInertia: collider.momentOfInertia,
     velocity,
     type,
   });
@@ -148,6 +147,30 @@ describe('createContinuousCollisionEcsSystem', () => {
     expect(ball.rigidBody.velocity.y).toBe(-6000);
   });
 
+  it("should sweep an off-center circle's rotated center and keep its rotation", () => {
+    addStaticCollider(world, flatTerrain(), { x: 0, y: 0 });
+
+    // A local center of (20, 0), turned a quarter turn to (0, 20): the
+    // circle starts 50 units up, and its center falls 100 units this tick.
+    const ball = addBody(
+      world,
+      new CircleCollider(10, 1, { x: 20, y: 0 }),
+      { x: 0, y: 30 },
+      { x: 0, y: -6000 },
+    );
+    const rotation = world.getComponent(ball.entity, rotationId)!;
+
+    rotation.local = Math.PI / 2;
+
+    tick();
+
+    // The circle's center stops 1% of its radius inside, at y = 9.9, so the
+    // entity's origin is 20 units below it.
+    expect(ball.position.local.y).toBeCloseTo(9.9 - 20);
+    expect(ball.position.local.x).toBeCloseTo(0);
+    expect(rotation.local).toBeCloseTo(Math.PI / 2);
+  });
+
   it('should stop at the first of several colliders in the way', () => {
     addStaticCollider(world, box(10), { x: 0, y: -60 });
     addStaticCollider(world, box(10), { x: 0, y: -20 });
@@ -168,8 +191,6 @@ describe('createContinuousCollisionEcsSystem', () => {
     const entity = addStaticCollider(world, box(10), { x: 0, y: -20 });
 
     addRigidBodyComponent(world, entity, {
-      mass: 1,
-      momentOfInertia: 1,
       type: 'static',
     });
 

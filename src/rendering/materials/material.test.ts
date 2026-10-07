@@ -176,7 +176,36 @@ describe('Material', () => {
   describe('uniforms', () => {
     let locations: Map<string, WebGLUniformLocation>;
 
-    const createMaterial = (uniforms: MockActiveUniform[]): Material => {
+    /**
+     * Declares each mocked active uniform in GLSL, so the material sees the
+     * same uniforms in its source as the program reports. Struct members
+     * and unknown types are left out, as a real source can't declare them
+     * by those names.
+     */
+    const declare = (uniforms: MockActiveUniform[]): string =>
+      uniforms
+        .map(({ name, type, size = 1 }) => {
+          const glslName = Object.entries(glTypes).find(
+            ([, glType]) => glType === type,
+          )?.[0];
+          const isArray = name.endsWith('[0]') || size > 1;
+          const baseName = name.replace(/\[0\]$/, '');
+
+          if (glslName === undefined || baseName.includes('.')) {
+            return '';
+          }
+
+          return isArray
+            ? `uniform ${glslName} ${baseName}[${size}];`
+            : `uniform ${glslName} ${baseName};`;
+        })
+        .join('\n');
+
+    const createMaterial = (
+      uniforms: MockActiveUniform[],
+      fragmentDeclarations: string = declare(uniforms),
+      vertexDeclarations: string = '',
+    ): Material => {
       (gl.getProgramParameter as Mock).mockImplementation(
         (_program: WebGLProgram, parameter: GLenum) =>
           parameter === gl.ACTIVE_UNIFORMS ? uniforms.length : true,
@@ -193,8 +222,8 @@ describe('Material', () => {
       );
 
       return new Material(
-        createShaderSource('void main() {}'),
-        createShaderSource('void main() {}'),
+        createShaderSource(`${vertexDeclarations}\nvoid main() {}`),
+        createShaderSource(`${fragmentDeclarations}\nvoid main() {}`),
         gl,
       );
     };
@@ -223,7 +252,7 @@ describe('Material', () => {
         ]);
 
         expect(() => material.setUniform('uNonExistent', 42)).toThrow(
-          'Uniform "uNonExistent" does not exist on material. Available uniforms are: uTestUniform.',
+          /^Uniform "uNonExistent" is not declared in material "testShader\d+" \+ "testShader\d+"\. Declared uniforms: uTestUniform\.$/,
         );
       });
 
@@ -239,7 +268,7 @@ describe('Material', () => {
           material.setUniform('u_waves[0]', new Float32Array(16)),
         ).not.toThrow();
         expect(() => material.setUniform('uMissing', 1)).toThrow(
-          'Available uniforms are: u_waves.',
+          'Declared uniforms: u_waves.',
         );
       });
 
@@ -392,13 +421,152 @@ describe('Material', () => {
 
         const material = new Material(
           createShaderSource('void main() {}'),
-          createShaderSource('void main() {}'),
+          createShaderSource('uniform float u_value;\nvoid main() {}'),
           gl,
         );
 
         expect(() => material.setUniform('gl_DepthRange.near', 1)).toThrow(
-          'Available uniforms are: u_value.',
+          'Declared uniforms: u_value.',
         );
+      });
+    });
+
+    describe('declared uniforms the compiler stripped', () => {
+      it('should accept a declared uniform the program does not report', () => {
+        const material = createMaterial(
+          [{ name: 'u_color', type: glTypes.vec4 }],
+          'uniform vec4 u_color;\nuniform float u_time;',
+        );
+
+        expect(() => material.setUniform('u_time', 1)).not.toThrow();
+      });
+
+      it('should validate a stripped uniform against its declared type', () => {
+        const material = createMaterial([], 'uniform float u_time;');
+
+        expect(() => material.setUniform('u_time', new WebGLTexture())).toThrow(
+          'Uniform "u_time" is declared as float and expects a number or a Float32Array of length 1, but received a WebGLTexture.',
+        );
+        expect(() =>
+          material.setUniform('u_time', new Float32Array(2)),
+        ).toThrow('is declared as float');
+      });
+
+      it('should never upload a stripped uniform on bind', () => {
+        const material = createMaterial(
+          [{ name: 'u_color', type: glTypes.vec4 }],
+          'uniform vec4 u_color;\nuniform float u_time;',
+        );
+
+        material.setUniform('u_time', 1);
+        material.setUniform('u_color', new Float32Array(4));
+        material.bind(gl);
+
+        expect(gl.uniform1f).not.toHaveBeenCalled();
+        expect(gl.uniform1fv).not.toHaveBeenCalled();
+        expect(gl.uniform4fv).toHaveBeenCalledTimes(1);
+      });
+
+      it('should reach a stripped array by both of its names, sized by its declaration', () => {
+        const material = createMaterial(
+          [],
+          'uniform vec4 u_waves[4];\nuniform float u_single[1];',
+        );
+
+        expect(() =>
+          material.setUniform('u_waves', new Float32Array(16)),
+        ).not.toThrow();
+        expect(() =>
+          material.setUniform('u_waves[0]', new Float32Array(16)),
+        ).not.toThrow();
+        expect(() =>
+          material.setUniform('u_waves', new Float32Array(20)),
+        ).toThrow('is declared as vec4[4]');
+        expect(() => material.setUniform('u_single[0]', 1)).not.toThrow();
+      });
+
+      it('should validate an array against its declared size when the program reports fewer elements', () => {
+        const material = createMaterial(
+          [{ name: 'u_waves[0]', type: glTypes.vec4, size: 2 }],
+          'uniform vec4 u_waves[4];',
+        );
+        const waves = new Float32Array(16);
+
+        material.setUniform('u_waves', waves);
+        material.bind(gl);
+
+        expect(gl.uniform4fv).toHaveBeenCalledWith(
+          locationOf('u_waves[0]'),
+          waves,
+        );
+      });
+
+      it('should accept a uniform declared in the vertex shader', () => {
+        const material = createMaterial([], '', 'uniform mat3 u_projection;');
+
+        expect(() =>
+          material.setUniform('u_projection', new Float32Array(9)),
+        ).not.toThrow();
+      });
+
+      it('should throw when the two shaders declare a uniform with different types', () => {
+        expect(() =>
+          createMaterial(
+            [],
+            'uniform vec2 u_offset;',
+            'uniform float u_offset;',
+          ),
+        ).toThrow(
+          /^Uniform "u_offset" is declared as both float and vec2 in material "testShader\d+" \+ "testShader\d+"\.$/,
+        );
+      });
+
+      it('should say so when the shaders declare no uniforms', () => {
+        const material = createMaterial([], '');
+
+        expect(() => material.setUniform('u_time', 1)).toThrow(
+          'Declared uniforms: none.',
+        );
+      });
+    });
+
+    describe('uniforms the declarations do not name', () => {
+      it('should accept an active struct member, typed from the program', () => {
+        const declarations =
+          'struct Light { vec4 color; };\nuniform Light u_light;';
+        const material = createMaterial(
+          [{ name: 'u_light.color', type: glTypes.vec4 }],
+          declarations,
+        );
+        const color = new Float32Array([1, 0, 0, 1]);
+
+        material.setUniform('u_light.color', color);
+        material.bind(gl);
+
+        expect(gl.uniform4fv).toHaveBeenCalledWith(
+          locationOf('u_light.color'),
+          color,
+        );
+        expect(() => material.setUniform('u_light', color)).toThrow(
+          'is not declared in material',
+        );
+      });
+
+      it('should accept a uniform whose type is a macro only while the program reports it', () => {
+        const declarations =
+          '#define TINT_TYPE vec4\nuniform TINT_TYPE u_tint;';
+        const active = createMaterial(
+          [{ name: 'u_tint', type: glTypes.vec4 }],
+          declarations,
+        );
+        const stripped = createMaterial([], declarations);
+
+        expect(() =>
+          active.setUniform('u_tint', new Float32Array(4)),
+        ).not.toThrow();
+        expect(() =>
+          stripped.setUniform('u_tint', new Float32Array(4)),
+        ).toThrow('is not declared in material');
       });
     });
 

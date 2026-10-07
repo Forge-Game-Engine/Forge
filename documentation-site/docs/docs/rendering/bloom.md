@@ -85,11 +85,7 @@ import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { world, renderContext } = createGame('game-container');
 
-const sceneTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
+const sceneTarget = createRenderTarget(renderContext, 'canvas');
 
 const camera = createCamera(world, { renderTarget: sceneTarget });
 
@@ -151,9 +147,10 @@ three knobs:
   pixels are added back onto the scene. Unlike
   `GaussianBlurEcsComponent.intensity`, this is **not** a `0`–`1` blend
   factor and isn't clamped to `1`: it's an additive multiplier, so `2` adds
-  the glow at twice its original brightness, and `0` disables bloom
-  entirely (cheaper than `passes: 0`, since it also skips allocating the
-  internal scratch buffers on first use).
+  the glow at twice its original brightness.
+
+`intensity: 0` or `passes: 0` turns bloom off: nothing is drawn and no
+internal buffers are allocated. To restore it, set the value back.
 
 ```ts
 addBloomComponent(world, camera, { threshold: 0.6, passes: 6, intensity: 1.5 });
@@ -180,9 +177,8 @@ bloom](#emissive-driven-bloom) below for making only part of a sprite glow.
 
 Bloom costs one threshold pass, two full-screen draws per blur `passes`
 (same cost shape as [Gaussian Blur](./gaussian-blur.md#performance-note)),
-one composite pass, and one final copy back into the camera's
-`renderTarget` — `2 * passes + 3` full-screen draws in total, regardless of
-`intensity`. The threshold and blur passes are far cheaper than that count
+and one composite pass that writes the camera's `renderTarget` directly:
+`2 * passes + 2` full-screen draws in total, for any `intensity` above `0`. The threshold and blur passes are far cheaper than that count
 suggests, though: they run at a quarter of the canvas's CSS-pixel
 resolution in each direction (a sixteenth of the fragment shader invocations
 per draw on a standard display, and the same number of invocations on a
@@ -190,15 +186,15 @@ high-DPI one, since the downsampling scales with `pixelRatio`), which is also
 why a small `passes` count already produces a wide glow (see Tuning,
 above).
 
-There are three lazily-allocated internal scratch render targets per
+There are two lazily-allocated internal scratch render targets per
 distinct render target the first time it's bloomed: a downsampled
-bright-pass buffer, a downsampled [`PingPongTarget`](/Forge/docs/api/classes/PingPongTarget)
-pair for the blur, and one full-resolution buffer for the composite pass's
-output (it can't write directly into the camera's `renderTarget`, since
-that's also the texture it's reading the unblurred scene from). All three
-are resized (or recreated) automatically if the render target's dimensions
-change, and disposed automatically when the world stops. Each of these
-scratch buffers inherits the source render target's format, so bloom on an
+bright-pass buffer and a downsampled [`PingPongTarget`](/Forge/docs/api/classes/PingPongTarget)
+pair for the blur. Both are resized (or recreated) automatically if the
+render target's dimensions change, and disposed automatically when the world
+stops. The composite runs as a
+[post-processing pass](./multipass-rendering.md#writing-a-post-processing-effect),
+so the camera's render target also allocates its second color buffer the
+first time it's bloomed. Each of these buffers inherits the source render target's format, so bloom on an
 `hdr` camera stays HDR end-to-end without any extra configuration — see
 [HDR Rendering & Tone Mapping](./hdr-rendering.md).
 
@@ -227,9 +223,8 @@ import {
 } from '@forge-game-engine/forge/rendering';
 
 const sceneTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
+  renderContext,
+  'canvas',
   RENDER_TARGET_FORMAT.hdr,
 );
 

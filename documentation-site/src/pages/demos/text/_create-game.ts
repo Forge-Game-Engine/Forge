@@ -19,6 +19,7 @@ import { createEffectsHeroExample } from './_create-effects-hero-example';
 import { createHorizontalAlignmentExamples } from './_create-horizontal-alignment-examples';
 import { createLineHeightExamples } from './_create-line-height-examples';
 import { createLiveMaxWidthExample } from './_create-live-max-width-example';
+import { createRichTextExample } from './_create-rich-text-example';
 import { createVerticalAlignmentExamples } from './_create-vertical-alignment-examples';
 import { createLiveMaxWidthEcsSystem } from './_live-max-width.system';
 import { createPlayground, Playground } from './_create-playground';
@@ -42,7 +43,8 @@ const sectionGap = 16;
  * Builds the text rendering demo: a showcase of every `horizontalAlign` and
  * `verticalAlign` value, a comparison of a few `lineHeight` multipliers, a
  * paragraph whose `maxWidth` oscillates every frame to show
- * `createTextShapingEcsSystem` reflowing text live, an interactive
+ * `createTextShapingEcsSystem` reflowing text live, rich text tags, an
+ * interactive
  * playground, and an outline/soft-shadow showcase, all drawn from one
  * shared `FontAtlas`: the engine's default font, imported through the
  * package's `fonts/default` exports so webpack serves both files.
@@ -125,6 +127,17 @@ export const createTextGame = async (
   y -= sectionGap;
 
   y = createLiveMaxWidthExample(
+    world,
+    fontAtlas,
+    whiteSprite,
+    drawOrder.guide,
+    drawOrder.content,
+    { x: left, y },
+    usableWidth,
+  );
+  y -= sectionGap;
+
+  y = createRichTextExample(
     world,
     fontAtlas,
     whiteSprite,

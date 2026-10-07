@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PingPongTarget } from './ping-pong-target';
 import { RENDER_TARGET_FORMAT } from './enums/index.js';
+import { PingPongTarget } from './ping-pong-target';
+import { RenderContext } from './render-context.js';
 
 describe('PingPongTarget', () => {
   let gl: WebGL2RenderingContext;
+  let renderContext: RenderContext;
 
   beforeEach(() => {
     gl = {
@@ -28,16 +30,23 @@ describe('PingPongTarget', () => {
       RGBA16F: 'RGBA16F',
       HALF_FLOAT: 'HALF_FLOAT',
     } as unknown as WebGL2RenderingContext;
+    renderContext = { gl } as RenderContext;
   });
 
   it('should start with two distinct read and write targets', () => {
-    const pingPong = new PingPongTarget(gl, 128, 128);
+    const pingPong = new PingPongTarget(renderContext, {
+      width: 128,
+      height: 128,
+    });
 
     expect(pingPong.read).not.toBe(pingPong.write);
   });
 
   it('should swap read and write targets', () => {
-    const pingPong = new PingPongTarget(gl, 128, 128);
+    const pingPong = new PingPongTarget(renderContext, {
+      width: 128,
+      height: 128,
+    });
     const initialRead = pingPong.read;
     const initialWrite = pingPong.write;
 
@@ -48,7 +57,10 @@ describe('PingPongTarget', () => {
   });
 
   it('should swap back to the original targets after two swaps', () => {
-    const pingPong = new PingPongTarget(gl, 128, 128);
+    const pingPong = new PingPongTarget(renderContext, {
+      width: 128,
+      height: 128,
+    });
     const initialRead = pingPong.read;
     const initialWrite = pingPong.write;
 
@@ -60,9 +72,12 @@ describe('PingPongTarget', () => {
   });
 
   it('should resize both underlying targets', () => {
-    const pingPong = new PingPongTarget(gl, 128, 128);
+    const pingPong = new PingPongTarget(renderContext, {
+      width: 128,
+      height: 128,
+    });
 
-    pingPong.resize(gl, 64, 64);
+    pingPong.resize(64, 64);
 
     expect(pingPong.read.width).toBe(64);
     expect(pingPong.read.height).toBe(64);
@@ -71,23 +86,33 @@ describe('PingPongTarget', () => {
   });
 
   it('should dispose both underlying targets', () => {
-    const pingPong = new PingPongTarget(gl, 128, 128);
+    const pingPong = new PingPongTarget(renderContext, {
+      width: 128,
+      height: 128,
+    });
 
-    pingPong.dispose(gl);
+    pingPong.dispose();
 
     expect(gl.deleteFramebuffer).toHaveBeenCalledTimes(2);
     expect(gl.deleteTexture).toHaveBeenCalledTimes(2);
   });
 
   it('defaults both underlying targets to ldr', () => {
-    const pingPong = new PingPongTarget(gl, 128, 128);
+    const pingPong = new PingPongTarget(renderContext, {
+      width: 128,
+      height: 128,
+    });
 
     expect(pingPong.read.format).toBe(RENDER_TARGET_FORMAT.ldr);
     expect(pingPong.write.format).toBe(RENDER_TARGET_FORMAT.ldr);
   });
 
   it('forwards the requested format to both underlying targets', () => {
-    const pingPong = new PingPongTarget(gl, 128, 128, RENDER_TARGET_FORMAT.hdr);
+    const pingPong = new PingPongTarget(
+      renderContext,
+      { width: 128, height: 128 },
+      RENDER_TARGET_FORMAT.hdr,
+    );
 
     expect(pingPong.read.format).toBe(RENDER_TARGET_FORMAT.hdr);
     expect(pingPong.write.format).toBe(RENDER_TARGET_FORMAT.hdr);

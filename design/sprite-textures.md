@@ -6,7 +6,7 @@
 | **Kind**                              | Defect and feature                                                                                                                                                                                                                                                                               |
 | **Found in**                          | Galactic Journey demo: `src/ui/create-qr-code.ts`, `src/main-menu/create-how-to-play-panel.ts`, `src/speed/create-hud.ts`, `src/engine-flame/*`, `src/shockwave/create-displacement-map.ts`, `src/ui/create-ui.ts`, `src/background/create-background.ts`, `src/explosions/create-explosions.ts` |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                                                         |
-| **Related**                           | [`shader-uniform-declarations.md`](./shader-uniform-declarations.md) (prerequisite), [`sprite-fill.md`](./sprite-fill.md), [`webgl-context-loss.md`](./webgl-context-loss.md), [`post-processing-effects.md`](./post-processing-effects.md)                                                      |
+| **Related**                           | material uniforms following the shader's declarations (prerequisite, shipped), [`sprite-fill.md`](./sprite-fill.md), [`webgl-context-loss.md`](./webgl-context-loss.md)                                                                                                                          |
 
 ## 0. Targeted modules
 
@@ -218,9 +218,8 @@ between render contexts, so the program cache can't live there).
 `new Material(vertex, fragment, gl)` becomes
 `new Material(renderContext, vertex, fragment)`.
 
-The uniform table (declared uniforms, as in
-[`shader-uniform-declarations.md`](./shader-uniform-declarations.md), and
-their locations) belongs to the cached program, not to each material.
+The uniform table (the declared uniforms `Material` reads from the shader
+source, and their locations) belongs to the cached program, not to each material.
 
 Uniform values live on the GL program, and today `bind` uploads only the
 uniforms a material has set, so with shared programs a material would
@@ -244,9 +243,8 @@ sprite material, the render system binds the sprite's texture to
 `u_texture` and its emissive map to `u_emissiveTexture` for each batch, so
 a custom sprite shader declares `u_texture` and doesn't set it. That only
 works once a shader that declares `u_texture` without reading it (a
-procedural background) no longer throws, so
-[`shader-uniform-declarations.md`](./shader-uniform-declarations.md) is a
-prerequisite.
+procedural background) no longer throws. That shipped: `Material` accepts any uniform its shaders
+declare, whether or not the compiler kept it.
 
 `renderContext.spriteMaterial` is the default, shared by every sprite that
 doesn't name one.
@@ -374,7 +372,7 @@ sprites of the same texture and material in sequence draw in one call
 wherever they were created; the docs demos and e2e suite pass; a sprite's
 image or glow can be changed by assigning `texture` or `emissive`.
 
-Depends on [`shader-uniform-declarations.md`](./shader-uniform-declarations.md).
+Depends on `Material` accepting every declared uniform (shipped).
 
 ---
 

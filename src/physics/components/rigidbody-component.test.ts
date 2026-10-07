@@ -7,7 +7,7 @@ describe('addRigidBodyComponent', () => {
     const world = new EcsWorld();
     const entity = world.createEntity();
 
-    addRigidBodyComponent(world, entity, { mass: 1, momentOfInertia: 1 });
+    addRigidBodyComponent(world, entity);
 
     const rigidBody = world.getComponent(entity, rigidBodyId)!;
 
@@ -21,8 +21,6 @@ describe('addRigidBodyComponent', () => {
       const entity = world.createEntity();
 
       addRigidBodyComponent(world, entity, {
-        mass: 1,
-        momentOfInertia: 1,
         type,
       });
 

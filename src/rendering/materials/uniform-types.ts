@@ -214,3 +214,28 @@ const uniformTypes: ReadonlyMap<GLenum, UniformType> = new Map<
  */
 export const getUniformType = (glType: GLenum): UniformType | null =>
   uniformTypes.get(glType) ?? null;
+
+/** A uniform type together with the GL type enum it's reported as. */
+export interface GlslUniformType {
+  readonly glType: GLenum;
+  readonly uniformType: UniformType;
+}
+
+const uniformTypesByGlslName: ReadonlyMap<string, GlslUniformType> = new Map(
+  Array.from(uniformTypes, ([glType, uniformType]) => [
+    uniformType.glslName,
+    { glType, uniformType },
+  ]),
+);
+
+/**
+ * Looks up a uniform type from the GLSL type name it's declared with.
+ * @param glslName - The declared type name, e.g. `'vec4'` or `'sampler2D'`,
+ * spelled the way `UniformSourceDeclaration.glslTypeName` reports it (`mat4`
+ * rather than its alias `mat4x4`).
+ * @returns The uniform type and its GL type enum, or `null` if `glslName`
+ * isn't a WebGL 2 uniform type (for example, a struct's name).
+ */
+export const getUniformTypeByGlslName = (
+  glslName: string,
+): GlslUniformType | null => uniformTypesByGlslName.get(glslName) ?? null;

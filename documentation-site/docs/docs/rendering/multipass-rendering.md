@@ -20,9 +20,9 @@ the canvas exactly as before, with no extra passes or texture allocations.
 ## Rendering a camera off-screen
 
 Give the camera a [`RenderTarget`](/Forge/docs/api/classes/RenderTarget)
-sized to the area you want to render into, and register
-`createPresentEcsSystem` after your render system so there's a pass that
-draws the result:
+created with [`createRenderTarget`](/Forge/docs/api/functions/createRenderTarget),
+and register `createPresentEcsSystem` after your render system so there's a
+pass that draws the result:
 
 ```ts
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
@@ -36,11 +36,7 @@ import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { world, renderContext } = createGame('game-container');
 
-const sceneTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
+const sceneTarget = createRenderTarget(renderContext, 'canvas');
 
 createCamera(world, { renderTarget: sceneTarget });
 
@@ -59,14 +55,30 @@ through its own render target, see
 [Creating a Canvas](../ui/creating-a-canvas.md)) sit on top of a world camera
 that has no render target of its own.
 
-:::caution
-`RenderContext.resize` only resizes the canvas and the default framebuffer's
-viewport; it doesn't know about render targets owned by cameras. If you
-resize the render context (for example on a window resize), also call
-`sceneTarget.resize(renderContext.gl, renderContext.width, renderContext.height)`,
-or the off-screen texture will stay at its old resolution while the canvas
-grows or shrinks around it.
-:::
+## Render target sizes
+
+`createRenderTarget` takes the target's size as its second argument:
+
+- `'canvas'`: the render context's drawing buffer
+  (`renderContext.width` by `renderContext.height`, in device pixels).
+  `RenderContext.resize` resizes every canvas-sized target along with the
+  canvas, including when `maxPixelRatio` changes, so the target always
+  matches the canvas. Use it for a camera's target that covers the canvas.
+  Calling `resize` on a canvas-sized target throws.
+- `{ width, height }`: a fixed size in pixels, for a target with its own
+  resolution, such as a minimap or a render-to-texture. It keeps that size
+  until you call `resize(width, height)` on it.
+
+```ts
+const minimapTarget = createRenderTarget(renderContext, {
+  width: 256,
+  height: 256,
+});
+```
+
+The render context keeps a reference to every canvas-sized target. Call
+`dispose()` on a target you no longer use to free its textures and remove
+it from the render context.
 
 ## Layering multiple render targets
 
@@ -80,16 +92,8 @@ replacing it.) This is how you apply an effect to only part of a scene, for
 example blurring a background layer while keeping a foreground layer sharp:
 
 ```ts
-const backgroundTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
-const foregroundTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
+const backgroundTarget = createRenderTarget(renderContext, 'canvas');
+const foregroundTarget = createRenderTarget(renderContext, 'canvas');
 
 const background = createCamera(world, {
   cullingMask: layers.background,
@@ -178,11 +182,7 @@ holds that pair:
 ```ts
 import { PingPongTarget } from '@forge-game-engine/forge/rendering';
 
-const pingPong = new PingPongTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
+const pingPong = new PingPongTarget(renderContext, 'canvas');
 
 // Each step of a multi-pass effect samples `pingPong.read` and draws into
 // `pingPong.write`, then calls `pingPong.swap()` before the next step.
@@ -214,10 +214,60 @@ material.setUniform('u_texture', sourceTexture);
 drawFullscreenQuad(renderContext, material);
 ```
 
-`createGaussianBlurEcsSystem` uses these for its horizontal, vertical, copy,
-and cross-fade passes; `createPresentEcsSystem` uses `drawFullscreenQuad`
+`createGaussianBlurEcsSystem` uses these for its downsample and blur
+passes; `createPresentEcsSystem` uses `drawFullscreenQuad`
 too, but manages blending itself, since layering render targets onto the
 canvas needs premultiplied-alpha blending for every layer after the first,
 and for the first as well when a camera has already drawn straight onto the
 canvas (see [Layering multiple render targets](#layering-multiple-render-targets)
 and [Transparency](#transparency) above).
+
+A pass like this can't use the same render target as both its source and
+its destination, because a draw can't sample the texture it writes. To
+process a camera's own target, use `beginPostProcessPass` instead (see
+below).
+
+## Writing a post-processing effect
+
+A post-processing effect reads a camera's render target and writes the
+result back into the same target. `beginPostProcessPass` does this without
+an intermediate copy: each [`RenderTarget`](/Forge/docs/api/classes/RenderTarget)
+has two color buffers, and every post-processing pass reads one and writes
+the other.
+
+```ts
+import {
+  beginPostProcessPass,
+  drawFullscreenQuad,
+} from '@forge-game-engine/forge/rendering';
+
+const source = beginPostProcessPass(renderContext, camera.renderTarget);
+
+effectMaterial.setUniform('u_texture', source);
+drawFullscreenQuad(renderContext, effectMaterial);
+```
+
+[`beginPostProcessPass`](/Forge/docs/api/functions/beginPostProcessPass)
+makes the target's other buffer current, binds and clears it, disables
+blending, and returns the texture that held the target's contents before
+the call. The target allocates its second buffer the first time this runs
+on it, and resizes and disposes it together with the first.
+
+The material samples the returned texture. `camera.renderTarget.colorTexture`
+is already the buffer being drawn into, so sampling it reads the cleared
+destination instead of the scene. The pass has to write every pixel: a pixel
+the draw doesn't cover stays cleared.
+
+Sprites drawn into the target on the next frame, the next effect, and
+`createPresentEcsSystem` all use the buffer the last pass wrote, so effects
+chain in system registration order. Register an effect system after the
+render system and before `createPresentEcsSystem`, the same as the built-in
+effects. When several cameras share one render target, process it once per
+frame: a second pass over the same target applies the effect twice.
+
+:::note
+`RenderTarget.colorTexture` and `RenderTarget.framebuffer` change every
+time a post-processing pass runs on the target. Read them when drawing,
+not once at setup: a material that keeps a target's `colorTexture` from an
+earlier frame samples the wrong buffer.
+:::

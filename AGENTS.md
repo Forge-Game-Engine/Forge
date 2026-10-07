@@ -113,6 +113,7 @@ this step by step for bug fixes.
   /pooling                 # Object pooling
   /rendering               # Rendering system
   /states                  # Game states (createGameState), inState/onEnter/onExit run conditions, state-scoped entities
+  /storage                 # StorageBackend (localStorage, memory) and createPersistentState: typed records kept outside the game
   /text                    # MSDF font atlas loading and text rendering
   /timer                   # Timer utilities
   /ui                      # Retained-mode UI (anchored rect tree layout, canvases, panels, labels, buttons, focus navigation, toggles, sliders, progress bars, dropdowns, layout groups, content size/aspect ratio fitters)
@@ -484,11 +485,15 @@ describe('MyClass', () => {
 - Use descriptive assertions
 - For tests involving ECS, create a minimal `World` and entities
 - When a test constructs a real `Material` against a mocked WebGL context,
-  the mocked `getActiveUniform` must report each uniform's real GL type enum
-  (e.g. `0x8b5e /* SAMPLER_2D */`, `0x1406 /* FLOAT */`) and array `size`.
-  `Material.setUniform` picks the upload from the declared type and throws
-  for a value that doesn't fit it (or for an unknown type such as `0`), and
-  `bind` calls the matching `uniform*` method, so mock that method too
+  declare each uniform the test sets in the shader source it passes
+  (`uniform vec4 u_color;`): `Material` takes a uniform's type and array
+  size from its declaration and throws for a name neither shader declares.
+  The mocked `getActiveUniform` decides which declared uniforms are active,
+  and so uploaded on `bind`; leave one out to test a uniform the compiler
+  stripped. Report the real GL type enum (e.g. `0x8b5e /* SAMPLER_2D */`,
+  `0x1406 /* FLOAT */`) and array `size` for what it does return, since
+  undeclared active uniforms (struct members) are typed from it, and mock
+  the `uniform*` method `bind` calls for the declared type
 
 ### Coverage
 
@@ -765,8 +770,11 @@ sizes that differ on any HiDPI display (and in Playwright only when a test
 sets `deviceScaleFactor`, since it defaults to `1`):
 
 - `width`/`height` - the drawing buffer, in device pixels. Use these for
-  anything GL sees: the viewport, `RenderTarget` sizes, shader uniforms
-  compared against `gl_FragCoord`.
+  anything GL sees: the viewport, shader uniforms compared against
+  `gl_FragCoord`. A render target that covers the canvas is created with
+  `createRenderTarget(renderContext, 'canvas')`, and `RenderContext.resize`
+  resizes it with the canvas; never resize a camera's target by hand to
+  follow the canvas.
 - `cssWidth`/`cssHeight` - the canvas's on-page size, in CSS pixels. Use
   these for anything the DOM measures: `MouseInputSource.position`,
   `getSafeAreaInsets()`, and any UI size meant to stay the same physical

@@ -6,7 +6,11 @@ import {
   revoluteJointId,
 } from '../components/revolute-joint-component.js';
 import { applyPointImpulse } from '../joints/apply-point-impulse.js';
-import { JointBody, resolveJointBody } from '../joints/resolve-joint-body.js';
+import {
+  getJointLeverArm,
+  JointBody,
+  resolveJointBody,
+} from '../joints/resolve-joint-body.js';
 import { velocityAtPoint } from '../joints/velocity-at-point.js';
 import { getSoftConstraintParams } from '../solve-soft-constraint.js';
 
@@ -103,10 +107,8 @@ function prepareJoint(
   bodyA: JointBody,
   bodyB: JointBody,
 ): PreparedRevoluteJoint {
-  // Clone before rotating: `joint.localAnchorA`/`localAnchorB` are
-  // persistent component fields reused every tick.
-  const rA = Vec2.rotate(Vec2.clone(joint.localAnchorA), bodyA.rotation);
-  const rB = Vec2.rotate(Vec2.clone(joint.localAnchorB), bodyB.rotation);
+  const rA = getJointLeverArm(bodyA, joint.localAnchorA);
+  const rB = getJointLeverArm(bodyB, joint.localAnchorB);
 
   const k00 =
     bodyA.invMass +
@@ -120,10 +122,10 @@ function prepareJoint(
     bodyA.invInertia * rA.x * rA.x +
     bodyB.invInertia * rB.x * rB.x;
 
-  // Clone before adding: `bodyA.position`/`bodyB.position` are the entities'
-  // live world position.
-  const worldAnchorA = Vec2.add(Vec2.clone(bodyA.position), rA);
-  const worldAnchorB = Vec2.add(Vec2.clone(bodyB.position), rB);
+  // Clone before adding: the bodies' `centerOfMass` is read again by
+  // later solve steps.
+  const worldAnchorA = Vec2.add(Vec2.clone(bodyA.centerOfMass), rA);
+  const worldAnchorB = Vec2.add(Vec2.clone(bodyB.centerOfMass), rB);
 
   return {
     joint,

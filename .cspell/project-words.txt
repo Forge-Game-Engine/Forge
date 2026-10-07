@@ -99,6 +99,7 @@ letterbox
 letterboxed
 letterboxing
 lifecycles
+lowp
 matterjs
 mediump
 Menlo
@@ -221,3 +222,5 @@ winit
 xadvance
 yoavbls
 Zoltan
+rrggbb
+rrggbbaa

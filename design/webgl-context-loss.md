@@ -1,12 +1,12 @@
 # Design: Surviving a Lost WebGL Context
 
-|                                       |                                                                                                                                                                                                                                                     |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review                                                                                                                                                                                                                                   |
-| **Kind**                              | Feature                                                                                                                                                                                                                                             |
-| **Found in**                          | Galactic Journey demo: `src/graphics/recover-from-context-loss.ts` (saves a lower quality and reloads the page)                                                                                                                                     |
-| **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                            |
-| **Related**                           | [`sprite-textures.md`](./sprite-textures.md) and [`shader-uniform-declarations.md`](./shader-uniform-declarations.md) (prerequisites), [`render-resolution.md`](./render-resolution.md), [`persistent-preferences.md`](./persistent-preferences.md) |
+|                                       |                                                                                                                 |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review                                                                                               |
+| **Kind**                              | Feature                                                                                                         |
+| **Found in**                          | Galactic Journey demo: `src/graphics/recover-from-context-loss.ts` (saves a lower quality and reloads the page) |
+| **Engine version at time of writing** | `0.25.8`                                                                                                        |
+| **Related**                           | [`sprite-textures.md`](./sprite-textures.md) (prerequisite)                                                     |
 
 ## 0. Targeted modules
 
@@ -59,9 +59,8 @@ its settings without a reload.
 ### Out of scope
 
 - **Choosing lower settings after a loss.** That's the game's call (the
-  demo steps its quality down). With
-  [`render-resolution.md`](./render-resolution.md) it can lower
-  `maxPixelRatio` in the event handler instead of reloading.
+  demo steps its quality down). It can lower `RenderContext.maxPixelRatio`
+  (settable at runtime) in the event handler instead of reloading.
 - **Raw GL objects created by game code.** After
   [`sprite-textures.md`](./sprite-textures.md) removes the raw GL helpers,
   a game has no reason to create them; if it does, it rebuilds them in
@@ -108,10 +107,9 @@ that's not true:
   moves the program cache onto the render context, and deletes the public
   helpers that return bare handles (`createTextureFromImage`,
   `createEmptyTexture`, `createProgram`, the shared placeholder textures).
-- [`shader-uniform-declarations.md`](./shader-uniform-declarations.md)
-  lets a material created while the context is lost validate
-  `setUniform` from the shader source rather than from the (missing)
-  program.
+- `Material` already takes its uniforms from the shader source's
+  declarations rather than from the linked program, so a material created
+  while the context is lost can validate `setUniform` without a program.
 - This design finishes the job: `Geometry` is created from vertex data,
   which it keeps, instead of buffers the caller made; `RenderTarget`,
   `PingPongTarget`, `Geometry` and the terrain mesh take the render
@@ -194,8 +192,7 @@ nothing extra. A texture made from a canvas keeps the canvas.
 `restoreContext()` draws the same frame as before, with no errors and no
 reload.
 
-Depends on [`sprite-textures.md`](./sprite-textures.md) (Phase 1) and
-[`shader-uniform-declarations.md`](./shader-uniform-declarations.md).
+Depends on [`sprite-textures.md`](./sprite-textures.md) (Phase 1).
 
 ---
 
@@ -259,5 +256,4 @@ drawing is the engine's, and the GL calls already do nothing.
 - `rendering/index.md` (or a new page): what happens on context loss,
   reacting to `onContextLost`, and textures made from closable sources.
 - Demo: `recover-from-context-loss.ts` lowers the quality in
-  `onContextLost` and stays on the page (lowering `maxPixelRatio` needs
-  [`render-resolution.md`](./render-resolution.md)).
+  `onContextLost` and stays on the page, lowering `maxPixelRatio`.

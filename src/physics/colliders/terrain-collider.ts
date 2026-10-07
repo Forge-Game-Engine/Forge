@@ -82,11 +82,10 @@ export interface TerrainEdgeSlab {
  * point. Author the points as the ground's surface in world coordinates,
  * with the entity unrotated, and the ground is below them.
  *
- * Unlike {@link PolygonCollider}, `TerrainCollider` does not re-center its
- * vertices around their centroid - `points` are used exactly as authored, in
- * the collider's own local space, with the owning entity's position acting
- * as a simple translation offset (typically `Vec2.zero`, with the terrain
- * authored directly in world coordinates).
+ * Like every collider, `points` are used exactly as authored, in the
+ * entity's local space, with the owning entity's position acting as a
+ * simple translation (typically `Vec2.zero`, with the terrain authored
+ * directly in world coordinates).
  *
  * Narrow-phase collision against a `TerrainCollider` (see
  * `detectCircleTerrainCollision`/`detectPolygonTerrainCollision`) runs
@@ -165,7 +164,7 @@ export class TerrainCollider extends Collider {
       verticesAboutCentroid,
     );
 
-    super(momentOfInertia, mass);
+    super(mass, momentOfInertia, centroid);
 
     this.points = clonedPoints;
     this.depth = depth;
@@ -178,11 +177,7 @@ export class TerrainCollider extends Collider {
     // own vector objects for the surface vertices, so this must not mutate
     // the collider's own stored points.
     const worldVertices = silhouetteVertices(this.points, this.bottomY).map(
-      (vertex) =>
-        Vec2.add(
-          Vec2.rotate(Vec2.add(Vec2.clone(vertex), this.offset), rotation),
-          position,
-        ),
+      (vertex) => Vec2.add(Vec2.rotate(Vec2.clone(vertex), rotation), position),
     );
 
     let minX = Infinity;

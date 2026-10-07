@@ -43,11 +43,7 @@ import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { world, renderContext } = createGame('game-container');
 
-const sceneTarget = createRenderTarget(
-  renderContext.gl,
-  renderContext.width,
-  renderContext.height,
-);
+const sceneTarget = createRenderTarget(renderContext, 'canvas');
 
 const camera = createCamera(world, { renderTarget: sceneTarget });
 
@@ -132,11 +128,10 @@ There are two, deliberately different, knobs on
 addGaussianBlurComponent(world, camera, { passes: 8, intensity: 0.4 });
 ```
 
-`intensity: 0` skips the blur entirely (cheaper than `passes: 0`, since it
-also skips allocating the internal scratch buffers on first use). `intensity:
-1` is the cheapest non-zero setting: it skips the extra blend/copy pass
-entirely and behaves exactly like earlier versions of this system that only
-had `passes`.
+`intensity: 0` or `passes: 0` skips the blur entirely: nothing is drawn and
+no internal buffers are allocated. `intensity: 1` is the cheapest non-zero
+setting: it skips the blend pass, and the last blur pass writes the camera's
+`renderTarget` directly.
 
 :::caution
 Each individual pass only samples 9 adjacent texels (one CSS pixel apart, see above), so `passes` (or
@@ -165,13 +160,13 @@ on a high-DPI display as on a standard one; only the last draw, which
 writes back into the full-resolution `renderTarget`, and, when `pixelRatio`
 is above `1`, one extra draw that averages the scene down first, scale with
 the display's resolution. A fractional `intensity` (anything other than
-exactly `0` or `1`) adds two more full-screen draws regardless of `passes`:
-one to blend the sharp scene against the blurred result, and one to copy
-that blend back into the camera's `renderTarget`. There's also one
-lazily-allocated internal [`PingPongTarget`](/Forge/docs/api/classes/PingPongTarget)
-pair (at CSS-pixel resolution), plus, for a fractional `intensity`, one
-full-resolution buffer for the blend, per
-distinct render target the first time it's blurred, resized (or recreated)
+exactly `0` or `1`) adds one more full-screen draw regardless of `passes`,
+which blends the sharp scene against the blurred result as a
+[post-processing pass](./multipass-rendering.md#writing-a-post-processing-effect)
+over the camera's `renderTarget` (allocating that target's second color
+buffer the first time). There's also one lazily-allocated internal
+[`PingPongTarget`](/Forge/docs/api/classes/PingPongTarget) pair (at
+CSS-pixel resolution) per distinct render target the first time it's blurred, resized (or recreated)
 automatically if that target's dimensions change, and disposed automatically
 when the world stops. Because every pass and helper draw share materials
 (and the compiled shader programs backing them) by source, via
