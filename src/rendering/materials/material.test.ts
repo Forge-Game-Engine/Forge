@@ -102,6 +102,8 @@ describe('Material', () => {
       createTexture: vi.fn(() => ({})),
       texParameteri: vi.fn(),
       texImage2D: vi.fn(),
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
     renderContext = createRenderContext(gl);
   });
@@ -352,9 +354,9 @@ describe('Material', () => {
         expect(() => material.setUniform('u_float', new Int32Array(1))).toThrow(
           'but received an Int32Array of length 1.',
         );
-        expect(() => material.setUniform('u_float', new Texture(gl))).toThrow(
-          'but received a Texture.',
-        );
+        expect(() =>
+          material.setUniform('u_float', new Texture(renderContext)),
+        ).toThrow('but received a Texture.');
         expect(() =>
           material.setUniform('u_texture', new Float32Array(1)),
         ).toThrow(
@@ -541,7 +543,9 @@ describe('Material', () => {
       it('should validate a stripped uniform against its declared type', () => {
         const material = createMaterial([], 'uniform float u_time;');
 
-        expect(() => material.setUniform('u_time', new Texture(gl))).toThrow(
+        expect(() =>
+          material.setUniform('u_time', new Texture(renderContext)),
+        ).toThrow(
           'Uniform "u_time" is declared as float and expects a number or a Float32Array of length 1, but received a Texture.',
         );
         expect(() =>
@@ -781,8 +785,8 @@ describe('Material', () => {
           { name: 'u_texture1', type: glTypes.sampler2D },
           { name: 'u_texture2', type: glTypes.sampler2D },
         ]);
-        const texture1 = new Texture(gl);
-        const texture2 = new Texture(gl);
+        const texture1 = new Texture(renderContext);
+        const texture2 = new Texture(renderContext);
 
         (gl.bindTexture as Mock).mockClear();
         material.setUniform('u_texture1', texture1);
@@ -811,7 +815,7 @@ describe('Material', () => {
         const material = createMaterial([
           { name: 'u_texture', type: glTypes.sampler2D },
         ]);
-        const texture = new Texture(gl);
+        const texture = new Texture(renderContext);
 
         material.setUniform('u_texture', texture);
         texture.dispose();
@@ -1025,6 +1029,8 @@ describe('Material program caching', () => {
       getActiveUniform: vi.fn(() => null),
       getUniformLocation: vi.fn(),
       createBuffer: vi.fn(() => ({})),
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
   });
 

@@ -54,20 +54,21 @@ describe('RenderTarget', () => {
       HALF_FLOAT: 'HALF_FLOAT',
       createBuffer: vi.fn().mockReturnValue({}),
       viewport: vi.fn(),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
 
+    renderContext = createRenderContext();
+  });
+
+  const createRenderContext = (): RenderContext => {
     const canvas = document.createElement('canvas');
 
     canvas.width = 300;
     canvas.height = 150;
     vi.spyOn(canvas, 'getContext').mockReturnValue(gl);
 
-    renderContext = new RenderContext(
-      new ShaderCache([]),
-      new ImageCache(),
-      canvas,
-    );
-  });
+    return new RenderContext(new ShaderCache([]), new ImageCache(), canvas);
+  };
 
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -149,14 +150,13 @@ describe('RenderTarget', () => {
   });
 
   describe('format', () => {
-    it('defaults to ldr without calling gl.getExtension', () => {
+    it('defaults to ldr', () => {
       const target = new RenderTarget(renderContext, {
         width: 256,
         height: 128,
       });
 
       expect(target.format).toBe(RENDER_TARGET_FORMAT.ldr);
-      expect(gl.getExtension).not.toHaveBeenCalled();
     });
 
     it('resolves to hdr when requested and supported', () => {
@@ -174,7 +174,7 @@ describe('RenderTarget', () => {
       (gl.getExtension as Mock).mockReturnValue(null);
 
       const target = new RenderTarget(
-        renderContext,
+        createRenderContext(),
         { width: 256, height: 128 },
         RENDER_TARGET_FORMAT.hdr,
       );
@@ -449,6 +449,8 @@ describe('createRenderTarget', () => {
       FRAMEBUFFER_COMPLETE: 1,
       COLOR_ATTACHMENT0: 'COLOR_ATTACHMENT0',
       TEXTURE_2D: 'TEXTURE_2D',
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
     const renderContext = { gl } as RenderContext;
 

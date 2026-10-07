@@ -246,6 +246,8 @@ describe('createRenderEcsSystem', () => {
       ONE: 'ONE',
       SRC_ALPHA: 'SRC_ALPHA',
       ONE_MINUS_SRC_ALPHA: 'ONE_MINUS_SRC_ALPHA',
+      getExtension: vi.fn(() => null),
+      isContextLost: vi.fn(() => false),
     } as unknown as WebGL2RenderingContext;
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
@@ -371,6 +373,19 @@ describe('createRenderEcsSystem', () => {
 
     expect(bindInstanceData).toHaveBeenCalledTimes(1);
     expect(mockGl.drawArraysInstanced).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws nothing while the WebGL context is lost', () => {
+    addCameraEntity(0b0011);
+    const { renderable, bindInstanceData } = createRenderable();
+
+    addSpriteEntity(renderable, 0, { category: 0b0001 });
+    (mockGl.isContextLost as Mock).mockReturnValue(true);
+
+    world.update();
+
+    expect(bindInstanceData).not.toHaveBeenCalled();
+    expect(mockGl.drawArraysInstanced).not.toHaveBeenCalled();
   });
 
   it('uses the render context dimensions (not the canvas dimensions) for the projection matrix', () => {
