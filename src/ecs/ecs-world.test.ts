@@ -1276,6 +1276,34 @@ describe('EcsWorld', () => {
     });
   });
 
+  describe('getCreationSequence', () => {
+    it('increases with every entity created, even one reusing a removed slot', () => {
+      const world = new EcsWorld();
+      const first = world.createEntity();
+      const removed = world.createEntity();
+      const second = world.createEntity();
+
+      world.removeEntity(removed);
+      const reused = world.createEntity();
+
+      expect(world.getCreationSequence(first)).toBeLessThan(
+        world.getCreationSequence(second),
+      );
+      expect(world.getCreationSequence(second)).toBeLessThan(
+        world.getCreationSequence(reused),
+      );
+    });
+
+    it('throws for an entity that is not alive', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      world.removeEntity(entity);
+
+      expect(() => world.getCreationSequence(entity)).toThrow();
+    });
+  });
+
   describe('getComponentRequired', () => {
     it('returns the component when the entity has it', () => {
       const world = new EcsWorld();

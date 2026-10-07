@@ -7,7 +7,9 @@ import {
   bloomDefaults,
   blurDefaults,
   createSpaceShooterGame,
+  SpaceShooterAudio,
 } from './_create-game';
+import { AudioControls } from './_AudioControls';
 import { BloomControls } from './_BloomControls';
 import { GaussianBlurControls } from './_GaussianBlurControls';
 import gameCode from '!!raw-loader!./_create-game';
@@ -54,6 +56,11 @@ export default function Rendering(): JSX.Element {
   const [blurIntensity, setBlurIntensity] = useState(blurDefaults.intensity);
   const [blurEnabled, setBlurEnabled] = useState(true);
 
+  const audioRef = useRef<SpaceShooterAudio | null>(null);
+  const [musicVolume, setMusicVolume] = useState(1);
+  const [sfxVolume, setSfxVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
+
   const createGame = useCallback<CreateDemoGame>(
     (stopWithGame) =>
       createSpaceShooterGame(
@@ -64,9 +71,36 @@ export default function Rendering(): JSX.Element {
         (blur) => {
           blurRef.current = blur;
         },
+        (audio) => {
+          audioRef.current = audio;
+        },
       ),
     [],
   );
+
+  const handleMusicVolumeChange = (value: number) => {
+    setMusicVolume(value);
+
+    if (audioRef.current) {
+      audioRef.current.musicBus.volume = value;
+    }
+  };
+
+  const handleSfxVolumeChange = (value: number) => {
+    setSfxVolume(value);
+
+    if (audioRef.current) {
+      audioRef.current.sfxBus.volume = value;
+    }
+  };
+
+  const handleMutedChange = (value: boolean) => {
+    setMuted(value);
+
+    if (audioRef.current) {
+      audioRef.current.mixer.master.muted = value;
+    }
+  };
 
   const handleThresholdChange = (value: number) => {
     setThreshold(value);
@@ -285,6 +319,15 @@ export default function Rendering(): JSX.Element {
             onEnabledChange={handleBlurEnabledChange}
             onPassesChange={handleBlurPassesChange}
             onIntensityChange={handleBlurIntensityChange}
+          />
+
+          <AudioControls
+            musicVolume={musicVolume}
+            sfxVolume={sfxVolume}
+            muted={muted}
+            onMusicVolumeChange={handleMusicVolumeChange}
+            onSfxVolumeChange={handleSfxVolumeChange}
+            onMutedChange={handleMutedChange}
           />
         </>
       }

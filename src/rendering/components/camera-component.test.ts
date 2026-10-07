@@ -21,6 +21,7 @@ describe('addCameraComponent', () => {
       layer: 0,
       clearColor: Color.transparent,
       verticalWorldUnits: 10,
+      ySort: false,
     });
   });
 
