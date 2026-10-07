@@ -93,6 +93,13 @@ Bindings on a _different_ source (a gamepad, say) that target the same
 action are combined by the `InputManager`, see
 [Combining input from several sources](./actions.md#combining-input-from-several-sources).
 
+Keys typed into an editable element (an `<input>`, `<textarea>`, `<select>`
+or `contentEditable` element, including one inside a shadow root) aren't
+game input: such a key isn't held, isn't reported for any binding, and its release
+is ignored too. A key that went down outside the element is still released
+when its `keyup` arrives in the element. This covers HTML forms next to the
+game and Forge's own [text fields](../ui/text-input.md).
+
 Key repeat events are ignored (the browser's
 [`KeyboardEvent.repeat`](https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/repeat)
 flag), so holding a key down reports its bindings once on press and once on

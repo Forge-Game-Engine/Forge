@@ -5,6 +5,7 @@ export * from './content-size-fitter-component.js';
 export * from './layout-element-component.js';
 export * from './layout-group-component.js';
 export * from './rect-transform-component.js';
+export * from './text-input-component.js';
 export * from './tooltip-component.js';
 export * from './ui-color-transition-component.js';
 export * from './ui-dropdown-component.js';

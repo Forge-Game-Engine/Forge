@@ -24,6 +24,7 @@ describe('addTextComponent', () => {
       horizontalAlign: 'left',
       verticalAlign: 'top',
       horizontalAlignPivot: 0,
+      richText: true,
       layer: 0,
       category: TEXT_RENDER_CATEGORY,
       enabled: true,

@@ -184,7 +184,7 @@ export const createUiInteractionEcsSystem = (
           world,
           canvas,
           renderContext,
-          pointerSource,
+          pointerSource.position,
         );
         pointerPositionByCanvas.set(canvasEntity, position);
       }

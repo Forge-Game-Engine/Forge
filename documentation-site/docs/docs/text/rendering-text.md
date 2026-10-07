@@ -206,7 +206,20 @@ an error, since text often comes from players or translations:
 - a closing tag with no matching open tag
 
 A tag that's never closed runs to the end of the string. There's no escape
-syntax, so the exact text `<b>` can't be displayed.
+syntax inside tagged text. To draw a string exactly as written, tags
+included, set `richText: false`:
+
+```ts
+addTextComponent(world, label, {
+  text: playerName,
+  fontAtlas,
+  size: 24,
+  richText: false,
+});
+```
+
+A [text field](../ui/text-input.md)'s labels have `richText` set to
+`false`.
 
 ## Positioning and scale
 

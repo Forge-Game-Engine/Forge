@@ -302,20 +302,20 @@ describe('GamepadInputSource', () => {
   });
 
   it('releases an axis it was driving once the gamepad disappears from navigator.getGamepads()', () => {
-    const noResetAction = new Axis1dAction('noResetMove', group);
+    const stickAction = new Axis1dAction('stickMove', group);
 
-    inputManager.addAxis1dActions(noResetAction);
+    inputManager.addAxis1dActions(stickAction);
 
     source = createSource([createGamepad([0.8, 0, 0, 0], [])]);
 
     source.axis1dBindings.add(
-      new GamepadAxis1dBinding(noResetAction, {
+      new GamepadAxis1dBinding(stickAction, {
         axisIndex: gamepadAxes.leftStickX,
       }),
     );
 
     source.update();
-    expect(noResetAction.value).toBeCloseTo(0.8);
+    expect(stickAction.value).toBeCloseTo(0.8);
 
     // The gamepad reported by navigator.getGamepads() no longer includes
     // this gamepad's index (e.g. it was unplugged).
@@ -323,7 +323,7 @@ describe('GamepadInputSource', () => {
 
     source.update();
 
-    expect(noResetAction.value).toBe(0);
+    expect(stickAction.value).toBe(0);
   });
 
   it('does not override another source once the gamepad has disappeared and been released', () => {

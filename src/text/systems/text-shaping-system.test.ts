@@ -170,6 +170,7 @@ describe('createTextShapingEcsSystem', () => {
     // y (3.5) down by 9.
     expect(mesh?.glyphs[0].offset).toEqual({ x: 3, y: 3.5 - 9 });
     expect(mesh?.bounds).toEqual({ width: 6, height: 12 });
+    expect(mesh?.caretStops).toHaveLength(2);
   });
 
   it('does not re-shape unchanged text on a later tick', () => {

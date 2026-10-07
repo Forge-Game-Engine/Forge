@@ -53,6 +53,7 @@ describe('KeyboardInputSource', () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.a }));
     expect(keyUpAction.isTriggered).toBe(false);
 
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.a }));
     window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.a }));
     expect(keyUpAction.isTriggered).toBe(true);
 
@@ -320,6 +321,87 @@ describe('KeyboardInputSource', () => {
 
     window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.d }));
     expect(axis1dAction.value).toBe(0);
+  });
+
+  describe('keys typed into editable elements', () => {
+    const dispatchKey = (
+      target: EventTarget,
+      type: 'keydown' | 'keyup',
+      code: string,
+    ): void => {
+      target.dispatchEvent(
+        new KeyboardEvent(type, { code, bubbles: true, composed: true }),
+      );
+    };
+
+    let input: HTMLInputElement;
+
+    beforeEach(() => {
+      input = document.createElement('input');
+      document.body.appendChild(input);
+    });
+
+    it('ignores a key pressed in an <input>, and its release', () => {
+      dispatchKey(input, 'keydown', keyCodes.s);
+      expect(keyDownAction.isTriggered).toBe(false);
+
+      dispatchKey(input, 'keydown', keyCodes.a);
+      dispatchKey(input, 'keyup', keyCodes.a);
+      expect(keyUpAction.isTriggered).toBe(false);
+
+      input.remove();
+    });
+
+    it('ignores keys pressed in a <textarea>, a <select> and a contentEditable element', () => {
+      const textarea = document.createElement('textarea');
+      const select = document.createElement('select');
+      const editable = document.createElement('div');
+
+      editable.contentEditable = 'true';
+      // jsdom doesn't implement isContentEditable.
+      Object.defineProperty(editable, 'isContentEditable', { value: true });
+
+      for (const element of [textarea, select, editable]) {
+        document.body.appendChild(element);
+        dispatchKey(element, 'keydown', keyCodes.s);
+        element.remove();
+      }
+
+      expect(keyDownAction.isTriggered).toBe(false);
+      input.remove();
+    });
+
+    it('ignores a key pressed in an <input> inside a shadow root', () => {
+      const host = document.createElement('div');
+      const shadowInput = document.createElement('input');
+
+      host.attachShadow({ mode: 'open' }).appendChild(shadowInput);
+      document.body.appendChild(host);
+
+      dispatchKey(shadowInput, 'keydown', keyCodes.s);
+      expect(keyDownAction.isTriggered).toBe(false);
+
+      host.remove();
+      input.remove();
+    });
+
+    it('still releases a key held before typing started', () => {
+      dispatchKey(window, 'keydown', keyCodes.space);
+      expect(keyHoldAction.isHeld).toBe(true);
+
+      dispatchKey(input, 'keyup', keyCodes.space);
+      expect(keyHoldAction.isHeld).toBe(false);
+
+      input.remove();
+    });
+
+    it('does not report a key released outside the input after being pressed in it', () => {
+      dispatchKey(input, 'keydown', keyCodes.a);
+      input.remove();
+      dispatchKey(window, 'keyup', keyCodes.a);
+
+      expect(keyUpAction.isTriggered).toBe(false);
+    });
   });
 
   describe('switching the active input group', () => {
