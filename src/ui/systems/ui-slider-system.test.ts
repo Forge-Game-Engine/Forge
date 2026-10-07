@@ -11,7 +11,12 @@ import {
   mouseButtons,
   MouseInputSource,
 } from '../../input/index.js';
-import { addCameraComponent, RenderContext } from '../../rendering/index.js';
+import {
+  addCameraComponent,
+  addMaskComponent,
+  maskId,
+  RenderContext,
+} from '../../rendering/index.js';
 import { addCanvasComponent } from '../components/canvas-component.js';
 import {
   addRectTransformComponent,
@@ -20,7 +25,7 @@ import {
 import { addUiInteractableComponent } from '../components/ui-interactable-component.js';
 import { addUiSliderComponent } from '../components/ui-slider-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
-import { UiAxis, UiStretchAxis } from '../types/ui-axis.js';
+import { UiAxis } from '../types/ui-axis.js';
 
 const buildRenderContext = (width: number, height: number): RenderContext =>
   ({
@@ -216,7 +221,7 @@ describe('createUiSliderEcsSystem', () => {
     );
   });
 
-  it("also drives a fill entity's x.anchorMax, when one is given", () => {
+  it("also sets the amount of a fill's mask, when one is given", () => {
     const world = new EcsWorld();
     const renderContext = buildRenderContext(1920, 1080);
     const mouseInputSource = buildMouseInputSource();
@@ -247,9 +252,11 @@ describe('createUiSliderEcsSystem', () => {
     const fill = world.createEntity();
     addPositionComponent(world, fill);
     world.setParent(fill, track);
-    addRectTransformComponent(world, fill, {
-      x: UiAxis.stretch({ min: 0, max: 0 }, { pivot: 0 }),
-      y: UiAxis.stretch({ min: 0, max: 1 }, { pivot: 0.5 }),
+    addRectTransformComponent(world, fill, UiAnchor.stretchAll());
+    addMaskComponent(world, fill, {
+      width: 1,
+      height: 1,
+      shape: { kind: 'linear', origin: 'left', amount: 0 },
     });
 
     addUiSliderComponent(world, track, { handle, fill });
@@ -266,9 +273,9 @@ describe('createUiSliderEcsSystem', () => {
     mouseInputSource.buttonsDown.add(mouseButtons.left);
     world.update();
 
-    expect(
-      (world.getComponent(fill, rectTransformId)!.x as UiStretchAxis).anchorMax,
-    ).toBeCloseTo(1);
+    expect(world.getComponent(fill, maskId)!.shape).toMatchObject({
+      amount: 1,
+    });
   });
 
   it('does nothing (and does not throw) when a press is captured on a track with no owning canvas', () => {

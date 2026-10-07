@@ -6,7 +6,7 @@
 | **Kind**                              | Feature                                                                                                                                                                                                                                                                                                                                                                                    |
 | **Found in**                          | Galactic Journey demo: `setShown` helpers in `src/game-over/create-stats-panel.ts`, `create-flight-history-page.ts`, `pilot-panel.system.ts`, `src/leaderboard/create-leaderboard-page.ts`, `src/main-menu/create-main-menu.ts`; the stats panel's button repositioned by hand when the one above it is hidden; `src/speed/create-hud.ts` (the speed HUD's ring hidden segment by segment) |
 | **Engine version at time of writing** | `0.25.8`                                                                                                                                                                                                                                                                                                                                                                                   |
-| **Related**                           | [`ui-system.md`](./ui-system.md), the world's hierarchy (`EcsWorld.setParent`/`getChildren`, landed), [`sprite-draw-order.md`](./sprite-draw-order.md) (prerequisite)                                                                                                                                                                                                                      |
+| **Related**                           | [`ui-system.md`](./ui-system.md), the world's hierarchy (`EcsWorld.setParent`/`getChildren`, landed), hierarchical draw order (`DrawOrderEcsComponent`, `createDrawOrderResolver` in `src/rendering/draw-order.ts`, landed)                                                                                                                                                                |
 
 ## 0. Targeted modules
 
@@ -120,7 +120,7 @@ and UI all depend on.
 
 `isVisibleInHierarchy` walks up the hierarchy. The render system and UI
 systems resolve it once per entity per frame, in the same pass that
-resolves draw order ([`sprite-draw-order.md`](./sprite-draw-order.md)),
+resolves draw order (`createDrawOrderResolver`),
 so nothing stores a derived value and nothing has to keep one in sync.
 
 ### 4.2 What respects it
@@ -175,8 +175,8 @@ stay is open question 1.
 the gap; a hidden page draws nothing and can't be clicked or focused; the
 dropdown and tooltip have no hand-written hiding.
 
-Depends on [`sprite-draw-order.md`](./sprite-draw-order.md) for the
-per-frame resolution pass. The hierarchy it walks (`EcsWorld.getChildren`)
+Builds on the draw order's per-frame resolution pass
+(`createDrawOrderResolver`), which has landed. The hierarchy it walks (`EcsWorld.getChildren`)
 has landed.
 
 ---

@@ -27,7 +27,7 @@ A `SpriteEcsComponent` holds:
   [Drawing sprites with a custom shader](#drawing-sprites-with-a-custom-shader)).
 - `category`: which cameras draw the sprite (see
   [Choosing which cameras draw a sprite](#choosing-which-cameras-draw-a-sprite)).
-- `layer` and `sortDepth`: the sprite's draw order (see
+- `layer`: the sprite's draw order (see
   [Setting the draw order](#setting-the-draw-order)).
 - `enabled`: whether the sprite is drawn.
 
@@ -164,9 +164,11 @@ The health bar is drawn only by the second camera.
 ## Setting the draw order
 
 A camera draws its sprites sorted by `layer`, lower layers first, so sprites
-in a higher layer are drawn on top. Within a layer, sprites are sorted by
-depth, lower depth first. A sprite's depth is its world Y position, unless
-its `sortDepth` is set.
+in a higher layer are drawn on top. Within a layer, sprites draw by their
+entity's [`DrawOrderEcsComponent`](/Forge/docs/api/interfaces/DrawOrderEcsComponent)
+and then in hierarchy order: entities created earlier first, and children
+after their parents. [Draw Order](./draw-order.md) covers ordering a child
+relative to its parent and sorting by height on screen.
 
 `layer` orders sprites drawn by the same camera. The order in which cameras
 are composited is the camera's own `layer` (see
@@ -225,10 +227,15 @@ in vec4 v_tint;
 in vec3 v_emissive;
 out vec4 fragColor;
 
+#pragma forge include(spriteMask)
+
 void main() {
   vec4 color = texture(u_texture, v_texCoord) * v_tint;
 
-  fragColor = vec4(color.rgb, color.a * (1.0 - u_progress));
+  fragColor = vec4(
+    color.rgb,
+    color.a * (1.0 - u_progress) * spriteMaskCoverage()
+  );
 }
 `;
 
@@ -251,6 +258,12 @@ The fragment shader receives three inputs from the sprite vertex shader:
   to alpha.
 - `v_emissive`: the RGB of the sprite's emissive color (black without an
   emissive map).
+
+Every sprite fragment shader must include `spriteMask` and multiply its
+output alpha by `spriteMaskCoverage()`, which is how much of the fragment
+the sprite's [masks](./masks.md) let through (`1` for an unmasked sprite).
+`createSpriteMaterial` throws for a shader that doesn't include it, so a
+custom material never ignores a mask.
 
 If the shader declares `uniform sampler2D u_texture`, the render system
 binds each sprite's `texture` to it; if it declares

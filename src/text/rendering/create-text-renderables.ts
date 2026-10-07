@@ -3,6 +3,7 @@ import type { RenderCommand } from '../../rendering/render-command.js';
 import type { RenderContext } from '../../rendering/render-context.js';
 import { Renderable } from '../../rendering/renderable.js';
 import { combineInstanceDataSegments } from '../../rendering/utilities/instance-data-segment.js';
+import { maskInstanceDataSegment } from '../../rendering/utilities/mask-instance-data-segment.js';
 import { spriteInstanceDataSegment } from '../../rendering/utilities/sprite-instance-data-segment.js';
 import { textEffectsInstanceDataSegment } from './text-effects-instance-data-segment.js';
 import { textEmboldenInstanceDataSegment } from './text-embolden-instance-data-segment.js';
@@ -91,6 +92,7 @@ export function createTextRenderables(
   const fillLayout = combineInstanceDataSegments(
     spriteInstanceDataSegment,
     textEmboldenInstanceDataSegment,
+    maskInstanceDataSegment,
   );
   const fillRenderable = new Renderable(
     fillMaterial,
@@ -112,6 +114,7 @@ export function createTextRenderables(
     spriteInstanceDataSegment,
     textEmboldenInstanceDataSegment,
     textEffectsInstanceDataSegment,
+    maskInstanceDataSegment,
   );
   const effectsRenderable = new Renderable(
     effectsMaterial,

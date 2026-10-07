@@ -1,17 +1,14 @@
 import {
   PositionEcsComponent,
   RotationEcsComponent,
-  rotationId,
   ScaleEcsComponent,
-  scaleId,
 } from '../../common/index.js';
-import { EcsWorld, QueryResult } from '../../ecs/index.js';
 import { Vec2 } from '../../math/index.js';
 import { SpriteEcsComponent } from '../../rendering/components/sprite-component.js';
 import { RenderCommand } from '../../rendering/render-command.js';
 import { TextEffectsInstanceData } from '../../rendering/renderable.js';
+import type { InstanceMask } from '../../rendering/utilities/resolve-instance-mask.js';
 import type { TextRenderables } from './create-text-renderables.js';
-import { matchesMask } from '../../utilities/matches-mask.js';
 import { TextEcsComponent } from '../components/text-component.js';
 import {
   GlyphQuad,
@@ -30,6 +27,9 @@ export interface TextTransform {
 
   /** The entity's scale, if it has one. */
   scale: ScaleEcsComponent | null;
+
+  /** The masks the entity's glyphs are drawn through, or `null` for none. */
+  mask: InstanceMask | null;
 }
 
 /**
@@ -59,7 +59,7 @@ function buildGlyphPosition(
  * `setupSpriteInstanceAttributes` machinery sprites and nine-slice regions
  * already batch through.
  * @param commands - The render command buffer to push into.
- * @param textComponent - The entity's `TextEcsComponent` (for `layer` and effect fields).
+ * @param textComponent - The entity's `TextEcsComponent` (for its effect fields).
  * @param textMesh - The entity's shaped glyph quads to push commands for.
  * @param renderables - The renderables glyphs draw with (see `createTextRenderables`).
  * @param transform - The entity's position (each glyph is offset from it), rotation and scale.
@@ -84,8 +84,7 @@ function pushTextEffectsRenderCommands(
     shadowOffset,
     shadowSoftness,
   } = textComponent;
-  const { position: entityPosition, rotation, scale } = transform;
-  const depth = textComponent.sortDepth ?? entityPosition.world.y;
+  const { position: entityPosition, rotation, scale, mask } = transform;
 
   // Uniform across every glyph in this entity, so built once rather than
   // per glyph. The effect sizes are authored in CSS pixels but the shader
@@ -120,8 +119,6 @@ function pushTextEffectsRenderCommands(
     };
 
     commands.push({
-      layer,
-      depth,
       renderable: effectsRenderable,
       texture: fontAtlas.texture,
       emissiveTexture: null,
@@ -132,6 +129,7 @@ function pushTextEffectsRenderCommands(
         scale,
         sprite: glyphSprite,
         flip: null,
+        mask,
         textEffects,
         textEmbolden: glyph.embolden,
       },
@@ -145,7 +143,7 @@ function pushTextEffectsRenderCommands(
  * entity (see `pushTextRenderCommands`) so a glyph's fill can never be
  * painted over by a neighboring glyph's outline/shadow.
  * @param commands - The render command buffer to push into.
- * @param textComponent - The entity's `TextEcsComponent` (for `layer`, and `color` for glyphs outside a `<color>` tag).
+ * @param textComponent - The entity's `TextEcsComponent` (for `color`, for glyphs outside a `<color>` tag).
  * @param textMesh - The entity's shaped glyph quads to push commands for.
  * @param renderables - The renderables glyphs draw with (see `createTextRenderables`).
  * @param transform - The entity's position (each glyph is offset from it), rotation and scale.
@@ -159,8 +157,7 @@ function pushTextFillRenderCommands(
 ): void {
   const { fillRenderable } = renderables;
   const { layer, category, fontAtlas, color } = textComponent;
-  const { position: entityPosition, rotation, scale } = transform;
-  const depth = textComponent.sortDepth ?? entityPosition.world.y;
+  const { position: entityPosition, rotation, scale, mask } = transform;
 
   for (const glyph of textMesh.glyphs) {
     const glyphSprite: SpriteEcsComponent = {
@@ -180,8 +177,6 @@ function pushTextFillRenderCommands(
     };
 
     commands.push({
-      layer,
-      depth,
       renderable: fillRenderable,
       texture: fontAtlas.texture,
       emissiveTexture: null,
@@ -192,6 +187,7 @@ function pushTextFillRenderCommands(
         scale,
         sprite: glyphSprite,
         flip: null,
+        mask,
         textEmbolden: glyph.embolden,
       },
     });
@@ -204,12 +200,11 @@ function pushTextFillRenderCommands(
  * `createTextRenderables`' doc comment for why. The effects pass is skipped
  * entirely when neither an outline nor a shadow is actually configured (the
  * common case), so plain text costs exactly what it did before this split.
- * Both passes share the same `layer`/`depth` per glyph, so the render
- * system's stable sort-by-`(layer, depth)` preserves this push order,
- * keeping every glyph's fill drawn after every glyph's effects for this
- * entity.
+ * The render system sorts whole text entities, not glyphs, and draws an
+ * entity's commands in the order they're pushed, so every glyph's fill is
+ * drawn after every glyph's effects for this entity.
  * @param commands - The render command buffer to push into.
- * @param textComponent - The entity's `TextEcsComponent` (for `layer`, `color`, and effect fields).
+ * @param textComponent - The entity's `TextEcsComponent` (for `color` and its effect fields).
  * @param textMesh - The entity's shaped glyph quads to push commands for.
  * @param renderables - The renderables glyphs draw with (see `createTextRenderables`).
  * @param transform - The entity's position (each glyph is offset from it), rotation and scale.
@@ -244,68 +239,4 @@ export function pushTextRenderCommands(
     renderables,
     transform,
   );
-}
-
-/**
- * Builds render commands for every visible text entity a camera should
- * draw, mirroring `render-system.ts`'s own `buildCameraCommands` for
- * sprites: skips disabled text and text whose `category` doesn't match
- * `cullingMask`, then delegates to `pushTextRenderCommands`.
- * @param world - The ECS world, used to look up each entity's optional
- * rotation/scale components.
- * @param textQuery - The text entities to draw, and each one's
- * `TextEcsComponent`, `TextMeshEcsComponent` and `PositionEcsComponent`.
- * @param cullingMask - The camera's culling mask.
- * @param commands - The render command buffer to push into.
- * @param getRenderables - Returns the renderables glyphs draw with; only
- * called when there's text to draw.
- * @param pixelRatio - Device pixels per CSS pixel the destination is rendered at (see `RenderContext.pixelRatio`), which the outline/shadow sizes are scaled by (default: 1).
- */
-export function buildTextCameraCommands(
-  world: EcsWorld,
-  textQuery: QueryResult<
-    [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
-  >,
-  cullingMask: number,
-  commands: RenderCommand[],
-  getRenderables: () => TextRenderables,
-  pixelRatio: number = 1,
-): void {
-  const {
-    entities: textEntities,
-    components: [textComponents, textMeshes, textPositions],
-  } = textQuery;
-
-  for (let t = 0; t < textEntities.length; t++) {
-    const textComponent = textComponents[t];
-
-    if (!textComponent.enabled) {
-      continue;
-    }
-
-    if (!matchesMask(textComponent.category, cullingMask)) {
-      continue;
-    }
-
-    const textMesh = textMeshes[t];
-
-    const textEntity = textEntities[t];
-    const entityPosition = textPositions[t];
-
-    pushTextRenderCommands(
-      commands,
-      textComponent,
-      textMesh,
-      getRenderables(),
-      {
-        position: entityPosition,
-        rotation: world.getComponent<RotationEcsComponent>(
-          textEntity,
-          rotationId,
-        ),
-        scale: world.getComponent<ScaleEcsComponent>(textEntity, scaleId),
-      },
-      pixelRatio,
-    );
-  }
 }

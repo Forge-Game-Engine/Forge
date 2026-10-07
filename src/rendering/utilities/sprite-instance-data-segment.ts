@@ -3,11 +3,16 @@ import type { InstanceComponents, Renderable } from '../renderable.js';
 import type { InstanceDataSegment } from './instance-data-segment.js';
 import { setupInstanceAttribute } from './setup-instance-attribute.js';
 
+// Laid out so the shader reads them as five attributes (`a_instancePosScale`,
+// `a_instanceRot`, `a_instanceSizePivot`, `a_instanceTexRect` and
+// `a_instanceTint`) rather than one per value: WebGL2 only guarantees 16
+// vertex attributes, and the glyph shaders add their own segments on top of
+// this one.
 const POSITION_X_OFFSET = 0;
 const POSITION_Y_OFFSET = 1;
-const ROTATION_OFFSET = 2;
-const SCALE_X_OFFSET = 3;
-const SCALE_Y_OFFSET = 4;
+const SCALE_X_OFFSET = 2;
+const SCALE_Y_OFFSET = 3;
+const ROTATION_OFFSET = 4;
 const WIDTH_OFFSET = 5;
 const HEIGHT_OFFSET = 6;
 const PIVOT_X_OFFSET = 7;
@@ -137,9 +142,9 @@ function setupSpriteInstanceAttributes(
   const stride = renderable.floatsPerInstance * 4;
 
   setupInstanceAttribute(
-    gl.getAttribLocation(program, 'a_instancePos'),
+    gl.getAttribLocation(program, 'a_instancePosScale'),
     gl,
-    2,
+    4,
     stride,
     (offset + POSITION_X_OFFSET) * 4,
   );
@@ -153,43 +158,19 @@ function setupSpriteInstanceAttributes(
   );
 
   setupInstanceAttribute(
-    gl.getAttribLocation(program, 'a_instanceScale'),
+    gl.getAttribLocation(program, 'a_instanceSizePivot'),
     gl,
-    2,
-    stride,
-    (offset + SCALE_X_OFFSET) * 4,
-  );
-
-  setupInstanceAttribute(
-    gl.getAttribLocation(program, 'a_instanceSize'),
-    gl,
-    2,
+    4,
     stride,
     (offset + WIDTH_OFFSET) * 4,
   );
 
   setupInstanceAttribute(
-    gl.getAttribLocation(program, 'a_instancePivot'),
+    gl.getAttribLocation(program, 'a_instanceTexRect'),
     gl,
-    2,
-    stride,
-    (offset + PIVOT_X_OFFSET) * 4,
-  );
-
-  setupInstanceAttribute(
-    gl.getAttribLocation(program, 'a_instanceTexOffset'),
-    gl,
-    2,
+    4,
     stride,
     (offset + TEX_OFFSET_X_OFFSET) * 4,
-  );
-
-  setupInstanceAttribute(
-    gl.getAttribLocation(program, 'a_instanceTexSize'),
-    gl,
-    2,
-    stride,
-    (offset + TEX_SIZE_X_OFFSET) * 4,
   );
 
   setupInstanceAttribute(
@@ -206,9 +187,9 @@ function setupSpriteInstanceAttributes(
  *
  * Binds position, rotation, scale, size, pivot, texture coordinates and tint
  * from an entity's `SpriteEcsComponent`, and wires them up to the
- * `a_instancePos`, `a_instanceRot`, `a_instanceScale`, `a_instanceSize`,
- * `a_instancePivot`, `a_instanceTexOffset`, `a_instanceTexSize` and
- * `a_instanceTint` attributes.
+ * `a_instancePosScale` (position and scale), `a_instanceRot`,
+ * `a_instanceSizePivot` (size and pivot), `a_instanceTexRect` (UV offset and
+ * size) and `a_instanceTint` attributes.
  *
  * Use this with `combineInstanceDataSegments` to reuse the sprite vertex
  * shader with a custom fragment shader, or to extend it with additional

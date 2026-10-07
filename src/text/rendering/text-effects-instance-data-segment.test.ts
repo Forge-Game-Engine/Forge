@@ -37,7 +37,7 @@ describe('textEffectsInstanceDataSegment', () => {
       2,
     );
 
-    const expected = [0.1, 0.2, 0.3, 0.4, 2, 0.5, 0.6, 0.7, 0.8, 1, -1, 3];
+    const expected = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 2, 1, -1, 3];
 
     Array.from(buffer.slice(2, 14)).forEach((value, index) => {
       expect(value).toBeCloseTo(expected[index]);
@@ -72,10 +72,8 @@ describe('textEffectsInstanceDataSegment', () => {
 
     for (const attributeName of [
       'a_instanceOutlineColor',
-      'a_instanceOutlineWidth',
       'a_instanceShadowColor',
-      'a_instanceShadowOffset',
-      'a_instanceShadowSoftness',
+      'a_instanceEffectParams',
     ]) {
       expect(getAttribLocation).toHaveBeenCalledWith(
         renderable.material.program,
@@ -83,7 +81,7 @@ describe('textEffectsInstanceDataSegment', () => {
       );
     }
 
-    expect(vertexAttribPointer).toHaveBeenCalledTimes(5);
+    expect(vertexAttribPointer).toHaveBeenCalledTimes(3);
 
     const stride = renderable.floatsPerInstance * 4;
 
@@ -98,24 +96,25 @@ describe('textEffectsInstanceDataSegment', () => {
       17 * 4,
     );
 
-    // a_instanceOutlineWidth: float, 4 floats into the segment.
+    // a_instanceShadowColor: vec4, 4 floats into the segment.
     expect(vertexAttribPointer).toHaveBeenCalledWith(
       0,
-      1,
+      4,
       'FLOAT',
       false,
       stride,
       (17 + 4) * 4,
     );
 
-    // a_instanceShadowSoftness: float, the last field, 11 floats in.
+    // a_instanceEffectParams: outline width, shadow offset and shadow
+    // softness as one vec4, 8 floats in.
     expect(vertexAttribPointer).toHaveBeenCalledWith(
       0,
-      1,
+      4,
       'FLOAT',
       false,
       stride,
-      (17 + 11) * 4,
+      (17 + 8) * 4,
     );
   });
 });

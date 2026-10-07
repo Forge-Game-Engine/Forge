@@ -21,6 +21,7 @@ import {
 import { findOwningCanvas } from '../utilities/find-owning-canvas.js';
 import { resolveCanvasGroupState } from '../utilities/resolve-canvas-group-state.js';
 import { setUiFocus } from '../utilities/set-ui-focus.js';
+import { sortByDrawOrder } from '../utilities/sort-by-draw-order.js';
 
 /**
  * The minimum `navigateInput` magnitude that counts as "pointing" in a
@@ -154,27 +155,14 @@ function findNearestInDirection(
   return bestEntity;
 }
 
-/** The candidate with the lowest `RectTransformEcsComponent.sortDepth` (the topmost/earliest in hierarchy order). */
-function pickTopmostCandidate(
+/** The candidate drawn first (see `sortByDrawOrder`): the first element of a menu, not one drawn over it. */
+function pickFirstDrawnCandidate(
   world: EcsWorld,
   candidates: readonly FocusCandidate[],
 ): number | null {
-  let topmost: number | null = null;
-  let topmostSortDepth = Infinity;
+  const entities = candidates.map((candidate) => candidate.entity);
 
-  for (const candidate of candidates) {
-    const sortDepth = world.getComponentRequired<RectTransformEcsComponent>(
-      candidate.entity,
-      rectTransformId,
-    ).sortDepth;
-
-    if (topmost === null || sortDepth < topmostSortDepth) {
-      topmost = candidate.entity;
-      topmostSortDepth = sortDepth;
-    }
-  }
-
-  return topmost;
+  return sortByDrawOrder(world, entities)[0] ?? null;
 }
 
 /** The currently focused entity's explicit `UiFocusEcsComponent` override for `direction`, if it's set and still focusable. */
@@ -199,7 +187,7 @@ function resolveNextFocusTarget(
   candidates: readonly FocusCandidate[],
 ): number | null {
   if (canvas.focusedEntity === null) {
-    return pickTopmostCandidate(world, candidates);
+    return pickFirstDrawnCandidate(world, candidates);
   }
 
   const explicitTarget = resolveExplicitFocusTarget(

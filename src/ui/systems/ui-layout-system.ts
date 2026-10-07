@@ -7,6 +7,8 @@ import {
   cameraId,
   CameraView,
   computeCameraView,
+  MaskEcsComponent,
+  maskId,
   RenderContext,
   SpriteEcsComponent,
   spriteId,
@@ -169,16 +171,11 @@ function computeCanvasCameraView(
  * `CanvasEcsComponent`'s root. For each element it writes the resolved
  * `RectTransformEcsComponent.rect`, the entity's `PositionEcsComponent.local`
  * (so the existing `createTransformEcsSystem` composes the correct
- * `position.world`), and `RectTransformEcsComponent.sortDepth` - and, for
- * elements that also carry a `SpriteEcsComponent` and/or a
- * `TextEcsComponent`, their `sortDepth` too (plus, for a sprite, its
- * `width`/`height`/`pivot`) - all set to the element's hierarchy pre-order
- * index, so draw order follows hierarchy order within a canvas regardless
- * of whether a panel and its label happen to share a world Y (draw order
- * otherwise ties on `position.world.y`, which a panel and a centered child
- * label routinely don't share), and `createUiRaycastEcsSystem` has a
- * topmost-first ordering for every interactable regardless of whether it
- * happens to draw anything.
+ * `position.world`), and, for an element with a `SpriteEcsComponent` or a
+ * `MaskEcsComponent`, its `width`/`height`/`pivot`, so a mask clips to the
+ * element's rect. It doesn't order anything: the render
+ * system draws a UI tree in hierarchy order like any other, and the UI's
+ * raycasts and navigation use that same draw order.
  *
  * A `renderMode: 'screenSpace'` canvas root's rect (and its camera's
  * `verticalWorldUnits`) is recomputed from `renderContext`'s current
@@ -234,8 +231,6 @@ export const createUiLayoutEcsSystem = (
       }
     }
 
-    let sortDepth = 0;
-
     const visit = (
       entity: number,
       parentRect: Rect,
@@ -262,7 +257,6 @@ export const createUiLayoutEcsSystem = (
       );
 
       rectTransform.rect = rect;
-      rectTransform.sortDepth = sortDepth;
 
       const pivot = { x: rectTransform.x.pivot, y: rectTransform.y.pivot };
       const pivotPosition = pivotPositionOf(rect, pivot);
@@ -284,14 +278,22 @@ export const createUiLayoutEcsSystem = (
         sprite.height = size.y;
         sprite.pivot.x = pivot.x;
         sprite.pivot.y = pivot.y;
-        sprite.sortDepth = sortDepth;
+      }
+
+      const mask = world.getComponent<MaskEcsComponent>(entity, maskId);
+
+      if (mask) {
+        const size = Rects.size(rect);
+
+        mask.width = size.x;
+        mask.height = size.y;
+        mask.pivot.x = pivot.x;
+        mask.pivot.y = pivot.y;
       }
 
       const text = world.getComponent<TextEcsComponent>(entity, textId);
 
       if (text) {
-        text.sortDepth = sortDepth;
-
         // A `UiStretchAxis`'s `margin` is a margin, not a width, so the
         // entity's resolved rect - not anything statically knowable at the
         // call site - is the only correct source for maxWidth here; a
@@ -320,8 +322,6 @@ export const createUiLayoutEcsSystem = (
           text.horizontalAlignPivot = pivot.x;
         }
       }
-
-      sortDepth += 1;
 
       for (const child of world.getChildren(entity)) {
         if (elements.has(child) && !isTreeRoot(child)) {
