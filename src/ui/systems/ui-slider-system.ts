@@ -60,7 +60,12 @@ function applyActiveDrag(
       ? world.getComponent<CanvasEcsComponent>(owningCanvasEntity, canvasId)
       : null;
   const pointerPosition = canvas
-    ? resolveCanvasPointerPosition(world, canvas, renderContext, pointerSource)
+    ? resolveCanvasPointerPosition(
+        world,
+        canvas,
+        renderContext,
+        pointerSource.position,
+      )
     : null;
 
   if (!pointerPosition) {

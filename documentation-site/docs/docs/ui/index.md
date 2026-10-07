@@ -39,6 +39,8 @@ Guides in this section:
   arrangement, content-size fitting, and aspect-ratio fitting.
 - [Canvas Groups and Tooltips](./canvas-groups-and-tooltips.md): fading or
   disabling a whole subtree at once, and hover/focus tooltips.
+- [Text Input](./text-input.md): single-line text fields, editing versus
+  focus, filtering, and submit/cancel events.
 
 ## Quick Start
 

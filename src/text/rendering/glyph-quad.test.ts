@@ -36,6 +36,7 @@ function buildTextComponent(
     horizontalAlign: 'left',
     verticalAlign: 'top',
     horizontalAlignPivot: 0,
+    richText: true,
     layer: 2,
     category: 1,
     enabled: true,
@@ -52,6 +53,7 @@ function buildTextMesh(glyphs: GlyphQuad[]): TextMeshEcsComponent {
   return {
     glyphs,
     bounds: { width: 0, height: 0 },
+    caretStops: [],
     fillRenderable,
     effectsRenderable,
   };
@@ -453,6 +455,7 @@ describe('buildTextCameraCommands', () => {
             {
               glyphs: [glyph],
               bounds: { width: 0, height: 0 },
+              caretStops: [],
               fillRenderable: mismatchedRenderable,
               effectsRenderable: mismatchedRenderable,
             },

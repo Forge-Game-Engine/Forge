@@ -105,7 +105,7 @@ this step by step for bug fixes.
   /ecs                     # Entity-Component-System core
   /events                  # Event system
   /finite-state-machine    # FSM implementation
-  /input                   # Input handling
+  /input                   # Input handling (keyboard, mouse, gamepad, hidden-DOM text entry)
   /lifecycle               # Lifecycle management
   /math                    # Math utilities
   /particles               # Particle system
@@ -116,7 +116,7 @@ this step by step for bug fixes.
   /storage                 # StorageBackend (localStorage, memory) and createPersistentState: typed records kept outside the game
   /text                    # MSDF font atlas loading and text rendering
   /timer                   # Timer utilities
-  /ui                      # Retained-mode UI (anchored rect tree layout, canvases, panels, labels, buttons, focus navigation, toggles, sliders, progress bars, dropdowns, layout groups, content size/aspect ratio fitters)
+  /ui                      # Retained-mode UI (anchored rect tree layout, canvases, panels, labels, buttons, focus navigation, toggles, sliders, progress bars, dropdowns, text inputs, layout groups, content size/aspect ratio fitters)
   /utilities               # General utilities
   index.ts                 # Main exports
 
