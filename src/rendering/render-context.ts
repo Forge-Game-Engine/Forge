@@ -39,7 +39,12 @@ function assertValidPixelRatio(name: string, value: number): void {
  * The rendering context.
  */
 export class RenderContext implements Resizable {
-  /** The strategy for clearing the render context. */
+  /**
+   * Whether `clear` clears the bound destination. `CLEAR_STRATEGY.blank`
+   * (the default) clears it; `CLEAR_STRATEGY.none` makes `clear` do
+   * nothing, so cameras and full-screen passes draw over what the
+   * destination already holds.
+   */
   public clearStrategy: CLEAR_STRATEGY_KEYS;
 
   /**
@@ -404,11 +409,32 @@ export class RenderContext implements Resizable {
   }
 }
 
+/**
+ * Options for {@link createRenderContext}.
+ */
 export interface RenderContextOptions {
+  /**
+   * The shader cache materials get their shaders from (default: a new
+   * `createShaderCache()`, holding the engine's shaders and includes).
+   */
   shaderCache?: ShaderCache;
+
+  /** The cache images are loaded through (default: a new `ImageCache`). */
   imageCache?: ImageCache;
+
+  /**
+   * Whether `clear` clears the bound destination (default:
+   * `CLEAR_STRATEGY.blank`). See `RenderContext.clearStrategy`.
+   */
   clearStrategy?: CLEAR_STRATEGY_KEYS;
+
+  /**
+   * Whether the canvas keeps its drawing buffer after a frame is presented
+   * (default: `false`), which reading the canvas's pixels back (e.g.
+   * `toDataURL`) after the frame needs.
+   */
   preserveDrawingBuffer?: boolean;
+
   /**
    * The highest pixel ratio to render at, however dense the display is
    * (default: no limit). See `RenderContext.maxPixelRatio`.
@@ -416,6 +442,15 @@ export interface RenderContextOptions {
   maxPixelRatio?: number;
 }
 
+/**
+ * Creates a render context that draws into `canvas` with WebGL2.
+ * `createGame` creates one for its game.
+ * @param canvas - The canvas to draw into.
+ * @param options - Options for the render context.
+ * @returns The render context.
+ * @throws An error if the canvas has no WebGL2 context, or if
+ * `maxPixelRatio` isn't a positive number.
+ */
 export function createRenderContext(
   canvas: HTMLCanvasElement,
   options: RenderContextOptions = {},

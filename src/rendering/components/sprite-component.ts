@@ -68,9 +68,9 @@ export interface SpriteDefaultedOptions {
   pivot: Vector2;
 
   /**
-   * A color multiplied against the sprite's sampled texture color (RGB
-   * only; the texture's own alpha is used unmodified) to tint it. Defaults
-   * to `Color.white`, which leaves the texture unmodified.
+   * A color the sprite's sampled texture color is multiplied by, alpha
+   * included, to tint it. Defaults to `Color.white`, which leaves the
+   * texture unmodified.
    */
   tintColor: Color;
 
@@ -141,6 +141,13 @@ export interface SpriteDefaultedOptions {
   slices?: NineSliceOptions;
 }
 
+/**
+ * Draws a texture as a rectangle at the entity's world position, rotated
+ * and scaled by its world rotation and scale, and mirrored by its
+ * `FlipEcsComponent`, if any. Drawn by `createRenderEcsSystem` for every
+ * camera whose `cullingMask` matches `category`. Add one with
+ * {@link addSpriteComponent}.
+ */
 export interface SpriteEcsComponent
   extends SpriteRequiredOptions, SpriteDefaultedOptions {
   /**
@@ -157,6 +164,7 @@ export interface SpriteEcsComponent
   opacityMultiplier?: number;
 }
 
+/** The component key of {@link SpriteEcsComponent}. */
 export const spriteId = createComponentId<SpriteEcsComponent>('sprite');
 
 /**
