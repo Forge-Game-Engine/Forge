@@ -1,4 +1,4 @@
-import { Resettable, Stoppable } from '../../../common/index.js';
+import { Stoppable } from '../../../common/index.js';
 import { clamp } from '../../../math/index.js';
 import { Axis1dAction, Axis2dAction } from '../../actions/index.js';
 import { KeyboardHoldBinding } from '../bindings/keyboard-hold-binding.js';
@@ -16,6 +16,27 @@ import {
   TriggerInputSource,
 } from '../../input-sources/index.js';
 
+/**
+ * Whether `event` was typed into an editable element: an `<input>`,
+ * `<textarea>`, `<select>` or a `contentEditable` element. Reads the
+ * event's composed path rather than `target`, since at the window `target`
+ * is the shadow host for an element inside a shadow root.
+ */
+function isTypedIntoEditableElement(event: KeyboardEvent): boolean {
+  const [origin] = event.composedPath();
+
+  if (!(origin instanceof HTMLElement)) {
+    return false;
+  }
+
+  return (
+    origin instanceof HTMLInputElement ||
+    origin instanceof HTMLTextAreaElement ||
+    origin instanceof HTMLSelectElement ||
+    origin.isContentEditable
+  );
+}
+
 /** Represents a keyboard input source with associated bindings. */
 export class KeyboardInputSource
   implements
@@ -23,8 +44,7 @@ export class KeyboardInputSource
     HoldInputSource<KeyboardHoldBinding>,
     Axis2dInputSource<KeyboardAxis2dBinding>,
     Axis1dInputSource<KeyboardAxis1dBinding>,
-    Stoppable,
-    Resettable
+    Stoppable
 {
   /** The set of trigger bindings associated with this input source. */
   public readonly triggerBindings = new Set<KeyboardTriggerBinding>();
@@ -38,8 +58,13 @@ export class KeyboardInputSource
 
   private readonly _inputManager: InputManager;
 
-  private readonly _keyPressesDown = new Set<KeyCode>();
-  private readonly _keyPressesUps = new Set<KeyCode>();
+  /**
+   * The keys the game saw go down and hasn't seen released yet. A key typed
+   * into an editable element never enters this set, and a release of a key
+   * that isn't in it is ignored, so typing into an HTML text box (Forge's
+   * own text fields included) never reaches the game, while a key held
+   * before typing started is still released.
+   */
   private readonly _keyHolds = new Set<KeyCode>();
 
   /** Constructs a new KeyboardInputSource.
@@ -48,21 +73,13 @@ export class KeyboardInputSource
   constructor(inputManager: InputManager) {
     this._inputManager = inputManager;
 
-    this._inputManager.addResettable(this);
-
     globalThis.addEventListener('keydown', this._onKeyDownHandler);
     globalThis.addEventListener('keyup', this._onKeyUpHandler);
-  }
-
-  public reset(): void {
-    this._keyPressesDown.clear();
-    this._keyPressesUps.clear();
   }
 
   public stop(): void {
     globalThis.removeEventListener('keydown', this._onKeyDownHandler);
     globalThis.removeEventListener('keyup', this._onKeyUpHandler);
-    this._inputManager.removeResettable(this);
   }
 
   private readonly _onKeyDownHandler = (event: KeyboardEvent) => {
@@ -71,9 +88,12 @@ export class KeyboardInputSource
       return;
     }
 
+    if (isTypedIntoEditableElement(event)) {
+      return;
+    }
+
     const keyCode = event.code as KeyCode;
 
-    this._keyPressesDown.add(keyCode);
     this._keyHolds.add(keyCode);
 
     this._handleTriggerBindingsOnKeyDown(keyCode);
@@ -109,7 +129,10 @@ export class KeyboardInputSource
 
     const keyCode = event.code as KeyCode;
 
-    this._keyPressesUps.add(keyCode);
+    if (!this._keyHolds.has(keyCode)) {
+      return;
+    }
+
     this._keyHolds.delete(keyCode);
 
     this._handleTriggerBindingsOnKeyUp(keyCode);
