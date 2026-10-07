@@ -4,64 +4,50 @@ sidebar_position: 1
 
 # Creating a Canvas
 
-Every UI you build is a plain ECS entity tree, parented with the same
-`world.setParent` any other entity uses: a canvas at the root, with
-panels, labels, and buttons as its children (and grandchildren):
-
-```mermaid
-graph TD
-    Canvas["Canvas<br/>(CanvasEcsComponent)"] --> Panel["Panel<br/>(createPanel)"]
-    Panel --> Label["Label<br/>(createLabel)"]
-    Panel --> Button["Button<br/>(createButton)"]
-    Button --> ButtonLabel["Label<br/>(createButton's own child)"]
-```
-
-Each node above is just an entity with a `RectTransformEcsComponent`,
-resolved every frame against its **parent's** resolved rect - which is why
-the canvas has to exist before anything else, and why every `create*`
-factory in this module takes a `parent` entity as its second argument.
-
-Siblings are laid out, drawn and navigated in the order they were parented,
-and keep that order when other entities are removed. Removing an element
-with `world.removeEntity` removes everything under it too, so removing a
-page's root panel removes all of its labels, buttons and nested panels.
+A canvas is the root entity of a UI tree. Every panel, label, button and
+control is a descendant of a canvas, and is laid out against it. There are
+two kinds of canvas: a **screen-space** canvas is drawn over the screen by
+a camera of its own, and a **world-space** canvas is drawn in the game
+world by a camera you choose.
 
 ## Registering the UI systems
 
-`registerUiSystems(world, renderContext, time, options?)` registers every
-system a UI canvas depends on - layout, layout groups, interaction, focus
-navigation, and more. Call it **once per `EcsWorld`**, regardless of how
-many canvases that world ends up with:
+[`registerUiSystems`](/Forge/docs/api/functions/registerUiSystems)
+registers the systems every canvas in a world uses: layout, layout groups,
+focus navigation, interaction, color transitions, controls, tooltips and
+text inputs. Call it once per `EcsWorld`, before creating canvases:
 
 ```ts
+import { MouseInputSource } from '@forge-game-engine/forge/input';
 import { registerUiSystems } from '@forge-game-engine/forge/ui';
 
 registerUiSystems(world, renderContext, time, {
-  // Pointer interaction needs a pointer source; omit it for a
-  // gamepad/keyboard-only game. MouseInputSource satisfies this directly.
   pointerSource: new MouseInputSource(inputManager, game.container),
 });
 ```
 
-`registerUiSystems` and `createUiCanvas` are deliberately separate calls,
-the same split as `registerInputs`/creating an input source: `registerUiSystems`
-sets up the systems that drive every canvas in the world, once, while
-`createUiCanvas` creates one canvas entity and can be called as many times
-as you have canvases (a screen-space HUD plus several world-space health
-bars, say). Calling `registerUiSystems` more than once for the same world
-would register every system a second time, double-processing each canvas
-every tick (double `onInvoke` raises, focus moving two steps at once, and
-so on) - call it exactly once, the same way you register the transform or
-render systems exactly once regardless of how many entities use them.
+`pointerSource` is the pointer the UI is hit-tested against. Without one,
+the pointer systems (hover, click, drag and sliders) aren't registered, and
+the UI is used through [focus navigation](buttons-and-interaction.md#focus-navigation)
+only.
+
+Calling `registerUiSystems` a second time for the same world registers
+every system a second time, so each canvas is processed twice per tick.
+
+Register `createTransformEcsSystem` and `createRenderEcsSystem` after
+`registerUiSystems`. The layout system writes each element's
+`position.local`, and the [transform system](../common/transforms.md)
+computes `position.world` from it, so layout has to run first.
 
 ## Creating a screen-space canvas
+
+[`createUiCanvas`](/Forge/docs/api/functions/createUiCanvas) creates a
+canvas entity and returns it. A screen-space canvas (the default
+`renderMode`) needs a `cullingMask`:
 
 ```ts
 import { createUiCanvas } from '@forge-game-engine/forge/ui';
 
-// Forge doesn't reserve or ship a "UI" render category - pick any bit your
-// game isn't already using for another camera, and reuse it everywhere UI
-// content needs to match this canvas's cullingMask.
 const uiRenderCategory = 1 << 1;
 
 const canvas = createUiCanvas(world, renderContext, {
@@ -69,120 +55,141 @@ const canvas = createUiCanvas(world, renderContext, {
 });
 ```
 
-`createUiCanvas` creates a canvas root entity and, for the default
-`renderMode: 'screenSpace'`, a dedicated, static UI camera - a
-transparent-cleared, canvas-sized `RenderTarget` composited onto the canvas
-by `createPresentEcsSystem` (see
-[Multipass Rendering](../rendering/multipass-rendering.md) for how the
-camera/render-target/present-pass pieces fit together generally), isolated
-from the world by `cullingMask` and each visual's `category`. `cullingMask` has no
-default - `createUiCanvas` requires it explicitly, since Forge has no
-reserved "this bit means UI" value: pick one your game isn't already using
-for another camera, and reuse that exact value for every UI visual's own
-category. Give a panel's sprite that same
-[`category`](../rendering/sprites.md#choosing-which-cameras-draw-a-sprite)
-(`SpriteEcsComponent.category`, not `layer`, which is the sprite's draw
-order). Without a
-matching category, a world camera whose own `cullingMask` still matches
-everything would draw the panel a second time wherever its UI-space
-position happens to land in the world.
+`createUiCanvas` also creates a static camera for the canvas. The camera
+renders into its own canvas-sized
+[render target](../rendering/multipass-rendering.md), cleared to
+transparent, so register `createPresentEcsSystem` to composite it onto the
+screen. The camera's `layer` is `1000` by default, which composites it over
+world cameras at the default layer `0`. A UI sprite tinted to 50% alpha
+covers 50% of the world behind it.
 
-The UI is composited over the world whether the world camera renders
-straight to the canvas or through a render target of its own, and
-translucent UI shows at exactly the opacity it was drawn with: a panel
-tinted to 50% alpha lets 50% of the world through behind it (see
-[Transparency](../rendering/multipass-rendering.md#transparency)).
+The canvas's root rectangle is the area its camera shows, resized every
+frame from the screen size. [Responsive UI](responsive-ui.md) covers how it
+scales.
 
-Text works the same way: `TextEcsComponent.category` defaults to
-`TEXT_RENDER_CATEGORY`, shared by every text entity that doesn't override
-it - not a value the engine reserves or forces, just an ordinary default,
-and one that has nothing to do with any particular UI canvas's
-`cullingMask`. [`createLabel`](/Forge/docs/api/functions/createLabel)
-doesn't override it either, so a label needs its own `category` passed
-explicitly - the same value you gave that canvas's `cullingMask` - to be
-visible through it; `createButton`'s `labelCategory` option forwards the
-same value to its own child label.
+### Choosing a render category
 
-Register `createTransformEcsSystem`/`createRenderEcsSystem` **after**
-`registerUiSystems`, so the layout system (which writes `position.local`)
-runs before the transform system (which reads it to compute
-`position.world`), which in turn must run before the render system.
+The canvas's camera draws only the sprites and text whose `category`
+shares a bit with its `cullingMask`. Forge reserves no bit for UI: pick one
+no other camera uses (bits `0` to `30`), give it to every UI sprite and
+label, and leave it out of your world cameras' `cullingMask`. A camera's
+`cullingMask` defaults to every bit, so a world camera left at the default
+also draws the UI's sprites, at their UI positions in the world.
+
+A sprite's `category` defaults to `1` and a label's to
+`TEXT_RENDER_CATEGORY`, neither of which is the UI's category, so set it
+on each one (see [Sprites](../rendering/sprites.md)).
+`createButton`, `createDropdown`, `createTooltip` and `createTextInput`
+take the label's category as an option.
+
+## Adding elements to a canvas
+
+Every `create*` element factory takes the parent entity as its second
+argument: the canvas, or another element. A panel is an element that draws
+one sprite:
+
+```ts
+import {
+  createImageSprite,
+  createTexture,
+} from '@forge-game-engine/forge/rendering';
+import { createPanel, UiAnchor } from '@forge-game-engine/forge/ui';
+
+const panelSprite = {
+  ...createImageSprite(createTexture(renderContext, panelImage), {
+    pixelsPerUnit: 1,
+    slices: { left: 12, right: 12, top: 12, bottom: 12 },
+  }),
+  category: uiRenderCategory,
+};
+
+const panel = createPanel(world, canvas, {
+  anchor: UiAnchor.topLeft({ x: 240, y: 96 }),
+  anchoredPosition: { x: 20, y: -20 },
+  sprite: panelSprite,
+});
+```
+
+[`createPanel`](/Forge/docs/api/functions/createPanel) copies `sprite`, so
+one sprite can be passed to many panels. The layout system sets the
+panel's sprite size to its rectangle every frame, so the sprite's imported
+size doesn't change how big the panel is drawn. For a
+[nine-slice sprite](../rendering/nine-slice-sprites.md), the imported size
+is the size the insets are measured against: importing UI sprites with
+`pixelsPerUnit: 1` puts the insets in reference pixels, so the `12` above
+is 12 pixels of border art. [Anchors and Layout](anchors-and-layout.md)
+covers `anchor` and `anchoredPosition`.
+
+The factories parent each element with `world.setParent`. An element's
+children are laid out and drawn in the order they were parented, and the
+element drawn on top is the one a click hits (see
+[Draw Order](../rendering/draw-order.md)).
 
 ## Creating a world-space canvas
 
-Pass `renderMode: 'worldSpace'` to put UI content in the game world instead
-of overlaid on the screen - diegetic UI like a health bar over an enemy's
-head, a name tag, or a floating damage indicator with a persistent rect:
+A world-space canvas is drawn by the `camera` you pass, usually the game's
+world camera, so it moves and zooms with the world. Use one for UI that
+belongs to something in the world, for example a health bar or a name tag:
 
 ```ts
 const healthBarCanvas = createUiCanvas(world, renderContext, {
   renderMode: 'worldSpace',
-  camera: worldCamera, // the game's own world camera, not a dedicated UI one
+  camera: worldCamera,
   anchor: UiAnchor.center({ x: 80, y: 10 }),
-  anchoredPosition: { x: 0, y: 40 }, // 40 units above the enemy's own origin
+  anchoredPosition: { x: 0, y: 40 },
 });
 
-world.setParent(healthBarCanvas, enemy);
+world.setParent(healthBarCanvas, target);
 
-const fill = createPanel(world, healthBarCanvas, {
+createPanel(world, healthBarCanvas, {
   anchor: UiAnchor.stretchAll(),
   sprite: fillSprite,
 });
 ```
 
-A world-space canvas's root rect is an ordinary `RectTransformEcsComponent`
+A world-space canvas's root rectangle is sized by `anchor` (a
+`100` by `100` box by default) instead of the screen. Its position relative
+to its parent is `anchoredPosition`: the layout system writes the canvas's
+`position.local` every frame, so set `anchoredPosition` rather than the
+position. Parented to an entity, the canvas follows that entity's
+position, rotation and scale.
 
-- sized via `anchor`/`anchoredPosition` (mirroring `createPanel`'s own
-  options) rather than the render destination's size. Its offset from the
-  entity it's attached to comes from `anchoredPosition` above, not from touching
-  `PositionEcsComponent` directly - `createUiLayoutEcsSystem` recomputes the
-  canvas's local position from its anchor every frame, so a manually-set
-  `PositionEcsComponent.local` would just be overwritten on the next frame.
+The UI's sprites and labels need a `category` that `camera`'s
+`cullingMask` matches. `createUiCanvas` rejects `cullingMask`,
+`referenceResolution`, `scaleMode` and `layer` for a world-space canvas at
+compile time, and `camera`, `anchor` and `anchoredPosition` for a
+screen-space one.
 
-It draws through whichever camera `camera` names - typically the game's own
-world camera - not a dedicated UI camera `createUiCanvas` creates for you,
-so it pans and zooms with the world exactly like any other sprite.
-`referenceResolution`/`scaleMode`/`cullingMask`/`layer` aren't valid options
-for `renderMode: 'worldSpace'` at all - the type checker rejects them,
-since there's no "destination size" for a canvas embedded in the world to
-scale against, and no dedicated UI camera for them to configure.
+### Keeping a world-space canvas upright
 
-**Keeping it upright**: a parented canvas inherits its target's full
-world transform, so it spins and scales with the target, the same as a
-turret mounted on a rotating tank. A health bar usually shouldn't. To keep
-one upright above its target, don't parent it. Write its
-`RectTransformEcsComponent.anchoredPosition` from the target's position
-every frame instead, in a system registered before `registerUiSystems` so
-layout picks it up the same frame:
+To follow an entity without turning or scaling with it, leave the canvas
+unparented and write its `anchoredPosition` from the entity's position
+every frame, in a system registered before `registerUiSystems`:
 
 ```ts
-const healthBarOffset = { x: 0, y: 40 };
+import { positionId } from '@forge-game-engine/forge/common';
+import { EcsSystem } from '@forge-game-engine/forge/ecs';
+import { rectTransformId } from '@forge-game-engine/forge/ui';
 
-const followEnemySystem: EcsSystem<[]> = {
+const followTargetSystem: EcsSystem<[]> = {
   query: [],
   update: (world) => {
-    const enemyPosition = world.getComponentRequired(enemy, positionId);
-    const rectTransform = world.getComponentRequired(
+    const targetPosition = world.getComponentRequired(target, positionId);
+    const canvasRect = world.getComponentRequired(
       healthBarCanvas,
       rectTransformId,
     );
 
-    // The enemy has no parent, so its local position is its world position.
-    rectTransform.anchoredPosition.x =
-      enemyPosition.local.x + healthBarOffset.x;
-    rectTransform.anchoredPosition.y =
-      enemyPosition.local.y + healthBarOffset.y;
+    // target has no parent, so its local position is its world position.
+    canvasRect.anchoredPosition.x = targetPosition.local.x;
+    canvasRect.anchoredPosition.y = targetPosition.local.y + 40;
   },
 };
 ```
 
-A world-space canvas is created exactly like a screen-space one otherwise -
-multiple canvases (a screen-space HUD plus several world-space health
-bars) all share the one `registerUiSystems` call for their world.
+## Removing a canvas
 
-`createUiCanvas`'s options are a discriminated union on `renderMode`: the
-type checker requires `cullingMask` for the default `'screenSpace'` mode and
-`camera` for `'worldSpace'`, and rejects the other mode's fields
-(`referenceResolution`/`scaleMode`/`layer` vs. `camera`/`anchor`/
-`anchoredPosition`) outright, rather than accepting them and ignoring them
-at runtime.
+Removing the canvas entity with `world.removeEntity` also removes every
+element under it (see [World](../ecs/world.md)).
+A screen-space canvas's camera is a separate entity: its id is the
+canvas's `CanvasEcsComponent.camera`, and it's removed separately.

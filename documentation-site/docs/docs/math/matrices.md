@@ -4,61 +4,62 @@ sidebar_position: 4
 
 # Transformation Matrices
 
-[`Matrix3x3`](/Forge/docs/api/classes/Matrix3x3) represents a 3x3 2D
-transformation matrix, stored as a flat, column-major `Float32Array` of 9
-numbers. Forge's renderer uses it to build the projection matrix passed to
-shaders each frame, converting world-space coordinates into clip space.
+[`Matrix3x3`](/Forge/docs/api/classes/Matrix3x3) is a 3x3 matrix for 2D
+transforms (translation, rotation and scale), stored as a column-major
+`Float32Array` of 9 numbers. The renderer uses one as the projection matrix
+that maps world coordinates to clip space.
 
-## Matrices mutate in place
+## Creating a matrix
 
-Like [`Vector2`](/Forge/docs/api/interfaces/Vector2) and
-[`Vector3`](/Forge/docs/api/interfaces/Vector3)'s arithmetic functions,
-[`translate`](/Forge/docs/api/classes/Matrix3x3#translate),
-[`rotate`](/Forge/docs/api/classes/Matrix3x3#rotate), and
-[`scale`](/Forge/docs/api/classes/Matrix3x3#scale) **mutate the matrix in
-place** and return `this` for chaining:
+[`Matrix3x3.identity`](/Forge/docs/api/classes/Matrix3x3#identity) returns a
+new identity matrix on every access. The constructor takes the 9 values in
+column-major order and throws if there aren't exactly 9:
 
 ```ts
-const projectionMatrix = Matrix3x3.identity;
+import { Matrix3x3 } from '@forge-game-engine/forge/math';
 
-projectionMatrix.scale(2 / width, -2 / height);
-projectionMatrix.scale(zoom, zoom);
-projectionMatrix.translate(-cameraPosition.x, -cameraPosition.y);
+const transform = Matrix3x3.identity;
 ```
 
-Each call composes the new transform onto the matrix's current state, so
-**order matters**. The example above (Forge's own projection matrix) scales
-to clip space, then applies zoom, then re-centers on the camera; applying
-`translate` before the scales would translate by a different amount, since
-the translation itself would then be scaled.
+## Transforming a matrix
 
-## Identity: `Matrix3x3.identity` vs `resetToIdentity()`
+[`translate`](/Forge/docs/api/classes/Matrix3x3#translate),
+[`rotate`](/Forge/docs/api/classes/Matrix3x3#rotate) and
+[`scale`](/Forge/docs/api/classes/Matrix3x3#scale) change the matrix in place
+and return it, so calls can be chained:
 
-[`Matrix3x3.identity`](/Forge/docs/api/classes/Matrix3x3#identity) is a
-static getter that allocates a **new** identity matrix every time it's
-accessed, use it when you need a fresh matrix, for example at the start of
-building a new projection matrix as above.
+```ts
+transform
+  .translate(100, 50)
+  .rotate(Math.PI / 4)
+  .scale(2, 2);
+```
 
-[`resetToIdentity()`](/Forge/docs/api/classes/Matrix3x3#resettoidentity)
-resets an **existing** matrix's values back to identity without allocating a
-new `Float32Array`. If you keep a `Matrix3x3` instance around (for example,
-one rebuilt every frame), call `resetToIdentity()` on it rather than
-replacing it with `Matrix3x3.identity`, to avoid creating garbage every
-frame.
+Each call multiplies onto the right of the current matrix, so the last call
+is the first transform applied to a point. The example above scales a point,
+then rotates it, then translates it by `(100, 50)`.
+
+## Resetting a matrix
+
+[`resetToIdentity`](/Forge/docs/api/classes/Matrix3x3#resettoidentity) sets
+an existing matrix back to identity without allocating a new array. Use it
+for a matrix that's rebuilt every frame:
+
+```ts
+transform.resetToIdentity().translate(position.x, position.y);
+```
 
 ## Using a matrix as a shader uniform
 
-`Matrix3x3` instances can be passed directly to
-[`Material.setUniform`](/Forge/docs/api/classes/Material#setuniform).
-Internally, the material reads [`matrix`](/Forge/docs/api/classes/Matrix3x3#matrix),
-the underlying `Float32Array`, and uploads it as a `mat3` uniform:
+Pass a `Matrix3x3` to
+[`Material.setUniform`](/Forge/docs/api/classes/Material#setuniform) for a
+uniform declared as `mat3`:
 
 ```ts
-material.setUniform('u_projection', projectionMatrix);
+material.setUniform('u_transform', transform);
 ```
 
-You don't need to call `.matrix` yourself, `setUniform` checks `instanceof Matrix3x3`
-and extracts the array for you.
-The uniform must be declared as a `mat3` in the shader; see
-[Material Uniforms](../rendering/material-uniforms.md) for which values fit
-which uniform types.
+The material reads the matrix's
+[`matrix`](/Forge/docs/api/classes/Matrix3x3#matrix) array each time it is
+bound, so changes made to the matrix after `setUniform` are uploaded the next
+time the material is bound. See [Material Uniforms](../rendering/material-uniforms.md).

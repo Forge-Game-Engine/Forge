@@ -4,210 +4,168 @@ sidebar_position: 1
 
 # Vectors and Rectangles
 
-[`Vector2`](/Forge/docs/api/interfaces/Vector2) is the workhorse type in
-Forge: positions, velocities, sizes, directions, and collision normals are
-all `Vector2`. [`Vector3`](/Forge/docs/api/interfaces/Vector3) shares the
-same shape and is mostly used for shader uniforms (colors, 3D data) via
-[`Vec3.toFloat32Array`](/Forge/docs/api/classes/Vec3#tofloat32array).
-[`Rect`](/Forge/docs/api/interfaces/Rect) pairs two `Vector2`s into an
-axis-aligned bounding box.
+[`Vector2`](/Forge/docs/api/interfaces/Vector2) is a plain `{ x, y }`
+object. The engine uses it for positions, velocities, sizes, directions and
+normals. [`Vector3`](/Forge/docs/api/interfaces/Vector3) is a plain
+`{ x, y, z }` object. [`Rect`](/Forge/docs/api/interfaces/Rect) is an
+axis-aligned rectangle made of two `Vector2` corners.
 
-`Vector2`/`Vector3`/`Rect` are plain `{ x, y }`/`{ x, y, z }`/`{ min, max }`
-objects, not classes - create one with an object literal (`{ x: 1, y: 2 }`)
-rather than `new Vector2(x, y)`, and operate on them with
-[`Vec2`](/Forge/docs/api/classes/Vec2)/[`Vec3`](/Forge/docs/api/classes/Vec3)/
-[`Rects`](/Forge/docs/api/classes/Rects)'s static methods below rather than
-instance methods.
+## Creating a vector
 
-## Vector operations mutate in place
-
-[`Vec2.add`](/Forge/docs/api/classes/Vec2#add),
-[`Vec2.subtract`](/Forge/docs/api/classes/Vec2#subtract),
-[`Vec2.multiply`](/Forge/docs/api/classes/Vec2#multiply),
-[`Vec2.divide`](/Forge/docs/api/classes/Vec2#divide),
-[`Vec2.normalize`](/Forge/docs/api/classes/Vec2#normalize),
-[`Vec2.rotate`](/Forge/docs/api/classes/Vec2#rotate),
-[`Vec2.perpendicular`](/Forge/docs/api/classes/Vec2#perpendicular) and,
-[`Vec2.negate`](/Forge/docs/api/classes/Vec2#negate), all **mutate their first
-argument in place** (the `target`) and return it (for chaining), rather than
-allocating a new `Vector2`. This is a deliberate performance choice: the
-physics engine integrates every rigid body's motion every tick, and this way
-that no longer allocates a fresh vector per body per frame:
+Vectors are object literals, not class instances:
 
 ```ts
-Vec2.add(body.velocity, Vec2.multiply(Vec2.clone(gravity), deltaTimeInSeconds));
-Vec2.add(
-  body.position,
-  Vec2.multiply(Vec2.clone(body.velocity), deltaTimeInSeconds),
-);
+import { Vector2, Vector3 } from '@forge-game-engine/forge/math';
+
+const position: Vector2 = { x: 10, y: 20 };
+const color: Vector3 = { x: 1, y: 0.5, z: 0 };
+```
+
+The static getters [`Vec2.zero`](/Forge/docs/api/classes/Vec2#zero),
+[`Vec2.one`](/Forge/docs/api/classes/Vec2#one),
+[`Vec2.up`](/Forge/docs/api/classes/Vec2#up),
+[`Vec2.down`](/Forge/docs/api/classes/Vec2#down),
+[`Vec2.left`](/Forge/docs/api/classes/Vec2#left) and
+[`Vec2.right`](/Forge/docs/api/classes/Vec2#right) return a new vector on
+every access, so the result can be changed without affecting other code.
+The world is Y-up: `Vec2.up` is `(0, 1)` and `Vec2.down` is `(0, -1)`.
+[`Vec3`](/Forge/docs/api/classes/Vec3) has the same getters, plus
+`forward` `(0, 0, 1)` and `backward` `(0, 0, -1)`.
+
+## Changing a vector
+
+The static methods of [`Vec2`](/Forge/docs/api/classes/Vec2) and
+[`Vec3`](/Forge/docs/api/classes/Vec3) that change a vector (`add`,
+`subtract`, `multiply`, `multiplyComponents`, `divide`, `normalize`,
+`floorComponents`, and for `Vec2` also `rotate`, `perpendicular` and
+`negate`) write the result into their first argument and return it. No new
+vector is created:
+
+```ts
+import { Vec2 } from '@forge-game-engine/forge/math';
+
+const velocity = { x: 2, y: 0 };
+
+Vec2.add(velocity, { x: 0, y: 1 }); // velocity is now (2, 1)
+Vec2.multiply(velocity, 3); // velocity is now (6, 3)
+```
+
+Because each method returns its first argument, calls can be nested. To
+compute a new vector without changing an existing one, pass a copy made with
+[`Vec2.clone`](/Forge/docs/api/classes/Vec2#clone):
+
+```ts
+const offset = Vec2.multiply(Vec2.clone(velocity), deltaTimeInSeconds);
+
+Vec2.add(position, offset);
 ```
 
 :::caution
-Because these methods mutate their first argument, **clone before
-operating on any vector you still need unchanged** -
-[`Vec2.clone(v)`](/Forge/docs/api/classes/Vec2#clone) returns an
-independent copy. This matters most for two things: a component's live
-field (e.g. `entity.position.local`) that other code reads later in the
-same tick, and a value you need for more than one computation. In the
-example above, `gravity` and `body.velocity` are cloned before being scaled,
-since scaling them in place would permanently corrupt the constant gravity
-vector and double-apply velocity into itself. `body.velocity`/`body.position`
-themselves are mutated directly with no clone, since mutating the entity's
-own live state in place every tick is the entire point.
+Passing a component's field or a shared constant as the first argument
+changes it. Clone any vector that has to keep its value.
 :::
 
-[`Vec2.clone`](/Forge/docs/api/classes/Vec2#clone),
-[`Vec2.magnitude`](/Forge/docs/api/classes/Vec2#magnitude),
-[`Vec2.magnitudeSquared`](/Forge/docs/api/classes/Vec2#magnitudesquared),
-[`Vec2.dot`](/Forge/docs/api/classes/Vec2#dot),
-[`Vec2.cross`](/Forge/docs/api/classes/Vec2#cross),
-[`Vec2.distanceTo`](/Forge/docs/api/classes/Vec2#distanceto),
-[`Vec2.equals`](/Forge/docs/api/classes/Vec2#equals),
-[`Vec2.toString`](/Forge/docs/api/classes/Vec2#tostring), and
-[`Vec2.toFloat32Array`](/Forge/docs/api/classes/Vec2#tofloat32array)
-never mutate their arguments - they only read them (or, for `clone`, copy
-into a brand new vector).
+## Reading a vector
 
-`Vec3` mirrors this with a static method of the same name for each: `add`,
-`subtract`, `multiply`, `multiplyComponents`, `divide`, `normalize`,
-`floorComponents`, `set`, `clone`, and so on. Note that `Vec3` has no
-`rotate`/`dot`/`cross`/`perpendicular`/`negate`/`distanceTo` - those are
-`Vec2`-only.
+[`magnitude`](/Forge/docs/api/classes/Vec2#magnitude),
+[`magnitudeSquared`](/Forge/docs/api/classes/Vec2#magnitudesquared),
+[`distanceTo`](/Forge/docs/api/classes/Vec2#distanceto),
+[`dot`](/Forge/docs/api/classes/Vec2#dot),
+[`cross`](/Forge/docs/api/classes/Vec2#cross),
+[`equals`](/Forge/docs/api/classes/Vec2#equals),
+[`toString`](/Forge/docs/api/classes/Vec2#tostring) and
+[`toFloat32Array`](/Forge/docs/api/classes/Vec2#tofloat32array) return a
+value and don't change their arguments:
 
-## Static directions and the Y-up convention
+```ts
+const speed = Vec2.magnitude(velocity);
+const distance = Vec2.distanceTo(position, target);
+const facing = Vec2.dot(direction, Vec2.up);
+```
 
-[`Vec2.up`](/Forge/docs/api/classes/Vec2#up),
-[`Vec2.down`](/Forge/docs/api/classes/Vec2#down),
-[`Vec2.left`](/Forge/docs/api/classes/Vec2#left),
-[`Vec2.right`](/Forge/docs/api/classes/Vec2#right),
-[`Vec2.zero`](/Forge/docs/api/classes/Vec2#zero), and
-[`Vec2.one`](/Forge/docs/api/classes/Vec2#one) are convenience getters -
-each access returns a **fresh vector**, not a shared instance, so it's
-always safe to mutate the result. Forge's world is **Y-up**, so `Vec2.up` is
-`(0, 1)` and `Vec2.down` is `(0, -1)`. Gravity that pulls things down the
-screen is a _negative_ y value, and a positive angle turns counter-clockwise
-(see [Angles and Rotation](./angles-and-rotation.md)).
+`magnitudeSquared` returns the squared length without a square root. Compare
+it with a squared distance to check a range:
 
-`Vec3` has the same getters, with the same Y-up directions, plus
-`forward`/`backward` along the z-axis.
+```ts
+if (Vec2.magnitudeSquared(offset) < radius * radius) {
+  // offset is inside the radius
+}
+```
 
-## Length, direction, and normalization
+`Vec3` has the same methods except `distanceTo`, `dot` and `cross`.
 
-- [`Vec2.magnitude(v)`](/Forge/docs/api/classes/Vec2#magnitude) returns the
-  vector's length; [`Vec2.magnitudeSquared(v)`](/Forge/docs/api/classes/Vec2#magnitudesquared)
-  skips the `Math.sqrt` call.
-- [`Vec2.normalize(v)`](/Forge/docs/api/classes/Vec2#normalize) scales `v`
-  in place to unit length, in the same direction.
-- [`Vec2.distanceTo(a, b)`](/Forge/docs/api/classes/Vec2#distanceto),
-  [`Vec2.dot(a, b)`](/Forge/docs/api/classes/Vec2#dot),
-  [`Vec2.cross(a, b)`](/Forge/docs/api/classes/Vec2#cross), and
-  [`Vec2.perpendicular(v)`](/Forge/docs/api/classes/Vec2#perpendicular)
-  are the standard tools for collision normals, tangents, and angle-free
-  direction comparisons; the physics module's collision resolver builds its
-  friction tangent with `Vec2.perpendicular(Vec2.clone(normal))` and
-  projects relative velocity onto it with `Vec2.dot`.
+## Normalizing a vector
+
+[`Vec2.normalize`](/Forge/docs/api/classes/Vec2#normalize) scales a vector
+to length `1` in the same direction:
+
+```ts
+const direction = Vec2.normalize(Vec2.subtract(Vec2.clone(target), position));
+```
 
 :::caution
-`Vec2.normalize(v)` **throws** if `v` has zero length, since its direction
-is undefined. If a zero-length input is possible in your code (for example,
-two overlapping bodies with no separation vector), check
-`Vec2.magnitude(v) === 0` explicitly before normalizing rather than letting
-the call throw.
+`normalize` throws when the vector's length is `0`. When a vector can be
+zero (for example, the offset between two equal positions), check
+`Vec2.magnitudeSquared(vector) === 0` before normalizing it.
 :::
 
-### Performance: prefer `Vec2.magnitudeSquared` for comparisons
+## Rotating a vector
 
-Whenever you only need to **compare** distances or radii, use
-`Vec2.magnitudeSquared(v)` to avoid the square root. `PolygonCollider`
-computes its bounding radius this way, comparing every vertex's
-`Vec2.magnitudeSquared()` and taking a single `Math.sqrt` only at the end,
-rather than calling `Vec2.magnitude()` once per vertex.
+[`Vec2.rotate`](/Forge/docs/api/classes/Vec2#rotate) rotates a vector by an
+angle in radians, counter-clockwise for a positive angle (see
+[Angles and Rotation](./angles-and-rotation.md)).
+[`Vec2.perpendicular`](/Forge/docs/api/classes/Vec2#perpendicular) rotates
+it a quarter turn clockwise, to `(y, -x)`, and
+[`Vec2.negate`](/Forge/docs/api/classes/Vec2#negate) reverses it:
+
+```ts
+Vec2.rotate(offset, Math.PI / 2); // (1, 0) becomes (0, 1)
+Vec2.perpendicular(normal); // (0, 1) becomes (1, 0)
+```
 
 ## Scaling around a pivot
 
 [`scaleRelativeToPoint(point, pivot, scale)`](/Forge/docs/api/functions/scaleRelativeToPoint)
-scales `point` by `scale`, keeping `pivot` fixed, returning a new vector
-(this one does not mutate `point`). This is the function you want for
-"zoom toward the cursor" or scaling a shape around something other than the
-origin, where `Vec2.multiplyComponents(point, scale)` would also shift the
-shape's position.
-
-## Rect: axis-aligned bounding boxes
-
-A [`Rect`](/Forge/docs/api/interfaces/Rect) is a `min` corner and a `max`
-corner (both `Vector2`), with static helpers on
-[`Rects`](/Forge/docs/api/classes/Rects):
-
-- [`Rects.size(rect)`](/Forge/docs/api/classes/Rects#size): `max - min`, as a
-  fresh `Vector2`.
-- [`Rects.contains(rect, point)`](/Forge/docs/api/classes/Rects#contains): is
-  a point inside the rectangle?
-- [`Rects.intersects(a, b)`](/Forge/docs/api/classes/Rects#intersects): do
-  two rectangles overlap?
-- [`Rects.clone(rect)`](/Forge/docs/api/classes/Rects#clone): a deep copy.
+returns a new vector: `point` scaled by `scale` with `pivot` as the fixed
+point. `point` isn't changed. `Vec2.multiplyComponents(point, scale)` scales
+around the origin instead.
 
 ```ts
-const button: Rect = { min: { x: 10, y: 10 }, max: { x: 130, y: 42 } };
+import { scaleRelativeToPoint } from '@forge-game-engine/forge/math';
 
-if (Rects.contains(button, mousePosition)) {
-  // mouse is over the button
+const scaled = scaleRelativeToPoint(
+  { x: 20, y: 10 },
+  { x: 10, y: 10 },
+  { x: 2, y: 2 },
+); // (30, 10)
+```
+
+## Rectangles
+
+A [`Rect`](/Forge/docs/api/interfaces/Rect) has a `min` corner (lower left)
+and a `max` corner (upper right). The static methods of
+[`Rects`](/Forge/docs/api/classes/Rects) operate on it:
+
+- [`Rects.size`](/Forge/docs/api/classes/Rects#size) returns `max - min` as
+  a new `Vector2`.
+- [`Rects.contains`](/Forge/docs/api/classes/Rects#contains) returns whether
+  a point is inside the rectangle.
+- [`Rects.intersects`](/Forge/docs/api/classes/Rects#intersects) returns
+  whether two rectangles overlap.
+- [`Rects.clone`](/Forge/docs/api/classes/Rects#clone) returns a copy with
+  new corner vectors.
+
+```ts
+import { Rect, Rects } from '@forge-game-engine/forge/math';
+
+const area: Rect = { min: { x: 0, y: 0 }, max: { x: 100, y: 50 } };
+
+if (Rects.contains(area, point)) {
+  // point is inside area
 }
 ```
 
-:::caution
-Both `Rects.contains` and `Rects.intersects` are **inclusive of edges**: two
-rectangles that only touch along an edge or at a corner count as
-intersecting, and a zero-size `Rect` (`min` equal to `max`) still contains
-its single point. This is the right behavior for broad-phase collision
-(touching counts as a potential collision), but can be surprising for UI
-hit-testing where you might expect adjacent elements to be mutually
-exclusive.
+:::note
+`contains` and `intersects` include the edges: a point on an edge is inside,
+and two rectangles that only share an edge or a corner intersect.
 :::
-
-See [Bodies and Shapes](../physics/rigid-bodies.md) and
-[Raycasting](../physics/raycasting.md) for how `Rect` is used in the physics
-module.
-
-## Worked example: seeking a target
-
-A common gameplay pattern is moving an entity toward a target position at a
-fixed speed, combining `Vec2.subtract`, `Vec2.magnitude`, `Vec2.normalize`,
-`Vec2.multiply`, and `Vec2.add`:
-
-```ts
-import { Vec2, Vec3 } from '@forge-game-engine/forge/math';
-import { positionId } from '@forge-game-engine/forge/common';
-
-const seekSpeed = 120; // pixels per second
-
-const seekSystem = {
-  query: [positionId, targetId] as const,
-  update(world, { components: [positions, targets] }) {
-    for (let i = 0; i < positions.length; i++) {
-      const position = positions[i];
-      const target = targets[i];
-
-      // Clone before subtracting: `target.value` is still needed unchanged
-      // next tick, and `position.local` is the entity's live position.
-      const toTarget = Vec2.subtract(Vec2.clone(target.value), position.local);
-      const distance = Vec2.magnitude(toTarget);
-
-      if (distance < 1) {
-        continue;
-      }
-
-      const step = Vec2.multiply(
-        Vec2.normalize(toTarget),
-        seekSpeed * deltaTimeInSeconds,
-      );
-
-      Vec2.add(position.local, step);
-    }
-  },
-};
-```
-
-The early `return` when `distance < 1` avoids calling `Vec2.normalize` on a
-near-zero vector, which would otherwise make the entity jitter in place as
-`toTarget` flips direction on tiny floating-point differences once it
-reaches the target.

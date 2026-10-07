@@ -4,66 +4,65 @@ sidebar_position: 1
 
 import SpriteSheetStandard from '../../../static/img/Human_Soldier_Sword_Shield_Jump_Fall-Sheet.png';
 
-import SpriteSheetWithGap from '../../../static/img/Human_Soldier_Sword_Shield_Jump_Fall-Sheet_w_gap.png';
-
 # Sprite Animations
 
-You can use sprite sheets in forge to create animated characters and objects.
+A sprite animation shows the frames of an animation clip on an entity's
+sprite, one after another. The frames come from a sprite sheet: a single
+image with the frames arranged in a grid.
 
 ## Sprite sheets
 
 <img src={SpriteSheetStandard} alt="Sprite sheet" width="1000" />
 
-A sprite sheet is a single image that contains multiple frames arranged in a grid. Each frame represents one visual state (for example, a single step in a walk cycle). The sprite sheet could contain multiple animations and their frames (for example, walk, run, jump, etc.) The animation system slices the sheet into frames based on the number of rows and columns you provide, and uses per-frame UV offsets and sizes to render the correct sub-region every frame.
+A [`SpriteSheet`](/Forge/docs/api/interfaces/SpriteSheet) holds the frames
+of an image divided into equal rows and columns, as `frames[row][column]`.
+Each frame is an [`AnimationFrame`](/Forge/docs/api/interfaces/AnimationFrame):
+its `offset` and `dimensions` in the image, as fractions (`0` to `1`) of the
+image's width and height.
 
-### Creating a sprite sheet
-
-In forge a sprite sheet ([`SpriteSheet`](/Forge/docs/api/interfaces/SpriteSheet)) is represented as a row-major 2D array of animation frames. To create a sprite sheet you can use the [`createSpriteSheet`](/Forge/docs/api/functions/createSpriteSheet) utility.
-
-All you need is an image (your sprite sheet) and the number of rows and columns in the sheet.
-
-```ts
-const { imageCache } = renderContext;
-
-const image = await imageCache.getOrLoad('sprite_sheet.png');
-
-const spriteSheet = createSpriteSheet(image, 1, 6); // 1 row and 6 columns
-```
-
-## Animation Clips
-
-An [`AnimationClip`](/Forge/docs/api/classes/AnimationClip) is a collection of related animation frames (for example, 6 frames for a jump animation). A sprite sheet will contain frames that can be used to create one or more animation clips.
-
-### Creating animation clips
-
-You can use the [`selectAnimationFrames`](/Forge/docs/api/functions/selectAnimationFrames) utility to select the animation frames from a sprite sheet.
-
-If your sprite sheet has ten frames (5x2), and you select 6 frames it would look something like this:
+[`createSpriteSheet`](/Forge/docs/api/functions/createSpriteSheet) takes an
+image or texture and the number of rows and columns:
 
 ```ts
-const jumpAnimation = new AnimationClip(
-  selectAnimationFrames(spriteSheet, 6), // selects 6 frames,
-);
+import { createSpriteSheet } from '@forge-game-engine/forge/animations';
 
-// [x][x][x][x][x]
-// [x][ ][ ][ ][ ]
+const spriteSheet = createSpriteSheet(texture, 1, 6); // 1 row, 6 columns
 ```
 
-you can also pass in a starting frame:
+## Animation clips
+
+An [`AnimationClip`](/Forge/docs/api/classes/AnimationClip) is the sequence
+of frames one animation plays, such as a walk or a jump. One sprite sheet
+can hold the frames of several clips.
+
+[`selectAnimationFrames(spriteSheet, count, startFrame)`](/Forge/docs/api/functions/selectAnimationFrames)
+selects `count` frames in row-major order (left to right, then the next row),
+starting at frame index `startFrame` (default `0`):
 
 ```ts
-const jumpAnimation = new AnimationClip(
-  selectAnimationFrames(spriteSheet, 6, 2), // selects 6 frames, starts at index 2
-);
+import {
+  AnimationClip,
+  selectAnimationFrames,
+} from '@forge-game-engine/forge/animations';
 
-// [ ][ ][x][x][x]
-// [x][x][x][ ][ ]
+const clip = new AnimationClip(selectAnimationFrames(spriteSheet, 6, 2));
 ```
 
-## Creating an animated entity
+For a sheet of 2 rows and 5 columns, that selects these frames:
 
-To include an animated sprite in your game, your entity must include both a sprite component and a [sprite animation](/Forge/docs/api/interfaces/SpriteAnimationEcsComponent) component. Animation clips are stored in an
-[`AssetRegistry`](/Forge/docs/api/classes/AssetRegistry) and referenced from the component by handle, so the same registry (and clips) can be shared across every animated entity.
+```
+[ ][ ][x][x][x]
+[x][x][x][ ][ ]
+```
+
+## Playing a clip on an entity
+
+Clips are stored in an [`AssetRegistry`](/Forge/docs/api/classes/AssetRegistry).
+A [`SpriteAnimationEcsComponent`](/Forge/docs/api/interfaces/SpriteAnimationEcsComponent)
+refers to its clip by the handle `register` returns. The entity also needs a
+sprite whose size is one frame: pass the frame's size in texels as
+`frameDimensions` to `createImageSprite` (see
+[Sprites](../rendering/sprites.md)).
 
 ```ts
 import { AssetRegistry } from '@forge-game-engine/forge/asset-loading';
@@ -75,86 +74,86 @@ import {
   selectAnimationFrames,
 } from '@forge-game-engine/forge/animations';
 import {
-  addPositionComponent,
-  createTransformEcsSystem,
-} from '@forge-game-engine/forge/common';
-import { Vec2 } from '@forge-game-engine/forge/math';
-import {
   addSpriteComponent,
-  createCameraEcsSystem,
   createImageSprite,
-  createRenderEcsSystem,
-  createTexture,
 } from '@forge-game-engine/forge/rendering';
 
-const { imageCache } = renderContext;
+const entity = world.createEntity();
 
-// 1. create the entity and position it
-const spriteEntity = world.createEntity();
-addPositionComponent(world, spriteEntity, { local: { x: 0, y: 0 } });
-
-// 2. load the sprite sheet and upload it to a texture
-const image = await imageCache.getOrLoad('character_sprite_sheet_32_32.png');
-const texture = createTexture(renderContext, image, { filter: 'nearest' });
-
-// 3. create a sprite and add it to the entity
 addSpriteComponent(
   world,
-  spriteEntity,
-  createImageSprite(texture, {
-    frameDimensions: { x: 32, y: 32 }, // 3.1 define the dimensions of a frame
-  }),
+  entity,
+  createImageSprite(texture, { frameDimensions: { x: 32, y: 32 } }),
 );
 
-// 4. create a sprite sheet
-const spriteSheet = createSpriteSheet(texture, 2, 5); // 4.1 define the rows and columns (2x5 = 10 frames in total)
+const spriteSheet = createSpriteSheet(texture, 2, 5);
+const idleClip = new AnimationClip(selectAnimationFrames(spriteSheet, 5));
 
-// 5. create an animation clip
-const idleAnimation = new AnimationClip(
-  selectAnimationFrames(spriteSheet, 5), // 5.1 select the first 5 frames for this clip
-);
+const animationClips = new AssetRegistry<AnimationClip>();
+const idleClipHandle = animationClips.register('idle', idleClip);
 
-// 6. create an asset registry for your animation clips
-// (usually you only need a shared one for all clips in your game)
-const animationRegistry = new AssetRegistry<AnimationClip>();
-
-// 7. add the animation clip to the registry and receive a handle
-const idleAnimationHandle = animationRegistry.register('idle', idleAnimation);
-
-// 8. add a sprite animation component to your entity
-addSpriteAnimationComponent(world, spriteEntity, {
-  animationClipHandle: idleAnimationHandle,
+addSpriteAnimationComponent(world, entity, {
+  animationClipHandle: idleClipHandle,
 });
 
-// 9. register the systems
-world.addSystem(createCameraEcsSystem(time));
-world.addSystem(createTransformEcsSystem());
-world.addSystem(createRenderEcsSystem(renderContext));
-world.addSystem(createSpriteAnimationEcsSystem(time, animationRegistry));
+world.addSystem(createSpriteAnimationEcsSystem(time, animationClips));
 ```
 
+One registry can hold every clip, and any number of entities can play the
+same clip.
+
 [`createSpriteAnimationEcsSystem`](/Forge/docs/api/functions/createSpriteAnimationEcsSystem)
-takes the `animationRegistry` so it can look up the clip referenced by
-`animationClipHandle`. Every `frameDurationMilliseconds` (scaled by
-`playbackSpeed`), it advances `animationFrameIndex` and writes that frame's
-`offset` onto the sprite's `uvOffset`, wrapping back to frame `0` once the
-clip ends.
+changes the frame of each entity with a `SpriteAnimationEcsComponent` and a
+sprite. Each time a frame's duration has passed, it writes the offset of the
+frame at `animationFrameIndex` to the sprite's `uvOffset` and moves
+`animationFrameIndex` to the next frame. After the clip's last frame, it
+moves back to frame `0`, so a clip loops for as long as the component is on
+the entity.
 
-## Notes and troubleshooting
+## Setting the frame rate
 
-- `frameDurationMilliseconds` and `playbackSpeed` must both be greater than
-  `0`. If `frameDurationMilliseconds / playbackSpeed` is `0` or negative, the
-  system throws rather than dividing by zero or running the animation
-  backwards.
-- Sprite animation clips always loop back to frame `0` at the end; there's
-  currently no built-in way to stop after one play-through or to get
-  notified when a clip finishes.
-- Switching `animationClipHandle` to a different clip keeps the current
-  `animationFrameIndex`. If the new clip has fewer frames than the old one,
-  the next update can throw `Frame index is out of bounds`. Reset
-  `animationFrameIndex` to `0` whenever you change `animationClipHandle`.
-- `lastFrameChangeTimeInSeconds` is normally initialized to `0`, which makes
-  the component advance to its second frame on the very first update (since
-  `time.timeInSeconds` is already greater than `0`). If you need the first
-  frame to hold for a full `frameDurationMilliseconds`, initialize it to
-  `time.timeInSeconds` instead.
+`frameDurationMilliseconds` (default `100`) is how long each frame is shown.
+`playbackSpeed` (default `1`) divides it: `2` plays twice as fast and `0.5`
+half as fast.
+
+```ts
+addSpriteAnimationComponent(world, entity, {
+  animationClipHandle: idleClipHandle,
+  frameDurationMilliseconds: 80,
+  playbackSpeed: 1.5,
+});
+```
+
+Frame durations are measured with the [Time](../common/time.md)'s
+`timeInSeconds`, so they follow its `timeScale`.
+
+:::caution
+The animation system throws if `frameDurationMilliseconds / playbackSpeed`
+is `0` or less.
+:::
+
+## Changing the clip
+
+Set `animationClipHandle` to another clip's handle, and set
+`animationFrameIndex` to `0` so the new clip starts from its first frame:
+
+```ts
+import { spriteAnimationId } from '@forge-game-engine/forge/animations';
+
+const spriteAnimation = world.getComponentRequired(entity, spriteAnimationId);
+
+spriteAnimation.animationClipHandle = jumpClipHandle;
+spriteAnimation.animationFrameIndex = 0;
+```
+
+:::caution
+The animation system throws if `animationFrameIndex` is past the last frame
+of the clip, which happens when the new clip has fewer frames than the old
+one and the index isn't reset.
+:::
+
+## Stopping an animation
+
+Remove the `SpriteAnimationEcsComponent` with
+`world.removeComponent(entity, spriteAnimationId)`. The sprite keeps showing
+the last frame written to its `uvOffset`.

@@ -4,116 +4,82 @@ sidebar_position: 3
 
 # Interpolation and Smoothing
 
-These functions cover the numeric glue between values: blending between two
-numbers, keeping a value in range, easing a position toward a target over
-time, and squaring a value while keeping its sign.
+The math module has four functions for moving a number or vector between
+values: `lerp` blends two numbers, `clamp` keeps a number in a range,
+`smoothDampVector2` moves a position toward a target over time, and
+`signedSquare` squares a number and keeps its sign.
 
-## lerp: blending between two values
+## Blending two values
 
-[`lerp(v0, v1, t)`](/Forge/docs/api/functions/lerp) returns `v0 + t * (v1 - v0)`.
-At `t = 0` you get `v0`, at `t = 1` you get `v1`, and anything in between is a
-blend. It works for any numeric quantity: positions, colors, opacity, scale.
-
-:::caution
-`t` is **not clamped**. Values outside `[0, 1]` extrapolate past `v0` or
-`v1`, which is useful for deliberate overshoot effects, but means a `t`
-computed as `elapsed / duration` will keep extrapolating past `v1` once
-`elapsed > duration`. If you need the result to stop at the endpoints, clamp
-`t` yourself:
+[`lerp(v0, v1, t)`](/Forge/docs/api/functions/lerp) returns
+`v0 + t * (v1 - v0)`: `v0` when `t` is `0`, `v1` when `t` is `1`, and the
+values between them for a `t` between `0` and `1`.
 
 ```ts
-const t = clamp(elapsed / duration, 0, 1);
-const value = lerp(start, end, t);
+import { clamp, lerp } from '@forge-game-engine/forge/math';
+
+const t = clamp(elapsedSeconds / durationSeconds, 0, 1);
+const opacity = lerp(0, 1, t);
 ```
 
+:::caution
+`lerp` doesn't clamp `t`. A `t` greater than `1` returns a value past `v1`,
+so clamp `t` when it's computed from a time that keeps increasing, as above.
 :::
 
-## clamp: keeping a value in range
+## Keeping a value in a range
 
-[`clamp(value, min, max)`](/Forge/docs/api/functions/clamp) restricts
-`value` to `[min, max]`. It shows up in two different shapes in the engine:
+[`clamp(value, min, max)`](/Forge/docs/api/functions/clamp) returns `min`
+when `value` is less than `min`, `max` when it's greater than `max`, and
+`value` otherwise:
 
-- **Normalizing constructor input once**: `RigidBody` clamps `restitution`
-  and `friction` to `[0, 1]` in its constructor, so invalid values are
-  caught early and the rest of the engine can trust they're always in range,
-  rather than re-clamping on every read.
-- **Clamping a value that changes every frame**: the camera system clamps
-  `zoom` between `minZoom` and `maxZoom` every time zoom input is applied,
-  since the valid range doesn't change but the value does.
+```ts
+const zoom = clamp(requestedZoom, 0.5, 4);
+```
 
-Pick whichever matches your case, clamp once at the boundary if the value is
-fixed after construction, or every update if it's driven by continuous
-input.
-
-## smoothDampVector2: easing toward a target
+## Moving toward a target over time
 
 [`smoothDampVector2`](/Forge/docs/api/functions/smoothDampVector2) moves a
-position toward a target using a critically damped spring, the same
-algorithm Unity's `Vector2.SmoothDamp` uses. Unlike `lerp`, it has momentum:
-it accelerates and decelerates smoothly and won't overshoot the target, which
-makes it well suited for camera follow and UI elements easing toward a new
-position.
-
-It's a pure function: it does not mutate `position` or `velocity`, it
-returns new `positionOutput` and `velocityOutput` values. The
-`velocityOutput` carries the current rate of change, so you must store it
-and pass it back in as `velocity` on the next call:
+position toward a target as a critically damped spring: it speeds up, then
+slows down as it reaches the target, and doesn't move past it. Call it once
+per frame. It doesn't change its arguments; it returns a new position
+(`positionOutput`) and a new velocity (`velocityOutput`). Store the velocity
+and pass it back as `velocity` on the next call:
 
 ```ts
-import { smoothDampVector2, Vec2 } from '@forge-game-engine/forge/math';
+import { smoothDampVector2 } from '@forge-game-engine/forge/math';
 
-const cameraFollowSystem = {
-  query: [cameraId, positionId] as const,
-  update(world, { components: [cameras, positions] }) {
-    for (let i = 0; i < cameras.length; i++) {
-      const camera = cameras[i];
-      const position = positions[i];
+const { positionOutput, velocityOutput } = smoothDampVector2(
+  follower.position,
+  target,
+  follower.velocity,
+  maxSpeed,
+  smoothTimeInSeconds,
+  time.deltaTimeInSeconds,
+);
 
-      const { positionOutput, velocityOutput } = smoothDampVector2(
-        camera.position,
-        position.local,
-        camera.velocity,
-        camera.maxFollowSpeed,
-        camera.followSmoothTime,
-        deltaTimeInSeconds,
-      );
-
-      camera.position = positionOutput;
-      camera.velocity = velocityOutput;
-    }
-  },
-};
+follower.position = positionOutput;
+follower.velocity = velocityOutput;
 ```
+
+`smoothTime` is the approximate time in seconds the position takes to reach
+the target. `maxSpeed` limits how fast the position moves.
 
 :::caution
-If `velocityOutput` is discarded instead of stored (for example, by passing
-`Vec2.zero` as `velocity` on every call instead of the previous
-`velocityOutput`), the spring never builds momentum. The camera will still
-move toward the target, but at a constant slow rate near `maxSpeed`, missing
-the acceleration/deceleration that makes the smoothing feel natural.
+Passing a zero velocity on every call instead of the previous
+`velocityOutput` resets the spring each frame, and the position doesn't
+speed up or slow down.
 :::
 
-`smoothTime` is the approximate time to reach the target, smaller values
-follow more tightly (less lag, more responsive), larger values feel looser
-and more cinematic. `maxSpeed` caps how fast the position can change
-regardless of how far away the target is, preventing a huge initial jump if
-the target teleports.
-
-## signedSquare: squaring without losing direction
+## Squaring a value with its sign
 
 [`signedSquare(x)`](/Forge/docs/api/functions/signedSquare) returns
-`x * Math.abs(x)`, the square of `x` with the original sign preserved
-(`signedSquare(-3)` is `-9`, not `9`). Plain `x * x` always returns a
-positive number, which loses the sign of `x`.
-
-This is the shape you want for drag or resistance forces that scale with the
-square of speed but must oppose the current direction of motion, whichever
-way that is:
+`x * Math.abs(x)`: the square of `x` with the sign of `x`, so
+`signedSquare(-3)` is `-9`. Use it for a value that grows with the square of
+another but keeps its direction, such as drag opposing a velocity:
 
 ```ts
-const dragForce = -signedSquare(velocity.x) * dragCoefficient;
-```
+import { signedSquare } from '@forge-game-engine/forge/math';
 
-Squaring `velocity.x` directly here would make the drag force always
-negative, accelerating a body moving in the negative direction instead of
-slowing it down.
+const drag = -signedSquare(velocity.x) * dragCoefficient;
+```

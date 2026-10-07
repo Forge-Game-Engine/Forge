@@ -4,73 +4,59 @@ sidebar_position: 3
 
 # Raycasting
 
-`raycast(world, start, end, options?)`
-casts a line segment against every entity in an `EcsWorld` with a
-`ColliderEcsComponent` and returns every point where it intersects one, as
-a `RaycastHit`. Use it for hitscan
-weapons, line-of-sight checks, and ground/wall detection, anything that
-needs to ask "what's between these two points?" without running a full
-simulation step.
+[`raycast(world, start, end, options?)`](/Forge/docs/api/functions/raycast)
+tests the line segment from `start` to `end` against every entity in an
+`EcsWorld` that has a `ColliderEcsComponent` and a `PositionEcsComponent`.
+It returns a [`RaycastHit`](/Forge/docs/api/interfaces/RaycastHit) for
+each collider the segment crosses. Use it to find what lies between two
+points, for example for a line-of-sight check or a hitscan weapon.
 
-Try it in the [Raycasting demo](/Forge/demos/raycasting), which casts a ray
-from a fixed point toward your cursor every time it moves.
-
-## Finding the closest hit
-
-The default `sort: true` orders results by distance from `start`, so the
-first result is the nearest entity along the ray:
+## Casting a ray
 
 ```ts
 import { raycast } from '@forge-game-engine/forge/physics';
 
-const hits = raycast(world, origin, target);
+const hits = raycast(world, start, end);
 const closest = hits[0];
 
 if (closest) {
   const { entity, point, normal, distance } = closest;
-  // `point`/`normal` describe where and how it was hit, in world space
 }
 ```
 
-If you only need a yes/no line-of-sight check and don't care which entity
-is nearest, pass `{ sort: false }` to skip the sort.
+By default, the hits are ordered by `distance` from `start`, so the first
+hit is the closest. Each hit has:
 
-## Hitting only some colliders
+- `entity`: the entity whose collider the ray crossed.
+- `point`: the world-space point where the ray crosses the collider's
+  edge, closest to `start`.
+- `normal`: the collider's outward surface normal at `point`.
+- `distance`: the distance from `start` to `point`.
 
-`mask` limits the ray to colliders whose `category` shares a bit with it,
-the same categories colliders filter each other by (see
-[Collision filtering](./collisions.md#collision-filtering)). It defaults
-to every category.
+`raycast` tests circle, polygon and terrain colliders. A ray can enter a
+terrain from any side, including from below.
+
+:::caution
+`raycast` skips every collider whose `aabb` doesn't overlap the ray, and
+`createBroadPhaseEcsSystem` is the system that writes `aabb`. Register the
+broad phase, and cast rays after it has run: a collider is tested where it
+was when the broad phase last ran, and a collider added since then isn't
+hit.
+:::
+
+## Choosing which colliders a ray hits
+
+The `mask` option limits the ray to colliders whose `category` shares a bit
+with it, the same categories colliders filter each other by (see
+[Filtering which colliders collide](./collisions.md#filtering-which-colliders-collide)).
+By default it hits every category.
 
 ```ts
-const WALLS = 1 << 0;
-const ENEMIES = 1 << 1;
+const STATIC_GEOMETRY = 1 << 0;
 
-// A line-of-sight check that looks through enemies and stops at walls.
-const blocked = raycast(world, eye, target, { sort: false, mask: WALLS });
+const blockingHits = raycast(world, start, end, { mask: STATIC_GEOMETRY });
+const hasLineOfSight = blockingHits.length === 0;
 ```
 
-Rays pass through [sensor colliders](./collisions.md#sensors), so a trigger
-zone doesn't block line of sight. Pass `includeSensors: true` to hit them
-too, for example to ask which zone the cursor is over.
-
-`raycast` works against every collider shape - `CircleCollider`,
-`PolygonCollider`, and `TerrainCollider` - dispatching to the appropriate
-intersection test based on each entity's `Collider.type`.
-
-## Performance
-
-`raycast` reads each collider's `aabb` directly rather than recomputing
-it, so `createBroadPhaseEcsSystem`, which writes it, must be registered and
-run at least once before casting. Those bounds are from when the broad phase
-last ran: a body that has moved since is tested against where it was, and a
-collider added since can't be hit yet. Before testing an entity's exact collider shape, `raycast`
-then skips any entity whose AABB doesn't overlap the ray's own bounding
-box, so casting against a `world` with many entities is cheap as long as
-most of them aren't near the ray.
-
-If you need many raycasts per frame (for example, a shotgun spread or a
-sensor array), each call repeats this AABB pass over every collider entity
-in the world; for very large worlds, consider maintaining a smaller,
-purpose-built `EcsWorld` (or a spatial index of your own) for the subset of
-entities raycasts should actually be able to hit.
+A ray passes through [sensor colliders](./collisions.md#sensors) unless the
+`includeSensors` option is `true`.

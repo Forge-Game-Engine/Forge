@@ -2,140 +2,161 @@
 sidebar_position: 4
 ---
 
-# Prismatic Joints (Sliders)
+# Joints
 
-A `PrismaticJointEcsComponent`
-constrains two entities to move together along a single, straight axis: no
-rotation relative to each other, no translation perpendicular to the axis.
-Use it for anything that slides along a fixed line relative to something
-else: pistons, elevators, drawers, suspension struts, moving platforms with
-a fixed travel path.
+A joint constrains how two bodies, `entityA` and `entityB`, move relative to
+each other. A joint is a component on an entity of its own, which
+references the two bodies. Every tick, after collision resolution, a joint
+system changes the bodies' velocities so they keep to the constraint.
+
+## Joint types
+
+- **Revolute joint (hinge)**: a
+  [`RevoluteJointEcsComponent`](/Forge/docs/api/interfaces/RevoluteJointEcsComponent)
+  pins an anchor point on each body to the same place. The bodies can turn
+  about that point, but not move apart. Use it for doors, pendulums and
+  wheels.
+- **Prismatic joint (slider)**: a
+  [`PrismaticJointEcsComponent`](/Forge/docs/api/interfaces/PrismaticJointEcsComponent)
+  lets `entityB` slide relative to `entityA` along one axis, and keeps their
+  relative rotation fixed. Use it for pistons, elevators and suspension
+  struts.
+
+Both bodies need a `PositionEcsComponent` and a `RotationEcsComponent`. A
+body with no `RigidBodyEcsComponent`, or a static or kinematic one, isn't
+moved by the joint, so a joint between such a body and a dynamic body fixes
+the dynamic body to it.
+
+## Adding a revolute joint
+
+Create an entity for the joint and add a `RevoluteJointEcsComponent` to it
+with `addRevoluteJointComponent`:
+
+```ts
+import { addRevoluteJointComponent } from '@forge-game-engine/forge/physics';
+
+const joint = world.createEntity();
+
+addRevoluteJointComponent(world, joint, {
+  entityA: frame,
+  entityB: door,
+  localAnchorB: { x: -60, y: 0 },
+});
+```
+
+`localAnchorA` and `localAnchorB` are the anchor points, in each body's
+local space. Each defaults to its body's origin. In this example the door
+turns about a point 60 units to the left of its own origin, which is pinned
+to the frame's origin.
+
+## Adding a prismatic joint
+
+Create an entity for the joint and add a `PrismaticJointEcsComponent` to it
+with `addPrismaticJointComponent`:
 
 ```ts
 import { Vec2 } from '@forge-game-engine/forge/math';
 import { addPrismaticJointComponent } from '@forge-game-engine/forge/physics';
 
-// frame and piston are entities with their own PositionEcsComponent,
-// RotationEcsComponent, ColliderEcsComponent, and RigidBodyEcsComponent
-// (frame has no RigidBodyEcsComponent, so it's treated as static), created
-// the same way as in Bodies and Shapes.
-const jointEntity = world.createEntity();
+const joint = world.createEntity();
 
-addPrismaticJointComponent(world, jointEntity, {
+addPrismaticJointComponent(world, joint, {
   entityA: frame,
   entityB: piston,
   axis: Vec2.up,
-  enableLimit: true,
-  lowerTranslation: 0,
-  upperTranslation: 120,
 });
 ```
 
-Once registered (see [ECS integration](#ecs-integration) below), the joint
-solves alongside collisions every tick, no further calls needed.
+`axis` is the direction `entityB`'s anchor point slides in, in `entityA`'s
+local space, so it turns with `entityA`. It defaults to `+X`. The anchor
+points `localAnchorA` and `localAnchorB` default to each body's origin, as
+for a revolute joint.
 
-## Choosing an axis and anchors
+## Reference angle
 
-`axis` lives in `entityA`'s local space and rotates with it, this is what
-makes a joint on a rotating turret still slide in the turret's "forward"
-direction as it turns. `localAnchorA`/`localAnchorB` default to each
-entity's own origin; offset them when the sliding line shouldn't pass
-through an entity's origin, for example a piston rod attached to the rim of
-a rotating wheel rather than its hub. All of these are set once when the
-component is attached and can't be changed afterwards, the joint is defined
-by its axis and anchors for its whole lifetime.
+When a joint is added, it stores `entityB`'s world rotation minus
+`entityA`'s as its `referenceAngle`. A prismatic joint keeps the bodies at
+that relative rotation. A revolute joint measures its angle from it: the
+angle is `0` when the bodies are at the relative rotation they had when the
+joint was added.
 
-`referenceAngle`, the relative angle the joint locks the two entities to, is
-captured from their actual rotations at the moment `addPrismaticJointComponent`
-is called, not fixed separately. If `entityA` and `entityB` start rotated 15
-degrees apart, the joint holds them 15 degrees apart, not parallel. Attach
-the joint after positioning both entities, not before - `entityA`/`entityB`
-must already have a `RotationEcsComponent` when you call
-`addPrismaticJointComponent`.
+Add a joint after placing and rotating both bodies.
+`addRevoluteJointComponent` and `addPrismaticJointComponent` throw if either
+body has no `RotationEcsComponent`.
 
-## Limits
+## Limiting a joint's motion
 
-`enableLimit`, `lowerTranslation`, and `upperTranslation` bound the
-translation along `axis`: the drawer can't be pulled out further than the
-rails allow, the piston can't push past its stroke length. Unlike the old
-class-based joints, these are plain component fields, so a mutable limit (a
-drawer that locks, a piston that's been extended by a level-up) is just an
-assignment on the component `addPrismaticJointComponent` returned, no need
-to recreate the joint:
+With `enableLimit: true`, a revolute joint keeps its angle between
+`lowerAngle` and `upperAngle` (in radians), and a prismatic joint keeps the
+distance from `entityA`'s anchor point to `entityB`'s, measured along
+`axis`, between `lowerTranslation` and `upperTranslation`:
 
 ```ts
-const joint = addPrismaticJointComponent(world, jointEntity, { ... });
+const hinge = addRevoluteJointComponent(world, joint, {
+  entityA: frame,
+  entityB: door,
+  localAnchorB: { x: -60, y: 0 },
+  enableLimit: true,
+  lowerAngle: 0,
+  upperAngle: Math.PI / 2,
+});
+```
 
-joint.upperTranslation = 200;
+The limits are fields of the component, and can be changed at any time:
+
+```ts
+hinge.upperAngle = Math.PI;
 ```
 
 :::caution
-`lowerTranslation`/`upperTranslation` default to `0`. Setting
-`enableLimit: true` without also setting both bounds locks the translation
-at exactly `0`, which reads as "the joint doesn't move at all" rather than
-"unlimited". Leave `enableLimit` unset (or `false`) for a free-sliding
-joint, and only set it once you have real bounds to give it.
+`lowerAngle`, `upperAngle`, `lowerTranslation` and `upperTranslation` all
+default to `0`. With `enableLimit: true` and no limits set, the joint
+doesn't turn or slide at all.
 :::
 
-There's no motor: a prismatic joint doesn't drive translation on its own.
-Move a jointed entity by applying an impulse to it (see
-[Applying Forces](./forces.md)), or by giving its `RigidBodyEcsComponent` an
-initial velocity along `axis`; the joint constrains the resulting motion to
-the axis rather than producing it.
+## Moving jointed bodies
 
-## ECS integration
+A joint has no motor: it only constrains the motion of its bodies. Move a
+jointed body with an impulse, a torque or an angular velocity motor (see
+[Applying Forces](./forces.md)), or by setting its velocity. Without a
+limit, a revolute joint doesn't slow a turning body down.
 
-Add a `PrismaticJointEcsComponent` to a dedicated joint entity (not
-`entityA` or `entityB` themselves) via `addPrismaticJointComponent`, then
-register `createPrismaticJointEcsSystem(time)`:
+## Registering the joint systems
+
+Register [`createRevoluteJointEcsSystem`](/Forge/docs/api/functions/createRevoluteJointEcsSystem)
+and [`createPrismaticJointEcsSystem`](/Forge/docs/api/functions/createPrismaticJointEcsSystem)
+after `createCollisionResolutionEcsSystem` and before
+`createEulerIntegrationEcsSystem` (see
+[Registering the physics systems](./index.md#registering-the-physics-systems)):
 
 ```ts
-import { Vec2 } from '@forge-game-engine/forge/math';
 import {
-  addPrismaticJointComponent,
   createPrismaticJointEcsSystem,
+  createRevoluteJointEcsSystem,
 } from '@forge-game-engine/forge/physics';
 
-const jointEntity = world.createEntity();
-
-addPrismaticJointComponent(world, jointEntity, {
-  entityA: frame,
-  entityB: piston,
-  axis: Vec2.up,
-});
-
-// Must run after whatever system resolves collisions
-// (createCollisionResolutionEcsSystem) and before whatever system
-// integrates velocity into position (createEulerIntegrationEcsSystem).
+world.addSystem(createRevoluteJointEcsSystem(time));
 world.addSystem(createPrismaticJointEcsSystem(time));
 ```
 
-The joint's own entity doesn't need position/rotation components, a
-prismatic joint isn't itself positioned in the world, it only references
-`entityA`/`entityB`, which get their own entities (positioned as usual, see
-[Bodies and Shapes](./rigid-bodies.md)).
-
-By default each joint solves in a single pass per tick, sufficient for an
-isolated joint. If several joints chain through a shared body (for example
-a suspension mount, where one joint connects the chassis to an intermediate
-"upright" body and another connects that upright to a wheel), pass a higher
-`iterations` to converge that chain more accurately:
+Each system solves each joint once per tick. When several joints share a
+body, for example a chain of bodies, pass a higher `iterations` so the
+chain converges:
 
 ```ts
-world.addSystem(createPrismaticJointEcsSystem(time, { iterations: 8 }));
+world.addSystem(createRevoluteJointEcsSystem(time, { iterations: 8 }));
 ```
 
-:::caution[Registration order]
-`createPrismaticJointEcsSystem` must run after whatever system resolves
-contacts (`createCollisionResolutionEcsSystem`), so the joint gets the
-"last word" on velocity each tick, and before whatever system integrates
-velocity into position (`createEulerIntegrationEcsSystem`).
+:::note
+A joint corrects a body's distance from its anchor point or axis over
+several ticks, at the rate its `hertz` and `dampingRatio` set. Under a
+constant load, such as gravity, a jointed body stays a small distance from
+its exact position.
 :::
 
-## A small amount of drift is normal
+## Removing a joint
 
-Like collision resolution, joint solving corrects perpendicular and limit
-positional error incrementally rather than snapping it to zero. A jointed
-entity may sit a fraction of a unit off its exact axis under constant load
-such as gravity, this is expected and generally imperceptible; it is not a
-sign the joint is misconfigured.
+Remove the joint's entity with `world.removeEntity`. The bodies are no
+longer constrained, and keep their velocities. While either body has no
+`PositionEcsComponent` or `RotationEcsComponent`, for example after it has
+been removed, the joint system skips the joint.

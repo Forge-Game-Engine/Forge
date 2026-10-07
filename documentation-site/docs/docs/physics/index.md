@@ -1,121 +1,72 @@
 # Physics
 
-Forge includes a native 2D physics engine: rigid bodies, convex collision
-shapes, gravity, collision detection and resolution, raycasting, and
-impulse-based forces (including explosions). It has no external
-dependencies and is entirely ECS-native - there's no separate physics world
-object to step; each concern (gravity, broad phase, narrow phase, collision
-resolution, integration, joints) is its own system, registered on the
-`EcsWorld` like any other.
+Forge's physics module simulates 2D rigid bodies: it moves them by their
+velocity, applies gravity and other forces, and detects and resolves
+collisions between their shapes. It is made of ECS components, which hold
+each body's data, and ECS systems, which each run one step of the
+simulation every tick. There is no separate physics world: the systems are
+registered on the `EcsWorld` like any other system.
 
-Core concepts:
+The physics module has these parts:
 
-- `RigidBodyEcsComponent`: a
-  simulated body's velocity, mass, and `type` (`'dynamic'`, `'kinematic'`,
-  or `'static'`).
-- `ColliderEcsComponent`: an entity's
-  collision shape (`CircleCollider`,
-  `PolygonCollider`, or
-  `TerrainCollider`), plus friction,
-  restitution, the collision `category`/`mask` that filter which
-  colliders it's tested against, and whether it's a `sensor` (detected,
-  never resolved).
-- `createBroadPhaseEcsSystem`/`createNarrowPhaseEcsSystem`/
-  `createCollisionResolutionEcsSystem`: detect and resolve collisions
-  between collider entities each tick.
-- `createContinuousCollisionEcsSystem`: stops fast dynamic circles from
-  sinking into or passing through static colliders between two ticks.
-- `ContactsEcsComponent`: which entities a collider entity is touching,
-  and which contacts started or ended this tick.
-- `raycast`: casts a ray against every
-  collider entity in an `EcsWorld`.
-- `PrismaticJointEcsComponent`: a
-  slider constraint locking two bodies to one linear degree of freedom.
-- `RevoluteJointEcsComponent`: a hinge
-  constraint locking two bodies to one rotational degree of freedom about a
-  shared anchor point.
-- `LinearSpringEcsComponent`
-  and
-  `LinearDamperEcsComponent`:
-  position- and velocity-based forces connecting two bodies' anchor points,
-  for soft connections like vehicle suspension.
+- **Bodies and colliders**: a
+  [`ColliderEcsComponent`](/Forge/docs/api/interfaces/ColliderEcsComponent)
+  gives an entity a collision shape, and a
+  [`RigidBodyEcsComponent`](/Forge/docs/api/interfaces/RigidBodyEcsComponent)
+  makes it move. See [Bodies and Shapes](./rigid-bodies.md).
+- **Collisions**: the broad phase, narrow phase and collision resolution
+  systems find overlapping colliders and push them apart. Collision
+  categories and masks filter which colliders collide, sensors detect
+  overlaps without resolving them, and a
+  [`ContactsEcsComponent`](/Forge/docs/api/interfaces/ContactsEcsComponent)
+  lists what an entity touches. See [Collisions](./collisions.md).
+- **Forces**: gravity, impulses, torque, angular velocity motors, springs,
+  dampers and explosions change a body's velocity. See
+  [Applying Forces](./forces.md).
+- **Raycasting**: [`raycast`](/Forge/docs/api/functions/raycast) finds the
+  colliders a line segment crosses. See [Raycasting](./raycasting.md).
+- **Joints**: revolute (hinge) and prismatic (slider) joints constrain how
+  two bodies move relative to each other. See [Joints](./joints.md).
+- **Terrain**: a
+  [`TerrainCollider`](/Forge/docs/api/classes/TerrainCollider) is static
+  ground built from a heightmap. See [Terrain](./terrain.md).
+- **Continuous collision detection**: stops fast circles from sinking into
+  or passing through static colliders within one tick. See
+  [Continuous Collision Detection](./continuous-collision-detection.md).
 
-Guides in this section:
+## Registering the physics systems
 
-- [Bodies and Shapes](./rigid-bodies.md): creating bodies and shapes,
-  static/kinematic/dynamic bodies, and ECS integration.
-- [Collisions](./collisions.md): filtering which colliders collide, sensor
-  colliders for trigger zones, and reading what an entity touched.
-- [Applying Forces](./forces.md): gravity, impulses, torque, springs and
-  dampers, and explosions.
-- [Raycasting](./raycasting.md): casting rays against colliders.
-- [Continuous Collision Detection](./continuous-collision-detection.md):
-  keeping fast circles from sinking into or tunneling through static
-  colliders.
-- [Prismatic Joints (Sliders)](./joints.md): constraining bodies to slide
-  along a single axis.
-- [Revolute Joints (Hinges)](./revolute-joints.md): pinning bodies together
-  at a point while leaving rotation free.
-- [Terrain](./terrain.md): building non-convex 2D ground out of a
-  heightmap.
-
-## Quick Start
-
-Give an entity a `ColliderEcsComponent` and a `RigidBodyEcsComponent`
-alongside its position and rotation components, then register the systems
-that simulate them. Every `world.update()`, those systems apply gravity,
-detect and resolve collisions, and integrate each dynamic (or kinematic)
-body's velocity into its local position/rotation. The transform system turns
-that into the world transform everything else reads (see
-[Transforms](../common/transforms.md)).
+Physics systems read values that earlier systems write, so their order
+matters. A setup that uses every physics feature registers them in this
+order:
 
 ```ts
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
-  addPositionComponent,
-  addRotationComponent,
-  createTransformEcsSystem,
-} from '@forge-game-engine/forge/common';
-import {
-  addColliderComponent,
-  addGravityComponent,
-  addRigidBodyComponent,
-  CollisionManifold,
-  CollisionPair,
-  ContactConstraint,
+  type CollisionManifold,
+  type CollisionPair,
+  type ContactConstraint,
+  createAngularVelocityMotorEcsSystem,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
+  createLinearDamperEcsSystem,
+  createLinearSpringEcsSystem,
   createNarrowPhaseEcsSystem,
-  PolygonCollider,
+  createPrismaticJointEcsSystem,
+  createRevoluteJointEcsSystem,
 } from '@forge-game-engine/forge/physics';
-import { createGame } from '@forge-game-engine/forge/utilities';
-
-const { world, time } = createGame('game-container');
-
-const box = world.createEntity();
-// A 32x32 square, drawn around the entity's position.
-const collider = new PolygonCollider([
-  { x: -16, y: -16 },
-  { x: 16, y: -16 },
-  { x: 16, y: 16 },
-  { x: -16, y: 16 },
-]);
-
-addPositionComponent(world, box);
-addRotationComponent(world, box);
-addColliderComponent(world, box, { collider });
-addRigidBodyComponent(world, box);
-addGravityComponent(world, box, { amount: { x: 0, y: -300 } });
 
 const collisionPairs: CollisionPair[] = [];
 const collisionManifolds: CollisionManifold[] = [];
 const contactConstraints: ContactConstraint[] = [];
 
-// Physics reads each body's world transform, so resolve it first.
 world.addSystem(createTransformEcsSystem());
 world.addSystem(createGravityEcsSystem(time));
+world.addSystem(createLinearSpringEcsSystem(time));
+world.addSystem(createLinearDamperEcsSystem(time));
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
 world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
 world.addSystem(
@@ -125,9 +76,28 @@ world.addSystem(
     time,
   ),
 );
+world.addSystem(createRevoluteJointEcsSystem(time));
+world.addSystem(createPrismaticJointEcsSystem(time));
+world.addSystem(createAngularVelocityMotorEcsSystem(time));
 world.addSystem(createEulerIntegrationEcsSystem(time));
 world.addSystem(createContinuousCollisionEcsSystem());
 ```
 
-See [Bodies and Shapes](./rigid-bodies.md) for static and kinematic bodies,
-choosing a collision shape, and the full system registration order.
+1. `createTransformEcsSystem` writes every entity's world position and
+   rotation, which the physics systems read (see
+   [Transforms](../common/transforms.md)).
+2. Gravity, springs and dampers change velocities before collisions are
+   resolved, so the solver works with this tick's velocities.
+3. The broad phase writes each collider's bounds and lists the pairs whose
+   bounds overlap in `collisionPairs`. The narrow phase tests those pairs'
+   shapes and writes each collision to `collisionManifolds`.
+4. Collision resolution changes velocities so colliding bodies separate.
+   `contactConstraints` keeps its solver state from one tick to the next.
+5. The joint systems run after collision resolution, then the angular
+   velocity motor system.
+6. `createEulerIntegrationEcsSystem` moves each body's local position and
+   rotation by its velocity, and continuous collision detection checks
+   that movement.
+
+Register only the systems for the features a game uses, in the same
+relative order.

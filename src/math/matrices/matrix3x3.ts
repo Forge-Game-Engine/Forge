@@ -32,7 +32,9 @@ export class Matrix3x3 {
   }
 
   /**
-   * Applies a translation transformation to the matrix.
+   * Applies a translation transformation to the matrix. Like `rotate` and
+   * `scale`, it multiplies onto the right of the current matrix, so the last
+   * transform applied is the first one applied to a point.
    * @param x - The x-coordinate translation
    * @param y - The y-coordinate translation
    * @returns This matrix for chaining
@@ -80,7 +82,11 @@ export class Matrix3x3 {
     return this;
   }
 
-  /** * Resets the matrix to the identity matrix. */
+  /**
+   * Resets the matrix to the identity matrix in place, without allocating a
+   * new array.
+   * @returns This matrix for chaining
+   */
   public resetToIdentity(): this {
     // We intentionally set each element to avoid creating a new array (gc pressure)
     this._matrix[0] = 1;
@@ -97,7 +103,7 @@ export class Matrix3x3 {
   }
 
   /**
-   * Creates and returns an identity matrix.
+   * Creates and returns an identity matrix. Every access creates a new matrix.
    * @returns {Matrix3x3} A new identity matrix
    */
   static get identity(): Matrix3x3 {

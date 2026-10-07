@@ -17,14 +17,16 @@ export interface ColliderDefaultedOptions {
   /**
    * The Coulomb friction coefficient used when this entity is in contact
    * with another. `createCollisionResolutionEcsSystem` combines two
-   * contacting colliders' friction via their geometric mean.
+   * contacting colliders' friction via their geometric mean. Defaults to
+   * `0.6`.
    */
   friction: number;
 
   /**
    * The restitution (bounciness) coefficient used when this entity is in
    * contact with another. `createCollisionResolutionEcsSystem` combines two
-   * contacting colliders' restitution via their geometric mean.
+   * contacting colliders' restitution via their geometric mean. `0` doesn't
+   * bounce. Defaults to `0.05`.
    */
   restitution: number;
 
@@ -51,10 +53,26 @@ export interface ColliderDefaultedOptions {
   sensor: boolean;
 }
 
+/**
+ * Fields of {@link ColliderEcsComponent} with no default; callers must
+ * provide these.
+ */
 export interface ColliderRequiredOptions {
+  /**
+   * The collision shape, in the entity's local space. A `'dynamic'`
+   * `RigidBodyEcsComponent` on the same entity takes its mass, moment of
+   * inertia and center of mass from it.
+   */
   collider: Collider;
 }
 
+/**
+ * ECS-style component interface for a collider: an entity's collision
+ * shape and how it collides. An entity with a collider and a
+ * `PositionEcsComponent` takes part in collision detection; one with no
+ * `RigidBodyEcsComponent` is static. `RotationEcsComponent` is optional, and
+ * an entity without one is treated as unrotated.
+ */
 export interface ColliderEcsComponent
   extends ColliderRequiredOptions, ColliderDefaultedOptions {
   /**
@@ -68,6 +86,13 @@ export interface ColliderEcsComponent
 
 export const colliderId = createComponentId<ColliderEcsComponent>('collider');
 
+/**
+ * Attaches a {@link ColliderEcsComponent} to `entity`.
+ * @param world - The ECS world `entity` belongs to.
+ * @param entity - The entity to attach the component to.
+ * @param options - The collider shape, plus any options to override.
+ * @returns The attached component, for further tuning or runtime changes.
+ */
 export function addColliderComponent(
   world: EcsWorld,
   entity: number,

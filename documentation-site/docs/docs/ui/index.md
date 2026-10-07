@@ -1,110 +1,43 @@
 # UI
 
-The `ui` module is a retained-mode, ECS-native UI system built on an
-**anchored rect tree**: a hierarchy of rectangle-shaped elements, each
-anchored and pivoted against its parent's rectangle, resolved once per
-frame by a layout pass, and drawn through the existing sprite/text
-rendering pipeline. There's no immediate-mode API and no markup/stylesheet
-language - a UI is a plain ECS entity hierarchy, assembled with factory
-functions the same way any other composite entity in Forge is.
+The `ui` module builds menus, HUDs and other interface elements out of ECS
+entities. A UI is an entity hierarchy with a canvas at its root. Every
+element in it has a rectangle that is anchored to its parent's rectangle,
+and the UI systems resolve those rectangles every frame, size each
+element's sprite to its rectangle, and run pointer and focus interaction.
 
-Core concepts:
-
-- `CanvasEcsComponent`: a UI tree's root - screen-space (its own dedicated
-  camera) or world-space (draws through your own camera, for diegetic UI
-  like a health bar).
-- `RectTransformEcsComponent`: every element's anchored position/size,
-  resolved against its parent's rect each frame.
-- `UiInteractableEcsComponent`: makes a rect clickable, hoverable, and
-  focus-navigable.
-- `registerUiSystems`: registers the systems that drive layout and
-  interaction - called once per `EcsWorld`.
-
-Guides in this section:
-
-- [Creating a Canvas](./creating-a-canvas.md): `registerUiSystems`,
-  `createUiCanvas`, screen-space vs. world-space canvases, and render
-  categories.
-- [Anchors and Layout](./anchors-and-layout.md): `RectTransformEcsComponent`,
-  point vs. stretch axes, and the `UiAnchor` presets.
-- [Responsive UI](./responsive-ui.md): scale modes for different screen
-  sizes, and safe-area support for notched displays.
-- [Labels and Text](./labels-and-text.md): `createLabel`, text alignment,
-  and sizing a label to its own text.
-- [Buttons and Interaction](./buttons-and-interaction.md): `createButton`,
-  source-agnostic invocation, focus navigation, and hit testing/drag.
-- [Controls](./controls.md): toggles, sliders, progress bars, and
-  dropdowns.
-- [Layout Groups](./layout-groups.md): automatic horizontal/vertical/grid
-  arrangement, content-size fitting, and aspect-ratio fitting.
-- [Canvas Groups and Tooltips](./canvas-groups-and-tooltips.md): fading or
-  disabling a whole subtree at once, and hover/focus tooltips.
-- [Text Input](./text-input.md): single-line text fields, editing versus
-  focus, filtering, and submit/cancel events.
-
-## Quick Start
-
-```ts
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
-import {
-  createImageSprite,
-  createPresentEcsSystem,
-  createRenderEcsSystem,
-  createTexture,
-} from '@forge-game-engine/forge/rendering';
-import {
-  createPanel,
-  createUiCanvas,
-  registerUiSystems,
-  UiAnchor,
-} from '@forge-game-engine/forge/ui';
-
-// Forge doesn't reserve or ship a "UI" render category - pick any bit your
-// game isn't already using for another camera, and reuse it everywhere UI
-// content needs to match this canvas's cullingMask.
-const uiRenderCategory = 1 << 1;
-
-// Registers the UI layout/interaction systems - call this once per world,
-// before registering the transform/render systems, so layout runs first
-// each frame. `time` drives its color transition tweens.
-registerUiSystems(world, renderContext, time);
-
-// createUiCanvas only creates the canvas entity itself, so it's safe to
-// call as many times as you have canvases.
-const canvas = createUiCanvas(world, renderContext, {
-  cullingMask: uiRenderCategory,
-});
-
-const panelSprite = {
-  ...createImageSprite(createTexture(renderContext, panelImage), {
-    // One texel per reference pixel, so the 12px slices below line up with
-    // 12px of border art in panelImage.
-    pixelsPerUnit: 1,
-    slices: { left: 12, right: 12, top: 12, bottom: 12 },
-  }),
-  category: uiRenderCategory, // matches the UI camera's cullingMask above
-};
-
-createPanel(world, canvas, {
-  anchor: UiAnchor.topLeft({ x: 240, y: 96 }),
-  anchoredPosition: { x: 20, y: -20 },
-  sprite: panelSprite,
-});
-
-world.addSystem(createTransformEcsSystem());
-world.addSystem(createRenderEcsSystem(renderContext));
-// The UI camera renders into its own off-screen RenderTarget (see below) -
-// createPresentEcsSystem is what actually composites it onto the canvas.
-world.addSystem(createPresentEcsSystem(renderContext));
+```mermaid
+graph TD
+    Canvas["Canvas<br/>(createUiCanvas)"] --> Panel["Panel<br/>(createPanel)"]
+    Panel --> Label["Label<br/>(createLabel)"]
+    Panel --> Button["Button<br/>(createButton)"]
+    Button --> ButtonLabel["Label<br/>(created by createButton)"]
 ```
 
-See [Creating a Canvas](./creating-a-canvas.md) for what `createUiCanvas`
-builds and how render categories keep UI content separate from the world.
+The UI is made of:
 
-The layout system resizes a panel's sprite to fit its rect every frame, so
-the sprite's own imported size never determines how big it's drawn. With
-nine-slice `slices`, though, that imported size is the native size the
-insets are measured against (see
-[Nine-Slice Sprites](../rendering/nine-slice-sprites.md#native-size)) -
-which is why UI sprites are imported with `pixelsPerUnit: 1`, putting the
-insets and the texture in the same reference-pixel units.
+- [Canvases](creating-a-canvas.md): the root of a UI tree, holding a
+  [`CanvasEcsComponent`](/Forge/docs/api/type-aliases/CanvasEcsComponent).
+  A screen-space canvas is drawn over the screen by its own camera; a
+  world-space canvas is drawn by a camera you choose, in the game world.
+  [`registerUiSystems`](/Forge/docs/api/functions/registerUiSystems)
+  registers the systems every canvas in a world uses.
+- [Rect transforms](anchors-and-layout.md): every element's
+  [`RectTransformEcsComponent`](/Forge/docs/api/type-aliases/RectTransformEcsComponent),
+  which anchors its rectangle to its parent's. A screen-space canvas sizes
+  its root rectangle from the screen size and its
+  [scale mode](responsive-ui.md).
+- [Labels](labels-and-text.md): elements that draw text.
+- [Buttons and interactables](buttons-and-interaction.md): a
+  [`UiInteractableEcsComponent`](/Forge/docs/api/interfaces/UiInteractableEcsComponent)
+  makes an element respond to the pointer and to focus navigation.
+  `createButton` builds a panel with one.
+- [Controls](controls.md): toggles, sliders, progress bars and dropdowns.
+- [Text inputs](text-input.md): single-line fields the player types into.
+- [Layout groups and fitters](layout-groups.md): components that arrange an
+  element's children in a row, a column or a grid, or size an element to
+  its content or to an aspect ratio.
+- [Canvas groups and tooltips](canvas-groups-and-tooltips.md): a
+  `CanvasGroupEcsComponent` fades or disables an element and everything
+  under it; a tooltip is a panel shown while an element is hovered or
+  focused.

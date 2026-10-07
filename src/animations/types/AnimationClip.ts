@@ -8,7 +8,8 @@ export type OnAnimationFrameChangeEvent =
   ParameterizedForgeEvent<AnimationFrame>;
 
 /**
- * Interface representing a group of animation frames for a specific animation name.
+ * A sequence of sprite sheet frames that a sprite animation plays in order,
+ * looping back to the first frame after the last.
  */
 export class AnimationClip {
   /**
@@ -39,6 +40,7 @@ export class AnimationClip {
   /**
    * Creates an instance of Animation.
    * @param frames - The frames of the animation.
+   * @throws An error if `frames` is empty.
    */
   constructor(frames: AnimationFrame[]) {
     if (frames.length === 0) {
@@ -55,9 +57,10 @@ export class AnimationClip {
   }
 
   /**
-   * Gets a specific frame of the animation, looping if the index exceeds the number of frames.
+   * Gets a specific frame of the animation.
    * @param index - The index of the frame to retrieve.
    * @returns The requested AnimationFrame.
+   * @throws An error if `index` is less than `0` or not less than `frameCount`.
    */
   public getFrame(index: number): AnimationFrame {
     if (index < 0 || index >= this.frames.length) {

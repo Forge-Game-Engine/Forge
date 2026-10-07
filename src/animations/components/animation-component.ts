@@ -17,7 +17,9 @@ export interface AnimatedProperty {
   endValue?: number;
 
   /**
-   * The elapsed time of the animation.
+   * The elapsed time of the animation, in milliseconds. The animation system
+   * adds `time.deltaTimeInMilliseconds` to it on every update, and sets it
+   * back to `0` when a looping animation restarts.
    */
   elapsed?: number;
 
@@ -27,7 +29,11 @@ export interface AnimatedProperty {
   duration: number;
 
   /**
-   * The callback function to update the animated value.
+   * The callback function to update the animated value. Called on every
+   * update with the eased value between `startValue` and `endValue`. On the
+   * update that completes an iteration it's called again with `endValue`,
+   * and, when the animation loops, once more with the next iteration's
+   * `startValue`.
    */
   updateCallback: (value: number) => void;
 
@@ -42,12 +48,16 @@ export interface AnimatedProperty {
   loop?: LoopMode;
 
   /**
-   * The number of times the animation should loop. -1 means that it will loop indefinitely.
+   * The number of times a looping animation plays again after its first
+   * iteration. The animation system decrements it on each restart. -1 means
+   * that it will loop indefinitely.
    */
   loopCount?: number;
 
   /**
-   * The callback function to call when the animation is finished.
+   * The callback function to call when the animation is finished and
+   * removed from `animations`. A looping animation calls it only after its
+   * last iteration.
    */
   finishedCallback?: () => void;
 }
@@ -57,7 +67,7 @@ export interface AnimatedProperty {
  *
  * - `'none'`: the animation stops and is removed.
  * - `'loop'`: `elapsed` resets to `0` and the animation restarts from `startValue`.
- * - `'pingpong'`: `elapsed` resets to `0` and `startValue`/`endValue` are swapped, so the animation plays in reverse on the next iteration.
+ * - `'pingpong'`: `elapsed` resets to `0` and `startValue`/`endValue` are swapped on the animated property, so the animation plays in reverse on the next iteration.
  */
 export type LoopMode = 'none' | 'loop' | 'pingpong';
 

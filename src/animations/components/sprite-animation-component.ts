@@ -18,7 +18,9 @@ export interface SpriteAnimationRequiredOptions {
  */
 export interface SpriteAnimationDefaultedOptions {
   /**
-   * The index of the currently displayed frame within the active animation clip.
+   * The index, within the active animation clip, of the next frame the
+   * sprite animation system writes to the sprite. Set it back to `0` when
+   * changing `animationClipHandle` to a clip with fewer frames.
    */
   animationFrameIndex: number;
 

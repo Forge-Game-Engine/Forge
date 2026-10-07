@@ -4,24 +4,32 @@ sidebar_position: 2
 
 # Anchors and Layout
 
-Every UI element - including a canvas's own root entity - has a
-[`RectTransformEcsComponent`](/Forge/docs/api/type-aliases/RectTransformEcsComponent).
-`createUiLayoutEcsSystem` resolves it against its parent's rect once per
-frame (top-down, in hierarchy order) and writes the result to
-`rectTransform.rect`, the entity's `PositionEcsComponent.local` (so the
-existing `createTransformEcsSystem` composes the right
-`position.world`), and - for elements with a `SpriteEcsComponent` - the
-sprite's `width`/`height`/`pivot`.
+Every UI element, including a canvas's root, has a
+[`RectTransformEcsComponent`](/Forge/docs/api/type-aliases/RectTransformEcsComponent)
+that places its rectangle relative to its parent's rectangle. Every frame,
+the layout system resolves the elements of each canvas top-down, parents
+before children, and writes:
 
-Two fields, `x` and `y`, drive resolution - one per axis, each a
-[`UiAxis`](/Forge/docs/api/type-aliases/UiAxis):
+- the element's `rect`, the resolved rectangle in its canvas's
+  coordinates (reference pixels, Y-up);
+- the entity's `position.local`, the offset of its pivot from its parent's
+  pivot;
+- the width, height and pivot of the element's sprite and mask, if it has
+  them, so they cover the rectangle.
 
-- A **point axis** (`UiAxis.point`) anchors to a single normalized position
-  within the parent's rect on that axis, `0` its low edge and `1` its high
-  edge. It keeps its own literal `size` and moves with the anchor.
-- A **stretch axis** (`UiAxis.stretch`) anchors to a normalized
-  `[anchorMin, anchorMax]` span of the parent's rect on that axis instead. It
-  resizes with the parent, with `margin` added to that span.
+## Point and stretch axes
+
+A rect transform's `x` and `y` are each a
+[`UiAxis`](/Forge/docs/api/type-aliases/UiAxis), of one of two kinds:
+
+- A **point axis** anchors to one position in the parent's rectangle on
+  that axis: `0` is the parent's left or bottom edge and `1` its right or
+  top edge. It has a `size`, and keeps that size whatever the parent's
+  size.
+- A **stretch axis** anchors to a span of the parent's rectangle, from
+  `anchorMin` to `anchorMax`. Its size is the span's size plus its
+  `margin`, so it resizes with the parent. A negative `margin` makes it
+  smaller than the span.
 
 <svg viewBox="0 0 640 220" role="img" aria-label="A point-anchored element keeps a literal size and sits at a single anchor point on its parent's rect. A stretch-anchored element spans a range of its parent's rect, resizing with it, with a margin inset from that span." style={{width: '100%', height: 'auto', maxWidth: '640px'}}>
   <defs>
@@ -49,79 +57,116 @@ Two fields, `x` and `y`, drive resolution - one per axis, each a
   <text x="490" y="215" textAnchor="middle" fontSize="13" fill="var(--ifm-color-emphasis-700)">Stretch axis</text>
 </svg>
 
-_A point axis (left) keeps a literal size at a single anchor point - here
-`(1, 1)`, the parent's top-right corner, matching `UiAnchor.topRight`. A
-stretch axis (right) spans a range of the parent's rect instead - here the
-full width, matching `UiAnchor.stretchTop` - resizing with the parent, with
-`margin` inset from that span._
+_A point axis (left) keeps its size at one anchor point, here `(1, 1)`,
+the parent's top-right corner (`UiAnchor.topRight`). A stretch axis (right)
+spans part of the parent's rectangle, here its full width
+(`UiAnchor.stretchTop`), with `margin` added to the span._
 
-Both kinds also carry a `pivot` - the point within the element's own extent
-on that axis that sits at the anchor (and that sprites/text position
-around) - and the component separately has an **`anchoredPosition`**, an
-`{x, y}` offset from the anchor, in reference pixels, that applies
-regardless of either axis's kind.
+## Pivot and anchored position
 
-Splitting `size` and `margin` into different fields, gated by which kind of
-axis they belong to, means a stretch axis's type simply has no `size`
-field to set by mistake, and a point axis's has no `margin` field.
+Each axis also has a `pivot`: a position in the element's own rectangle,
+from `0` to `1`, that is placed at the anchor. A point axis's pivot
+defaults to its anchor, so an element anchored to the parent's top-right
+corner has its own top-right corner there, and stays inside the parent. A
+stretch axis's pivot defaults to `0.5`.
 
-[`UiAnchor`](/Forge/docs/api/variables/UiAnchor) has factories for the
-common cases, each producing an `{x, y}` pair of axes: the nine point
-anchors (`topLeft`, `topCenter`, `topRight`, `middleLeft`, `center`,
-`middleRight`, `bottomLeft`, `bottomCenter`, `bottomRight`) take a `size`
-`Vector2`; edge-pinned bands (`stretchTop`, `stretchBottom`, `stretchLeft`,
-`stretchRight` - the common "HUD bar" and "side panel" anchors) take a
-`height`/`width` plus an optional `horizontalMargin`/`verticalMargin`;
-center bands (`stretchHorizontal`, `stretchVertical`) take the same;
-`stretchAll` takes a `margin` `Vector2`; and a few non-center-pivoted
-variants - `stretchTopLeft`, `stretchHorizontalLeft`, and `stretchTopRight`
-- take the same shape as their band counterparts, for when you specifically
-want the rect's own local origin on a particular edge rather than the
-center (see [Labels and Text](./labels-and-text.md)). Spread the result into
-`addRectTransformComponent`'s options, or into `createPanel`/`createLabel`'s
-`anchor` option:
+`anchoredPosition` moves the pivot away from the anchor, in reference
+pixels, on both kinds of axis. The pivot is the entity's position: the
+element's sprite is drawn around it to cover the rectangle, and a label's
+text is placed from it (see [Labels and Text](labels-and-text.md)).
+
+## Adding a rect transform
+
+The element factories (`createPanel`, `createLabel`, `createButton`, ...)
+add a rect transform and take its axes as their `anchor` option. To make
+an element without a factory, for example an invisible container, give an
+entity a position, a parent and a rect transform:
 
 ```ts
-addRectTransformComponent(world, entity, {
-  ...UiAnchor.stretchTop({ height: 64 }), // a 64-unit-tall bar spanning the full width
+import { addPositionComponent } from '@forge-game-engine/forge/common';
+import {
+  addRectTransformComponent,
+  UiAnchor,
+} from '@forge-game-engine/forge/ui';
+
+const topBar = world.createEntity();
+
+addPositionComponent(world, topBar);
+world.setParent(topBar, canvas);
+addRectTransformComponent(world, topBar, UiAnchor.stretchTop({ height: 64 }));
+```
+
+[`addRectTransformComponent`](/Forge/docs/api/functions/addRectTransformComponent)
+copies the axes it's given, so one anchor value can be used for many
+elements.
+
+## Anchor presets
+
+[`UiAnchor`](/Forge/docs/api/variables/UiAnchor) has a factory for each
+common anchor. Each returns an `x` and `y` axis pair:
+
+- `topLeft`, `topCenter`, `topRight`, `middleLeft`, `center`,
+  `middleRight`, `bottomLeft`, `bottomCenter` and `bottomRight` are point
+  anchors on both axes, and take the element's size:
+  `UiAnchor.bottomRight({ x: 200, y: 80 })`.
+- `stretchTop`, `stretchHorizontal` and `stretchBottom` span the parent's
+  width at its top, middle or bottom, and take a `height`.
+  `stretchTopLeft`, `stretchHorizontalLeft` and `stretchTopRight` are the
+  same bands with the pivot on the left or right edge instead of the
+  center.
+- `stretchLeft`, `stretchVertical` and `stretchRight` span the parent's
+  height at its left, middle or right, and take a `width`.
+- `stretchAll` fills the parent, and takes an optional margin for each
+  axis.
+
+For any other anchor, build the axes with `UiAxis.point(anchor, options)`
+and `UiAxis.stretch({ min, max }, options)`:
+
+```ts
+import { UiAxis } from '@forge-game-engine/forge/ui';
+
+const lowerThird = {
+  x: UiAxis.stretch({ min: 0, max: 1 }, { margin: -40 }),
+  y: UiAxis.stretch({ min: 0, max: 1 / 3 }),
+};
+```
+
+## Moving and resizing an element
+
+Change an element at runtime by writing its rect transform's `x`, `y` or
+`anchoredPosition`. The layout system resolves every element from these
+values every frame, so the change takes effect on the next layout pass,
+and an element moves and resizes with its parent, including when the
+screen is resized, without any code of its own. Read `rect` for the
+element's resolved rectangle, but don't write it: the layout system
+overwrites it every frame.
+
+:::note
+A [layout group](layout-groups.md) writes `x`, `y` and `anchoredPosition`
+of the children it arranges, and a
+[safe area](responsive-ui.md#keeping-elements-inside-the-safe-area)
+element's are written by the safe area system, so your writes to them are
+overwritten.
+:::
+
+## Sizing an element in screen pixels
+
+A point axis's `size` and a stretch axis's `margin` are in reference
+pixels, which [scale with the canvas](responsive-ui.md). To keep an
+element the same size on screen whatever the canvas's scale, give the
+value in CSS pixels with `sizeUnit: 'screenPixels'` (on `UiAxis.point`) or
+`marginUnit: 'screenPixels'` (on `UiAxis.stretch`). The band presets take
+`heightUnit` or `widthUnit` for their point axis:
+
+```ts
+const sidebar = createPanel(world, canvas, {
+  anchor: UiAnchor.stretchLeft({ width: 320, widthUnit: 'screenPixels' }),
+  sprite: sidebarSprite,
 });
 ```
 
-A HUD top bar and a corner-anchored panel both hold their layout correctly
-across a resize (window resize, aspect ratio change) - `createUiLayoutEcsSystem`
-does a full recompute every frame rather than tracking dirty state, so
-there's no separate resize hook to wire up.
-
-## Pixel-locking one element with `screenPixels`
-
-Every `UiAxis`'s `size`/`margin` is in **reference pixels** by default,
-scaling with the canvas's scale factor exactly like everything else - a
-600-reference-pixel-wide sidebar covers the same *proportion* of the screen
-at any resolution or aspect ratio. Sometimes that's the wrong call for one
-specific element: a fixed-width nav rail or a HUD icon that should hold a
-constant **on-screen** size instead of growing or shrinking as the window
-resizes. Pass `sizeUnit`/`marginUnit: 'screenPixels'` to keep that one axis
-in literal, unscaled CSS pixels (the same unit DOM layout uses, so it keeps
-the same physical size on a high-DPI display), converted to reference pixels
-fresh every frame from the owning canvas's live scale factor:
-
-```ts
-addRectTransformComponent(world, sidebar, {
-  ...UiAnchor.stretchLeft({ width: 320, widthUnit: 'screenPixels' }),
-});
-```
-
-This sidebar stays exactly 320 CSS pixels wide at any window size or
-aspect ratio, even though the rest of the canvas keeps scaling normally with
-`referenceResolution` (see [Responsive UI](./responsive-ui.md)). `UiAnchor`'s
-edge-pinned band presets (`stretchLeft`/`stretchRight`/`stretchVertical` via
-`widthUnit`,
-`stretchTop`/`stretchBottom`/`stretchHorizontal`/`stretchHorizontalLeft`/`stretchTopLeft`/`stretchTopRight`
-via `heightUnit`) accept this directly; for a raw `UiAxis.point`/`UiAxis.stretch`,
-pass `sizeUnit`/`marginUnit` in its own options.
-
-Only `size`/`margin` convert this way - `anchoredPosition` and font sizes
-stay in reference pixels regardless, so a `screenPixels`-sized element's own
-children/content aren't automatically pixel-locked too; give a child its own
-stretch anchor (a percentage of its now-pixel-locked parent, not a fixed
-`anchoredPosition` inset) if it needs to track that parent's actual size.
+The value is converted to reference pixels every frame, from the current
+scale of the canvas's camera. `anchoredPosition` and font sizes stay in
+reference pixels, and the element's children aren't converted: anchor a
+child with a stretch axis to make it follow its screen-pixel parent's
+size.

@@ -59,8 +59,9 @@ export class Space {
 
   /**
    * Sets the dimensions of the space.
-   * @param height - The new height of the space.
+   * Recalculates the center and raises `onSpaceChange`.
    * @param width - The new width of the space.
+   * @param height - The new height of the space.
    * @returns The updated Space instance.
    */
   public setValue(width: number, height: number): this {
