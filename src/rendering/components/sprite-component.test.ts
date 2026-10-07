@@ -26,7 +26,6 @@ describe('addSpriteComponent', () => {
       emissive: null,
       material: null,
       category: 1,
-      enabled: true,
       layer: 0,
     });
   });
@@ -40,12 +39,10 @@ describe('addSpriteComponent', () => {
       width: 32,
       height: 32,
       texture,
-      enabled: false,
       layer: 2,
     });
 
     expect(world.getComponent(entity, spriteId)).toMatchObject({
-      enabled: false,
       layer: 2,
     });
   });

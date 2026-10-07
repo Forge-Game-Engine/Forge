@@ -1,15 +1,17 @@
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { ParameterizedForgeEvent } from '../../events/index.js';
 import { Vector2 } from '../../math/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import {
+  addVisibilityComponent,
   Color,
   NineSliceOptions,
   SpriteEcsComponent,
-  spriteId,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { textHorizontalAlignments, textId } from '../../text/index.js';
 import { UiColorTransitionDefaultedOptions } from '../components/ui-color-transition-component.js';
+import { addRectTransformComponent } from '../components/rect-transform-component.js';
 import { UiInteractableDefaultedOptions } from '../components/ui-interactable-component.js';
 import {
   addUiDropdownComponent,
@@ -100,9 +102,15 @@ export interface Dropdown {
   header: Button;
 
   /**
-   * The option row buttons, in `options` order, parented to the header -
-   * hidden (invisible and non-interactable) while closed. Clicking one
-   * selects it and closes the list.
+   * The option list's container entity, parented to the header and
+   * covering the same rect. Its `VisibilityEcsComponent` hides the whole
+   * list (drawn, hit-tested and focusable as nothing) while closed.
+   */
+  list: number;
+
+  /**
+   * The option row buttons, in `options` order, parented to `list`.
+   * Clicking one selects it and closes the list.
    */
   options: Button[];
 
@@ -148,8 +156,8 @@ const chevronOpenText = '^';
  * Creates a dropdown: a header button (see `createButton`) showing the
  * currently selected option and a chevron indicator on its right edge, with
  * a `UiDropdownEcsComponent` added, plus one option-row button per entry in
- * `options`, stacked below the header and hidden until the header is
- * clicked open. Selecting an option updates the header's label, raises
+ * `options`, stacked below the header in a `list` container that's hidden
+ * (see `VisibilityEcsComponent`) until the header is clicked open. Selecting an option updates the header's label, raises
  * `onValueChanged`, and closes the list. The chevron flips between
  * `chevronClosedText` and `chevronOpenText` in step with `dropdown.isOpen`.
  *
@@ -164,7 +172,7 @@ const chevronOpenText = '^';
  * `optionSprite`, `options`, and `fontAtlas` have no sensible default and
  * must always be provided.
  * @returns The created dropdown: its header entity/button, its option row
- * buttons, its chevron label entity, its `UiDropdownEcsComponent`, and
+ * buttons and their list container, its chevron label entity, its `UiDropdownEcsComponent`, and
  * `onValueChanged` for the common case of registering a single listener.
  */
 export function createDropdown(
@@ -237,8 +245,21 @@ export function createDropdown(
   });
   const chevronText = world.getComponentRequired(chevron, textId);
 
+  // One container for every row, so opening and closing the list is a
+  // single visibility write. It covers the header's rect, so the rows hang
+  // from the header's bottom edge as if they were parented to it directly.
+  const list = world.createEntity();
+
+  addPositionComponent(world, list);
+  world.setParent(list, header.entity);
+  addRectTransformComponent(world, list, UiAnchor.stretchAll());
+
+  const listVisibility = addVisibilityComponent(world, list, {
+    visible: false,
+  });
+
   const optionButtons = optionLabels.map((label, index) =>
-    createButton(world, header.entity, {
+    createButton(world, list, {
       anchor: optionRowAnchor(resolvedOptionHeight),
       anchoredPosition: { x: 0, y: -resolvedOptionHeight * index },
       // `optionRowAnchor` stretches each row to the header's full width with
@@ -254,7 +275,7 @@ export function createDropdown(
       labelSize,
       labelColor,
       ...(labelCategory !== undefined && { labelCategory }),
-      interactable: { interactable: false, blocksRaycasts: false },
+      interactable: interactableOptions,
       transition: transitionOptions,
     }),
   );
@@ -264,16 +285,7 @@ export function createDropdown(
   const setOpen = (isOpen: boolean): void => {
     dropdown.isOpen = isOpen;
     chevronText.text = isOpen ? chevronOpenText : chevronClosedText;
-
-    for (const optionButton of optionButtons) {
-      optionButton.interactable.interactable = isOpen;
-      optionButton.interactable.blocksRaycasts = isOpen;
-      world.getComponentRequired<SpriteEcsComponent>(
-        optionButton.entity,
-        spriteId,
-      ).enabled = isOpen;
-      world.getComponentRequired(optionButton.label, textId).enabled = isOpen;
-    }
+    listVisibility.visible = isOpen;
   };
 
   header.onInvoke.registerListener(() => setOpen(!dropdown.isOpen));
@@ -292,6 +304,7 @@ export function createDropdown(
   return {
     entity: header.entity,
     header,
+    list,
     options: optionButtons,
     chevron,
     dropdown,

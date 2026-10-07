@@ -434,11 +434,12 @@ function setDrawItem(
 }
 
 /**
- * Collects one draw item per enabled sprite and text, in no particular
- * order.
+ * Collects one draw item per sprite and text visible in the hierarchy (see
+ * `VisibilityEcsComponent`), in no particular order.
  * @returns The number of draw items.
  */
 function collectDrawItems(
+  resolver: DrawOrderResolver,
   spriteQuery: QueryResult<[SpriteEcsComponent, PositionEcsComponent]>,
   textQuery: QueryResult<
     [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
@@ -455,15 +456,13 @@ function collectDrawItems(
   let count = 0;
 
   for (let s = 0; s < spriteEntities.length; s++) {
-    const sprite = sprites[s];
-
-    if (sprite.enabled) {
+    if (resolver.isVisible(spriteEntities[s])) {
       setDrawItem(
         count++,
         spriteEntities[s],
-        sprite.category,
+        sprites[s].category,
         spritePositions[s],
-        sprite,
+        sprites[s],
         null,
         null,
       );
@@ -471,16 +470,14 @@ function collectDrawItems(
   }
 
   for (let t = 0; t < textEntities.length; t++) {
-    const text = texts[t];
-
-    if (text.enabled) {
+    if (resolver.isVisible(textEntities[t])) {
       setDrawItem(
         count++,
         textEntities[t],
-        text.category,
+        texts[t].category,
         textPositions[t],
         null,
-        text,
+        texts[t],
         textMeshes[t],
       );
     }
@@ -586,7 +583,8 @@ const drawOrderResolver = createDrawOrderResolver();
  * and glyphs whose quads are outside that view are skipped before anything
  * is uploaded.
  *
- * Sprites and text draw by `layer`, then by world order (see
+ * Sprites and text hidden in the hierarchy (see `VisibilityEcsComponent`)
+ * aren't drawn. The rest draw by `layer`, then by world order (see
  * `DrawOrderEcsComponent`), then, for a camera with `ySort`, by their root
  * entity's Y (higher first), then in hierarchy order: root entities in
  * creation order, each followed by its subtree in pre-order. That's a total
@@ -614,13 +612,18 @@ export const createRenderEcsSystem = (
         [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
       >([textId, textMeshId, positionId]);
 
-      const itemCount = collectDrawItems(spriteQuery, textQuery);
-
       drawOrderResolver.resolve(
         world,
         spriteQuery.entities,
         textQuery.entities,
       );
+
+      const itemCount = collectDrawItems(
+        drawOrderResolver,
+        spriteQuery,
+        textQuery,
+      );
+
       writeSortKeys(drawOrderResolver, itemCount);
 
       const hierarchyOrder = radixSortByKeys(

@@ -94,7 +94,7 @@ The shaping system only re-walks the string (kerning, glyph positions,
 wrapping, alignment) when `text`, `fontAtlas`, `size`, `letterSpacing`,
 `lineHeight`, `horizontalAlign`, `verticalAlign`, `maxWidth`, or
 `horizontalAlignPivot` actually changed since the last tick it ran against
-this entity. Changing `color`, `layer`, or `enabled` alone never triggers a
+this entity. Changing `color` or `layer` alone never triggers a
 re-shape, they're read directly by the render system each frame. A
 `<color>` tag is part of `text`, so changing one re-shapes the string.
 

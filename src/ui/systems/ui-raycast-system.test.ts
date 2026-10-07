@@ -7,6 +7,7 @@ import { MouseInputSource } from '../../input/index.js';
 import {
   addCameraComponent,
   addSpriteComponent,
+  addVisibilityComponent,
   RenderContext,
   Texture,
 } from '../../rendering/index.js';
@@ -146,6 +147,20 @@ describe('createUiRaycastEcsSystem', () => {
     const canvasComponent = world.getComponent(canvas, canvasId)!;
 
     expect(canvasComponent.hoveredEntity).toBe(back);
+  });
+
+  it('lets the pointer pass through an element hidden by an ancestor', () => {
+    const world = new EcsWorld();
+    const renderContext = buildRenderContext(1920, 1080);
+    const { canvas } = createTestCanvas(world);
+    const back = createInteractablePanel(world, canvas, { x: 400, y: 400 });
+    const page = createInteractablePanel(world, canvas, { x: 300, y: 300 });
+    createInteractablePanel(world, page, { x: 200, y: 200 });
+
+    addVisibilityComponent(world, page, { visible: false });
+    runRaycast(world, renderContext, 960, 540);
+
+    expect(world.getComponent(canvas, canvasId)!.hoveredEntity).toBe(back);
   });
 
   it('does not hit an interactable culled from its canvas camera by cullingMask', () => {
