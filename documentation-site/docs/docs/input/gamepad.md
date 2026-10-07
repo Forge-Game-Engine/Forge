@@ -5,7 +5,8 @@ sidebar_position: 4
 # Gamepad Input
 
 [`GamepadInputSource`](/Forge/docs/api/classes/GamepadInputSource) reads
-from `navigator.getGamepads()` and dispatches to whichever bindings match.
+from `navigator.getGamepads()` and reports the state of every binding to its
+`InputManager`.
 Unlike `KeyboardInputSource` and `MouseInputSource`, the Gamepad API has no
 change events, so this source polls the gamepad's state every frame instead
 of listening for browser events. Create one per `InputManager`:
@@ -54,7 +55,6 @@ import {
   Axis1dAction,
   HoldAction,
   TriggerAction,
-  actionResetTypes,
   buttonMoments,
   gamepadAxes,
   gamepadButtons,
@@ -65,11 +65,7 @@ import {
   registerInputs,
 } from '@forge-game-engine/forge/input';
 
-const moveVertical = new Axis1dAction(
-  'moveVertical',
-  'game',
-  actionResetTypes.noReset,
-);
+const moveVertical = new Axis1dAction('moveVertical');
 const shoot = new HoldAction('shoot');
 const restart = new TriggerAction('restart');
 
@@ -133,33 +129,19 @@ code when the setting is on.
 
 ## Gotchas
 
-`GamepadInputSource.update()` polls the gamepad every frame, but only calls
-`set()` on a binding's action when _this source's own_ combined value
-actually changes from the previous frame, the same as `KeyboardAxis1dBinding`
-and `MouseAxis2dBinding` only calling `set()` on a browser event. This
-matters when an action is shared with an event-driven source: if the
-gamepad re-dispatched its idle value every single frame regardless of
-change, an idle controller would snap a keyboard-driven action back to `0`
-on the very next frame after every key press. Like the other axis bindings,
-`GamepadAxis1dBinding` and `GamepadAxis2dBinding` need
-`actionResetTypes.noReset` on their action, see
-[Actions and Input Groups](./actions.md#reset-behavior-zero-vs-noreset).
-Hold bindings follow the same rule: the gamepad only starts or ends a hold
-when its own buttons change, so an idle controller never ends a hold the
-keyboard started.
+`GamepadInputSource.update()` polls the gamepad every frame and reports
+every binding's current state. The `InputManager` combines the gamepad's
+reports with other sources', so an idle controller reporting `0` doesn't
+override a held key, see
+[Combining input from several sources](./actions.md#combining-input-from-several-sources).
 
 Multiple axis bindings on the same `GamepadInputSource` can target the same
 action, like the stick and D-pad bindings in the worked example above.
 Their values are summed and clamped to `[-1, 1]` (per component, for a 2D
-axis) before dispatching, the same "opposite inputs cancel out" behavior
+axis) before reporting, the same "opposite inputs cancel out" behavior
 documented for [keyboard axis bindings](./keyboard.md#gotchas). Multiple
 hold bindings on the same action hold it while _any_ of their buttons is
 pressed, so letting go of one of two pressed buttons doesn't end the hold.
-Bindings on _different_ `GamepadInputSource` or `KeyboardInputSource`
-instances don't combine this way: whichever source dispatches most recently
-simply overwrites the action's value, so switching between a controller and
-the keyboard mid-game works, but holding both at once just means the last
-one touched wins.
 
 Because the source polls, a trigger binding sees a button change between
 one frame and the next, not each browser-level press. A press and release
@@ -168,14 +150,6 @@ pressed down when the gamepad is first read counts as a fresh press. Hold
 and trigger bindings use the button's `pressed` flag, so an analog trigger
 counts as pressed once it passes the browser's own threshold, while an
 axis binding built from buttons reads their analog `value` instead.
-
-Because the source only dispatches on a change, a stick or button held
-still while its action's [input group](./actions.md#input-groups) is
-switched away from and back again sends nothing new. The `InputManager`
-keeps the latest axis value a binding dispatched while its group was
-inactive, and which holds are still down, and applies them when the group
-becomes active, so the action still matches the gamepad without the
-player having to move the stick or press the button again.
 
 Stick axis values within `±0.15` of `0` are treated as `0`, to absorb
 resting drift on analog sticks. `GamepadAxis2dBinding` applies this to the
@@ -195,23 +169,17 @@ group.
 Browsers only populate `navigator.getGamepads()` for a controller after the
 page has seen some input from it, typically a button press, not just
 moving a stick. Until then, `GamepadInputSource.update()` finds no gamepad
-at its index and skips the frame entirely, so bound actions simply keep
-whatever value they last had. No special handling is needed in game code,
-but don't be surprised if a freshly connected controller stays silent until
-the player presses a button on it once.
+at its index and reports nothing.
 
-When the gamepad is unplugged, the source returns every action it was
-driving to its idle state: each axis it last set to something other than
-`0` is set back to `0`, and each hold it started is ended. This happens on
+When the gamepad is unplugged, the source releases everything it was
+holding: its axes and holds no longer read the gamepad. This happens on
 the browser's `gamepaddisconnected` event, or on the next poll that finds
 the gamepad missing from `navigator.getGamepads()`, whichever comes first.
-Without this, a `noReset` axis would stay stuck at the stick's last
-deflection. Trigger bindings don't fire on a disconnect, since the player
-didn't release anything. A source constructed with `gamepadIndex` `-1`
+Trigger bindings don't fire on a disconnect. A source constructed with `gamepadIndex` `-1`
 then falls back to another connected gamepad, if there is one; otherwise
 the source picks the gamepad back up when one connects at its index.
 
 [`GamepadInputSource.stop()`](/Forge/docs/api/classes/GamepadInputSource#stop)
 unregisters it from the `InputManager` (so it stops calling `update()` on
-it) and removes its `gamepadconnected` and `gamepaddisconnected`
-listeners.
+it), releases everything it was holding, and removes its
+`gamepadconnected` and `gamepaddisconnected` listeners.

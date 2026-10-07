@@ -13,8 +13,9 @@ Core concepts:
   actions, the active input group, and drives the per-frame update/reset.
 - `InputAction`: one of `TriggerAction`, `HoldAction`, `Axis1dAction`, or
   `Axis2dAction`. See [Actions and Input Groups](./actions.md).
-- `InputSource`: reads raw browser events and dispatches to bound actions.
-  Forge ships
+- `InputSource`: reads a device (browser events, or a polled gamepad) and
+  reports the state of its bound keys, buttons and sticks to the
+  `InputManager`, which derives the actions' state from it. Forge ships
   [`KeyboardInputSource`](/Forge/docs/api/classes/KeyboardInputSource),
   [`MouseInputSource`](/Forge/docs/api/classes/MouseInputSource), and
   [`GamepadInputSource`](/Forge/docs/api/classes/GamepadInputSource).
@@ -26,8 +27,9 @@ Core concepts:
 
 Guides in this section:
 
-- [Actions and Input Groups](./actions.md): the four action types, when to
-  use each, and switching the active group.
+- [Actions and Input Groups](./actions.md): the four action types, how
+  input from several sources combines, switching the active group, and
+  writing a custom input source.
 - [Keyboard Input](./keyboard.md): `KeyboardInputSource` and its bindings.
 - [Mouse Input](./mouse.md): `MouseInputSource`, cursor position, and scroll.
 - [Gamepad Input](./gamepad.md): `GamepadInputSource`, sticks, D-pads, and
@@ -47,7 +49,6 @@ add bindings to it:
 import {
   Axis2dAction,
   TriggerAction,
-  actionResetTypes,
   buttonMoments,
   keyCodes,
   registerInputs,
@@ -59,9 +60,7 @@ import { createGame } from '@forge-game-engine/forge/utilities';
 
 const { world, time } = createGame('game-container');
 
-// `noReset` keeps the axis value while a direction key is held down, see
-// "Actions and Input Groups" for why this matters.
-const move = new Axis2dAction('move', 'game', actionResetTypes.noReset);
+const move = new Axis2dAction('move');
 const jump = new TriggerAction('jump');
 
 const inputManager = registerInputs(world, time, {

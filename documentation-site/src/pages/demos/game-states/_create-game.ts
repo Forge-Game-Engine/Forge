@@ -1,7 +1,6 @@
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
-  actionResetTypes,
   Axis1dAction,
   buttonMoments,
   KeyboardAxis1dBinding,
@@ -98,7 +97,7 @@ export const createGameStatesGame = async (): Promise<Game> => {
     halfHeight: visibleSize.y / 2,
   };
 
-  const moveInput = new Axis1dAction('move', null, actionResetTypes.noReset);
+  const moveInput = new Axis1dAction('move');
   const playInput = new TriggerAction('play');
   const menuInput = new TriggerAction('menu');
 

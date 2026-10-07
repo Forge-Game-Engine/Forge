@@ -1,5 +1,4 @@
 import {
-  actionResetTypes,
   addPositionComponent,
   Axis1dAction,
   Axis2dAction,
@@ -44,9 +43,9 @@ const squareSize = 60;
 // swing (mouse at a canvas edge, +-0.5 from `MouseAxis2dBinding`'s default
 // center cursor origin).
 const pointerRangeInWorldUnits = 300;
-// How far, in world units, a single non-zero `scrollAction.value` frame
-// moves the scroll square - see the scene doc comment for why this only
-// ever applies for exactly one frame per wheel event.
+// How far, in world units, one frame's `scrollAction.value` of `1` (a
+// single 100-pixel wheel notch) moves the scroll square - see the scene doc
+// comment for why the wheel only moves it on the frame it turned.
 const scrollStepInWorldUnits = 60;
 const holdSmallSize = 40;
 const holdBigSize = 90;
@@ -58,9 +57,9 @@ function toColor(rgb: { r: number; g: number; b: number }): Color {
 
 /** The handle `mouse-input.spec.ts` drives and asserts against. */
 export interface MouseInputSceneHandle extends SceneHandle {
-  /** The cursor-tracking square's local position (`Axis2dAction`, `noReset`). */
+  /** The cursor-tracking square's local position (`Axis2dAction`). */
   readonly pointerPosition: { x: number; y: number };
-  /** The wheel-driven square's local position (`Axis1dAction`, default `zero` reset). */
+  /** The wheel-driven square's local position (`Axis1dAction`). */
   readonly scrollPosition: { x: number; y: number };
   /** How many times the `'game'`-group select `TriggerAction` has fired. */
   readonly gameTriggerCount: number;
@@ -85,12 +84,11 @@ export interface MouseInputSceneHandle extends SceneHandle {
 
 /**
  * Builds a scene exercising every mouse-bound action type against real
- * `MouseEvent`s: a cursor-tracking `Axis2dAction` (`actionResetTypes.noReset`,
- * so the square keeps following the last-known cursor ratio between
- * `mousemove` events instead of snapping back to center), a wheel-driven
- * `Axis1dAction` (the default `actionResetTypes.zero`, appropriate here
- * since a wheel event is a one-shot "delta this frame" input with no
- * corresponding "up" event to reverse it), a `TriggerAction` on the left
+ * `MouseEvent`s: a cursor-tracking `Axis2dAction` (which holds the last-known
+ * cursor ratio between `mousemove` events instead of snapping back to
+ * center), a wheel-driven `Axis1dAction` (which reads a frame's summed
+ * wheel delta for that frame only, since `MouseInputSource` withdraws its
+ * wheel input in its own reset), a `TriggerAction` on the left
  * button, a `HoldAction` on the right button, and a second `TriggerAction`
  * bound to the *same* left button but a different (`'menu'`) input group -
  * a regression test for `MouseInputSource` previously triggering regardless
@@ -108,14 +106,7 @@ export const createScene: CreateScene = async (
     preserveDrawingBuffer: true,
   });
 
-  const pointerAction = new Axis2dAction(
-    'pointer',
-    'game',
-    actionResetTypes.noReset,
-  );
-  // Default `actionResetTypes.zero`, correctly here: the wheel has no "up"
-  // event to reverse a `noReset` value, so without a zero reset a single
-  // scroll tick would move the square every single frame forever.
+  const pointerAction = new Axis2dAction('pointer', 'game');
   const scrollAction = new Axis1dAction('scroll', 'game');
   const selectAction = new TriggerAction('select', 'game');
   const menuConfirmAction = new TriggerAction('confirm', 'menu');

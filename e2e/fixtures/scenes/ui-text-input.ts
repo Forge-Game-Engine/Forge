@@ -7,7 +7,6 @@ import {
 } from '../../../src/common/index.js';
 import { EcsWorld } from '../../../src/ecs/index.js';
 import {
-  actionResetTypes,
   Axis2dAction,
   buttonMoments,
   KeyboardAxis2dBinding,
@@ -119,11 +118,7 @@ export const createScene: CreateScene = async (
   });
 
   const submitInput = new TriggerAction('ui-submit');
-  const navigateInput = new Axis2dAction(
-    'ui-navigate',
-    undefined,
-    actionResetTypes.noReset,
-  );
+  const navigateInput = new Axis2dAction('ui-navigate');
   const inputManager = registerInputs(world, time, {
     triggerActions: [submitInput],
     axis2dActions: [navigateInput],

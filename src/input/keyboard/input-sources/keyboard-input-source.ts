@@ -1,8 +1,8 @@
 import { Stoppable } from '../../../common/index.js';
 import { clamp } from '../../../math/index.js';
-import { Axis1dAction, Axis2dAction } from '../../actions/index.js';
+import { Axis1dAction, Axis2dAction, HoldAction } from '../../actions/index.js';
 import { KeyboardHoldBinding } from '../bindings/keyboard-hold-binding.js';
-import { buttonMoments, KeyCode } from '../../constants/index.js';
+import { KeyCode } from '../../constants/index.js';
 import { InputManager } from '../../input-manager.js';
 import {
   KeyboardAxis1dBinding,
@@ -37,7 +37,10 @@ function isTypedIntoEditableElement(event: KeyboardEvent): boolean {
   );
 }
 
-/** Represents a keyboard input source with associated bindings. */
+/**
+ * Represents a keyboard input source with associated bindings. It reports
+ * the keys held to its `InputManager` whenever a key goes down or comes up.
+ */
 export class KeyboardInputSource
   implements
     TriggerInputSource<KeyboardTriggerBinding>,
@@ -48,12 +51,16 @@ export class KeyboardInputSource
 {
   /** The set of trigger bindings associated with this input source. */
   public readonly triggerBindings = new Set<KeyboardTriggerBinding>();
+
   /** The set of hold bindings associated with this input source. */
   public readonly holdBindings = new Set<KeyboardHoldBinding>();
+
   /** The set of axis-2d bindings associated with this input source. */
   public readonly axis2dBindings = new Set<KeyboardAxis2dBinding>();
+
   /** The set of axis-1d bindings associated with this input source. */
   public readonly axis1dBindings = new Set<KeyboardAxis1dBinding>();
+
   public readonly name = 'Keyboard';
 
   private readonly _inputManager: InputManager;
@@ -77,9 +84,12 @@ export class KeyboardInputSource
     globalThis.addEventListener('keyup', this._onKeyUpHandler);
   }
 
+  /** Stops listening to the keyboard and releases every key this source was holding. */
   public stop(): void {
     globalThis.removeEventListener('keydown', this._onKeyDownHandler);
     globalThis.removeEventListener('keyup', this._onKeyUpHandler);
+    this._keyHolds.clear();
+    this._inputManager.removeSourceInput(this);
   }
 
   private readonly _onKeyDownHandler = (event: KeyboardEvent) => {
@@ -95,31 +105,8 @@ export class KeyboardInputSource
     const keyCode = event.code as KeyCode;
 
     this._keyHolds.add(keyCode);
-
-    this._handleTriggerBindingsOnKeyDown(keyCode);
-    this._handleHoldBindingsOnKeyDown(keyCode);
-    this._handleAxis1dBindings(keyCode);
-    this._handleAxis2dBindings(keyCode);
+    this._reportKey(keyCode, true);
   };
-
-  private _handleTriggerBindingsOnKeyDown(keyCode: KeyCode): void {
-    for (const binding of this.triggerBindings) {
-      if (
-        binding.keyCode === keyCode &&
-        binding.moment === buttonMoments.down
-      ) {
-        this._inputManager.dispatchTriggerAction(binding);
-      }
-    }
-  }
-
-  private _handleHoldBindingsOnKeyDown(keyCode: KeyCode): void {
-    for (const binding of this.holdBindings) {
-      if (binding.keyCode === keyCode) {
-        this._inputManager.dispatchHoldStartAction(binding);
-      }
-    }
-  }
 
   private readonly _onKeyUpHandler = (event: KeyboardEvent) => {
     // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/repeat
@@ -134,65 +121,83 @@ export class KeyboardInputSource
     }
 
     this._keyHolds.delete(keyCode);
-
-    this._handleTriggerBindingsOnKeyUp(keyCode);
-    this._handleHoldBindingsOnKeyUp(keyCode);
-    this._handleAxis1dBindings(keyCode);
-    this._handleAxis2dBindings(keyCode);
+    this._reportKey(keyCode, false);
   };
 
-  private _handleTriggerBindingsOnKeyUp(keyCode: KeyCode): void {
+  private _reportKey(keyCode: KeyCode, isDown: boolean): void {
     for (const binding of this.triggerBindings) {
-      if (binding.keyCode === keyCode && binding.moment === buttonMoments.up) {
-        this._inputManager.dispatchTriggerAction(binding);
+      if (binding.keyCode === keyCode) {
+        this._inputManager.setTriggerInput(this, binding, isDown);
       }
     }
+
+    this._reportHoldBindings(keyCode);
+    this._reportAxis1dBindings(keyCode);
+    this._reportAxis2dBindings(keyCode);
   }
 
-  private _handleHoldBindingsOnKeyUp(keyCode: KeyCode): void {
+  /**
+   * Reports every hold action bound to `keyCode` as held while any of its
+   * keys is, so releasing one of two keys bound to the same action doesn't
+   * end the hold.
+   */
+  private _reportHoldBindings(keyCode: KeyCode): void {
+    const reportedActions = new Set<HoldAction>();
+
     for (const binding of this.holdBindings) {
-      if (binding.keyCode === keyCode) {
-        this._inputManager.dispatchHoldEndAction(binding);
+      if (reportedActions.has(binding.action) || binding.keyCode !== keyCode) {
+        continue;
       }
+
+      reportedActions.add(binding.action);
+
+      let isDown = false;
+
+      for (const other of this.holdBindings) {
+        if (
+          other.action === binding.action &&
+          this._keyHolds.has(other.keyCode)
+        ) {
+          isDown = true;
+        }
+      }
+
+      this._inputManager.setHoldInput(this, binding.action, isDown);
     }
   }
 
   /**
-   * Re-dispatches every axis-1d action bound to `keyCode`, with its value
-   * derived from which of its keys are held right now rather than adjusted
-   * relative to the action's current value. A relative adjustment would
-   * leave the value permanently off whenever a key press or release didn't
-   * reach the action, for example because its input group was inactive at
-   * the time.
+   * Reports every axis-1d action bound to `keyCode`, with its value derived
+   * from which of its keys are held right now.
    */
-  private _handleAxis1dBindings(keyCode: KeyCode): void {
-    const dispatchedActions = new Set<Axis1dAction>();
+  private _reportAxis1dBindings(keyCode: KeyCode): void {
+    const reportedActions = new Set<Axis1dAction>();
 
     for (const binding of this.axis1dBindings) {
       if (
-        dispatchedActions.has(binding.action) ||
+        reportedActions.has(binding.action) ||
         (binding.positiveKeyCode !== keyCode &&
           binding.negativeKeyCode !== keyCode)
       ) {
         continue;
       }
 
-      dispatchedActions.add(binding.action);
-
-      this._inputManager.dispatchAxis1dAction(
-        binding,
+      reportedActions.add(binding.action);
+      this._inputManager.setAxis1dInput(
+        this,
+        binding.action,
         this._readAxis1dValue(binding.action),
       );
     }
   }
 
-  /** Re-dispatches every axis-2d action bound to `keyCode`, see `_handleAxis1dBindings`. */
-  private _handleAxis2dBindings(keyCode: KeyCode): void {
-    const dispatchedActions = new Set<Axis2dAction>();
+  /** Reports every axis-2d action bound to `keyCode`, see `_reportAxis1dBindings`. */
+  private _reportAxis2dBindings(keyCode: KeyCode): void {
+    const reportedActions = new Set<Axis2dAction>();
 
     for (const binding of this.axis2dBindings) {
       if (
-        dispatchedActions.has(binding.action) ||
+        reportedActions.has(binding.action) ||
         (binding.northKeyCode !== keyCode &&
           binding.southKeyCode !== keyCode &&
           binding.eastKeyCode !== keyCode &&
@@ -201,11 +206,11 @@ export class KeyboardInputSource
         continue;
       }
 
-      dispatchedActions.add(binding.action);
+      reportedActions.add(binding.action);
 
       const { x, y } = this._readAxis2dValue(binding.action);
 
-      this._inputManager.dispatchAxis2dAction(binding, x, y);
+      this._inputManager.setAxis2dInput(this, binding.action, x, y);
     }
   }
 
