@@ -46,7 +46,7 @@ const defaultAspectRatioFitterOptions: AspectRatioFitterDefaultedOptions = {
  * container might otherwise stretch it. `fitInParent`/`envelopeParent` read
  * the parent's own resolved `rect` (one frame stale, like every other
  * cross-entity read in this module - see `createUiLayoutEcsSystem`'s own
- * doc comment) - `entity` needs a `ParentEcsComponent` for those two modes.
+ * doc comment) - `entity` needs a parent for those two modes.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to attach the component to. Assumes a
  * point-anchored `RectTransformEcsComponent` (its `x`/`y` are each a

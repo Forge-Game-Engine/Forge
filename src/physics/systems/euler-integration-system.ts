@@ -1,5 +1,4 @@
 import {
-  parentId,
   PositionEcsComponent,
   positionId,
   RotationEcsComponent,
@@ -8,6 +7,7 @@ import {
 } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { formatEntity } from '../../ecs/entity.js';
+import { parentId } from '../../ecs/hierarchy.js';
 import { Vec2 } from '../../math/index.js';
 import {
   RigidBodyEcsComponent,

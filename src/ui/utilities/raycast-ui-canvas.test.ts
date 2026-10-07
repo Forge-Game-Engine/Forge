@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { raycastUiCanvas } from './raycast-ui-canvas.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { addCameraComponent, RenderContext } from '../../rendering/index.js';
 import { addCanvasComponent } from '../components/canvas-component.js';
@@ -42,7 +39,7 @@ function addElement(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity);
-  addParentComponent(world, entity, { parent: canvas });
+  world.setParent(entity, canvas);
   addRectTransformComponent(world, entity, {
     rect: { min: { x: -50, y: -50 }, max: { x: 50, y: 50 } },
     sortDepth,

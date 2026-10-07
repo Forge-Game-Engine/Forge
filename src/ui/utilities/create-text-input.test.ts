@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createTextInput } from './create-text-input.js';
-import { parentId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   Color,
@@ -67,7 +66,7 @@ describe('createTextInput', () => {
       attributes: { ariaLabel: 'Name' },
     });
 
-    expect(world.getComponent(field.entity, parentId)).toEqual({ parent });
+    expect(world.getParent(field.entity)).toBe(parent);
     expect(world.getComponent(field.entity, uiInteractableId)).toBe(
       field.interactable,
     );

@@ -180,9 +180,12 @@ factory functions, not classes:
 3. **Entities**: Just numeric ids (`number`), created with
    `EcsWorld.createEntity()`. Components are attached/detached by id via the
    world (`addComponent`/`removeComponent`/`addTag`); there is no `Entity`
-   object. Parent-child relationships are expressed via a
-   `ParentEcsComponent` referencing another entity's id, not object
-   containment.
+   object. Parent-child relationships are kept by the world, not object
+   containment: `world.setParent(child, parent)`/`removeParent` write the
+   child's `ParentEcsComponent` (the only writer; `addComponent`/
+   `removeComponent` of `parentId` throw) and the world's children index
+   (`getChildren`, in sibling order). `removeEntity` removes descendants
+   too, so loops that remove entities check `isAlive` first.
 
 4. **World** (`EcsWorld`): Container for component data and registered
    systems. Stores component data grouped by component key, runs each

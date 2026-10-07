@@ -1,7 +1,4 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '@forge-game-engine/forge/common';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Color } from '@forge-game-engine/forge/rendering';
 import { FontAtlas } from '@forge-game-engine/forge/text';
@@ -38,7 +35,7 @@ export function createOptionsContent(
   const optionsGrid = world.createEntity();
 
   addPositionComponent(world, optionsGrid);
-  addParentComponent(world, optionsGrid, { parent: content });
+  world.setParent(optionsGrid, content);
   addRectTransformComponent(world, optionsGrid, {
     ...UiAnchor.topLeft(),
     anchoredPosition: { x: 16, y: -96 },

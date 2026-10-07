@@ -1,7 +1,4 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { ForgeEvent, ParameterizedForgeEvent } from '../../events/index.js';
 import { createTextEntry } from '../../input/text-entry/text-entry.js';
@@ -261,7 +258,7 @@ export function createTextInput(
   const origin = world.createEntity();
 
   addPositionComponent(world, origin);
-  addParentComponent(world, origin, { parent: entity });
+  world.setParent(origin, entity);
   addRectTransformComponent(world, origin, {
     x: UiAxis.point(0, { pivot: 0, size: 0 }),
     y: UiAxis.point(0.5, { size: 0 }),

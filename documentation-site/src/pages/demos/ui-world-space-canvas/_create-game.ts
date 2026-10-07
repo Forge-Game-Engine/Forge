@@ -1,5 +1,4 @@
 import {
-  addParentComponent,
   addPositionComponent,
   addRotationComponent,
   createTransformEcsSystem,
@@ -92,7 +91,7 @@ async function createBackdrop(
  * marker, so the rotation is visually obvious) at `x`, and a world-space
  * health-bar canvas above it.
  * @param attachment - `'parent'` attaches the canvas with
- * `addParentComponent`, so it inherits the enemy's full world transform and
+ * `world.setParent`, so it inherits the enemy's full world transform and
  * visibly spins and swings around as the enemy rotates. `'position'` leaves
  * the canvas without a parent and puts it above the enemy with its
  * `anchoredPosition` instead, so it stays upright no matter which way the
@@ -142,7 +141,7 @@ async function createSpinningEnemyWithHealthBar(
   const marker = world.createEntity();
 
   addPositionComponent(world, marker, { local: { x: 36, y: 0 } });
-  addParentComponent(world, marker, { parent: enemy });
+  world.setParent(marker, enemy);
   addSpriteComponent(world, marker, markerSprite);
 
   // 80 units above the enemy: relative to the enemy when parented, and in
@@ -160,7 +159,7 @@ async function createSpinningEnemyWithHealthBar(
   });
 
   if (attachment === 'parent') {
-    addParentComponent(world, healthBarCanvas, { parent: enemy });
+    world.setParent(healthBarCanvas, enemy);
   }
 
   const barBackgroundSprite = createImageSprite(whiteImage, renderContext, {
@@ -188,7 +187,7 @@ async function createSpinningEnemyWithHealthBar(
   });
 
   createLabel(world, healthBarCanvas, {
-    text: attachment === 'parent' ? 'addParentComponent' : 'anchoredPosition',
+    text: attachment === 'parent' ? 'setParent' : 'anchoredPosition',
     fontAtlas,
     size: 20,
     anchor: UiAnchor.center({ x: 260, y: 32 }),
@@ -217,7 +216,7 @@ function createSpinEcsSystem(time: Time): EcsSystem<[RotationEcsComponent]> {
  * Builds the world-space canvas demo: two identical spinning "enemies",
  * each with a diegetic health-bar canvas (`renderMode: 'worldSpace'`)
  * attached to it. The left enemy's health bar is attached with the
- * ordinary `addParentComponent` and visibly spins and swings around with
+ * ordinary `world.setParent` and visibly spins and swings around with
  * the enemy. The right enemy's has no parent and is placed above it with its
  * `anchoredPosition`, so it stays upright regardless of which way the enemy
  * is facing.

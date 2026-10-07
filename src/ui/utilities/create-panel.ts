@@ -1,7 +1,4 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 import {
@@ -85,7 +82,7 @@ export function createPanel(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity);
-  addParentComponent(world, entity, { parent });
+  world.setParent(entity, parent);
   addRectTransformComponent(world, entity, {
     ...anchor,
     ...(anchoredPosition && { anchoredPosition }),

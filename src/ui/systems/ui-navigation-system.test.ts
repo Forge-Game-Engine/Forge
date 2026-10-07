@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createUiNavigationEcsSystem } from './ui-navigation-system.js';
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '../../common/index.js';
+import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   Axis2dAction,
@@ -53,7 +50,7 @@ const createButtonAt = (
   const entity = world.createEntity();
 
   addPositionComponent(world, entity);
-  addParentComponent(world, entity, { parent: canvas });
+  world.setParent(entity, canvas);
 
   const rectTransform = addRectTransformComponent(world, entity, {
     ...UiAnchor.center({ x: 100, y: 50 }),

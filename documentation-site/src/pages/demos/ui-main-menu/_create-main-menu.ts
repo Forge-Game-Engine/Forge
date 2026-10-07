@@ -1,7 +1,4 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '@forge-game-engine/forge/common';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { ParameterizedForgeEvent } from '@forge-game-engine/forge/events';
 import { Color, SpriteEcsComponent } from '@forge-game-engine/forge/rendering';
@@ -177,7 +174,7 @@ export function createMainMenu(
   const menuContainer = world.createEntity();
 
   addPositionComponent(world, menuContainer);
-  addParentComponent(world, menuContainer, { parent: panel });
+  world.setParent(menuContainer, panel);
   addRectTransformComponent(world, menuContainer, {
     x: UiAxis.stretch({ min: 0, max: 1 }, { margin: -2 * rowLeftInset }),
     y: UiAxis.point(1, { size: rowHeight }),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createLabel } from './create-label.js';
-import { parentId, positionId } from '../../common/index.js';
+import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import {
@@ -25,7 +25,7 @@ describe('createLabel', () => {
       size: 32,
     });
 
-    expect(world.getComponent(label, parentId)).toEqual({ parent });
+    expect(world.getParent(label)).toBe(parent);
     expect(world.getComponent(label, positionId)).not.toBeNull();
     expect(world.getComponent(label, rectTransformId)!.x).toEqual(
       UiAnchor.center().x,

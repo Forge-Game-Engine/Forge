@@ -1,7 +1,4 @@
-import {
-  addParentComponent,
-  addPositionComponent,
-} from '@forge-game-engine/forge/common';
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   Color,
@@ -113,7 +110,7 @@ export async function createOptionsForm(
   const group = world.createEntity();
 
   addPositionComponent(world, group);
-  addParentComponent(world, group, { parent: canvas });
+  world.setParent(group, canvas);
   addRectTransformComponent(world, group, {
     ...UiAnchor.bottomRight({
       x: width,

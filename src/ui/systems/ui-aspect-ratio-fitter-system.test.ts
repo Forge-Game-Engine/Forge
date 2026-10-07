@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { createUiAspectRatioFitterEcsSystem } from './ui-aspect-ratio-fitter-system.js';
-import { addParentComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
 import { addAspectRatioFitterComponent } from '../components/aspect-ratio-fitter-component.js';
@@ -73,7 +72,7 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
 
     const entity = world.createEntity();
 
-    addParentComponent(world, entity, { parent });
+    world.setParent(entity, parent);
     addRectTransformComponent(world, entity, {
       x: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 999 },
       y: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 999 },
@@ -103,7 +102,7 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
 
     const entity = world.createEntity();
 
-    addParentComponent(world, entity, { parent });
+    world.setParent(entity, parent);
     addRectTransformComponent(world, entity, {
       x: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 999 },
       y: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 999 },
@@ -150,7 +149,7 @@ describe('createUiAspectRatioFitterEcsSystem', () => {
     const parent = world.createEntity();
     const entity = world.createEntity();
 
-    addParentComponent(world, entity, { parent });
+    world.setParent(entity, parent);
     addRectTransformComponent(world, entity, {
       x: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 50 },
       y: { kind: 'point', anchor: 0.5, pivot: 0.5, size: 60 },

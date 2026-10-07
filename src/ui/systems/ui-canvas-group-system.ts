@@ -1,9 +1,4 @@
-import {
-  ParentEcsComponent,
-  parentId,
-  PositionEcsComponent,
-  positionId,
-} from '../../common/index.js';
+import { PositionEcsComponent, positionId } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { SpriteEcsComponent, spriteId } from '../../rendering/index.js';
@@ -96,43 +91,11 @@ export const createUiCanvasGroupEcsSystem = (): EcsSystem<
   query: [rectTransformId, positionId],
   update: (world, { entities }) => {
     const elements = new Set(entities);
-    const childrenByParent = new Map<number, number[]>();
-    const roots: number[] = [];
-
-    for (const entity of entities) {
-      const parentComponent = world.getComponent<ParentEcsComponent>(
-        entity,
-        parentId,
-      );
-
-      if (!parentComponent || !elements.has(parentComponent.parent)) {
-        roots.push(entity);
-
-        continue;
-      }
-
-      let children = childrenByParent.get(parentComponent.parent);
-
-      if (!children) {
-        children = [];
-        childrenByParent.set(parentComponent.parent, children);
-      }
-
-      children.push(entity);
-    }
-
-    const visited = new Set<number>();
 
     const visit = (
       entity: number,
       inherited: CombinedCanvasGroupState,
     ): void => {
-      if (visited.has(entity)) {
-        return;
-      }
-
-      visited.add(entity);
-
       const combined = combineWithOwnGroup(world, entity, inherited);
 
       if (combined.isGoverned) {
@@ -149,8 +112,10 @@ export const createUiCanvasGroupEcsSystem = (): EcsSystem<
         }
       }
 
-      for (const child of childrenByParent.get(entity) ?? []) {
-        visit(child, combined);
+      for (const child of world.getChildren(entity)) {
+        if (elements.has(child)) {
+          visit(child, combined);
+        }
       }
     };
 
@@ -159,8 +124,12 @@ export const createUiCanvasGroupEcsSystem = (): EcsSystem<
       isGoverned: false,
     };
 
-    for (const root of roots) {
-      visit(root, identityCombinedState);
+    for (const entity of entities) {
+      const parent = world.getParent(entity);
+
+      if (parent === null || !elements.has(parent)) {
+        visit(entity, identityCombinedState);
+      }
     }
   },
 });

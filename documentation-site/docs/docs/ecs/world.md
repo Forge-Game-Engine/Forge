@@ -37,12 +37,61 @@ world.removeEntity(entity);
 This removes every component/tag the entity had, then raises `onEntityRemoved`
 with the entity. The world reuses the entity's slot for a later entity, under a
 new handle, so the removed entity's handle never refers to the new one.
-Entities parented to it (with `addParentComponent`) aren't removed with it.
+
+Removing an entity also removes its children, their children, and so on (see
+[Parenting entities](#parenting-entities)). They're removed first, depth first,
+so `onEntityRemoved` is raised for every descendant before the entity itself.
+While those events are raised the entity is already not alive, but still has
+its components, so a listener can read them.
+
+A system's query result is taken before the system runs, so removing an entity
+can remove other entities later in the same result: its descendants. A loop
+that removes entities and then acts on later ones should check `isAlive` first:
+
+```ts
+for (const entity of entities) {
+  if (!world.isAlive(entity)) {
+    continue; // Removed earlier in this loop, along with its parent.
+  }
+
+  // ...
+}
+```
 
 Removing an entity that's already been removed does nothing, and
 `removeEntity` returns `false` instead of `true`. Use `isAlive(entity)` to check
 whether an entity you're holding on to is still there. See
 [Entity](entity.md#holding-on-to-other-entities).
+
+## Parenting entities
+
+An entity can have one parent and any number of children. A child's
+transform follows its parent's (see
+[Transforms](../common/transforms.md)), and it's removed along with its
+parent. The world keeps the hierarchy, so set and clear parents through it:
+
+```ts
+world.setParent(turret, tank); // turret is now a child of tank
+world.getParent(turret); // tank
+world.getChildren(tank); // [turret]
+world.removeParent(turret); // turret is a root entity again
+```
+
+- `setParent` replaces any parent the child already has, and keeps its local
+  transform, so the child takes the same offset under its new parent. It
+  throws if either entity isn't alive, or if the new parent is the child itself
+  or one of its descendants.
+- `getChildren` lists the children in the order they were parented. Removing a
+  child, or moving it to another parent, keeps the rest in order. The list is
+  the world's own, and changes as children come and go, so copy it
+  (`[...world.getChildren(parent)]`) before removing or reparenting children in
+  a loop.
+- To keep a child when its parent is removed, call `removeParent` (or
+  `setParent` with another parent) first.
+
+The parent is stored as a `ParentEcsComponent` (`parentId`), so systems can
+query for it, but only the world writes it: adding it with `addComponent` or
+removing it with `removeComponent` throws.
 
 ## Adding a component to the entity
 

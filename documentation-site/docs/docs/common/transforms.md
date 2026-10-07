@@ -16,13 +16,14 @@ Each holds two values:
   only take `local`, and start `world` as a copy of it.
 
 The transform system sets an entity's `world` from its `local` and, if it
-has a `ParentEcsComponent`, its parent's `world`. The parent's rotation and
+has a parent, its parent's `world`. Give an entity a parent with
+`world.setParent(child, parent)` (see
+[Parenting entities](../ecs/world.md#parenting-entities)). The parent's rotation and
 scale apply to the child's offset, the rotations add, and the scales
 multiply. An entity without a parent gets `world = local`.
 
 ```ts
 import {
-  addParentComponent,
   addPositionComponent,
   createTransformEcsSystem,
 } from '@forge-game-engine/forge/common';
@@ -34,7 +35,7 @@ const tankPosition = addPositionComponent(world, tank, {
   local: { x: 100, y: 0 },
 });
 addPositionComponent(world, turret, { local: { x: 0, y: 12 } });
-addParentComponent(world, turret, { parent: tank });
+world.setParent(turret, tank);
 
 world.addSystem(createTransformEcsSystem());
 
@@ -42,6 +43,10 @@ world.addSystem(createTransformEcsSystem());
 // position. The turret follows.
 tankPosition.local.x += speed * time.deltaTimeInSeconds;
 ```
+
+Setting or removing a parent keeps the child's `local` transform as it is,
+so the child takes the same offset under its new parent (or from the world
+origin, once it has none). Removing a parent removes its children with it.
 
 Everything that reads a transform to draw, collide or measure, such as
 rendering, physics, cameras and UI hit testing, reads `world`. Everything that

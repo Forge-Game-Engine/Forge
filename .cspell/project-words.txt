@@ -150,7 +150,10 @@ reimplementation
 reinhard
 Renderable
 renderables
+reparent
+reparented
 reparenting
+reparents
 requizits
 resettables
 resizables
@@ -200,6 +203,8 @@ unedit
 unflipped
 unmarks
 unnegated
+unparent
+unparented
 unrepresentable
 unrotated
 unshifted
