@@ -33,18 +33,6 @@ export interface RectTransformDefaultedOptions {
    * on the next layout pass.
    */
   rect: Rect;
-
-  /**
-   * This element's hierarchy pre-order index within its canvas, written
-   * every frame by `createUiLayoutEcsSystem` - the same value it writes
-   * into `SpriteEcsComponent.sortDepth`/`TextEcsComponent.sortDepth` for
-   * elements that have one, so draw order follows hierarchy order within a
-   * canvas rather than world Y. Elements with neither still get one here,
-   * since `createUiRaycastEcsSystem` needs a topmost-first ordering for
-   * every interactable regardless of whether it happens to draw anything.
-   * Do not set this directly.
-   */
-  sortDepth: number;
 }
 
 export type RectTransformEcsComponent = RectTransformDefaultedOptions;
@@ -73,7 +61,6 @@ export function addRectTransformComponent(
     y: UiAxis.point(0.5),
     anchoredPosition: Vec2.zero,
     rect: Rects.zero,
-    sortDepth: 0,
   };
 
   const merged = { ...defaultRectTransformOptions, ...options };
@@ -89,7 +76,6 @@ export function addRectTransformComponent(
     y: { ...merged.y },
     anchoredPosition: Vec2.clone(merged.anchoredPosition),
     rect: Rects.clone(merged.rect),
-    sortDepth: merged.sortDepth,
   };
 
   return world.addComponent(entity, rectTransformId, component);

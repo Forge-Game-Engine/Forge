@@ -202,9 +202,8 @@ export function withUiAxisValue(axis: UiAxis, value: number): UiAxis {
  * Drives a {@link UiAxis} to a new normalized anchor position - `anchor` for
  * a `UiPointAxis`, `anchorMax` for a `UiStretchAxis` - mutating it in place
  * and leaving `pivot`/`size`/`margin`/`anchorMin` untouched. The mechanism
- * `createUiSliderEcsSystem`/`createUiProgressBarEcsSystem` use to slide a
- * handle along a track, or grow a fill span, from a normalized `[0, 1]`
- * value every tick.
+ * `createUiSliderEcsSystem` uses to slide a handle along a track from a
+ * normalized `[0, 1]` value every tick.
  * @param axis - The axis to mutate.
  * @param value - The new normalized anchor position.
  */

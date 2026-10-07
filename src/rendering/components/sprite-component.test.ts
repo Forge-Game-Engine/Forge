@@ -64,31 +64,6 @@ describe('addSpriteComponent', () => {
     expect(world.getComponent(entity, spriteId)).toBe(component);
   });
 
-  it('leaves sortDepth undefined by default', () => {
-    const world = new EcsWorld();
-    const entity = world.createEntity();
-    const texture = createTexture();
-
-    addSpriteComponent(world, entity, { width: 32, height: 32, texture });
-
-    expect(world.getComponent(entity, spriteId)?.sortDepth).toBeUndefined();
-  });
-
-  it('accepts an explicit sortDepth override', () => {
-    const world = new EcsWorld();
-    const entity = world.createEntity();
-    const texture = createTexture();
-
-    addSpriteComponent(world, entity, {
-      width: 32,
-      height: 32,
-      texture,
-      sortDepth: 7,
-    });
-
-    expect(world.getComponent(entity, spriteId)?.sortDepth).toBe(7);
-  });
-
   it('gives each entity its own pivot, uvOffset, and uvScale vector instances', () => {
     const world = new EcsWorld();
     const first = world.createEntity();

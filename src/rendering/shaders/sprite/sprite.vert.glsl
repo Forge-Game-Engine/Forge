@@ -6,15 +6,15 @@ in vec2 a_position;      // Vertex position (e.g., quad corners)
 in vec2 a_texCoord;      // Texture coordinate
 
 // Per-instance attributes:
-in vec2 a_instancePos;        // Sprite position
+in vec4 a_instancePosScale;   // Sprite position (xy) and scale (zw)
 in float a_instanceRot;       // Sprite rotation (radians)
-in vec2 a_instanceScale;      // Sprite scale
-in vec2 a_instanceSize;       // Sprite width/height
-in vec2 a_instancePivot;      // Sprite pivot (origin offset)
-in vec2 a_instanceTexOffset;  // Texture region offset (UV)
-in vec2 a_instanceTexSize;    // Texture region size (UV)
+in vec4 a_instanceSizePivot;  // Sprite width/height (xy) and pivot (zw)
+in vec4 a_instanceTexRect;    // Texture region offset (xy) and size (zw), in UV
 in vec4 a_instanceTint;       // tint color
 in vec3 a_instanceEmissive;   // emissive color
+
+// Per-instance mask attributes (see `maskInstanceDataSegment`).
+#pragma forge include(spriteMaskVertex)
 
 // Uniforms for projection/camera:
 uniform mat3 u_projection; // 2D projection/camera matrix
@@ -28,13 +28,13 @@ void main() {
     // a_position's own [-1,1] range so the pivot fully offsets the origin
     // to the requested edge instead of only halfway there. Without this
     // doubling, a_position (widened to [-1,1] to make its own `* 0.5` below
-    // correct) and a_instancePivot's contribution stay on mismatched
+    // correct) and the pivot's contribution stay on mismatched
     // scales, so pivot only ever applies half its intended offset - e.g.
     // pivot (0,0) lands 25% in from the sprite's edge instead of at the
     // edge, and every non-center pivot value needs a compensating
     // adjustment to land where it visually should.
     //
-    // Y is negated on top of that: `a_instancePivot` is public API
+    // Y is negated on top of that: `a_instanceSizePivot.zw` is public API
     // (`SpriteEcsComponent.pivot`) and is Y-up like every other public
     // Y-facing value in the engine (world position, rotation), so pivot
     // (0, 0) means bottom-left and (1, 1) means top-right. Everything below
@@ -42,15 +42,15 @@ void main() {
     // Y-down space the projection matrix's flip expects, so the pivot's Y
     // needs the same flip before it's combined with a_position.
     vec2 normalizedPivot = vec2(
-        (a_instancePivot.x - 0.5) * 2.0,
-        -(a_instancePivot.y - 0.5) * 2.0
+        (a_instanceSizePivot.z - 0.5) * 2.0,
+        -(a_instanceSizePivot.w - 0.5) * 2.0
     );
     
     // 1. Apply pivot (move origin)
     vec2 pivoted = a_position - normalizedPivot;
 
     // 2. Scale quad to sprite size and scale
-    vec2 scaled = pivoted * a_instanceSize * a_instanceScale * 0.5;
+    vec2 scaled = pivoted * a_instanceSizePivot.xy * a_instancePosScale.zw * 0.5;
 
     // 3. Rotate
     float c = cos(a_instanceRot);
@@ -61,7 +61,7 @@ void main() {
     );
 
     // 4. Translate to world position
-    vec2 world = rotated + a_instancePos;
+    vec2 world = rotated + a_instancePosScale.xy;
 
     // 5. Project to screen
     //
@@ -75,7 +75,9 @@ void main() {
     vec3 projected = u_projection * vec3(world, 1.0);
 
     gl_Position = vec4(projected.xy, 0.0, 1.0);
-    v_texCoord = a_instanceTexOffset + a_texCoord * a_instanceTexSize;
+    v_texCoord = a_instanceTexRect.xy + a_texCoord * a_instanceTexRect.zw;
     v_tint = a_instanceTint;
     v_emissive = a_instanceEmissive;
+
+    forwardSpriteMask(world);
 }

@@ -10,6 +10,7 @@ import {
 } from '../../common/index.js';
 import { Matrix3x3, Rect, Rects, Vec2 } from '../../math/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
+import { QueryResult } from '../../ecs/index.js';
 import { matchesMask } from '../../utilities/matches-mask.js';
 import {
   TextEcsComponent,
@@ -23,7 +24,7 @@ import {
   createTextRenderables,
   TextRenderables,
 } from '../../text/rendering/create-text-renderables.js';
-import { buildTextCameraCommands } from '../../text/rendering/glyph-quad.js';
+import { pushTextRenderCommands } from '../../text/rendering/glyph-quad.js';
 import {
   CameraEcsComponent,
   cameraId,
@@ -31,15 +32,28 @@ import {
   spriteId,
 } from '../components/index.js';
 import { computeCameraView } from '../camera-view.js';
+import {
+  createDrawOrderResolver,
+  DrawOrderResolver,
+  float32ToSortableUint32,
+  int32ToSortableUint32,
+  radixSortByKeys,
+  writeSortableFloat64,
+} from '../draw-order.js';
 import { createQuadGeometry, Geometry } from '../geometry/index.js';
 import { SpriteMaterial } from '../materials/sprite-material.js';
 import { RenderContext } from '../render-context.js';
 import { RenderTarget } from '../render-target.js';
-import { Renderable } from '../renderable.js';
+import { InstanceComponents, Renderable } from '../renderable.js';
 import { createProjectionMatrix } from '../shaders/utils/create-projection-matrix.js';
 import { RenderCommand } from '../render-command.js';
 import { computeNineSliceRegions } from '../utilities/compute-nine-slice-regions.js';
 import { combineInstanceDataSegments } from '../utilities/instance-data-segment.js';
+import { maskInstanceDataSegment } from '../utilities/mask-instance-data-segment.js';
+import {
+  createInstanceMaskResolver,
+  InstanceMaskResolver,
+} from '../utilities/resolve-instance-mask.js';
 import { spriteEmissiveInstanceDataSegment } from '../utilities/sprite-emissive-instance-data-segment.js';
 import {
   computeSpriteInstanceBounds,
@@ -50,17 +64,18 @@ import {
 const spriteInstanceLayout = combineInstanceDataSegments(
   spriteInstanceDataSegment,
   spriteEmissiveInstanceDataSegment,
+  maskInstanceDataSegment,
 );
 
 /**
  * Creates the renderable that draws sprites with `material`, binding each
  * batch's texture and emissive map (or the black texture) to it.
  */
-const createSpriteRenderable = (
+function createSpriteRenderable(
   renderContext: RenderContext,
   material: SpriteMaterial,
-): Renderable =>
-  new Renderable(
+): Renderable {
+  return new Renderable(
     material,
     spriteInstanceLayout.floatsPerInstance,
     spriteInstanceLayout.bindInstanceData,
@@ -73,6 +88,7 @@ const createSpriteRenderable = (
       );
     },
   );
+}
 
 /**
  * The GPU resources one render system draws with, created on its first
@@ -85,9 +101,7 @@ interface RenderResources {
   getTextRenderables: () => TextRenderables;
 }
 
-const createRenderResources = (
-  renderContext: RenderContext,
-): RenderResources => {
+function createRenderResources(renderContext: RenderContext): RenderResources {
   const spriteRenderables = new WeakMap<SpriteMaterial, Renderable>();
   let textRenderables: TextRenderables | null = null;
 
@@ -109,13 +123,13 @@ const createRenderResources = (
       return textRenderables;
     },
   };
-};
+}
 
-const setupInstanceAttributesAndDraw = (
+function setupInstanceAttributesAndDraw(
   renderContext: RenderContext,
   renderable: Renderable,
   batchLength: number,
-) => {
+): void {
   const { gl } = renderContext;
 
   gl.bindBuffer(gl.ARRAY_BUFFER, renderContext.instanceBuffer);
@@ -138,167 +152,28 @@ const setupInstanceAttributesAndDraw = (
     gl.ONE_MINUS_SRC_ALPHA,
   );
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength);
-};
+}
 
 let instanceDataBuffer = new Float32Array(0);
 
-const ensureInstanceDataBufferCapacity = (size: number): Float32Array => {
+function ensureInstanceDataBufferCapacity(size: number): Float32Array {
   if (instanceDataBuffer.length < size) {
     instanceDataBuffer = new Float32Array(size);
   }
 
   return instanceDataBuffer;
-};
+}
 
-// Per-layer bucket resolution for `computeDrawOrder`'s counting sort, and a
-// hard cap on total buckets (bucketsPerLayer * distinct layer count) so a
-// scene with pathologically many distinct layers can't blow up memory -
-// see `computeDrawOrder`.
-const DEFAULT_DEPTH_BUCKETS_PER_LAYER = 4096;
-const MAX_TOTAL_DEPTH_BUCKETS = 1 << 20;
-
-let drawOrderBuffer: Uint32Array<ArrayBufferLike> = new Uint32Array(0);
-let bucketKeysBuffer: Uint32Array<ArrayBufferLike> = new Uint32Array(0);
-let bucketOffsetsBuffer: Uint32Array<ArrayBufferLike> = new Uint32Array(0);
-
-const ensureUint32Capacity = (
-  buffer: Uint32Array<ArrayBufferLike>,
-  size: number,
-): Uint32Array<ArrayBufferLike> =>
-  buffer.length < size ? new Uint32Array(size) : buffer;
-
-const quantizeDepthToBucket = (
-  depth: number,
-  minDepth: number,
-  depthRange: number,
-  depthBucketsPerLayer: number,
-): number => {
-  const normalizedDepth = (depth - minDepth) / depthRange;
-
-  if (normalizedDepth <= 0) {
-    return 0;
-  }
-
-  if (normalizedDepth >= 1) {
-    return depthBucketsPerLayer - 1;
-  }
-
-  return (normalizedDepth * depthBucketsPerLayer) | 0;
-};
-
-/**
- * Computes a draw order for `commands` - indices into `commands`, ascending
- * by layer then depth - with a counting sort instead of a general-purpose
- * comparison sort.
- *
- * `Array.prototype.sort` with a comparator costs grow sharply with sprite
- * count for two independent reasons: it's O(n log n), and every comparison
- * has to dereference a full `RenderCommand` object to read `layer`/`depth`.
- * A counting sort buckets each command by a `(layer, quantized depth)` key
- * in one linear pass instead, which is both algorithmically cheaper (O(n))
- * and touches each command object only once. Depth is quantized per-frame,
- * relative to the actual depth range present in `commands`, into
- * `depthBucketsPerLayer` buckets - fine enough that any visually meaningful
- * depth difference lands in a different bucket for any reasonably sized
- * scene, while sidestepping the floating-point-equality comparisons a
- * comparison sort would otherwise make on every call. Commands are stable
- * within a bucket (original relative order preserved), matching
- * `Array.prototype.sort`'s own stability guarantee.
- * @param commands - The commands to order. Not reordered in place - the
- * returned indices describe the draw order instead, so batching
- * (`flushBatches`/`includeBatch`) never has to physically move the
- * (potentially large) `commands` array around.
- * @returns Indices into `commands`, in draw order. Backed by a buffer
- * reused across calls; only valid until the next call.
- */
-const computeDrawOrder = (
-  commands: RenderCommand[],
-): Uint32Array<ArrayBufferLike> => {
-  const commandCount = commands.length;
-
-  drawOrderBuffer = ensureUint32Capacity(drawOrderBuffer, commandCount);
-
-  if (commandCount === 0) {
-    return drawOrderBuffer.subarray(0, 0);
-  }
-
-  const layerIndexByLayer = new Map<number, number>();
-  let minDepth = Infinity;
-  let maxDepth = -Infinity;
-
-  for (const command of commands) {
-    layerIndexByLayer.set(command.layer, 0);
-
-    if (command.depth < minDepth) {
-      minDepth = command.depth;
-    }
-
-    if (command.depth > maxDepth) {
-      maxDepth = command.depth;
-    }
-  }
-
-  const sortedLayers = [...layerIndexByLayer.keys()].sort((a, b) => a - b);
-
-  sortedLayers.forEach((layer, index) => layerIndexByLayer.set(layer, index));
-
-  const depthBucketsPerLayer = Math.max(
-    1,
-    Math.min(
-      DEFAULT_DEPTH_BUCKETS_PER_LAYER,
-      Math.floor(MAX_TOTAL_DEPTH_BUCKETS / sortedLayers.length),
-    ),
-  );
-  const depthRange = maxDepth - minDepth || 1;
-  const bucketCount = sortedLayers.length * depthBucketsPerLayer;
-
-  bucketKeysBuffer = ensureUint32Capacity(bucketKeysBuffer, commandCount);
-  bucketOffsetsBuffer = ensureUint32Capacity(
-    bucketOffsetsBuffer,
-    bucketCount + 1,
-  );
-  bucketOffsetsBuffer.fill(0, 0, bucketCount + 1);
-
-  for (let i = 0; i < commandCount; i++) {
-    const command = commands[i];
-    const layerIndex = layerIndexByLayer.get(command.layer)!;
-    const depthBucket = quantizeDepthToBucket(
-      command.depth,
-      minDepth,
-      depthRange,
-      depthBucketsPerLayer,
-    );
-    const key = layerIndex * depthBucketsPerLayer + depthBucket;
-
-    bucketKeysBuffer[i] = key;
-    bucketOffsetsBuffer[key + 1] += 1;
-  }
-
-  for (let bucket = 0; bucket < bucketCount; bucket++) {
-    bucketOffsetsBuffer[bucket + 1] += bucketOffsetsBuffer[bucket];
-  }
-
-  for (let i = 0; i < commandCount; i++) {
-    const key = bucketKeysBuffer[i];
-
-    drawOrderBuffer[bucketOffsetsBuffer[key]] = i;
-    bucketOffsetsBuffer[key] += 1;
-  }
-
-  return drawOrderBuffer.subarray(0, commandCount);
-};
-
-const includeBatch = (
+function includeBatch(
   renderContext: RenderContext,
   quad: Geometry,
   projectionMatrix: Matrix3x3,
   commands: RenderCommand[],
-  order: Uint32Array<ArrayBufferLike>,
   batchStart: number,
   batchEnd: number,
-) => {
+): void {
   const { gl } = renderContext;
-  const firstCommand = commands[order[batchStart]];
+  const firstCommand = commands[batchStart];
   const { renderable } = firstCommand;
   const batchLength = batchEnd - batchStart;
 
@@ -313,7 +188,7 @@ const includeBatch = (
 
   for (let i = batchStart; i < batchEnd; i++) {
     renderable.bindInstanceData(
-      commands[order[i]].components,
+      commands[i].components,
       buffer,
       instanceDataOffset,
     );
@@ -325,35 +200,30 @@ const includeBatch = (
   gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.DYNAMIC_DRAW, 0, requiredBatchSize);
 
   setupInstanceAttributesAndDraw(renderContext, renderable, batchLength);
-};
+}
 
-const pushSpriteRenderCommands = (
+function pushSpriteRenderCommands(
   commands: RenderCommand[],
   renderable: Renderable,
-  spriteComponent: SpriteEcsComponent,
-  entityPosition: PositionEcsComponent,
-  rotationComponent: RotationEcsComponent | null,
-  scaleComponent: ScaleEcsComponent | null,
-  flipComponent: FlipEcsComponent | null,
-): void => {
-  const { texture, layer, slices } = spriteComponent;
+  components: InstanceComponents,
+): void {
+  const {
+    sprite: spriteComponent,
+    position: entityPosition,
+    rotation: rotationComponent,
+    scale: scaleComponent,
+    flip: flipComponent,
+    mask,
+  } = components;
+  const { texture, slices } = spriteComponent;
   const emissiveTexture = spriteComponent.emissive?.texture ?? null;
-  const depth = spriteComponent.sortDepth ?? entityPosition.world.y;
 
   if (!slices) {
     commands.push({
-      layer,
-      depth,
       renderable,
       texture,
       emissiveTexture,
-      components: {
-        position: entityPosition,
-        rotation: rotationComponent,
-        scale: scaleComponent,
-        sprite: spriteComponent,
-        flip: flipComponent,
-      },
+      components,
     });
 
     return;
@@ -401,8 +271,6 @@ const pushSpriteRenderCommands = (
     };
 
     commands.push({
-      layer,
-      depth,
       renderable,
       texture,
       emissiveTexture,
@@ -412,72 +280,21 @@ const pushSpriteRenderCommands = (
         scale: scaleComponent,
         sprite: regionSprite,
         flip: flipComponent,
+        mask,
       },
     });
-  }
-};
-
-interface OptionalSpriteComponentAccessors {
-  getRotation: (entity: number) => RotationEcsComponent | null;
-  getScale: (entity: number) => ScaleEcsComponent | null;
-  getFlip: (entity: number) => FlipEcsComponent | null;
-}
-
-/** How to find the renderable a sprite draws with. */
-interface SpriteRenderableSource {
-  /** The render context, whose `spriteMaterial` draws sprites without one. */
-  renderContext: RenderContext;
-  getSpriteRenderable: (material: SpriteMaterial) => Renderable;
-}
-
-function buildCameraCommands(
-  sprites: SpriteEcsComponent[],
-  spritePositions: PositionEcsComponent[],
-  spriteEntities: readonly number[],
-  cullingMask: number,
-  commands: RenderCommand[],
-  optionalComponents: OptionalSpriteComponentAccessors,
-  renderables: SpriteRenderableSource,
-): void {
-  const { getRotation, getScale, getFlip } = optionalComponents;
-  const { renderContext, getSpriteRenderable } = renderables;
-
-  for (let s = 0; s < spriteEntities.length; s++) {
-    const spriteComponent = sprites[s];
-
-    if (!spriteComponent.enabled) {
-      continue;
-    }
-
-    if (!matchesMask(spriteComponent.category, cullingMask)) {
-      continue;
-    }
-
-    const spriteEntity = spriteEntities[s];
-    const entityPosition = spritePositions[s];
-
-    pushSpriteRenderCommands(
-      commands,
-      getSpriteRenderable(
-        spriteComponent.material ?? renderContext.spriteMaterial,
-      ),
-      spriteComponent,
-      entityPosition,
-      getRotation(spriteEntity),
-      getScale(spriteEntity),
-      getFlip(spriteEntity),
-    );
   }
 }
 
 const commandBounds: Rect = Rects.zero;
 
 /**
- * Removes the commands whose quads don't overlap `viewBounds`, keeping the
- * rest in order, so nothing a camera can't see is uploaded or drawn. Every
- * command - a sprite, a nine-slice region or a glyph - is a quad drawn from
- * the same instance components, so one bounds test covers them all. Quads
- * touching the view's edge are kept.
+ * Removes the commands whose quads don't overlap `viewBounds`, or the
+ * bounds of the masks they're drawn through, keeping the rest in order, so
+ * nothing a camera can't see is uploaded or drawn. Every command - a
+ * sprite, a nine-slice region or a glyph - is a quad drawn from the same
+ * instance components, so one bounds test covers them all. Quads touching
+ * the view's edge are kept.
  * @param commands - The camera's commands, compacted in place.
  * @param viewBounds - The world-space area the camera shows.
  */
@@ -490,7 +307,12 @@ function cullCommandsOutsideView(
   for (const command of commands) {
     computeSpriteInstanceBounds(command.components, commandBounds);
 
-    if (Rects.intersects(commandBounds, viewBounds)) {
+    const { mask } = command.components;
+
+    if (
+      Rects.intersects(commandBounds, viewBounds) &&
+      (!mask || Rects.intersects(commandBounds, mask.bounds))
+    ) {
       commands[visibleCount] = command;
       visibleCount++;
     }
@@ -503,24 +325,25 @@ function cullCommandsOutsideView(
  * Whether two commands draw in the same instanced batch: the same
  * renderable (material and instance layout), texture and emissive map.
  */
-const isSameBatch = (a: RenderCommand, b: RenderCommand): boolean =>
-  a.renderable === b.renderable &&
-  a.texture === b.texture &&
-  a.emissiveTexture === b.emissiveTexture;
+function isSameBatch(a: RenderCommand, b: RenderCommand): boolean {
+  return (
+    a.renderable === b.renderable &&
+    a.texture === b.texture &&
+    a.emissiveTexture === b.emissiveTexture
+  );
+}
 
 function flushBatches(
   renderContext: RenderContext,
   quad: Geometry,
   projectionMatrix: Matrix3x3,
   commands: RenderCommand[],
-  order: Uint32Array<ArrayBufferLike>,
 ): void {
   let batchStart = 0;
 
-  for (let i = 1; i <= order.length; i++) {
+  for (let i = 1; i <= commands.length; i++) {
     const isBatchBoundary =
-      i === order.length ||
-      !isSameBatch(commands[order[i]], commands[order[batchStart]]);
+      i === commands.length || !isSameBatch(commands[i], commands[batchStart]);
 
     if (isBatchBoundary) {
       includeBatch(
@@ -528,7 +351,6 @@ function flushBatches(
         quad,
         projectionMatrix,
         commands,
-        order,
         batchStart,
         i,
       );
@@ -537,15 +359,239 @@ function flushBatches(
   }
 }
 
+/**
+ * One sprite or one text of an entity, sorted as a unit: its commands (a
+ * quad, nine-slice regions, or glyphs) are pushed together, in a fixed
+ * order, wherever it lands in the draw order.
+ */
+interface DrawItem {
+  entity: number;
+  category: number;
+  sprite: SpriteEcsComponent | null;
+  text: TextEcsComponent | null;
+  textMesh: TextMeshEcsComponent | null;
+  position: PositionEcsComponent;
+}
+
+// Draw items and sort keys, reused across frames so a frame allocates
+// nothing for them once they've grown to the scene's size.
+const drawItems: DrawItem[] = [];
+let layerKeys = new Uint32Array(0);
+let worldOrderKeys = new Uint32Array(0);
+let rootYHighKeys = new Uint32Array(0);
+let rootYLowKeys = new Uint32Array(0);
+let rootSequenceHighKeys = new Uint32Array(0);
+let rootSequenceLowKeys = new Uint32Array(0);
+let hierarchyKeys = new Uint32Array(0);
+let hierarchyOrderBuffer = new Uint32Array(0);
+let ySortedOrderBuffer = new Uint32Array(0);
+let hierarchySortScratch = new Uint32Array(0);
+let ySortScratch = new Uint32Array(0);
+
+function ensureSortCapacity(count: number): void {
+  if (hierarchyKeys.length >= count) {
+    return;
+  }
+
+  const capacity = Math.max(64, hierarchyKeys.length * 2, count);
+
+  layerKeys = new Uint32Array(capacity);
+  worldOrderKeys = new Uint32Array(capacity);
+  rootYHighKeys = new Uint32Array(capacity);
+  rootYLowKeys = new Uint32Array(capacity);
+  rootSequenceHighKeys = new Uint32Array(capacity);
+  rootSequenceLowKeys = new Uint32Array(capacity);
+  hierarchyKeys = new Uint32Array(capacity);
+  hierarchyOrderBuffer = new Uint32Array(capacity);
+  ySortedOrderBuffer = new Uint32Array(capacity);
+  hierarchySortScratch = new Uint32Array(capacity);
+  ySortScratch = new Uint32Array(capacity);
+}
+
+function setDrawItem(
+  index: number,
+  entity: number,
+  category: number,
+  position: PositionEcsComponent,
+  sprite: SpriteEcsComponent | null,
+  text: TextEcsComponent | null,
+  textMesh: TextMeshEcsComponent | null,
+): void {
+  const item = drawItems[index];
+
+  if (!item) {
+    drawItems[index] = { entity, category, position, sprite, text, textMesh };
+
+    return;
+  }
+
+  item.entity = entity;
+  item.category = category;
+  item.position = position;
+  item.sprite = sprite;
+  item.text = text;
+  item.textMesh = textMesh;
+}
+
+/**
+ * Collects one draw item per enabled sprite and text, in no particular
+ * order.
+ * @returns The number of draw items.
+ */
+function collectDrawItems(
+  spriteQuery: QueryResult<[SpriteEcsComponent, PositionEcsComponent]>,
+  textQuery: QueryResult<
+    [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
+  >,
+): number {
+  const {
+    entities: spriteEntities,
+    components: [sprites, spritePositions],
+  } = spriteQuery;
+  const {
+    entities: textEntities,
+    components: [texts, textMeshes, textPositions],
+  } = textQuery;
+  let count = 0;
+
+  for (let s = 0; s < spriteEntities.length; s++) {
+    const sprite = sprites[s];
+
+    if (sprite.enabled) {
+      setDrawItem(
+        count++,
+        spriteEntities[s],
+        sprite.category,
+        spritePositions[s],
+        sprite,
+        null,
+        null,
+      );
+    }
+  }
+
+  for (let t = 0; t < textEntities.length; t++) {
+    const text = texts[t];
+
+    if (text.enabled) {
+      setDrawItem(
+        count++,
+        textEntities[t],
+        text.category,
+        textPositions[t],
+        null,
+        text,
+        textMeshes[t],
+      );
+    }
+  }
+
+  return count;
+}
+
+function writeSortKeys(resolver: DrawOrderResolver, count: number): void {
+  ensureSortCapacity(count);
+
+  for (let i = 0; i < count; i++) {
+    const { entity, sprite, text } = drawItems[i];
+    const layer = sprite ? sprite.layer : text!.layer;
+
+    const rootSequence = resolver.rootSequence(entity);
+
+    layerKeys[i] = float32ToSortableUint32(layer);
+    worldOrderKeys[i] = int32ToSortableUint32(resolver.worldOrder(entity));
+    rootSequenceHighKeys[i] = Math.floor(rootSequence / 0x100000000);
+    rootSequenceLowKeys[i] = rootSequence >>> 0;
+    // An entity's sprite draws before its text.
+    hierarchyKeys[i] = resolver.hierarchyIndex(entity) * 2 + (sprite ? 0 : 1);
+  }
+}
+
+// Only needed when a camera y-sorts, so only written then.
+function writeRootYSortKeys(resolver: DrawOrderResolver, count: number): void {
+  for (let i = 0; i < count; i++) {
+    // Negated, so a higher Y (further up the screen) draws first.
+    writeSortableFloat64(
+      -resolver.rootY(drawItems[i].entity),
+      rootYHighKeys,
+      rootYLowKeys,
+      i,
+    );
+  }
+}
+
+function pushDrawItemCommands(
+  commands: RenderCommand[],
+  item: DrawItem,
+  optionalComponents: OptionalComponentAccessors,
+  renderContext: RenderContext,
+  resources: RenderResources,
+): void {
+  const { entity, sprite, text, textMesh, position } = item;
+  const mask = optionalComponents.getMask(entity);
+
+  // Hidden entirely by its masks, so nothing to draw.
+  if (mask && !mask.visible) {
+    return;
+  }
+
+  const rotation = optionalComponents.getRotation(entity);
+  const scale = optionalComponents.getScale(entity);
+
+  if (sprite) {
+    pushSpriteRenderCommands(
+      commands,
+      resources.getSpriteRenderable(
+        sprite.material ?? renderContext.spriteMaterial,
+      ),
+      {
+        position,
+        rotation,
+        scale,
+        sprite,
+        flip: optionalComponents.getFlip(entity),
+        mask,
+      },
+    );
+
+    return;
+  }
+
+  pushTextRenderCommands(
+    commands,
+    text!,
+    textMesh!,
+    resources.getTextRenderables(),
+    { position, rotation, scale, mask },
+    renderContext.pixelRatio,
+  );
+}
+
+interface OptionalComponentAccessors {
+  getRotation: (entity: number) => RotationEcsComponent | null;
+  getScale: (entity: number) => ScaleEcsComponent | null;
+  getFlip: (entity: number) => FlipEcsComponent | null;
+  getMask: InstanceMaskResolver;
+}
+
 const commandBuffersByCameraIndex: RenderCommand[][] = [];
 const clearedDestinationsThisFrame = new Set<RenderTarget | null>();
+const drawOrderResolver = createDrawOrderResolver();
 
 /**
  * Creates a render system that draws every camera's sprites and text.
  * Consecutive quads (in draw order) with the same material, texture and
- * emissive map draw in one instanced draw call. Each camera is projected from its view (see
- * `computeCameraView`), and sprites, nine-slice regions and glyphs whose
- * quads are outside that view are skipped before anything is uploaded.
+ * emissive map draw in one instanced draw call. Each camera is projected
+ * from its view (see `computeCameraView`), and sprites, nine-slice regions
+ * and glyphs whose quads are outside that view are skipped before anything
+ * is uploaded.
+ *
+ * Sprites and text draw by `layer`, then by world order (see
+ * `DrawOrderEcsComponent`), then, for a camera with `ySort`, by their root
+ * entity's Y (higher first), then in hierarchy order: root entities in
+ * creation order, each followed by its subtree in pre-order. That's a total
+ * order, resolved and sorted once per frame with an exact radix sort. An
+ * entity's sprite draws before its text.
  *
  * @param renderContext The rendering context
  * @returns The render ECS system
@@ -561,33 +607,47 @@ export const createRenderEcsSystem = (
       clearedDestinationsThisFrame.clear();
       resources ??= createRenderResources(renderContext);
 
-      const { quad, getSpriteRenderable, getTextRenderables } = resources;
-      const spriteRenderables: SpriteRenderableSource = {
-        renderContext,
-        getSpriteRenderable,
-      };
-
-      const {
-        entities: spriteEntities,
-        components: [sprites, spritePositions],
-      } = world.query<[SpriteEcsComponent, PositionEcsComponent]>([
-        spriteId,
-        positionId,
-      ]);
-
+      const spriteQuery = world.query<
+        [SpriteEcsComponent, PositionEcsComponent]
+      >([spriteId, positionId]);
       const textQuery = world.query<
         [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
       >([textId, textMeshId, positionId]);
 
+      const itemCount = collectDrawItems(spriteQuery, textQuery);
+
+      drawOrderResolver.resolve(
+        world,
+        spriteQuery.entities,
+        textQuery.entities,
+      );
+      writeSortKeys(drawOrderResolver, itemCount);
+
+      const hierarchyOrder = radixSortByKeys(
+        [
+          layerKeys,
+          worldOrderKeys,
+          rootSequenceHighKeys,
+          rootSequenceLowKeys,
+          hierarchyKeys,
+        ],
+        itemCount,
+        hierarchyOrderBuffer,
+        hierarchySortScratch,
+      );
+      let ySortedOrder: Uint32Array | null = null;
+
       // Resolved once per frame rather than once per sprite: rotation/scale/
       // flip are optional (not every sprite has them, so they can't just be
       // added to the query above), and `getComponentAccessor` resolves a
-      // component's storage a single time instead of on every call.
-      const optionalComponents: OptionalSpriteComponentAccessors = {
+      // component's storage a single time instead of on every call. Masks
+      // are resolved for each entity once per frame, shared by every camera.
+      const optionalComponents: OptionalComponentAccessors = {
         getRotation:
           world.getComponentAccessor<RotationEcsComponent>(rotationId),
         getScale: world.getComponentAccessor<ScaleEcsComponent>(scaleId),
         getFlip: world.getComponentAccessor<FlipEcsComponent>(flipId),
+        getMask: createInstanceMaskResolver(world),
       };
 
       for (let c = 0; c < cameras.length; c++) {
@@ -601,6 +661,25 @@ export const createRenderEcsSystem = (
         );
         const projectionMatrix = createProjectionMatrix(view.bounds);
 
+        if (cameraComponent.ySort && !ySortedOrder) {
+          writeRootYSortKeys(drawOrderResolver, itemCount);
+          ySortedOrder = radixSortByKeys(
+            [
+              layerKeys,
+              worldOrderKeys,
+              rootYHighKeys,
+              rootYLowKeys,
+              rootSequenceHighKeys,
+              rootSequenceLowKeys,
+              hierarchyKeys,
+            ],
+            itemCount,
+            ySortedOrderBuffer,
+            ySortScratch,
+          );
+        }
+
+        const order = cameraComponent.ySort ? ySortedOrder! : hierarchyOrder;
         let commands = commandBuffersByCameraIndex[c];
 
         if (!commands) {
@@ -610,24 +689,19 @@ export const createRenderEcsSystem = (
 
         commands.length = 0;
 
-        buildCameraCommands(
-          sprites,
-          spritePositions,
-          spriteEntities,
-          cameraComponent.cullingMask,
-          commands,
-          optionalComponents,
-          spriteRenderables,
-        );
+        for (let i = 0; i < itemCount; i++) {
+          const item = drawItems[order[i]];
 
-        buildTextCameraCommands(
-          world,
-          textQuery,
-          cameraComponent.cullingMask,
-          commands,
-          getTextRenderables,
-          renderContext.pixelRatio,
-        );
+          if (matchesMask(item.category, cameraComponent.cullingMask)) {
+            pushDrawItemCommands(
+              commands,
+              item,
+              optionalComponents,
+              renderContext,
+              resources,
+            );
+          }
+        }
 
         cullCommandsOutsideView(commands, view.bounds);
 
@@ -640,9 +714,7 @@ export const createRenderEcsSystem = (
           clearedDestinationsThisFrame.add(target);
         }
 
-        const order = computeDrawOrder(commands);
-
-        flushBatches(renderContext, quad, projectionMatrix, commands, order);
+        flushBatches(renderContext, resources.quad, projectionMatrix, commands);
       }
 
       renderContext.gl.disable(renderContext.gl.BLEND);

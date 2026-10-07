@@ -479,7 +479,6 @@ describe('createUiTextInputEcsSystem', () => {
     world.setParent(cover, canvasEntity);
     addRectTransformComponent(world, cover, {
       rect: { min: { x: -200, y: -200 }, max: { x: 200, y: 200 } },
-      sortDepth: 100,
     });
     addUiInteractableComponent(world, cover);
     world.update();

@@ -9,6 +9,7 @@ import type { SpriteEcsComponent } from './components/index.js';
 import type { Color } from './color.js';
 import type { Material } from './materials/material.js';
 import type { RenderCommand } from './render-command.js';
+import type { InstanceMask } from './utilities/resolve-instance-mask.js';
 
 /**
  * Per-glyph outline/soft-shadow parameters, bound by
@@ -63,6 +64,12 @@ export interface InstanceComponents {
    * The entity's flip flags, if it has any.
    */
   flip: FlipEcsComponent | null;
+
+  /**
+   * The masks (see `MaskEcsComponent`) on the entity and its ancestors,
+   * combined, or `null` when none apply.
+   */
+  mask: InstanceMask | null;
 
   /**
    * The entity's text outline/shadow effect data, if this instance is a

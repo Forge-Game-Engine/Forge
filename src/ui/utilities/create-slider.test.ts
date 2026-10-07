@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { createSlider } from './create-slider.js';
 import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, spriteId, Texture } from '../../rendering/index.js';
+import { Color, maskId, spriteId, Texture } from '../../rendering/index.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { uiColorTransitionId } from '../components/ui-color-transition-component.js';
 import { uiInteractableId } from '../components/ui-interactable-component.js';
 import { uiSliderId } from '../components/ui-slider-component.js';
-import { uiAxisValue, UiStretchAxis } from '../types/ui-axis.js';
+import { uiAxisValue } from '../types/ui-axis.js';
 
 const buildSprite = () => ({
   width: 1,
@@ -61,7 +61,7 @@ describe('createSlider', () => {
     expect(slider.interactable.dragThreshold).toBe(0);
   });
 
-  it('creates a fill entity only when fillSprite is given, and anchors it to the initial value', () => {
+  it('creates a fill entity only when fillSprite is given, and reveals it up to the initial value', () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -75,10 +75,11 @@ describe('createSlider', () => {
     });
 
     expect(slider.fill).not.toBeUndefined();
-    expect(
-      (world.getComponent(slider.fill!, rectTransformId)!.x as UiStretchAxis)
-        .anchorMax,
-    ).toBeCloseTo(0.5);
+    expect(world.getComponent(slider.fill!, maskId)!.shape).toEqual({
+      kind: 'linear',
+      origin: 'left',
+      amount: 0.5,
+    });
   });
 
   it('anchors the handle to the initial value', () => {

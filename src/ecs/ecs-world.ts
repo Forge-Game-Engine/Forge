@@ -90,6 +90,11 @@ export class EcsWorld implements Updatable, Stoppable {
   // generation climbs much faster than the rest.
   private readonly _freeHandles: number[] = [];
   private _freeHandlesHead = 0;
+
+  // The creation sequence of the entity in each slot. Handles are reused,
+  // so they can't tell which of two entities was created first; this can.
+  private readonly _creationSequences: number[] = [];
+  private _nextCreationSequence = 0;
   private readonly _systemGraphsByGroup: Map<
     EcsSystemGroup,
     DirectedAcyclicGraph<EcsSystem<readonly unknown[]>>
@@ -358,6 +363,8 @@ export class EcsWorld implements Updatable, Stoppable {
       this._freeHandlesHead += 1;
       this._compactFreeHandles();
       this._liveHandles[entityIndex(entity)] = entity;
+      this._creationSequences[entityIndex(entity)] = this
+        ._nextCreationSequence++;
 
       return entity;
     }
@@ -372,8 +379,23 @@ export class EcsWorld implements Updatable, Stoppable {
 
     const entity = createEntityHandle(index, 0);
     this._liveHandles.push(entity);
+    this._creationSequences.push(this._nextCreationSequence++);
 
     return entity;
+  }
+
+  /**
+   * Reads where an entity comes in the order entities were created in: an
+   * entity created later has a higher sequence number, even when it reuses a
+   * removed entity's slot. Root entities draw in this order.
+   * @param entity - The entity.
+   * @returns Its creation sequence number.
+   * @throws An error if the entity isn't alive.
+   */
+  public getCreationSequence(entity: number): number {
+    this._requireAliveFor(entity, 'read the creation sequence of');
+
+    return this._creationSequences[entityIndex(entity)];
   }
 
   /**

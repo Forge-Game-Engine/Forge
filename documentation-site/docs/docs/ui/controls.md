@@ -98,6 +98,10 @@ _before_ it (layout needs last tick's resolved rects for this tick's
 raycasting), a value change - from a drag or an external `slider.value =`
 write - is reflected one frame later; imperceptible at normal frame rates.
 
+The fill covers the whole track. A linear [mask](../rendering/masks.md)
+from the left reveals it up to the handle, so a nine-slice fill keeps its
+end caps at any value.
+
 ## Progress bars
 
 [`createProgressBar`](/Forge/docs/api/functions/createProgressBar) creates
@@ -122,9 +126,28 @@ health.progressBar.value = playerHealth;
 
 Unlike a slider, `createUiProgressBarEcsSystem` runs _before_
 `createUiLayoutEcsSystem` (it has no interaction dependency to wait on), so
-a `value` write is reflected the same frame. The fill is linear (the fill
-child's rect grows/shrinks along one axis) - there's no radial/clock-wipe
-fill mode.
+a `value` write is reflected the same frame.
+
+The fill covers the whole track, and a [mask](../rendering/masks.md) on it
+reveals the part `value` covers: `createUiProgressBarEcsSystem` sets the
+mask's `amount` to `value`'s fraction of the range. A nine-slice fill keeps
+its end caps at any value, and anything parented to the fill (a label) is
+revealed with it.
+
+### Choosing how the fill is revealed
+
+`fillShape` picks the mask shape, without its `amount`. It defaults to a
+linear fill from the left; a linear fill can start from any edge, and a
+radial fill reveals a sector, for a ring or a cooldown:
+
+```ts
+const cooldown = createProgressBar(world, canvas, {
+  anchor: UiAnchor.center({ x: 64, y: 64 }),
+  trackSprite: ringTrackSprite,
+  fillSprite: ringFillSprite,
+  fillShape: { kind: 'radial', startAngle: Math.PI / 2, sweep: -2 * Math.PI },
+});
+```
 
 ## Dropdowns
 

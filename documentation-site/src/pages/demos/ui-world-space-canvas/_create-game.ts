@@ -58,14 +58,9 @@ async function createBackdrop(
     category: renderLayers.world,
   };
   backdropSprite.tintColor = new Color(0.09, 0.11, 0.16, 1);
-  // Unlike every other demo's backdrop, this scene draws bare world
-  // sprites (the enemies) in the same layer/camera pass instead of routing
-  // everything else through a separate screen-space UI camera - sprites
-  // sort by position.world.y by default, and the enemies' y (-40) sorts
-  // below this sprite's own default (0), which would otherwise draw the
-  // backdrop over them since it covers the whole visible world. Pin it to
-  // the very back explicitly instead.
-  backdropSprite.sortDepth = -10000;
+  // Root entities draw in the order they're created, and the backdrop is
+  // created before the enemies and their health bars, so it stays behind
+  // them in this shared camera pass.
 
   const { x: width, y: height } = getCameraView(
     world,
