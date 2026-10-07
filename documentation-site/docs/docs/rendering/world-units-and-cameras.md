@@ -238,7 +238,7 @@ several device pixels. A `RenderContext` sets its canvas's drawing buffer
 to the canvas's size in CSS pixels times `window.devicePixelRatio`, so it
 renders at the display's resolution. `createGame` keeps both sizes up to
 date as the canvas's container is resized (see
-[Keeping the canvas sized to its container](../ecs/game.md#resizing)).
+[Resizing with the container](../utils/create-container.md#resizing-with-the-container)).
 
 A `RenderContext` therefore has two sizes:
 

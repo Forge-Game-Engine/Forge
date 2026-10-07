@@ -31,12 +31,10 @@ export interface ContainerResizeSync {
  * browser's "ResizeObserver loop completed with undelivered notifications"
  * error. A change to a zero width or height is skipped.
  *
- * Watching starts immediately and runs independently of any game loop;
- * call the returned `stop()` to disconnect it early (e.g. when switching
- * to a headless mode with no canvas left to keep sized). Not calling
- * `stop()` doesn't keep a container that's removed from the DOM alive: the
- * browser drops a `ResizeObserver`'s registration for a target once nothing
- * else references it.
+ * Watching starts immediately and runs independently of any game loop
+ * until the returned `stop()` is called. Call `stop()` when the container
+ * is removed from the page: the device pixel ratio listener references the
+ * container and the resizables until then.
  *
  * Does nothing (and returns a no-op `stop()`) if `resizables` is empty.
  * @param container - The element to watch for size changes.

@@ -66,34 +66,12 @@ Each frame, `Time` is updated with `performance.now()`, then each world's
 Without a `Game`, call `world.update()` directly to run one tick, for
 example in a unit test.
 
-## Keeping the canvas sized to its container {#resizing}
+## Keeping the canvas sized to its container
 
-[`createContainerResizeSync`](/Forge/docs/api/functions/createContainerResizeSync)
-calls `resize()` on each of its resizables (such as a `RenderContext`)
-whenever the container's size or the display's `devicePixelRatio` changes.
-`createGame` creates one for its `RenderContext`. With a manually created
-`Game`, create it yourself:
-
-```ts
-import { createContainerResizeSync } from '@forge-game-engine/forge/utilities';
-
-const resizeSync = createContainerResizeSync(container, [renderContext]);
-```
-
-The resize happens on the animation frame after the change. Resizing the
-`RenderContext` resizes its canvas, its viewport and the render targets
-created with the `'canvas'` size (see
-[Multipass Rendering](../rendering/multipass-rendering.md) and
-[High-DPI displays](../rendering/world-units-and-cameras.md#high-dpi-displays)).
-Camera projections and UI layout read the render context's size every
-frame, so they follow the resize.
-
-:::caution
-A value computed once from `RenderContext.width`/`height` or a camera's
-view, such as a quad sized to fill the view or a shader uniform set to
-the canvas resolution, isn't updated by a resize. Compute it in a system
-that runs every frame instead.
-:::
+`createGame` returns a `resizeSync` that resizes its `RenderContext` when
+the container's size changes. With a manually created `Game`, start one
+with `createContainerResizeSync` (see
+[Resizing with the container](../utils/create-container.md#resizing-with-the-container)).
 
 ## Stopping the game
 

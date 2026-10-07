@@ -54,9 +54,25 @@ const resizeSync = createContainerResizeSync(container, [renderContext]);
 It runs from the moment it's created, whether or not a `Game` is running,
 and skips a container whose width or height is `0`.
 
+Resizing a `RenderContext` resizes its canvas, its viewport and the render
+targets created with the `'canvas'` size (see
+[Render Targets](../rendering/multipass-rendering.md) and
+[High-DPI displays](../rendering/world-units-and-cameras.md#high-dpi-displays)).
+Camera projections and UI layout read the render context's size every
+frame, so they follow the resize.
+
+:::caution
+A value computed once from `RenderContext.width`/`height` or a camera's
+view, such as a quad sized to fill the view or a shader uniform set to
+the canvas resolution, isn't updated by a resize. Compute it in a system
+that runs every frame instead.
+:::
+
 ## Stopping a resize sync
 
-Call `stop` on the returned object to stop resizing:
+Call `stop` on the returned object to stop resizing. Stopping a `Game`
+doesn't stop its resize sync. Call `stop` when the container is removed
+from the page:
 
 ```ts
 resizeSync.stop();
