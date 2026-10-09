@@ -16,6 +16,9 @@ The module is made of:
   element a game's canvas is placed in, and
   [`createContainerResizeSync`](/Forge/docs/api/functions/createContainerResizeSync)
   resizes render contexts when that element changes size.
+- [Diagnostics](./diagnostics.md):
+  [`Diagnostics`](/Forge/docs/api/classes/Diagnostics) is the channel the
+  engine reports warnings and errors through, which a game listens to.
 - General-purpose helpers, documented in the API reference:
   - type checks: [`isNumber`](/Forge/docs/api/functions/isNumber),
     [`isString`](/Forge/docs/api/functions/isString) and

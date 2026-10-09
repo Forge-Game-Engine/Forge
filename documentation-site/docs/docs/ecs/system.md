@@ -268,6 +268,36 @@ When one system must run before or after another, order them with
 `addSystem`'s `before`/`after` options (see
 [Ordering systems](world.md#ordering-systems-with-beforeafter)).
 
+## What a system keeps between runs
+
+A system keeps nothing between runs itself. Its closure holds the services
+and configuration its factory received, and nothing written during one run
+that a later run reads:
+
+- State a later run needs goes in a component: on the entities it's about
+  (like a text field's caret blink), or in the subsystem's
+  [singleton component](world.md#singleton-components).
+- Caches of GPU, audio or DOM resources belong to the service that owns the
+  resource, such as the `RenderContext`.
+- Scratch arrays that are fully written before they're read each run may
+  be kept to avoid allocating, on the service or the singleton. Never keep
+  them in module scope, which every world on the page shares.
+
+State in components can be inspected, scoped to a game state and removed
+like any other component, and a system that's removed and added again, or
+added to a second world, starts from what the components hold.
+
+A value has one writer: the system that owns it. Two patterns sit beside
+that rule:
+
+- A per-frame message stream is a list on a singleton that several systems
+  append to during a frame, such as "what was hit". No system edits or
+  removes another's entry, one owning system clears it once per frame
+  before the writers run, and readers run after the writers.
+- A single-consumer queue is a list that any code appends to and one system
+  reads and empties each time it runs, such as a game state's requested
+  transition.
+
 ## Acquiring and releasing resources
 
 A system can implement two optional hooks:
@@ -279,5 +309,6 @@ A system can implement two optional hooks:
   (which [`Game.stop()`](game.md#stopping-the-game) calls).
 
 Use them for resources the system acquires outside the ECS, such as DOM
-event listeners. `cleanup` doesn't receive a query result; read what it
-needs to release with `world.query`.
+event listeners, and to add the subsystem's singleton if it doesn't exist
+yet. `cleanup` doesn't receive a query result; read what it needs to
+release with `world.query` or `world.getSingleton`.

@@ -75,6 +75,7 @@ function createTextMeshChild(
     glyphs: [],
     bounds,
     caretStops: [],
+    shapedFrom: null,
   });
   addLayoutElementComponent(world, entity, { sizeToText: true });
 
@@ -971,6 +972,7 @@ describe('createUiLayoutGroupEcsSystem', () => {
         glyphs: [],
         bounds: { width: 40, height: 20 },
         caretStops: [],
+        shapedFrom: null,
       });
       addLayoutElementComponent(world, a, {
         sizeToText: true,

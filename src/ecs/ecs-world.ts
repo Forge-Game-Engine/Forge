@@ -2,6 +2,7 @@ import { ComponentKey, TagKey } from './ecs-component.js';
 import { createSystemGroup, EcsSystemGroup } from './ecs-system-group.js';
 import { Stoppable, Updatable } from '../common/index.js';
 import { DirectedAcyclicGraph, SparseSet } from '../utilities/index.js';
+import { Diagnostics } from '../utilities/diagnostics.js';
 import { ParameterizedForgeEvent } from '../events/parameterized-forge-event.js';
 import { EcsSystem } from './ecs-system.js';
 import { entityGeneration, entityIndex, formatEntity } from './entity.js';
@@ -117,6 +118,12 @@ export class EcsWorld implements Updatable, Stoppable {
    */
   public readonly onEntityRemoved: ParameterizedForgeEvent<number>;
 
+  /**
+   * The channel warnings and errors about this world's entities and systems
+   * are reported through. Systems read it here.
+   */
+  public readonly diagnostics: Diagnostics;
+
   private readonly _componentSets: Map<symbol, SparseSet<unknown>>;
 
   // Each parent's children, in sibling order. The reverse direction (each
@@ -170,8 +177,15 @@ export class EcsWorld implements Updatable, Stoppable {
 
   private _changeTick = 0;
 
-  constructor() {
+  /**
+   * Creates an empty world.
+   * @param diagnostics - The channel the world and its systems report
+   * warnings and errors through. `createGame` passes the game's own; when
+   * omitted, the world creates one that writes to the console.
+   */
+  constructor(diagnostics: Diagnostics = new Diagnostics()) {
     this.onEntityRemoved = new ParameterizedForgeEvent('entityRemoved');
+    this.diagnostics = diagnostics;
     this._componentSets = new Map();
     this._systemGraphsByGroup = new Map();
     this._systemRecords = new Map();

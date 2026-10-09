@@ -23,6 +23,8 @@ import {
   textInputId,
 } from '../components/text-input-component.js';
 import { addUiInteractableComponent } from '../components/ui-interactable-component.js';
+import { uiTextInputStateId } from '../components/ui-text-input-state-component.js';
+import { createTextEntry } from '../../input/text-entry/text-entry.js';
 import { createTextInput, TextInput } from '../utilities/create-text-input.js';
 
 const glyph = (codePoint: number) => ({
@@ -327,6 +329,7 @@ describe('createUiTextInputEcsSystem', () => {
         { x: 20, y: 0 },
         { x: 30, y: 0 },
       ],
+      shapedFrom: null,
     });
     editTextInput(world, field.entity);
     type('abc');
@@ -514,5 +517,34 @@ describe('createUiTextInputEcsSystem', () => {
     world.stop();
 
     expect(other.textInput.entry.element.isConnected).toBe(false);
+  });
+
+  it("removes a field's hidden input when its component is replaced by one with another input", () => {
+    world.update();
+
+    const { element } = textInput.entry;
+    const replacementEntry = createTextEntry(container);
+
+    world.addComponent(field.entity, textInputId, {
+      ...textInput,
+      entry: replacementEntry,
+    });
+    world.update();
+
+    expect(element.isConnected).toBe(false);
+    expect(replacementEntry.element.isConnected).toBe(true);
+  });
+
+  it('keeps its state between runs in the text input state singleton and the field', () => {
+    editTextInput(world, field.entity);
+    world.update();
+
+    const state = world.getSingleton(uiTextInputStateId);
+
+    expect(state.entries.get(field.entity)).toBe(textInput.entry);
+    expect(textInput.caretBlink).toMatchObject({
+      isEditing: true,
+      elapsedMilliseconds: 0,
+    });
   });
 });

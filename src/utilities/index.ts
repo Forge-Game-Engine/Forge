@@ -12,4 +12,5 @@ export * from './shallow-array-equals.js';
 export * from './matches-mask.js';
 export * from './sparse-set.js';
 export * from './directed-acyclic-graph.js';
+export * from './diagnostics.js';
 export * from './with-defaults.js';

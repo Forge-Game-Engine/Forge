@@ -14,12 +14,15 @@ once per frame. It doesn't render or resize anything itself.
 [`createGame`](/Forge/docs/api/functions/createGame) creates a `Game` with
 one `EcsWorld`, a `Time`, a canvas appended to the element with the given
 id, a [`RenderContext`](/Forge/docs/api/classes/RenderContext) for that
-canvas, and a resize sync that keeps the canvas sized to the element:
+canvas, a resize sync that keeps the canvas sized to the element, and the
+[`Diagnostics`](../utils/diagnostics.md) the world and the render context
+report warnings and errors through:
 
 ```ts
 import { createGame } from '@forge-game-engine/forge/utilities';
 
-const { game, world, time, renderContext, resizeSync } = createGame('game');
+const { game, world, time, renderContext, resizeSync, diagnostics } =
+  createGame('game');
 ```
 
 It throws if no element has the given id.

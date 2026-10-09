@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createGame, EcsWorld, Game, Time } from '../index.js';
+import { createGame, Diagnostics, EcsWorld, Game, Time } from '../index.js';
 import { createCanvas, createRenderContext } from '../rendering/index.js';
 
 vi.mock('../rendering/index.js', () => ({
@@ -56,23 +56,35 @@ describe('createGame', () => {
     expect(createRenderContext).toHaveBeenCalled();
   });
 
-  it('creates the render context with the canvas and no options by default', () => {
+  it('creates the render context with the canvas and the game diagnostics by default', () => {
     const canvas = document.createElement('canvas');
     vi.mocked(createCanvas).mockReturnValueOnce(canvas);
 
-    createGame('game-container');
+    const { diagnostics } = createGame('game-container');
 
-    expect(createRenderContext).toHaveBeenLastCalledWith(canvas, {});
+    expect(createRenderContext).toHaveBeenLastCalledWith(canvas, {
+      diagnostics,
+    });
+  });
+
+  it('creates one Diagnostics and passes it to the world', () => {
+    const { diagnostics, world } = createGame('game-container');
+
+    expect(diagnostics).toBeInstanceOf(Diagnostics);
+    expect(world.diagnostics).toBe(diagnostics);
   });
 
   it('forwards renderContext options to createRenderContext', () => {
     const canvas = document.createElement('canvas');
     vi.mocked(createCanvas).mockReturnValueOnce(canvas);
 
-    createGame('game-container', { renderContext: { maxPixelRatio: 1.5 } });
+    const { diagnostics } = createGame('game-container', {
+      renderContext: { maxPixelRatio: 1.5 },
+    });
 
     expect(createRenderContext).toHaveBeenLastCalledWith(canvas, {
       maxPixelRatio: 1.5,
+      diagnostics,
     });
   });
 

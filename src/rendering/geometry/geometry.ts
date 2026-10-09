@@ -137,7 +137,11 @@ export class Geometry {
       const location = gl.getAttribLocation(program, name);
 
       if (location === -1) {
-        console.warn(`Attribute ${name} not found in shader`);
+        this._renderContext.diagnostics.warn({
+          code: 'geometry-attribute-not-found',
+          message: `Attribute ${name} not found in shader`,
+          label: name,
+        });
 
         continue;
       }

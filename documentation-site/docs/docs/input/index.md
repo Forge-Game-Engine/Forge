@@ -72,6 +72,11 @@ keyboard.triggerBindings.add(
 );
 ```
 
+`registerInputs` adds the input manager to the world as a singleton
+component (see [Singleton components](../ecs/world.md#singleton-components)),
+so a system can read it with `world.getSingleton(inputsId).inputManager`.
+Calling it twice for one world throws.
+
 `registerInputs` doesn't create any input sources. A system then reads
 `move.value` and `jump.isTriggered` each frame (see
 [Reading action state](./actions.md#reading-action-state)).

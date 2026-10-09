@@ -79,7 +79,11 @@ follows these rules:
   writes it; everything else reads it. When two systems write the same
   field (e.g. physics and the transform system both writing
   `position.world`), that's the bug, whichever one the symptom shows up in.
-  See "Transforms" under "Common Patterns".
+  See "Transforms" under "Common Patterns". Two patterns sit beside it and
+  aren't violations: a per-frame message stream and a single-consumer
+  queue (see "Where State Lives" under "Module Organization").
+- **State lives in components.** A system keeps nothing between runs in its
+  closure or in module scope. See "Where State Lives".
 - **Flag designs that don't fit instead of building on them.** If a request
   only works by bending a core part of the engine, or a relationship
   doesn't make sense in an ECS engine, stop and raise it with the user
@@ -394,6 +398,47 @@ system processes every entity that has its components, which is what makes
 a component mean the same thing everywhere. If a system matches entities it
 shouldn't touch, the entities' components are wrong, or another system is
 writing a value this one owns. Fix that instead.
+
+### Where State Lives
+
+| Kind of data                                          | Lives in                                                              |
+| ----------------------------------------------------- | --------------------------------------------------------------------- |
+| Anything a game can read or that changes behavior     | Components, including singleton components (`world.addSingleton`)     |
+| Derived, rebuildable caches of GPU or audio resources | The service that owns the resource (`RenderContext`, the audio mixer) |
+| Configuration a game builds once                      | Plain objects passed to a factory                                     |
+| Nothing                                               | A system's closure                                                    |
+
+- A system's closure holds the services and configuration its factory
+  received, and nothing written during one run that a later run reads.
+- State a later run needs goes in a component: on the entities it's about,
+  or in the subsystem's singleton. `world.addSingleton(key, value)` creates
+  an entity holding the only component for `key`, and
+  `world.getSingleton(key)` reads it in constant time (it throws when none
+  or several entities have it; `tryGetSingleton` returns `null` for none).
+  A singleton is an ordinary component: `removeEntity` removes it, a
+  `StateScopedEcsComponent` scopes it, declared queries match it. The
+  input manager (`inputsId`), each game state (`gameStateId`) and the UI
+  text input system (`uiTextInputStateId`) keep their state this way.
+- Scratch arrays fully written before being read each run may be kept to
+  avoid allocating, on the service or the singleton, never in module scope
+  (module scope is shared by every world in the page).
+- `onRegister` acquires resources outside the ECS (DOM listeners); it may
+  add the subsystem's singleton, but never keeps state in the system.
+
+Two named patterns sit beside "one writer per value":
+
+- **Per-frame message streams.** An append-only list on a singleton that
+  several systems append to in one frame. No system edits or removes an
+  entry another appended; one owning system clears it once per frame
+  (once per fixed step for a stream written from fixed-step systems),
+  before the writers run, and readers run after the writers. A stream
+  holds events of the frame (what was hit, what to draw), not a value with
+  an owner, so many appenders don't make many writers of one value.
+- **Single-consumer queues.** Any system or module function appends; the
+  one consumer reads and empties it each run. The consumer clears it, not
+  an owner before the writers, so an entry waits however long it takes
+  the consumer to run. A `GameState`'s `next` is one: `set` appends (the
+  last request wins) and the transition system consumes it.
 
 ### Journals and Change Ticks
 
@@ -936,6 +981,26 @@ unregisters in `dispose`.
 
 `e2e/specs/webgl-context-loss.spec.ts` loses and restores a real context
 with `WEBGL_lose_context`.
+
+### Diagnostics
+
+Warnings and errors that don't stop the caller go through one channel,
+`Diagnostics` (`src/utilities/diagnostics.ts`), never a bare
+`console.warn`/`console.error`:
+
+- `diagnostics.warn({ code, message, entity?, assetUrl?, label? })` for
+  something the engine worked around, `diagnostics.error(...)` for a
+  failure, such as an asynchronous one that would otherwise be lost in a
+  detached promise. A call that returns a promise the game awaits still
+  rejects.
+- Each diagnostic is raised once per `code` and key (the entity, asset URL
+  or label), so reporting a per-frame condition every frame is fine.
+- `Diagnostics` raises it through `onWarning`/`onError`, or writes it to the
+  console while nothing listens.
+- `createGame` creates one and passes it to the world (`world.diagnostics`)
+  and the render context (`renderContext.diagnostics`); systems and
+  services read it there. Tests pass their own to assert on what was
+  reported.
 
 ### Readonly Fields
 

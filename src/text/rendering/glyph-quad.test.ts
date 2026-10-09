@@ -52,6 +52,7 @@ function buildTextMesh(glyphs: GlyphQuad[]): TextMeshEcsComponent {
     glyphs,
     bounds: { width: 0, height: 0 },
     caretStops: [],
+    shapedFrom: null,
   };
 }
 

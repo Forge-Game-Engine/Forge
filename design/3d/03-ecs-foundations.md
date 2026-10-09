@@ -441,7 +441,21 @@ The audit of `0.26.1`:
 
 Phase 3 repeats the search with closure-level `let`, `Map`, `Set`,
 `WeakMap` and typed arrays in every system factory, not only module scope,
-and adds what it finds.
+and adds what it finds:
+
+| Where                                                              | What                                                                       | Kind                          | Moved by                                                      |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------- |
+| `render-system.ts` (factory closure)                               | `resources`: the sprite and text renderables, created on the first run     | GPU cache                     | Design 07 (deletes the render system)                         |
+| `present-system.ts`                                                | The present material, created by the factory                               | GPU resource                  | Design 07 (deletes the present system for design 06's output) |
+| `bloom-system.ts`, `gaussian-blur-system.ts`, `tone-map-system.ts` | Their materials, created by the factory                                    | GPU resources                 | Design 13 (post-processing passes on the frame graph)         |
+| `draw-order.ts` (module scope)                                     | `digitCounts`, the radix sort's counting scratch used by the render system | Scratch, shared across worlds | Design 07 (render context frame scratch)                      |
+
+Phase 3 moved the four rows this design owns. The text-input row's input
+elements are tracked, by field entity, in a `UiTextInputStateEcsComponent`
+singleton that also holds the pressed field and the system's DOM
+listeners, rather than in a separate text-entry service: the entries
+already live on each field's `TextInputEcsComponent`, so the singleton only
+records which ones to dispose when the `removed` journal reports a field.
 
 ### 6.6 Stages
 

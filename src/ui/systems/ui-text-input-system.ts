@@ -1,7 +1,6 @@
 import { PositionEcsComponent, positionId, Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import type { TextEntry } from '../../input/text-entry/text-entry.js';
 import { Vector2 } from '../../math/index.js';
 import {
   CameraEcsComponent,
@@ -30,6 +29,10 @@ import {
   textInputId,
 } from '../components/text-input-component.js';
 import {
+  UiTextInputStateEcsComponent,
+  uiTextInputStateId,
+} from '../components/ui-text-input-state-component.js';
+import {
   UiInteractableEcsComponent,
   uiInteractableId,
 } from '../components/ui-interactable-component.js';
@@ -42,15 +45,6 @@ import { resolveCanvasGroupState } from '../utilities/resolve-canvas-group-state
 const caretBlinkHalfPeriodMilliseconds = 530;
 
 const primaryButton = 0;
-
-/** What the caret was last drawn for, to restart its blink on any change. */
-interface CaretState {
-  text: string;
-  selectionStart: number;
-  selectionEnd: number;
-  isEditing: boolean;
-  elapsedMilliseconds: number;
-}
 
 /**
  * Removes the characters `glyphs` has no glyph for, keeping spaces, so a
@@ -252,7 +246,9 @@ function toCanvasCssRect(
  * their hidden input isn't moved over them.
  *
  * Every field's input is removed when its component is, and all of them
- * are removed in `cleanup`.
+ * are removed in `cleanup`. The system keeps what it needs between runs in
+ * a `UiTextInputStateEcsComponent` singleton, which it adds when it's
+ * registered, and each field's caret blink in its `TextInputEcsComponent`.
  *
  * Must be registered after `createUiNavigationEcsSystem` and
  * `createUiInteractionEcsSystem` (it reads `wasInvokedThisFrame`), which
@@ -269,12 +265,6 @@ export const createUiTextInputEcsSystem = (
 ): EcsSystem<
   [TextInputEcsComponent, UiInteractableEcsComponent, RectTransformEcsComponent]
 > => {
-  const entries = new Map<TextInputEcsComponent, TextEntry>();
-  const caretStates = new WeakMap<TextInputEcsComponent, CaretState>();
-  let currentWorld: EcsWorld | null = null;
-  let container: HTMLElement | null = null;
-  let pressedField: number | null = null;
-
   const toViewportPosition = (event: MouseEvent): Vector2 => {
     const bounds = renderContext.canvas.getBoundingClientRect();
 
@@ -297,14 +287,11 @@ export const createUiTextInputEcsSystem = (
   /**
    * The text field under a pointer event, or `null`. Only counts when it's
    * the single element hit across every canvas, so a field under an
-   * element on another canvas is never edited by mistake.
+   * element on another canvas is never edited by mistake. Runs in a DOM
+   * event handler, outside any system's `update`, so it queries the world
+   * directly.
    */
-  const findFieldAt = (event: MouseEvent): number | null => {
-    if (!currentWorld) {
-      return null;
-    }
-
-    const world = currentWorld;
+  const findFieldAt = (world: EcsWorld, event: MouseEvent): number | null => {
     const viewportPosition = toViewportPosition(event);
     const hits: number[] = [];
     const interactables = world.query<
@@ -336,48 +323,58 @@ export const createUiTextInputEcsSystem = (
       : null;
   };
 
-  const onPointerDown = (event: PointerEvent): void => {
-    pressedField = event.button === primaryButton ? findFieldAt(event) : null;
-  };
+  /**
+   * Attaches the tap listeners to the canvas's container, bound to `world`.
+   * A phone only opens its keyboard when an input is focused inside the
+   * gesture's own handler, so the listeners focus the field right there.
+   */
+  const listen = (
+    world: EcsWorld,
+    state: UiTextInputStateEcsComponent,
+  ): void => {
+    const container = renderContext.canvas.parentElement;
 
-  // Pressing anywhere that isn't focusable moves the browser's focus to the
-  // page, which would end editing for a moment when the player presses the
-  // field they're typing in. A pressed field keeps focus where it is
-  // instead; the release then focuses it.
-  const onMouseDown = (event: MouseEvent): void => {
-    if (findFieldAt(event) !== null) {
-      event.preventDefault();
-    }
-  };
-
-  const onPointerUp = (event: PointerEvent): void => {
-    const field = pressedField;
-
-    pressedField = null;
-
-    if (
-      !currentWorld ||
-      field === null ||
-      event.button !== primaryButton ||
-      findFieldAt(event) !== field
-    ) {
+    if (state.listeners || !container) {
       return;
     }
 
-    currentWorld
-      .getComponentRequired<TextInputEcsComponent>(field, textInputId)
-      .entry.focus();
-  };
+    const onPointerDown = (event: PointerEvent): void => {
+      state.pressedField =
+        event.button === primaryButton ? findFieldAt(world, event) : null;
+    };
 
-  const listen = (): void => {
-    if (container) {
-      return;
-    }
+    // Pressing anywhere that isn't focusable moves the browser's focus to
+    // the page, which would end editing for a moment when the player
+    // presses the field they're typing in. A pressed field keeps focus
+    // where it is instead; the release then focuses it.
+    const onMouseDown = (event: MouseEvent): void => {
+      if (findFieldAt(world, event) !== null) {
+        event.preventDefault();
+      }
+    };
 
-    container = renderContext.canvas.parentElement;
-    container?.addEventListener('pointerdown', onPointerDown);
-    container?.addEventListener('mousedown', onMouseDown);
-    container?.addEventListener('pointerup', onPointerUp);
+    const onPointerUp = (event: PointerEvent): void => {
+      const field = state.pressedField;
+
+      state.pressedField = null;
+
+      if (
+        field === null ||
+        event.button !== primaryButton ||
+        findFieldAt(world, event) !== field
+      ) {
+        return;
+      }
+
+      world
+        .getComponentRequired<TextInputEcsComponent>(field, textInputId)
+        .entry.focus();
+    };
+
+    container.addEventListener('pointerdown', onPointerDown);
+    container.addEventListener('mousedown', onMouseDown);
+    container.addEventListener('pointerup', onPointerUp);
+    state.listeners = { container, onPointerDown, onMouseDown, onPointerUp };
   };
 
   const updateEditing = (
@@ -482,7 +479,7 @@ export const createUiTextInputEcsSystem = (
     selectionStart: number,
     selectionEnd: number,
   ): boolean => {
-    const previous = caretStates.get(textInput);
+    const previous = textInput.caretBlink;
     const unchanged =
       previous &&
       previous.text === text &&
@@ -493,13 +490,21 @@ export const createUiTextInputEcsSystem = (
       ? previous.elapsedMilliseconds + time.rawDeltaTimeInMilliseconds
       : 0;
 
-    caretStates.set(textInput, {
-      text,
-      selectionStart,
-      selectionEnd,
-      isEditing: textInput.isEditing,
-      elapsedMilliseconds,
-    });
+    if (previous) {
+      previous.text = text;
+      previous.selectionStart = selectionStart;
+      previous.selectionEnd = selectionEnd;
+      previous.isEditing = textInput.isEditing;
+      previous.elapsedMilliseconds = elapsedMilliseconds;
+    } else {
+      textInput.caretBlink = {
+        text,
+        selectionStart,
+        selectionEnd,
+        isEditing: textInput.isEditing,
+        elapsedMilliseconds,
+      };
+    }
 
     return (
       elapsedMilliseconds % (caretBlinkHalfPeriodMilliseconds * 2) <
@@ -510,16 +515,40 @@ export const createUiTextInputEcsSystem = (
   return {
     name: 'uiTextInput',
     query: [textInputId, uiInteractableId, rectTransformId],
+    onRegister: (world) => {
+      if (world.tryGetSingleton(uiTextInputStateId)) {
+        return;
+      }
+
+      world.addSingleton(uiTextInputStateId, {
+        entries: new Map(),
+        pressedField: null,
+        listeners: null,
+      });
+    },
     update: (
       world,
-      { entities, components: [textInputs, interactables, rectTransforms] },
+      {
+        entities,
+        components: [textInputs, interactables, rectTransforms],
+        removed,
+      },
     ) => {
-      currentWorld = world;
+      const state = world.getSingleton(uiTextInputStateId);
 
-      const current = new Set<TextInputEcsComponent>();
+      // A removed field's input is disposed, unless the field is a field
+      // again with the same input (it left and came back).
+      for (const entity of removed) {
+        const entry = state.entries.get(entity);
+
+        if (entry && world.getComponent(entity, textInputId)?.entry !== entry) {
+          entry.dispose();
+          state.entries.delete(entity);
+        }
+      }
 
       if (entities.length > 0) {
-        listen();
+        listen(world, state);
       }
 
       for (let i = 0; i < entities.length; i++) {
@@ -527,8 +556,7 @@ export const createUiTextInputEcsSystem = (
         const textInput = textInputs[i];
         const { entry } = textInput;
 
-        current.add(textInput);
-        entries.set(textInput, entry);
+        state.entries.set(entity, entry);
 
         // `maxLength` isn't passed on as the input's `maxlength`: the
         // browser would count characters the filters are about to remove,
@@ -576,26 +604,31 @@ export const createUiTextInputEcsSystem = (
 
         updateVisuals(world, textInput);
       }
-
-      for (const [textInput, entry] of entries) {
-        if (!current.has(textInput)) {
-          entry.dispose();
-          entries.delete(textInput);
-        }
-      }
     },
-    cleanup: () => {
-      container?.removeEventListener('pointerdown', onPointerDown);
-      container?.removeEventListener('mousedown', onMouseDown);
-      container?.removeEventListener('pointerup', onPointerUp);
-      container = null;
-      currentWorld = null;
+    cleanup: (world) => {
+      const state = world.tryGetSingleton(uiTextInputStateId);
 
-      for (const entry of entries.values()) {
+      if (!state) {
+        return;
+      }
+
+      if (state.listeners) {
+        const { container, onPointerDown, onMouseDown, onPointerUp } =
+          state.listeners;
+
+        container.removeEventListener('pointerdown', onPointerDown);
+        container.removeEventListener('mousedown', onMouseDown);
+        container.removeEventListener('pointerup', onPointerUp);
+        state.listeners = null;
+      }
+
+      state.pressedField = null;
+
+      for (const entry of state.entries.values()) {
         entry.dispose();
       }
 
-      entries.clear();
+      state.entries.clear();
     },
   };
 };

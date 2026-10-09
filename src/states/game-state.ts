@@ -1,9 +1,10 @@
 import { createSystemGroup, EcsSystemGroup, EcsWorld } from '../ecs/index.js';
-import { createStateScopedRemovalEcsSystem } from './systems/state-scoped-removal-system.js';
 import {
-  createStateTransitionEcsSystem,
-  GameStateStore,
-} from './systems/state-transition-system.js';
+  GameStateEcsComponent,
+  gameStateId,
+} from './components/game-state-component.js';
+import { createStateScopedRemovalEcsSystem } from './systems/state-scoped-removal-system.js';
+import { createStateTransitionEcsSystem } from './systems/state-transition-system.js';
 
 /**
  * One value from a fixed set of state names, changed at the start of a
@@ -14,6 +15,12 @@ import {
  * @typeParam TName - The names of the states.
  */
 export interface GameState<TName extends string> {
+  /**
+   * The entity holding the state's `GameStateEcsComponent`, which this
+   * handle reads.
+   */
+  readonly entity: number;
+
   /**
    * The current state.
    */
@@ -56,7 +63,9 @@ export interface GameState<TName extends string> {
 }
 
 /**
- * Creates a {@link GameState} owned by `world`, starting in `initial`.
+ * Creates a {@link GameState} owned by `world`, starting in `initial`. The
+ * state lives in a `GameStateEcsComponent` on a new entity; the returned
+ * handle reads it.
  *
  * Registers, in order at the start of every tick: a transition system in
  * the world's `firstSystemGroup`, which applies the last `set` of the
@@ -76,18 +85,23 @@ export function createGameState<TName extends string>(
   world: EcsWorld,
   initial: TName,
 ): GameState<TName> {
-  const store: GameStateStore<TName> = {
+  const entity = world.createEntity();
+  const store: GameStateEcsComponent<TName> = {
     current: initial,
     entered: null,
     exited: null,
     next: null,
+    hasEntered: false,
   };
+
+  world.addComponent(entity, gameStateId, store);
 
   const exitGroup = createSystemGroup('state-exit');
   const removalGroup = createSystemGroup('state-scoped-removal');
   const enterGroup = createSystemGroup('state-enter');
 
   const state: GameState<TName> = {
+    entity,
     get current(): TName {
       return store.current;
     },
@@ -104,7 +118,7 @@ export function createGameState<TName extends string>(
     },
   };
 
-  world.addSystem(createStateTransitionEcsSystem(store), {
+  world.addSystem(createStateTransitionEcsSystem(entity), {
     group: world.firstSystemGroup,
   });
 

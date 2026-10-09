@@ -139,6 +139,30 @@ Tags aren't returned in the `components` array passed to a system's `update`
 method, but queries can require them. `removeComponent(entity, tagKey)`
 removes a tag. See [Component](component.md#tags).
 
+## Singleton components
+
+A singleton is a component that exactly one entity has, holding state a
+whole subsystem shares, such as the input manager. `addSingleton` creates
+an entity, adds the component to it and returns the component;
+`getSingleton` reads it in constant time:
+
+```ts
+const scoreId = createComponentId<{ points: number }>('score');
+
+world.addSingleton(scoreId, { points: 0 });
+
+// In a system:
+world.getSingleton(scoreId).points += 10;
+```
+
+- `addSingleton` throws if an entity already has the component.
+- `getSingleton` throws if no entity, or more than one, has the component.
+  `tryGetSingleton` returns `null` when none has it.
+
+A singleton is an ordinary component on an ordinary entity: `removeEntity`
+removes it, a `StateScopedEcsComponent` scopes it to a game state, and
+systems' queries match it.
+
 ## Querying for entities
 
 Code that runs outside a system's `update` (setup code, `cleanup`, DOM event
