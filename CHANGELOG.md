@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Fixed
+
+- **text:** Rotated and scaled text keeps its layout. A `RotationEcsComponent` or `ScaleEcsComponent` on a text entity now turns and scales the whole text about the entity's position, instead of turning and scaling each glyph about its own center along an unrotated, unscaled line
+
 ## [0.26.1] - 2026-10-07
 
 #### Added

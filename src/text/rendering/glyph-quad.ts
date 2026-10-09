@@ -22,10 +22,10 @@ export interface TextTransform {
   /** The entity's position; each glyph is offset from it. */
   position: PositionEcsComponent;
 
-  /** The entity's rotation, if it has one. */
+  /** The entity's rotation, if it has one; turns each glyph and its offset. */
   rotation: RotationEcsComponent | null;
 
-  /** The entity's scale, if it has one. */
+  /** The entity's scale, if it has one; scales each glyph and its offset. */
   scale: ScaleEcsComponent | null;
 
   /** The masks the entity's glyphs are drawn through, or `null` for none. */
@@ -33,19 +33,31 @@ export interface TextTransform {
 }
 
 /**
- * Builds the glyph-centered position offset from `entityPosition` shared by
- * a glyph's effects and fill commands.
- * @param entityPosition - The text entity's position.
- * @param glyph - The glyph to offset from it.
+ * Builds a glyph's center position: `glyph.offset` is in the text's own
+ * frame, so it's scaled by the entity's world scale and turned by its world
+ * rotation before being added to the entity's world position, the way
+ * nine-slice regions are placed. The render system then scales and turns
+ * the glyph's quad about that center, so the whole line keeps its layout.
+ * @param transform - The text entity's position, rotation and scale.
+ * @param glyph - The glyph to place.
  * @returns The glyph's own position.
  */
 function buildGlyphPosition(
-  entityPosition: PositionEcsComponent,
+  transform: TextTransform,
   glyph: GlyphQuad,
 ): PositionEcsComponent {
+  const { position, rotation, scale } = transform;
+  const glyphOffset = Vec2.rotate(
+    {
+      x: glyph.offset.x * (scale?.world.x ?? 1),
+      y: glyph.offset.y * (scale?.world.y ?? 1),
+    },
+    rotation?.world ?? 0,
+  );
+
   return {
-    local: entityPosition.local,
-    world: Vec2.add(Vec2.clone(entityPosition.world), glyph.offset),
+    local: position.local,
+    world: Vec2.add(Vec2.clone(position.world), glyphOffset),
   };
 }
 
@@ -62,7 +74,7 @@ function buildGlyphPosition(
  * @param textComponent - The entity's `TextEcsComponent` (for its effect fields).
  * @param textMesh - The entity's shaped glyph quads to push commands for.
  * @param renderables - The renderables glyphs draw with (see `createTextRenderables`).
- * @param transform - The entity's position (each glyph is offset from it), rotation and scale.
+ * @param transform - The entity's position, rotation and scale, which place each glyph (see `buildGlyphPosition`).
  * @param pixelRatio - Device pixels per CSS pixel the destination is rendered at (see `RenderContext.pixelRatio`).
  */
 function pushTextEffectsRenderCommands(
@@ -84,7 +96,7 @@ function pushTextEffectsRenderCommands(
     shadowOffset,
     shadowSoftness,
   } = textComponent;
-  const { position: entityPosition, rotation, scale, mask } = transform;
+  const { rotation, scale, mask } = transform;
 
   // Uniform across every glyph in this entity, so built once rather than
   // per glyph. The effect sizes are authored in CSS pixels but the shader
@@ -123,7 +135,7 @@ function pushTextEffectsRenderCommands(
       emissiveTexture: null,
       fontAtlas,
       components: {
-        position: buildGlyphPosition(entityPosition, glyph),
+        position: buildGlyphPosition(transform, glyph),
         rotation,
         scale,
         sprite: glyphSprite,
@@ -145,7 +157,7 @@ function pushTextEffectsRenderCommands(
  * @param textComponent - The entity's `TextEcsComponent` (for `color`, for glyphs outside a `<color>` tag).
  * @param textMesh - The entity's shaped glyph quads to push commands for.
  * @param renderables - The renderables glyphs draw with (see `createTextRenderables`).
- * @param transform - The entity's position (each glyph is offset from it), rotation and scale.
+ * @param transform - The entity's position, rotation and scale, which place each glyph (see `buildGlyphPosition`).
  */
 function pushTextFillRenderCommands(
   commands: RenderCommand[],
@@ -156,7 +168,7 @@ function pushTextFillRenderCommands(
 ): void {
   const { fillRenderable } = renderables;
   const { layer, category, fontAtlas, color } = textComponent;
-  const { position: entityPosition, rotation, scale, mask } = transform;
+  const { rotation, scale, mask } = transform;
 
   for (const glyph of textMesh.glyphs) {
     const glyphSprite: SpriteEcsComponent = {
@@ -180,7 +192,7 @@ function pushTextFillRenderCommands(
       emissiveTexture: null,
       fontAtlas,
       components: {
-        position: buildGlyphPosition(entityPosition, glyph),
+        position: buildGlyphPosition(transform, glyph),
         rotation,
         scale,
         sprite: glyphSprite,
@@ -205,7 +217,7 @@ function pushTextFillRenderCommands(
  * @param textComponent - The entity's `TextEcsComponent` (for `color` and its effect fields).
  * @param textMesh - The entity's shaped glyph quads to push commands for.
  * @param renderables - The renderables glyphs draw with (see `createTextRenderables`).
- * @param transform - The entity's position (each glyph is offset from it), rotation and scale.
+ * @param transform - The entity's position, rotation and scale, which place each glyph (see `buildGlyphPosition`).
  * @param pixelRatio - Device pixels per CSS pixel the destination is rendered at (see `RenderContext.pixelRatio`), which the outline/shadow sizes are scaled by (default: 1).
  */
 export function pushTextRenderCommands(

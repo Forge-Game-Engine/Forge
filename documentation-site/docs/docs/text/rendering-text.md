@@ -210,13 +210,10 @@ addTextComponent(world, label, {
 
 To change the size of text, set `size`.
 
-:::caution
 A [`ScaleEcsComponent`](/Forge/docs/api/interfaces/ScaleEcsComponent) or
 [`RotationEcsComponent`](/Forge/docs/api/interfaces/RotationEcsComponent)
-on a text entity scales or turns each glyph about its own center. The
-positions of the glyphs relative to the entity aren't scaled or turned,
-so text with more than one character doesn't keep its shape.
-:::
+on a text entity scales or turns the whole text about the entity's
+position, the way it does a sprite, so the text keeps its layout.
 
 ## Draw order and cameras
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PositionEcsComponent,
   RotationEcsComponent,
+  ScaleEcsComponent,
 } from '../../common/index.js';
 import { Color } from '../../rendering/color.js';
 import { RenderCommand } from '../../rendering/render-command.js';
@@ -386,6 +387,102 @@ describe('pushTextRenderCommands', () => {
     expect(commands[0].components.rotation).toBe(rotation);
     expect(commands[0].components.scale).toBeNull();
     expect(commands[0].components.flip).toBeNull();
+  });
+
+  describe('rotated and scaled text', () => {
+    const entityWorld = { x: 10, y: 20 };
+    const baselineY = -5;
+    const glyphXs = [2, 8, 14];
+    const rotationRadians = Math.PI / 6;
+    const scale: ScaleEcsComponent = {
+      local: { x: 2, y: 3 },
+      world: { x: 2, y: 3 },
+    };
+
+    const glyphsOnBaseline: GlyphQuad[] = glyphXs.map((x) => ({
+      ...glyph,
+      offset: { x, y: baselineY },
+    }));
+
+    function pushRotatedScaledText(
+      textOverrides: Partial<TextEcsComponent> = {},
+    ): RenderCommand[] {
+      const commands: RenderCommand[] = [];
+
+      pushTextRenderCommands(
+        commands,
+        buildTextComponent(textOverrides),
+        buildTextMesh(glyphsOnBaseline),
+        renderables,
+        {
+          position: { local: { x: 0, y: 0 }, world: { ...entityWorld } },
+          rotation: { local: rotationRadians, world: rotationRadians },
+          scale,
+          mask: null,
+        },
+      );
+
+      return commands;
+    }
+
+    // The rotated, scaled baseline: the line through the entity's position
+    // offset by `(0, baselineY)` in the entity's scaled, rotated frame, running
+    // along the entity's rotated `+X` axis.
+    const cos = Math.cos(rotationRadians);
+    const sin = Math.sin(rotationRadians);
+
+    function expectedGlyphCenter(offsetX: number): { x: number; y: number } {
+      const x = offsetX * scale.world.x;
+      const y = baselineY * scale.world.y;
+
+      return {
+        x: entityWorld.x + x * cos - y * sin,
+        y: entityWorld.y + x * sin + y * cos,
+      };
+    }
+
+    it("places each glyph's center on the rotated, scaled baseline", () => {
+      const commands = pushRotatedScaledText();
+
+      expect(commands).toHaveLength(glyphXs.length);
+
+      const baselineOrigin = expectedGlyphCenter(0);
+
+      commands.forEach((command, index) => {
+        const center = command.components.position.world;
+        const expected = expectedGlyphCenter(glyphXs[index]);
+
+        expect(center.x).toBeCloseTo(expected.x);
+        expect(center.y).toBeCloseTo(expected.y);
+
+        // Distance from the rotated baseline (perpendicular to its rotated
+        // +X direction) is zero.
+        const fromOrigin = {
+          x: center.x - baselineOrigin.x,
+          y: center.y - baselineOrigin.y,
+        };
+
+        expect(-fromOrigin.x * sin + fromOrigin.y * cos).toBeCloseTo(0);
+
+        // Distance along the baseline is the glyph's offset, scaled.
+        expect(fromOrigin.x * cos + fromOrigin.y * sin).toBeCloseTo(
+          glyphXs[index] * scale.world.x,
+        );
+      });
+    });
+
+    it('places effects-pass glyphs on the same rotated, scaled baseline as their fill', () => {
+      const commands = pushRotatedScaledText({ outlineWidth: 1 });
+
+      expect(commands).toHaveLength(glyphXs.length * 2);
+
+      commands.forEach((command, index) => {
+        const expected = expectedGlyphCenter(glyphXs[index % glyphXs.length]);
+
+        expect(command.components.position.world.x).toBeCloseTo(expected.x);
+        expect(command.components.position.world.y).toBeCloseTo(expected.y);
+      });
+    });
   });
 
   it('pushes nothing for a mesh with no glyphs', () => {
