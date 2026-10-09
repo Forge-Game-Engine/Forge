@@ -100,6 +100,9 @@ state, and no state in system closures.
 
 ### Phase 1: Declared, cached queries
 
+Replaces per-tick query scans with queries declared once and cached, so a
+tick costs time proportional to what changed and allocates nothing.
+
 | #   | Task                             | Description                                                                                                                                          | Size |
 | --- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 1.1 | Single write path                | §6.1.1: `addComponent`, `addTag`, `removeComponent`, `removeEntity`, `setParent`, `removeParent` go through one internal add and one internal remove | M    |
@@ -117,6 +120,9 @@ what changed.
 
 ### Phase 2: Journals and change ticks
 
+Adds added and removed journals and change ticks, so a system can
+process only the entities that changed.
+
 | #   | Task                  | Description                                                                 | Size |
 | --- | --------------------- | --------------------------------------------------------------------------- | ---- |
 | 2.1 | `added` and `removed` | §6.2, with every edge case listed there tested                              | M    |
@@ -128,18 +134,25 @@ same frame still sees the owner's stamp on its next run; journal tests pass.
 
 ### Phase 3: Singletons and the state rule
 
-| #   | Task                       | Description                                                                                                             | Size |
-| --- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---- |
-| 3.1 | Singleton API              | §6.4                                                                                                                    | S    |
-| 3.2 | Input manager, game states | `registerInputs` and `createGameState` keep their state in components                                                   | S    |
-| 3.3 | Text shaping, text input   | Their closure state moves to components (§6.5)                                                                          | M    |
-| 3.4 | Audit                      | Every remaining entry in §6.5 assigned to the design that moves it; `onRegister`'s documentation stops suggesting state | S    |
-| 3.5 | `AGENTS.md`                | The rule from README §4.4, what a system may keep, and per-frame message streams (§6.5) beside "one writer per value"   | S    |
+Adds singleton components and moves state kept in system closures into
+components, so every value has one owner.
+
+| #   | Task                       | Description                                                                                                                                                                                                                                                                                         | Size |
+| --- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 3.1 | Singleton API              | §6.4                                                                                                                                                                                                                                                                                                | S    |
+| 3.2 | Input manager, game states | `registerInputs` and `createGameState` keep their state in components                                                                                                                                                                                                                               | S    |
+| 3.3 | Text shaping, text input   | Their closure state moves to components (§6.5)                                                                                                                                                                                                                                                      | M    |
+| 3.4 | Audit                      | Every remaining entry in §6.5 assigned to the design that moves it; `onRegister`'s documentation stops suggesting state                                                                                                                                                                             | S    |
+| 3.5 | `AGENTS.md`                | The rule from README §4.4, what a system may keep, and per-frame message streams and single-consumer queues (§6.5) beside "one writer per value"                                                                                                                                                    | S    |
+| 3.6 | Diagnostics                | README §4.6: `ForgeDiagnostic`, `Diagnostics` with `onWarning` and `onError`, deduplication by code and key, console output when nothing listens; `createGame` creates one and passes it to the world and services; unit tests for deduplication and for routing to a custom listener; `#### Added` | M    |
 
 **Definition of done:** the §6.5 table has no entry without an owner; the
 ones this design owns are moved.
 
 ### Phase 4: Stages
+
+Adds built-in frame stages, so engine and game systems run in a fixed
+order whatever order they were registered in.
 
 | #   | Task              | Description                                                                                                         | Size |
 | --- | ----------------- | ------------------------------------------------------------------------------------------------------------------- | ---- |
@@ -152,6 +165,9 @@ ones this design owns are moved.
 behaves the same; the guides' "register in this order" lists are gone.
 
 ### Phase 5: Fixed step
+
+Adds a fixed-step loop to `Time` and the world, with input latched per
+fixed step.
 
 | #   | Task                 | Description                                                                                                          | Size |
 | --- | -------------------- | -------------------------------------------------------------------------------------------------------------------- | ---- |
@@ -192,8 +208,10 @@ zero, one or several.
 
 1. **Order of query results.** Results follow membership order, which
    changes as entities are swapped out. Today's order isn't documented
-   either. Proposal: document it as unspecified, since every system that
-   needs an order sorts.
+   either. Options: (a) document the order as unspecified; (b) guarantee
+   an order, such as entity id, by sorting results when membership
+   changes. (a) costs nothing, since every system that needs an order
+   sorts; (b) adds a sort to every membership change. Proposal: (a).
 
 ---
 
@@ -355,30 +373,37 @@ README §4.4, applied to systems:
   avoid allocating, on the service or singleton, never in module scope
   (module scope is shared by every world in the page).
 
-**Per-frame message streams** are the one named pattern beside "one
-writer per value". A message stream is an append-only list on a
-singleton that several systems append to in one frame. No system edits
-or removes an entry another appended; one owning system clears the
-stream once per frame, before the writers run; readers run after the
-writers. A stream holds events of the frame (what was hit, what to
-draw), not a value with an owner, so many appenders don't make many
-writers of one value. Design 06's debug-draw shape buffers and design
-15's `picking.hits` are message streams. Bevy's buffered messages work
-the same way.
+Two named patterns sit beside "one writer per value".
+
+- **Per-frame message streams.** A message stream is an append-only list
+  on a singleton that several systems append to in one frame. No system
+  edits or removes an entry another appended; one owning system clears it
+  once per frame, before the writers run (once per fixed step for a
+  stream written from the fixed stages, such as design 06's fixed-step
+  debug buffer); readers run after the writers. A stream holds events of
+  the frame (what was hit, what to draw), not a value with an owner, so
+  many appenders don't make many writers of one value. Design 06's
+  debug-draw shape buffers and design 15's `picking.hits` are message
+  streams. Bevy's buffered messages work the same way.
+- **Single-consumer queues.** Any system or module function appends; the
+  one consumer reads and empties it each run (design 08's mesh change
+  list, design 11's pending handle lists, design 12's requests and
+  triggers). The consumer clears it, not an owner before the writers, so
+  an entry waits however long it takes the consumer to run.
 
 The audit of `0.26.1`:
 
-| Where                                                              | What                                                                                                                                                 | Kind                                        | Moved by                                                                                                  |
-| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `transform-system.ts`                                              | `frozen` (static entities already computed); `computed`                                                                                              | State; scratch                              | Design 04 (exclusion and a stamp on the component)                                                        |
-| `render-system.ts` (module scope)                                  | Draw items, sort keys, command buffers, cleared destinations, the draw-order resolver, the instance staging buffer, the sprite renderables `WeakMap` | Scratch and GPU cache, shared across worlds | Design 07 (render context frame scratch)                                                                  |
-| `bloom-system.ts`, `gaussian-blur-system.ts`, `tone-map-system.ts` | Downsampled targets in `WeakMap`s; `processedTargetsThisFrame`                                                                                       | GPU cache; scratch                          | Design 13 (frame graph transient targets)                                                                 |
-| Physics 2D factories                                               | `collisionPairs`, `collisionManifolds`, `contactConstraints` passed in                                                                               | State (warm starting) and scratch           | Design 14 (a 2D physics singleton)                                                                        |
-| `sound-system.ts`                                                  | `trackedSounds` (playing sound per component), `updateCount`                                                                                         | Audio cache; state                          | Design 15 (journals and the mixer)                                                                        |
-| `text-shaping-system.ts`                                           | The last shaped snapshot per text, in a `WeakMap`                                                                                                    | State                                       | This design (onto the text mesh component)                                                                |
-| `ui-text-input-system.ts`                                          | Hidden inputs per field; caret blink state; the pressed field; the current world and container                                                       | DOM cache; state                            | This design (caret and pressed field into components, the input elements owned by the text-entry service) |
-| `register-inputs.ts`                                               | The input manager on an entity created by hand                                                                                                       | State in a component already                | This design (`addSingleton`)                                                                              |
-| `game-state.ts`                                                    | The transition store shared by the `GameState` handle and its systems                                                                                | State games read                            | This design (a component on the state's own entity; the handle reads it)                                  |
+| Where                                                              | What                                                                                                                                                                                                        | Kind                                        | Moved by                                                                                                                                                          |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `transform-system.ts`                                              | `frozen` (static entities already computed); `computed`                                                                                                                                                     | State; scratch                              | Design 04 (exclusion and a stamp on the component)                                                                                                                |
+| `render-system.ts` (module scope)                                  | Draw items, sort keys, command buffers, cleared destinations, the draw-order resolver, the instance staging buffer, the sprite renderables `WeakMap`                                                        | Scratch and GPU cache, shared across worlds | Design 07 (render context frame scratch)                                                                                                                          |
+| `bloom-system.ts`, `gaussian-blur-system.ts`, `tone-map-system.ts` | Downsampled targets in `WeakMap`s; `processedTargetsThisFrame`                                                                                                                                              | GPU cache; scratch                          | Design 13 (frame graph transient targets)                                                                                                                         |
+| Physics 2D factories                                               | `collisionPairs`, `collisionManifolds`, `contactConstraints` passed in                                                                                                                                      | State (warm starting) and scratch           | Design 14 (a 2D physics singleton)                                                                                                                                |
+| `sound-system.ts`                                                  | `trackedSounds` (playing sound per component), `updateCount`                                                                                                                                                | Audio cache; state                          | Design 15 (journals and the mixer)                                                                                                                                |
+| `text-shaping-system.ts`                                           | The last shaped snapshot per text, in a `WeakMap`                                                                                                                                                           | State                                       | This design (onto the text mesh component)                                                                                                                        |
+| `ui-text-input-system.ts`                                          | Hidden inputs per field; caret blink state; the pressed field; the current world and container                                                                                                              | DOM cache; state                            | This design (caret and pressed field into components, the input elements owned by the text-entry service)                                                         |
+| `register-inputs.ts`                                               | The input manager on an entity created by hand                                                                                                                                                              | State in a component already                | This design (`addSingleton`)                                                                                                                                      |
+| `game-state.ts`, `state-transition-system.ts`                      | The transition store shared by the `GameState` handle and its systems; the transition system's closure `isFirstTick` (`state-transition-system.ts:27`), which decides whether the first tick sets `entered` | State games read; state                     | This design (a component on the state's own entity; the handle reads it; `isFirstTick` becomes a `hasEntered` field on it, written only by the transition system) |
 
 Phase 3 repeats the search with closure-level `let`, `Map`, `Set`,
 `WeakMap` and typed arrays in every system factory, not only module scope,
@@ -416,16 +441,16 @@ being iterated.
 
 #### 6.6.2 What runs where
 
-| Stage             | Engine systems                                                                                                                                                                                                                                                                     |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `first`           | Game state transitions, exit, scoped removal, enter                                                                                                                                                                                                                                |
-| `preUpdate`       | Input update; picking: pointer rays, hit testers and the pointer interaction system; UI input (navigation, toggles, sliders, scroll views) in `uiInputGroup` (design 15). No audio system: the mixer unlocks audio itself, from DOM gesture listeners (`src/audio/sound-mixer.ts`) |
-| `fixedUpdate`     | The game's fixed systems (forces, character movement)                                                                                                                                                                                                                              |
-| `fixedPostUpdate` | 2D and 3D physics (design 14); the input module's fixed-step latch reset (last)                                                                                                                                                                                                    |
-| `update`          | Game logic (the default); lifecycle and timers                                                                                                                                                                                                                                     |
-| `postUpdate`      | Animation sampling (design 12), UI layout, physics pose write-back and interpolation (design 14), transform propagation (design 04), camera controllers and follow, the sound system and particle simulation (design 15)                                                           |
-| `render`          | Extraction, the render pipeline (design 06)                                                                                                                                                                                                                                        |
-| `last`            | Input reset                                                                                                                                                                                                                                                                        |
+| Stage             | Engine systems                                                                                                                                                                                                                                                                                                                                                            |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `first`           | Game state transitions, exit, scoped removal, enter                                                                                                                                                                                                                                                                                                                       |
+| `preUpdate`       | Input update; picking: pointer rays, hit testers and the pointer interaction system; UI input (navigation, toggles, sliders, scroll views) in `uiInputGroup` (design 15). No audio system: the mixer unlocks audio itself, from DOM gesture listeners (`src/audio/sound-mixer.ts`)                                                                                        |
+| `fixedUpdate`     | The game's fixed systems (forces, character movement)                                                                                                                                                                                                                                                                                                                     |
+| `fixedPostUpdate` | 2D and 3D physics (design 14); the input module's fixed-step latch reset (last)                                                                                                                                                                                                                                                                                           |
+| `update`          | Game logic (the default); lifecycle and timers                                                                                                                                                                                                                                                                                                                            |
+| `postUpdate`      | In order: physics pose write-back and interpolation (`physicsWriteBackGroup`, design 14); animation (`animationGroup`, then `poseAdjustmentGroup`, design 12); UI layout; transform propagation (`transformPropagationGroup`, design 04); camera controllers and follow (design 06); the sound system (`audioGroup`) and particle simulation (`particleGroup`), design 15 |
+| `render`          | Extraction, the render pipeline (design 06)                                                                                                                                                                                                                                                                                                                               |
+| `last`            | Input reset; debug-draw frame buffer clear (design 06 §6.9); asset collection (design 11 GA2)                                                                                                                                                                                                                                                                             |
 
 `EcsSystem.stage` names a stage. Engine factories set it, so the order in
 which a game calls `addSystem` doesn't matter. A game can pass `group` to
@@ -452,6 +477,12 @@ The first update only seeds the clock (it's the page's age, unclamped
 today, and must not become thousands of steps). `timeScale` changes how
 fast simulated time accumulates, not the step. The existing clamp caps a
 frame at four 60 Hz steps.
+
+The world keeps the clock it was created with as `world.time` (read-only,
+decision E7). Engine `register*` functions read it there, so none of them
+takes a `time` parameter (`registerAnimation(world)`,
+`registerPhysics2d(world, settings)`, `registerAudio(world, mixer)`,
+`registerParticles(world, renderContext, random)`).
 
 #### 6.7.2 The loop
 
@@ -495,8 +526,12 @@ frame of delay.
 - Change ticks: a reader before and after the owner in the same frame,
   across fixed steps, and after a skipped run.
 - Singletons: add twice throws; get with none or two throws; removal.
-- Stages: systems registered in random order run in stage order; a group
-  can't be ordered against a group in another stage.
+- Game state: `hasEntered` is written only by the transition system; a
+  state registered again after its systems' `cleanup` raises `entered` on
+  its first tick.
+- Stages: systems registered in random order run in stage order; the
+  engine's `register*` functions, called in every order, give the same
+  schedule; a group can't be ordered against a group in another stage.
 - Fixed step: steps per simulated second at several frame rates, the
   first frame, the cap, `timeScale`, alpha, `deltaTimeInSeconds` inside and
   outside the span, `fixedStepIndex` counting `0` to

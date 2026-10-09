@@ -6,7 +6,7 @@
 | **Kind**                              | Refactor, defect fixes and feature                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **Program**                           | [Forge 3D](./README.md), milestone M2. Phase 0 is a bug fix that lands before M1's golden images; Phase 4 lands in M3, after design 08 Phase 1                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| **Depends on**                        | [06 Render pipeline](./06-render-pipeline.md): Phase 1 here ships with its Phase 2, and needs the draw items and sorted transparent phase that 06 lists under task 3.1 (moved into its Phase 2, §7)                                                                                                                                                                                                                                                                                                                                                                  |
+| **Depends on**                        | [06 Render pipeline](./06-render-pipeline.md): Phase 1 here ships with its Phase 2, and needs the draw items and sorted transparent phase, which design 06 builds in its task 2.6 (§7)                                                                                                                                                                                                                                                                                                                                                                               |
 | **Related**                           | [05 GPU device layer](./05-gpu-device.md) (fixed attribute locations, texture-unit budgets, staging uploads), [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md) (Phase 4 here needs its meshes; its material blocks, built in design 05 Phase 3, carry `SpriteMaterial`), [13 Post-processing](./13-post-processing-and-anti-aliasing.md) (its Phases 1 and 2 ship with Phases 1 and 2 here), [15 Audio, particles and picking](./15-audio-particles-and-picking-in-3d.md) (particles and picking use the sort keys and billboard alignments) |
 
 ## 0. Targeted modules
@@ -160,6 +160,9 @@ draw-order system and the three extraction systems pass.
 
 ### Phase 2: Linear blending (ships with design 13 Phase 2)
 
+Moves 2D textures, colors and blending to linear space, so 2D and 3D
+share one color pipeline.
+
 | #   | Task                     | Description                                                                                                                                                       | Size |
 | --- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 2.1 | sRGB textures            | §6.6.1: `TextureOptions.colorSpace` defaults to `'srgb'`; font atlases and generated data textures load as `'linear'`; the texture cache keys by it               | S    |
@@ -176,6 +179,9 @@ test shows hue is kept; the golden changes are reviewed side by side.
 
 ### Phase 3: Quads in 3D, depth, masks and billboards
 
+Lets sprites, text and billboards be placed and depth-sorted in 3D, with
+masks that work in any view.
+
 | #   | Task                 | Description                                                                                                                                                                                                                                                                                                                  | Size |
 | --- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 3.1 | Instance layouts     | §6.2: a camera-relative corner and two edge vectors per quad; `a_texCoord` dropped; glyphs and nine-slice regions as rectangles in the entity's plane                                                                                                                                                                        | M    |
@@ -184,7 +190,7 @@ test shows hue is kept; the golden changes are reviewed side by side.
 | 3.4 | Culling              | §6.1.3: one bounding-sphere test against the view frustum for every view, and against the item's masks                                                                                                                                                                                                                       | S    |
 | 3.5 | Depth key and groups | §6.3: depth per view, `DrawOrderEcsComponent.depthGroup`, world-space canvases as groups; depth tested when an opaque pass wrote it                                                                                                                                                                                          | M    |
 | 3.6 | Billboards           | §6.5: `BillboardEcsComponent` for sprites and text                                                                                                                                                                                                                                                                           | S    |
-| 3.7 | Attribute check      | Every sprite and text layout uses at most 8 per-instance locations (8 to 15) and 16 in total, checked in design 01's shader-variant spec                                                                                                                                                                                     | S    |
+| 3.7 | Attribute check      | Every sprite, text and particle layout uses at most 8 per-instance locations (8 to 15) and 16 in total, checked in design 01's shader-variant spec                                                                                                                                                                           | S    |
 | 3.8 | Delete               | `Matrix3x3`, `createProjectionMatrix`, `resolve-instance-mask.ts`, the mask instance segment; `UniformValue`, the uniform upload path, `material-uniforms.md`, `matrices.md` and `angles-and-rotation.md` updated                                                                                                            | S    |
 | 3.9 | Changelog and guides | `#### Added`: billboards, sprites and text in 3D views, depth groups; `#### Fixed`: rotated rect masks clip to the rectangle, not its bounding box; `#### Changed`: masks clip in their own plane, nested linear and radial masks combine; terrain follows its entity; `#### Removed`: `Matrix3x3`, `createProjectionMatrix` | S    |
 
@@ -195,6 +201,9 @@ golden is unchanged except rotated rect masks; B7 and B8 are no slower
 than the baseline.
 
 ### Phase 4: 2D and 3D together (after design 08 Phase 1)
+
+Lets 2D and 3D content occlude each other in one view, with a guide and
+demos.
 
 | #   | Task      | Description                                                                                                                       | Size |
 | --- | --------- | --------------------------------------------------------------------------------------------------------------------------------- | ---- |
@@ -232,6 +241,8 @@ the docs site.
 
 ## 5. Open questions
 
+In priority order.
+
 1. **Distance in 2D sorting.** With S2, a 2D game that sets `z` changes its
    order. Options: (a) use distance (nearer in front), as proposed; (b)
    ignore `z` in orthographic views. (a) is consistent with 3D and with how
@@ -241,9 +252,9 @@ the docs site.
 2. **Text effect sizes in 3D.** Outline width, shadow offset and softness
    are CSS pixels scaled to device pixels (`glyph-quad.ts:94-100`), so
    world-space text in perspective keeps the same on-screen outline at any
-   distance, and a far label drowns in its outline. Options: (a) keep CSS
-   pixels and document it; (b) measure them in the font's em units, so
-   they scale with the text, as TextMeshPro and Godot's `Label3D` do. (b)
+   distance, and the outline of a far label covers its glyphs. Options: (a)
+   keep CSS pixels and document it; (b) measure them in the font's em units,
+   so they scale with the text, as TextMeshPro and Godot's `Label3D` do. (b)
    also changes 2D text under camera zoom (outlines would grow with the
    text), so it's a separate `#### Changed` entry. Proposal: (b), decided
    before Phase 3.
@@ -351,7 +362,7 @@ in the entity's plane) the same way. The vertex shader is:
 
 ```glsl
 vec3 relative = a_instanceOrigin.xyz + a_position.x * a_instanceAxisX.xyz + a_position.y * a_instanceAxisY;
-gl_Position = forge_relativeViewProjection * vec4(relative, 1.0); // view rotation and projection, design 06 §6.7.3
+gl_Position = forge_relativeViewProjection * vec4(relative, 1.0); // view rotation and projection; positions are relative to the camera
 v_texCoord = a_instanceTexRect.xy + vec2(a_position.x, 1.0 - a_position.y) * a_instanceTexRect.zw;
 ```
 

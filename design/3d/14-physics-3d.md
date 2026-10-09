@@ -6,32 +6,33 @@
 | **Kind**                              | Feature and breaking refactor                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | **Program**                           | [Forge 3D](./README.md), milestone M5, built in parallel with M2 to M4. Task 9.4 (root motion) needs design 12's Phase 3; Phase 10 (rag dolls) needs design 12's Phases 1 and 5 (§6.2.2)                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| **Depends on**                        | [02 Math](./02-math.md), [03 ECS foundations](./03-ecs-foundations.md) (with `Time.fixedStepIndex`, §6.7.1 there), [04 Transforms](./04-transforms.md) (with `getCurrentWorldMatrix`, §6.5 there)                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Depends on**                        | [02 Math](./02-math.md), [03 ECS foundations](./03-ecs-foundations.md) (with `Time.fixedStepIndex`, §6.7.1 there), [04 Transforms](./04-transforms.md) (with `getCurrentWorldMatrix`, §6.5 there); [06 Render pipeline](./06-render-pipeline.md) Phase 5 (debug drawing), for the demos of Phases 2 to 9                                                                                                                                                                                                                                                                                                                               |
 | **Related**                           | [01 Testing and benchmarks](./01-testing-and-benchmarks.md) (B6, physics scenarios, allocation specs), [06 Render pipeline](./06-render-pipeline.md) (debug drawing), [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md) (mesh data for colliders, matching primitives), [11 glTF and asset lifetime](./11-gltf-and-asset-lifetime.md) (no physics extension), [12 Skeletal and morph animation](./12-skeletal-and-morph-animation.md) (root motion, pose adjustments, rag dolls), [15 Audio, particles and picking](./15-audio-particles-and-picking-in-3d.md) (picking through physics queries, impact sounds) |
 
 ## 0. Targeted modules
 
-| Path                                                                                                                  | Change               | Notes                                                                                                                                                                                                                                                           |
-| --------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/physics/` → `src/physics-2d/`                                                                                    | Renamed and modified | Export path `@forge-game-engine/forge/physics-2d`; names that collide with 3D names get a `2d` suffix (§6.2.1)                                                                                                                                                  |
-| `src/physics-2d/systems/*`                                                                                            | Modified             | Run in `fixedPostUpdate`; read and write body poses; state in `PhysicsWorld2dEcsComponent`; no longer exported (§6.20)                                                                                                                                          |
-| `src/physics-2d/systems/broad-phase-system.ts`, `narrow-phase-system.ts`                                              | Modified             | The all-pairs loop becomes dynamic AABB trees and a persistent pair cache; sensors move to their own pass (§6.9.9)                                                                                                                                              |
-| `src/physics-2d/components/rigidbody-component.ts`, `apply-impluse.ts`, `apply-torque.ts`, `apply-explosive-force.ts` | Modified             | `velocity`, `angularVelocity` and `type` become read-only, changed through functions shaped like 3D's (§6.20)                                                                                                                                                   |
-| `src/physics-2d/components/gravity-component.ts`, `systems/gravity-system.ts`                                         | Removed              | World gravity on the singleton and `gravityScale` on the body (decision PH5)                                                                                                                                                                                    |
-| `src/physics-2d/register-physics-2d.ts`, `components/physics-world-2d-component.ts`                                   | New                  | `registerPhysics2d`, the singleton, `teleportBody2d`, the body functions, the write-back system                                                                                                                                                                 |
-| `src/physics-shared/` (new, internal)                                                                                 | New                  | Soft-constraint coefficients, the friction and restitution mixing rules, category filtering, the dynamic AABB tree, the sensor pass and the write-back's ordering, used by both engines. Not a public module: not in `src/index.ts` or `package.json` `exports` |
-| `src/common/collision-categories.ts`                                                                                  | New                  | `allCollisionCategories`, moved from `physics`, shared by both physics modules and picking (design 15)                                                                                                                                                          |
-| `src/common/physics-owned-transform-tag.ts`                                                                           | New                  | `physicsOwnedTransformTag`, on every dynamic and kinematic body of either module, written only by the physics modules (§6.6.4, PH36)                                                                                                                            |
-| `src/physics-3d/` (new)                                                                                               | New                  | The 3D engine: components, shapes, broad phase, narrow phase, solver, joints, islands, continuous collision, sensors, queries, character mover, rag dolls, debug drawing, `registerPhysics3d` (§6.2.2)                                                          |
-| `src/math/geometry/triangle-tree.ts`, `triangle-tree.bench.ts` (new)                                                  | New                  | `TriangleTree`, the binned-SAH tree over positions and indices that mesh shapes and design 15's mesh picking share; build and ray-query benchmarks at 1,000, 100,000 and 1,000,000 triangles (§6.7.4)                                                           |
-| `src/index.ts`, `package.json` `exports`                                                                              | Modified             | `./physics` becomes `./physics-2d`; `./physics-3d` added                                                                                                                                                                                                        |
-| `documentation-site/docs/docs/physics/` → `physics-2d/`                                                               | Renamed and modified | Fixed step, interpolation, world gravity, `registerPhysics2d`, `teleportBody2d`, body functions, sensors, suffixed names                                                                                                                                        |
-| `documentation-site/docs/docs/physics-3d/` (new)                                                                      | New                  | Guides listed in §6.24                                                                                                                                                                                                                                          |
-| `documentation-site/src/pages/demos/**` (14 physics demos), `demo/src/game.ts`                                        | Modified             | Imports, `registerPhysics2d`, world gravity; the five demos that write velocities directly call the body functions (§6.20)                                                                                                                                      |
-| `documentation-site/src/pages/demos/physics-3d/`, `joints-3d/`, `character-mover/`, `rag-doll/`                       | New                  | §6.24; entries in `documentation-site/src/data/demos.ts`                                                                                                                                                                                                        |
-| `bench/scenes/b6-physics-pile/`                                                                                       | New                  | B6 for Forge and Rapier (informational)                                                                                                                                                                                                                         |
-| `e2e/allocation/`, `e2e/specs/`, `e2e/golden/`, `e2e/fixtures/scenes/`                                                | New                  | Allocation specs, interpolation spec, debug-drawing golden (§6.23)                                                                                                                                                                                              |
-| `AGENTS.md`, `CHANGELOG.md`                                                                                           | Modified             | Repository structure, "Transforms" (physics-owned transforms), a "Physics" section under "Common Patterns"; changelog entries per phase                                                                                                                         |
+| Path                                                                                                                  | Change   | Notes                                                                                                                                                                                                                                                           |
+| --------------------------------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/physics/` → `src/physics-2d/`                                                                                    | Modified | Renamed from `physics/`; Export path `@forge-game-engine/forge/physics-2d`; names that collide with 3D names get a `2d` suffix (§6.2.1)                                                                                                                         |
+| `src/physics-2d/systems/*`                                                                                            | Modified | Run in `fixedPostUpdate`; read and write body poses; state in `PhysicsWorld2dEcsComponent`; no longer exported (§6.20)                                                                                                                                          |
+| `src/physics-2d/systems/broad-phase-system.ts`, `narrow-phase-system.ts`                                              | Modified | The all-pairs loop becomes dynamic AABB trees and a persistent pair cache; sensors move to their own pass (§6.9.9)                                                                                                                                              |
+| `src/physics-2d/components/rigidbody-component.ts`, `apply-impluse.ts`, `apply-torque.ts`, `apply-explosive-force.ts` | Modified | `velocity`, `angularVelocity` and `type` become read-only, changed through functions shaped like 3D's (§6.20)                                                                                                                                                   |
+| `src/physics-2d/components/gravity-component.ts`, `systems/gravity-system.ts`                                         | Removed  | World gravity on the singleton and `gravityScale` on the body (decision PH5)                                                                                                                                                                                    |
+| `src/physics-2d/register-physics-2d.ts`, `components/physics-world-2d-component.ts`                                   | New      | `registerPhysics2d`, the singleton, `teleportBody2d`, the body functions, the write-back system                                                                                                                                                                 |
+| `src/physics-shared/` (new, internal)                                                                                 | New      | Soft-constraint coefficients, the friction and restitution mixing rules, category filtering, the dynamic AABB tree, the sensor pass and the write-back's ordering, used by both engines. Not a public module: not in `src/index.ts` or `package.json` `exports` |
+| `src/common/collision-categories.ts`                                                                                  | New      | `allCollisionCategories`, moved from `physics`, shared by both physics modules and picking (design 15)                                                                                                                                                          |
+| `src/common/physics-owned-transform-tag.ts`                                                                           | New      | `physicsOwnedTransformTag`, on every dynamic and kinematic body of either module, written only by the physics modules (§6.6.4, PH36)                                                                                                                            |
+| `src/physics-3d/` (new)                                                                                               | New      | The 3D engine: components, shapes, broad phase, narrow phase, solver, joints, islands, continuous collision, sensors, queries, character mover, rag dolls, debug drawing, `registerPhysics3d` (§6.2.2)                                                          |
+| `src/math/geometry/triangle-tree.ts`, `triangle-tree.bench.ts` (new)                                                  | New      | `TriangleTree`, the binned-SAH tree over positions and indices that mesh shapes and design 15's mesh picking share; build and ray-query benchmarks at 1,000, 100,000 and 1,000,000 triangles (§6.7.4)                                                           |
+| `src/index.ts`, `package.json` `exports`                                                                              | Modified | `./physics` becomes `./physics-2d`; `./physics-3d` added                                                                                                                                                                                                        |
+| `documentation-site/docs/docs/physics/` → `physics-2d/`                                                               | Modified | Renamed from `physics/`; Fixed step, interpolation, world gravity, `registerPhysics2d`, `teleportBody2d`, body functions, sensors, suffixed names                                                                                                               |
+| `documentation-site/docs/docs/physics-3d/` (new)                                                                      | New      | Guides listed in §6.24                                                                                                                                                                                                                                          |
+| `documentation-site/src/pages/demos/**` (14 physics demos), `demo/src/game.ts`                                        | Modified | Imports, `registerPhysics2d`, world gravity; the five demos that write velocities directly call the body functions (§6.20)                                                                                                                                      |
+| `documentation-site/src/pages/demos/physics-3d/`, `joints-3d/`, `character-mover/`, `rag-doll/`                       | New      | §6.24; entries in `documentation-site/src/data/demos.ts`                                                                                                                                                                                                        |
+| `bench/scenes/b6-physics-pile/`                                                                                       | New      | B6 for Forge and Rapier (informational)                                                                                                                                                                                                                         |
+| `package.json`                                                                                                        | Modified | `@dimforge/rapier3d-compat` as a pinned dev dependency, used only by `bench/` and excluded from the build like `three` (design 01)                                                                                                                              |
+| `e2e/allocation/`, `e2e/specs/`, `e2e/golden/`, `e2e/fixtures/scenes/`                                                | New      | Allocation specs, interpolation spec, debug-drawing golden (§6.23)                                                                                                                                                                                              |
+| `AGENTS.md`, `CHANGELOG.md`                                                                                           | Modified | Repository structure, "Transforms" (physics-owned transforms), a "Physics" section under "Common Patterns"; changelog entries per phase                                                                                                                         |
 
 `getCurrentWorldMatrix` (`src/common/transform-helpers.ts`) is design 04's
 (§6.5 there) and `Time.fixedStepIndex` design 03's (§6.7.1 there); this
@@ -124,7 +125,7 @@ trees.
 - **A vehicle module** (raycast wheels, tire models). Vehicles can be built
   from bodies, revolute joints and six-degree-of-freedom joints; a
   dedicated module is a later design.
-- **Determinism across machines, rollback networking.** README non-goals.
+- **Determinism across machines, rollback networking.** Out of the README's scope (§2).
   Repeatability on one machine is in scope (§6.21).
 - **Running physics in a worker or in WebAssembly.** README P3; open
   question 6.
@@ -162,7 +163,7 @@ The three 2D defects in §6.1.3 are fixed before this phase, separately.
 | #    | Task                         | Description                                                                                                                                                                                                                               | Size |
 | ---- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 1.1  | Rename                       | `src/physics` to `src/physics-2d`, the export path, the names in §6.2.1, `allCollisionCategories` to `common`                                                                                                                             | M    |
-| 1.2  | Singleton and registration   | `PhysicsWorld2dEcsComponent` holds what the passed-in arrays held; `registerPhysics2d(world, time, settings)` adds it and the systems; system factories and wiring types become internal                                                  | M    |
+| 1.2  | Singleton and registration   | `PhysicsWorld2dEcsComponent` holds what the passed-in arrays held; `registerPhysics2d(world, settings)` adds it and the systems; system factories and wiring types become internal                                                        | M    |
 | 1.3  | Poses                        | `RigidBody2dEcsComponent.pose` and `previousPose`; integration, joints, contacts and continuous collision read and write poses; static colliders read `transform.world`                                                                   | M    |
 | 1.4  | Fixed step and write-back    | Systems in `fixedPostUpdate`; the interpolating write-back in `postUpdate`, the only writer of a physics-owned body's `local`, in body-depth order; `physicsOwnedTransformTag`; moving bodies may have parents; `teleportBody2d` (§6.6.4) | M    |
 | 1.5  | Body state through functions | `velocity`, `angularVelocity` and `type` become read-only; the velocity, impulse, force, kinematic-target and type functions of §6.2.1; the five demos that write velocities call them (§6.20)                                            | M    |
@@ -181,6 +182,9 @@ restricted to pairs with a dynamic body, sensor overlaps equal it
 unrestricted); the guides no longer list a system registration order.
 
 ### Phase 2: Rigid bodies with primitive shapes
+
+Adds the `physics-3d` module with rigid bodies, primitive shapes, broad
+and narrow phases and the solver.
 
 | #    | Task                     | Description                                                                                                                                                                                            | Size |
 | ---- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
@@ -204,13 +208,15 @@ decided and the B6 table revised before Phase 3 starts.
 
 ### Phase 3: Islands, sleeping and B6
 
-| #   | Task             | Description                                                                                                   | Size |
-| --- | ---------------- | ------------------------------------------------------------------------------------------------------------- | ---- |
-| 3.1 | Islands          | Per-step union-find over awake bodies and their touching contacts and joints (§6.12)                          | M    |
-| 3.2 | Sleeping         | Sleep timers, sleeping islands, the tag, wake rules, `wakeBody`, `sleepBody` and `isBodyAsleep`               | M    |
-| 3.3 | B6               | The Forge and Rapier versions in `bench/`; per-phase timing and per-frame step counts in the report (§6.22.3) | M    |
-| 3.4 | Tuning           | Profile and meet the budget in §6.22 (SoA layout, precomputed rows, the friction decision of open question 1) | L    |
-| 3.5 | Pyramid scenario | A 20-level pyramid comes to rest and sleeps                                                                   | S    |
+Adds islands and sleeping, and tunes the solver against B6.
+
+| #   | Task             | Description                                                                                                                                                            | Size |
+| --- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 3.1 | Islands          | Per-step union-find over awake bodies and their touching contacts and joints (§6.12)                                                                                   | M    |
+| 3.2 | Sleeping         | Sleep timers, sleeping islands, the tag, wake rules, `wakeBody`, `sleepBody` and `isBodyAsleep`                                                                        | M    |
+| 3.3 | B6               | The Forge and Rapier versions in `bench/` (`@dimforge/rapier3d-compat` pinned as a dev dependency); per-phase timing and per-frame step counts in the report (§6.22.3) | M    |
+| 3.4 | Tuning           | Profile and meet the budget in §6.22 (SoA layout, precomputed rows, the friction decision of open question 1)                                                          | L    |
+| 3.5 | Pyramid scenario | A 20-level pyramid comes to rest and sleeps                                                                                                                            | S    |
 
 **Definition of done:** B6 meets its budget on the desktop reference; the
 pyramid sleeps within 5 simulated seconds of settling; a sleeping scene
@@ -218,17 +224,21 @@ costs at most 0.5 ms per step.
 
 ### Phase 4: Queries
 
+Adds ray casts, shape casts, and overlap and closest-point queries.
+
 | #   | Task                        | Description                                                                                 | Size |
 | --- | --------------------------- | ------------------------------------------------------------------------------------------- | ---- |
 | 4.1 | Ray casts                   | `castRayAll` with a visitor, filters, every shape kind (§6.14)                              | S    |
 | 4.2 | Shape casts                 | `castShape` through GJK ray casting                                                         | M    |
-| 4.3 | Overlaps and closest points | `overlapShape`, `overlapBounds`, `overlapPoint`, `findClosestPoint`                         | M    |
+| 4.3 | Overlaps and closest points | `overlapShape`, `overlapBounds`, `overlapPoint3d`, `findClosestPoint`                       | M    |
 | 4.4 | Explosions and helpers      | `applyExplosiveForce3d`, `getVelocityAtPoint3d`; tests against brute force; allocation spec | S    |
 
 **Definition of done:** every query agrees with a brute-force reference on
 seeded scenes and allocates nothing when given an output object.
 
 ### Phase 5: Continuous collision
+
+Adds continuous collision, so fast bodies don't pass through thin ones.
 
 | #   | Task           | Description                                                                             | Size |
 | --- | -------------- | --------------------------------------------------------------------------------------- | ---- |
@@ -242,6 +252,8 @@ seeded scenes and allocates nothing when given an output object.
 
 ### Phase 6: Convex hulls, cylinders, cones and compound shapes
 
+Adds convex hull, cylinder, cone and compound shapes.
+
 | #   | Task            | Description                                                                         | Size |
 | --- | --------------- | ----------------------------------------------------------------------------------- | ---- |
 | 6.1 | Convex hulls    | Quickhull, face merging, the hull's edge and face data, mass properties (§6.7.3)    | L    |
@@ -254,6 +266,8 @@ seeded scenes and allocates nothing when given an output object.
 against brute-force sampling; the microbenchmarks meet §6.22.
 
 ### Phase 7: Static meshes and height fields
+
+Adds static triangle meshes and height fields.
 
 | #   | Task                | Description                                                                                                                                                                                      | Size |
 | --- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
@@ -269,6 +283,9 @@ mesh never gains more than 1 cm/s of upward velocity; a 1 m box pushed
 rest on top; ray casts against a 100,000-triangle mesh meet §6.22.
 
 ### Phase 8: Joints
+
+Adds fixed, revolute, prismatic, spherical, distance and
+six-degrees-of-freedom joints.
 
 | #   | Task                       | Description                                                                                                                                          | Size |
 | --- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
@@ -404,11 +421,14 @@ In priority order.
    body and is stripped from production builds.
 6. **Physics in a worker.** A worker needs the body data in a
    `SharedArrayBuffer`, which needs cross-origin isolation that many
-   hosting sites don't set. Proposal: no; revisit if B6 shows the main
-   thread can't fit physics and rendering.
+   hosting sites don't set. Options: (a) physics on the main thread; (b)
+   physics in a worker over a `SharedArrayBuffer`. Proposal: (a); revisit
+   if B6 shows the main thread can't fit physics and rendering.
 7. **glTF physics extensions.** Khronos has rigid-body and implicit-shape
-   extensions in development but none ratified (design 11). Proposal:
-   support them through design 11's extension handlers once ratified.
+   extensions in development but none ratified (design 11). Options: (a)
+   support them through design 11's extension handlers once ratified; (b)
+   support the current drafts now, at the risk of breaking changes.
+   Proposal: (a).
 8. **Root motion latency.** The mover system reads root motion in
    `fixedPostUpdate`, and it was produced in the previous frame's
    `postUpdate`, so it's one frame late (design 12, its open question 3).
@@ -416,9 +436,9 @@ In priority order.
    Proposal: measure in the Phase 9 scenarios and decide with design 12.
    Moving bodies doesn't depend on it: `animated` bodies already follow
    frame-rate transforms correctly (PH33).
-9. **Rolling resistance and per-triangle materials.** Proposal: add rolling
-   resistance (Box3D has it) and a material index per triangle when the
-   M6 sample game needs them.
+9. **Rolling resistance and per-triangle materials.** Options: (a) add
+   rolling resistance (Box3D has it) and a material index per triangle
+   now; (b) add them when the M6 sample game needs them. Proposal: (b).
 
 ---
 
@@ -537,7 +557,7 @@ exist and would collide in `src/index.ts`.
 | `applyImpulse`, `applyTorque`, `applyExplosiveForce`; writable `velocity`, `angularVelocity` and `type`                                                                                                                                                                                                                        | Read-only `velocity`, `angularVelocity` and `type`, changed through `setLinearVelocity2d`, `setAngularVelocity2d`, `setKinematicTarget2d`, `setBodyType2d`, `applyImpulse2d` (its point becomes optional, the center of mass by default), `applyAngularImpulse2d`, `applyForce2d`, `applyTorque2d` (reads the step itself; the delta parameter goes), `applyExplosiveForce2d` and `getVelocityAtPoint2d` (§6.20) |
 | `GravityEcsComponent`, `gravityId`, `addGravityComponent`, `createGravityEcsSystem`                                                                                                                                                                                                                                            | Removed: `PhysicsWorld2dEcsComponent.gravity` and `RigidBody2dEcsComponent.gravityScale` (PH5)                                                                                                                                                                                                                                                                                                                   |
 | `allCollisionCategories`                                                                                                                                                                                                                                                                                                       | Moved to `common` (shared by both engines and picking), beside the new `physicsOwnedTransformTag`                                                                                                                                                                                                                                                                                                                |
-| The 12 `create*EcsSystem` factories and their option types                                                                                                                                                                                                                                                                     | Internal; `registerPhysics2d(world, time, settings)` registers them; `PhysicsSettings2d` merges the three option types                                                                                                                                                                                                                                                                                           |
+| The 12 `create*EcsSystem` factories and their option types                                                                                                                                                                                                                                                                     | Internal; `registerPhysics2d(world, settings)` registers them; `PhysicsSettings2d` merges the three option types                                                                                                                                                                                                                                                                                                 |
 | `CollisionPair`, `CollisionManifold`, `NarrowPhaseManifold`, `ContactConstraint`, `CollisionBody`, the `detect*` and `sweep*` functions, `aabbsOverlap`, `collidersCanCollide`, `velocityAtPoint`, `applyPointImpulse`, `resolveJointBody`, `getJointLeverArm`, `JointBody`, `getSoftConstraintParams`, `SoftConstraintParams` | Internal: they existed for games to wire the passed-in arrays, or are solver details                                                                                                                                                                                                                                                                                                                             |
 | `getRigidBodyMassData`, `RigidBodyMassData`                                                                                                                                                                                                                                                                                    | `getRigidBody2dMassData`, `RigidBody2dMassData`                                                                                                                                                                                                                                                                                                                                                                  |
 | New                                                                                                                                                                                                                                                                                                                            | `PhysicsWorld2dEcsComponent`, `physicsWorld2dId`, `registerPhysics2d`, `PhysicsSettings2d`, `PhysicsStats2d`, `teleportBody2d`, `Pose2d`                                                                                                                                                                                                                                                                         |
@@ -552,7 +572,8 @@ joint has drives).
 3D's names follow the same rule. A function both modules have carries a
 suffix in each (`setLinearVelocity2d` and `setLinearVelocity3d`); one
 only 3D has (`wakeBody`, `sleepBody`, `isBodyAsleep`, the queries) has
-none.
+none. `overlapPoint3d` is the exception among the queries: design 15 adds
+`overlapPoint2d` to `physics-2d`, so the point query exists in both.
 
 #### 6.2.2 `physics-3d`
 
@@ -630,7 +651,7 @@ flowchart TB
   EV --> WB --> AN --> PA --> TP --> R[render]
 ```
 
-`registerPhysics3d(world, time, settings)` adds the singleton, creates
+`registerPhysics3d(world, settings)` adds the singleton, creates
 `physics3dGroup` in `fixedPostUpdate` and `physicsWriteBackGroup` in
 `postUpdate` (ordered before design 12's `animationGroup` and design 04's
 `transformPropagationGroup`) unless `registerPhysics2d` already created
@@ -678,7 +699,7 @@ settings; everything else is in components and the singleton.
 export interface PhysicsWorld3dEcsComponent {
   /** m/s². Input. Changing it wakes every body. Default (0, -9.81, 0). */
   gravity: Vector3;
-  /** What the debug drawing system draws (§6.19). Input. All false by default. */
+  /** What the debug drawing system draws. Input. All false by default. */
   debugDraw: PhysicsDebugDrawFlags;
   /** Counts and timings of the last step. Output. */
   readonly stats: PhysicsStats3d;
@@ -691,7 +712,6 @@ export const physicsWorld3dId =
 
 export function registerPhysics3d(
   world: EcsWorld,
-  time: Time,
   settings?: Partial<PhysicsSettings3d>,
 ): PhysicsWorld3dEcsComponent;
 ```
@@ -760,7 +780,7 @@ export interface RigidBody3dEcsComponent {
   gravityScale: number;
   /** World axes the body can't move along or turn about, `LockedAxis` bits. Input. Default 0. */
   lockedAxes: number;
-  /** Sweep against moving bodies too, not only static ones (§6.13). Input. Default false. */
+  /** Sweep against moving bodies too, not only static ones. Input. Default false. */
   continuous: boolean;
   /** Input. Default true. */
   canSleep: boolean;
@@ -781,7 +801,7 @@ export interface RigidBody3dEcsComponent {
 
 export const rigidBody3dId =
   createComponentId<RigidBody3dEcsComponent>('rigid-body-3d');
-/** On a sleeping body. Written only by physics (§6.12). */
+/** On a sleeping body. Written only by physics. */
 export const sleepingBodyTag = createTagId('sleeping-body');
 ```
 
@@ -867,7 +887,7 @@ their next synchronization.
 
 ```ts
 export interface Collider3dEcsComponent {
-  /** Replace the component to change any read-only field (PH15). */
+  /** Replace the component to change any read-only field. */
   readonly shape: CollisionShape;
   /** The shape's pose relative to the entity. Default identity. */
   readonly offset: Readonly<Pose3d>;
@@ -877,7 +897,7 @@ export interface Collider3dEcsComponent {
   readonly category: number;
   /** Default allCollisionCategories. */
   readonly mask: number;
-  /** Detects overlaps and never resolves them (§6.9.9). Default false. */
+  /** Detects overlaps and never resolves them. Default false. */
   readonly sensor: boolean;
 
   /** Input. Default 0.6. */
@@ -1392,7 +1412,7 @@ run is repeatable (§6.21).
 ```text
 h = dt / substepCount                       // dt is the fixed step
 prepareJoints(); prepareContacts()          // anchors, effective masses, softness, relative normal speeds
-applyGyroscopic(dt)                         // implicit, flagged dynamic bodies (§6.10.4)
+applyGyroscopic(dt)                         // implicit, flagged dynamic bodies
 for each substep:
   integrateVelocities(h)                    // gravity × gravityScale, damping, locked axes, speed limits
   warmStart()                               // apply last impulses (joints, then contacts)
@@ -1732,7 +1752,7 @@ export interface ShapeCast {
 | `castShape(world, cast, filter?, out?)`                      | The first hit of a convex shape moved along a direction, or `null`                                                                                                                                     |
 | `overlapShape(world, shape, pose, filter, out)`              | Writes overlapping collider entities into `out` and returns the count                                                                                                                                  |
 | `overlapBounds(world, bounds, filter, out)`                  | Colliders whose fat bounds overlap a `BoundingBox` (broad phase only, so possibly not touching)                                                                                                        |
-| `overlapPoint(world, point, filter, out)`                    | Colliders containing a point                                                                                                                                                                           |
+| `overlapPoint3d(world, point, filter, out)`                  | Colliders containing a point                                                                                                                                                                           |
 | `findClosestPoint(world, point, maxDistance, filter?, out?)` | The nearest collider surface point within `maxDistance`, or `null`                                                                                                                                     |
 
 - **Allocation.** With `out` given, nothing allocates; without, a new hit
@@ -1778,7 +1798,7 @@ export interface Contact3d {
   readonly normalImpulse: number;
   /** Approach speed along the normal when the contact began, m/s (for impact sounds). */
   readonly approachSpeed: number;
-  /** Either collider is a sensor: an overlap with no points, normal or impulse (§6.9.9). */
+  /** Either collider is a sensor: an overlap with no points, normal or impulse. */
   readonly sensor: boolean;
   /** Triangle or compound child on the other side, −1 otherwise. */
   readonly otherFeatureIndex: number;
@@ -1851,7 +1871,7 @@ export interface CharacterMoverEcsComponent {
   moveVelocity: Vector3;
   /** Turning speed about +Y, rad/s. */
   turnSpeed: number;
-  /** An entity with a RootMotionEcsComponent (design 12) whose motion replaces moveVelocity's horizontal part and turnSpeed, or null. */
+  /** An entity with a RootMotionEcsComponent whose motion replaces moveVelocity's horizontal part and turnSpeed, or null. */
   rootMotionSource: number | null;
 
   // Outputs.
@@ -1962,7 +1982,7 @@ bodies, because sampling rewrites a sleeping bone too.
 ```text
 physicsLocal = local from the interpolated pose, through the parent's current world (§6.6.4)
 weight       = RagDollEcsComponent.weight on the playback root, or 1
-sampled      = the root's poseTick > this system's lastRunTick         // design 12 §6.13.1
+sampled      = the root's poseTick > this system's lastRunTick
 if sampled:          local = blend(sampled local, physicsLocal, weight)  // lerp positions, slerp rotations
 else if weight = 1:  local = physicsLocal
 else:                leave local as it is                                // last frame's blend
@@ -2041,7 +2061,7 @@ rendering counters only.
 
 Phase 1 changes 2D's structure and ownership, not its contact model:
 
-- **Registration.** `registerPhysics2d(world, time, settings)` adds
+- **Registration.** `registerPhysics2d(world, settings)` adds
   `PhysicsWorld2dEcsComponent` (gravity, the trees, the contact pair cache
   with each pair's manifolds and contact constraints, the sensor pair
   cache, statistics) and the existing systems, unchanged in order, in
@@ -2119,7 +2139,8 @@ requires it. It holds because:
   statistics, which don't feed back.
 
 Results may differ between browsers and machines (`Math.sin` and friends
-aren't specified bit-exactly), which README's non-goals accept.
+aren't specified bit-exactly); determinism across machines is out of the
+README's scope (§2).
 
 ### 6.22 Performance
 

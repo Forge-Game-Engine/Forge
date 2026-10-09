@@ -12,27 +12,28 @@
 
 ## 0. Targeted modules
 
-| Path                                                                                                                                                                        | Change        | Notes                                                                                                                                                                                                                                                                                                                                                                 |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/animations/clips/` (new)                                                                                                                                               | New           | `KeyframeClip`, `KeyframeChannel`, sampling with cursors, `createKeyframeClip`, `addClipEvent`, `setAdditiveReference`                                                                                                                                                                                                                                                |
-| `src/animations/playback/` (new)                                                                                                                                            | New           | `ClipPlaybackEcsComponent` with layers, motions and requests; `playClip`, `playBlend`, `stopLayer`, `setMotionTime`, `setBlendParameter`; `ClipBlend1d`, a definition naming clips; `JointMask`; `PoseTargetEcsComponent`; the playback and pose sampling systems; `registerAnimation`; the `AnimationWorldEcsComponent` singleton (scratch and the binding registry) |
-| `src/animations/states/` (new)                                                                                                                                              | New           | `PlaybackStatesEcsComponent`, holding each driven layer's current state of a shared `FiniteStateMachine`; `PlaybackState`, `PlaybackTransition`, predicates, the states system                                                                                                                                                                                        |
-| `src/animations/root-motion/` (new)                                                                                                                                         | New           | `RootMotionEcsComponent`, `applyRootMotionTag`, its system                                                                                                                                                                                                                                                                                                            |
-| `src/animations/procedural/` (new)                                                                                                                                          | New           | Pose-space helpers (Phase 5); `JointLookAtEcsComponent`, `TwoBoneIkEcsComponent` and their systems (Phase 6, after M4)                                                                                                                                                                                                                                                |
-| `src/animations/types/AnimationClip.ts`, `components/sprite-animation-component.ts`, `systems/sprite-animation-system.ts`                                                   | Modified      | `AnimationClip` renamed `SpriteAnimationClip`; its three events, which nothing raises, removed                                                                                                                                                                                                                                                                        |
-| `src/animations/components/animation-component.ts`, `systems/animation-system.ts`                                                                                           | Modified      | Renamed to property animations: `PropertyAnimationEcsComponent`, `propertyAnimationId`, `addPropertyAnimationComponent`, `createPropertyAnimationEcsSystem`; `createAnimatedProperty` applies its defaults with `withDefaults` instead of a spread                                                                                                                    |
-| `src/animations/types/AnimationInputs.ts`, `AnimationCondition.ts`, `AnimationTransition.ts`, `DefaultAnimationStates.ts`, `utilities/create-animation.ts`, and their tests | Removed       | Unexported, with no callers (§6.2)                                                                                                                                                                                                                                                                                                                                    |
-| `src/finite-state-machine/finite-state-machine.ts`, `transition.ts`                                                                                                         | Modified      | A shared, immutable definition built from its states and transitions; `findTransition(current, input)` returns the transition taken and the caller keeps the current state; transitions from any state; `satisfies` without a closure per call                                                                                                                        |
-| `src/rendering/deformation/` (new)                                                                                                                                          | New           | `Skin`, `SkinEcsComponent`, `MorphWeightsEcsComponent`, joint bounds, the deformation extraction system, the animation data texture and deformation records, `computeDeformedPositions`, skeleton debug drawing                                                                                                                                                       |
-| `src/rendering/meshes/`                                                                                                                                                     | Modified      | `joints1` and `weights1` attributes; `Mesh.morphTargets`; joint-influence count and highest joint index on `Mesh`                                                                                                                                                                                                                                                     |
-| `src/rendering/shaders/forge/`                                                                                                                                              | Modified      | `forge/skinning` and `forge/morphing` includes; `forge/vertex` calls them; `forge/object` reads the deformation record that texel 3 references                                                                                                                                                                                                                        |
-| `src/rendering/gpu-scene/`, `src/rendering/components/mesh-component.ts`                                                                                                    | Modified      | Texel 3 references a deformation record in place of the skinned flag; deformed slots' world culling spheres come from the mesh-space bound the deformation extraction supplies; deformed slots never take the static path; `MeshEcsComponent.lastVisibleFrame` from culling results (design 06 §6.8.1)                                                                |
-| `src/lighting/shadows/`                                                                                                                                                     | Modified      | A kept cached tile counts the dynamic casters of its last render as visible (design 09 §6.5.6)                                                                                                                                                                                                                                                                        |
-| `src/gltf/`                                                                                                                                                                 | Modified      | With design 11 Phase 4: skins, morph data and clips into these types; up to eight joint influences; skinned and morphed nodes never static; instantiation adds the components (§6.4.4)                                                                                                                                                                                |
-| `AGENTS.md`                                                                                                                                                                 | Modified      | "Transforms": the pose pipeline (sampling, then adjustments in group order) as the one sanctioned exception to one writer per value (§6.13.1)                                                                                                                                                                                                                         |
-| `documentation-site/docs/docs/animations/`, `finite-state-machine/` (new), `asset-loading/asset-registry.md`, `events/index.md`                                             | Modified      | §6.19                                                                                                                                                                                                                                                                                                                                                                 |
-| `documentation-site/src/pages/demos/space-shooter/_create-explosions.ts`, new `animated-characters` demo                                                                    | Modified, New | The sprite clip rename; the demo in §6.19                                                                                                                                                                                                                                                                                                                             |
-| `bench/`, `e2e/golden/`, `e2e/allocation/`, `e2e/specs/`                                                                                                                    | Modified      | B4 with a generated character; the hidden-walker benchmark; animation goldens; allocation specs; attachment, visibility, cached-shadow, eight-influence and removed-joint specs                                                                                                                                                                                       |
+| Path                                                                                                                                                                        | Change   | Notes                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/animations/clips/` (new)                                                                                                                                               | New      | `KeyframeClip`, `KeyframeChannel`, sampling with cursors, `createKeyframeClip`, `addClipEvent`, `setAdditiveReference`                                                                                                                                                                                                                                                |
+| `src/animations/playback/` (new)                                                                                                                                            | New      | `ClipPlaybackEcsComponent` with layers, motions and requests; `playClip`, `playBlend`, `stopLayer`, `setMotionTime`, `setBlendParameter`; `ClipBlend1d`, a definition naming clips; `JointMask`; `PoseTargetEcsComponent`; the playback and pose sampling systems; `registerAnimation`; the `AnimationWorldEcsComponent` singleton (scratch and the binding registry) |
+| `src/animations/states/` (new)                                                                                                                                              | New      | `PlaybackStatesEcsComponent`, holding each driven layer's current state of a shared `FiniteStateMachine`; `PlaybackState`, `PlaybackTransition`, predicates, the states system                                                                                                                                                                                        |
+| `src/animations/root-motion/` (new)                                                                                                                                         | New      | `RootMotionEcsComponent`, `applyRootMotionTag`, its system                                                                                                                                                                                                                                                                                                            |
+| `src/animations/procedural/` (new)                                                                                                                                          | New      | Pose-space helpers (Phase 5); `JointLookAtEcsComponent`, `TwoBoneIkEcsComponent` and their systems (Phase 6, after M4)                                                                                                                                                                                                                                                |
+| `src/animations/types/AnimationClip.ts`, `components/sprite-animation-component.ts`, `systems/sprite-animation-system.ts`                                                   | Modified | `AnimationClip` renamed `SpriteAnimationClip`; its three events, which nothing raises, removed                                                                                                                                                                                                                                                                        |
+| `src/animations/components/animation-component.ts`, `systems/animation-system.ts`                                                                                           | Modified | Renamed to property animations: `PropertyAnimationEcsComponent`, `propertyAnimationId`, `addPropertyAnimationComponent`, `createPropertyAnimationEcsSystem`; `createAnimatedProperty` applies its defaults with `withDefaults` instead of a spread                                                                                                                    |
+| `src/animations/types/AnimationInputs.ts`, `AnimationCondition.ts`, `AnimationTransition.ts`, `DefaultAnimationStates.ts`, `utilities/create-animation.ts`, and their tests | Removed  | Unexported, with no callers (§6.2)                                                                                                                                                                                                                                                                                                                                    |
+| `src/finite-state-machine/finite-state-machine.ts`, `transition.ts`                                                                                                         | Modified | A shared, immutable definition built from its states and transitions; `findTransition(current, input)` returns the transition taken and the caller keeps the current state; transitions from any state; `satisfies` without a closure per call                                                                                                                        |
+| `src/rendering/deformation/` (new)                                                                                                                                          | New      | `Skin`, `SkinEcsComponent`, `MorphWeightsEcsComponent`, joint bounds, the deformation extraction system, the animation data texture and deformation records, `computeDeformedPositions`, skeleton debug drawing                                                                                                                                                       |
+| `src/rendering/meshes/`                                                                                                                                                     | Modified | `joints1` and `weights1` attributes; `Mesh.morphTargets`; joint-influence count and highest joint index on `Mesh`                                                                                                                                                                                                                                                     |
+| `src/rendering/shaders/forge/`                                                                                                                                              | Modified | `forge/skinning` and `forge/morphing` includes; `forge/vertex` calls them; `forge/object` reads the deformation record that texel 3 references                                                                                                                                                                                                                        |
+| `src/rendering/gpu-scene/`, `src/rendering/components/mesh-component.ts`                                                                                                    | Modified | Texel 3 references a deformation record in place of the skinned flag; deformed slots' world culling spheres come from the mesh-space bound the deformation extraction supplies; deformed slots never take the static path; `MeshEcsComponent.lastVisibleFrame` from culling results (design 06 §6.8.1)                                                                |
+| `src/lighting/shadows/`                                                                                                                                                     | Modified | A kept cached tile counts the dynamic casters of its last render as visible (design 09 §6.5.6)                                                                                                                                                                                                                                                                        |
+| `src/gltf/`                                                                                                                                                                 | Modified | With design 11 Phase 4: skins, morph data and clips into these types; up to eight joint influences; skinned and morphed nodes never static; instantiation adds the components (§6.4.4)                                                                                                                                                                                |
+| `AGENTS.md`                                                                                                                                                                 | Modified | "Transforms": the pose pipeline (sampling, then adjustments in group order) as the one sanctioned exception to one writer per value (§6.13.1)                                                                                                                                                                                                                         |
+| `documentation-site/docs/docs/animations/`, `finite-state-machine/` (new), `asset-loading/asset-registry.md`, `events/index.md`                                             | Modified | §6.19                                                                                                                                                                                                                                                                                                                                                                 |
+| `documentation-site/src/pages/demos/space-shooter/_create-explosions.ts`                                                                                                    | Modified | The sprite clip rename                                                                                                                                                                                                                                                                                                                                                |
+| `documentation-site/src/pages/demos/animated-characters/` (new)                                                                                                             | New      | The demo in §6.19                                                                                                                                                                                                                                                                                                                                                     |
+| `bench/`, `e2e/golden/`, `e2e/allocation/`, `e2e/specs/`                                                                                                                    | Modified | B4 with a generated character; the hidden-walker benchmark; animation goldens; allocation specs; attachment, visibility, cached-shadow, eight-influence and removed-joint specs                                                                                                                                                                                       |
 
 ---
 
@@ -146,7 +147,14 @@ things the names could mean once 3D animation exists (§6.2).
 
 ## 3. Phases
 
+Each phase adds its changelog bullets; Phases 4 and 5, which have no
+guide task, add `#### Added` for `animateWhenHidden` and the pose-space
+helpers.
+
 ### Phase 1: Clips, skins and morph targets (ships with design 11 Phase 4)
+
+Adds keyframe clips, binding, single-motion playback, skins and morph
+targets: enough to play a glTF animation.
 
 | #    | Task                     | Description                                                                                                                                                                                                                                                                                                                         | Size |
 | ---- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
@@ -178,6 +186,9 @@ imports the removed or renamed names.
 
 ### Phase 2: Layers and blending
 
+Adds playback layers, cross-fades, 1D blends, additive layers and joint
+masks.
+
 | #   | Task                     | Description                                                                                                                                                 | Size |
 | --- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 2.1 | Layers                   | §6.7: override and additive layers, layer weights, per-target coverage, the rest pose under everything                                                      | M    |
@@ -195,6 +206,9 @@ an additive layer sampled at its reference time leaves the pose unchanged
 within `1e-9`.
 
 ### Phase 3: Events, root motion and state machines
+
+Adds clip events, root motion and playback states on shared state
+machines.
 
 | #   | Task                 | Description                                                                                                                                                                                    | Size |
 | --- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
@@ -214,6 +228,8 @@ displacement times the loops played, within `1e-6`, at frame rates from 20
 to 240 fps; every event fires exactly once per crossing.
 
 ### Phase 4: Performance
+
+Makes deformation change-driven and skips hidden characters, to meet B4.
 
 | #   | Task                                 | Description                                                                                                                                                                                                                                 | Size |
 | --- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
@@ -310,7 +326,9 @@ In priority order.
 
 1. **Active morph targets and delta precision.** Up to 16 active targets per
    instance, and `rgba32float` deltas, are starting points. A 10,000-vertex
-   face with 52 targets of positions and normals takes 16.6 MB at 32 bits.
+   face with 52 targets of positions and normals takes 16.6 MB at 32 bits,
+   both used and allocated, since the texture is sized from the data
+   (§6.11.3).
    Options: (a) keep both; (b) `rgba16float` deltas, half the memory, about
    1 mm of error on a 2 m delta; (c) 32 active targets. Proposal: measure
    `MorphStressTest` and a 52-target face in Phase 4 on the reference
@@ -327,16 +345,19 @@ In priority order.
    they spread each frame's motion over its steps (design 14 PH33), so
    root-motion latency is the only reason left (design 14 open question
    8). Proposal: (a); revisit with design 14's character mover scenarios.
-4. **Lower sampling rates for small characters.** Characters far away could
-   sample every second or fourth frame, staggered. It needs a screen-size
-   output from design 06's level-of-detail selection. Proposal: after B4
-   and the M6 sample game are measured.
+4. **Lower sampling rates for small characters.** It needs a screen-size
+   output from design 06's level-of-detail selection. Options: (a) sample
+   every visible character every frame; (b) sample far characters every
+   second or fourth frame, staggered. Proposal: (a) until B4 and the M6
+   sample game are measured.
 5. **Animating component fields** (`KHR_animation_pointer`, and a path-based
-   successor to property animations' callbacks). Proposal: a follow-up
-   design after M4 that binds clip channels to component fields by path
-   with the same one-writer rule.
-6. **2D blend spaces** (direction and speed for strafing). Proposal: after
-   the M6 sample game shows whether a 1D blend per layer is enough.
+   successor to property animations' callbacks). Options: (a) a follow-up
+   design after M4 that binds clip channels to component fields by path,
+   with the one-writer rule; (b) leave `KHR_animation_pointer` unsupported
+   and keep property animations' callbacks. Proposal: (a).
+6. **2D blend spaces** (direction and speed for strafing). Options: (a) one
+   1D blend per layer; (b) 2D blend spaces for direction and speed.
+   Proposal: (a) until the M6 sample game shows (b) is needed.
 7. **Events read in the fixed step.** Records live from one playback run to
    the next, so a `fixedUpdate` system sees them zero or several times per
    frame. Options: (a) a latch like design 03's input latch; (b) the guide
@@ -377,7 +398,8 @@ flowchart TB
   G --> PW --> S --> P --> RM --> SA --> A --> T --> ME --> DX --> SK --> GS --> PL
 ```
 
-`registerAnimation(world, time)` adds the animation systems, creates
+`registerAnimation(world)` adds the animation systems, with the world's
+clock (`world.time`, design 03 §6.7.1), creates
 `animationGroup` and `poseAdjustmentGroup` in `postUpdate`, both before
 design 04's `transformPropagationGroup`, and adds the module's singleton,
 `AnimationWorldEcsComponent`: the sampling scratch (§6.7.1) and the
@@ -476,7 +498,7 @@ export interface KeyframeChannel {
 
 export interface KeyframeClip {
   readonly name: string;
-  /** Seconds from 0 to the last key of any channel (AN21). */
+  /** Seconds from 0 to the last key of any channel. */
   readonly duration: number;
   /** Distinct key-time arrays, each shared by every channel that uses it. */
   readonly timelines: readonly Float32Array[];
@@ -485,7 +507,7 @@ export interface KeyframeClip {
   readonly source: object | null;
   /** Named times, sorted by time. */
   readonly events: readonly ClipEvent[];
-  /** The pose additive layers subtract (§6.3.5). Default: this clip at time 0. */
+  /** The pose additive layers subtract. Default: this clip at time 0. */
   readonly additiveReference: {
     readonly clip: KeyframeClip;
     readonly time: number;
@@ -716,17 +738,17 @@ descendants), an attachment that carries a model of its own, or a node whose
 export interface ClipPlaybackEcsComponent {
   /** Multiplies every motion's speed. Input, default 1. */
   speed: number;
-  /** Sample the pose even when no view saw the instance last frame (AN20). Input, default false. */
+  /** Sample the pose even when no view saw the instance last frame. Input, default false. */
   animateWhenHidden: boolean;
   /** Bottom first. Layer 0 is an override layer created with the component. */
   readonly layers: readonly ClipLayer[];
-  /** The clips this entity can play, in the order they were added; a model's instances share them (§6.4.1). */
+  /** The clips this entity can play, in the order they were added; a model's instances share them. */
   readonly clips: readonly KeyframeClip[];
-  /** Events crossed during the playback system's latest run (§6.8). Output. */
+  /** Events crossed during the playback system's latest run. Output. */
   readonly events: readonly ClipEventRecord[];
   /** The change tick of the latest sampled pose; 0 before the first. Output. */
   readonly poseTick: number;
-  /** Pose layout, entity table and clip set (§6.4). Output. */
+  /** Pose layout, entity table and clip set. Output. */
   readonly binding: PoseBinding;
 }
 
@@ -737,11 +759,11 @@ export interface ClipLayer {
   weight: number;
   /** The targets the layer affects; null for every target. Input. */
   mask: JointMask | null;
-  /** Read by a 1D blend playing in this layer. Output: set through a request (§6.5.2). */
+  /** Read by a 1D blend playing in this layer. Output: set through a request. */
   readonly blendParameter: number;
   /** At most four motions with their fade weights. Output, written only by the playback system. */
   readonly motions: readonly LayerMotion[];
-  /** What was asked of the layer since the playback system last ran (§6.5.2). */
+  /** What was asked of the layer since the playback system last ran. */
   readonly request: LayerRequest;
 }
 
@@ -947,23 +969,23 @@ and keeps bindings current when targets or playback components are removed.
 
 ```text
 for each playback component P:
-  if not shouldSample(P): continue                               // §6.7.4
-  pose ← P's rest pose                                            // every target (AN11)
+  if not shouldSample(P): continue
+  pose ← P's rest pose                                            // every target
   for each layer L, bottom first, with L.weight > 0:
     clear L's accumulators for the targets it touches
     for each motion M in L with M.fadeWeight > 0:
       for each clip C of M with weight c > 0 (one clip, or the blend's nonzero entries):
         w ← M.fadeWeight × c
         for each channel of C bound to target i:
-          v ← sample(channel, M's time in C, M's cursors)        // §6.3.3
-          if L is additive: v ← delta(v, reference)             // §6.3.5
-          accumulate w·v into target i's path; coverage[i, path] += w  // §6.7.2
+          v ← sample(channel, M's time in C, M's cursors)
+          if L is additive: v ← delta(v, reference)
+          accumulate w·v into target i's path; coverage[i, path] += w
     for each target i and path the layer touched:
       a ← L.weight × min(1, coverage[i, path]) × (L.mask ? L.mask[i] : 1)
       normalize the accumulated value by coverage[i, path]
       override: pose[i] ← mix(pose[i], layerValue[i], a)
       additive: pose[i] ← apply(pose[i], layerDelta[i], a)
-  remove the root motion joint's extracted motion from pose        // §6.9.2
+  remove the root motion joint's extracted motion from pose
   write pose into each target's transform.local and morph weights, skipping removed targets (-1)
   P.poseTick ← world.changeTick
 ```
@@ -1162,7 +1184,7 @@ export interface Skin {
   readonly jointCount: number;
   /** 16 numbers per joint, column-major, from mesh bind space to the joint's space. Identity when the file has none. */
   readonly inverseBindMatrices: Float64Array;
-  /** Per joint, the largest axis scale of its inverse bind matrix, for bounds (§6.10.5). Computed by createSkin. */
+  /** Per joint, the largest axis scale of its inverse bind matrix, for bounds. Computed by createSkin. */
   readonly inverseBindScales: Float32Array;
   readonly jointNames: readonly string[];
 }
@@ -1173,7 +1195,7 @@ export interface SkinEcsComponent {
   readonly joints: readonly number[];
   /** Per joint, the index in `joints` of its nearest ancestor that is also a joint, or -1. Computed when the component is added. */
   readonly jointParents: Int16Array;
-  /** Per joint: center (x, y, z) and radius of the vertices it moves, in its bind space (§6.10.5). */
+  /** Per joint: center (x, y, z) and radius of the vertices it moves, in its bind space. */
   readonly jointBounds: Float32Array;
 }
 
@@ -1290,18 +1312,18 @@ restores it without waiting for joints to move.
 `forge/vertex` (design 08 §6.7) runs, under the mesh's variant bits:
 
 ```glsl
-// Order: morph targets, skinning, the material's vertex hook, the object transform (AN10).
+// Order: morph targets, skinning, the material's vertex hook, the object transform.
 #if defined(FORGE_MORPHED) || defined(FORGE_SKINNED)
   forge_readDeformationRecord();
 #endif
 #ifdef FORGE_MORPHED
-  forge_applyMorphTargets(vertex);           // §6.11.4
+  forge_applyMorphTargets(vertex);
 #endif
 #ifdef FORGE_SKINNED
   forge_applySkin(vertex);
 #endif
   forge_vertex(vertex);                      // the hook, when the material has one
-  // forge_objectToView(...) as in design 06 §6.7.3
+  // forge_objectToView(...)
 ```
 
 ```glsl
@@ -1310,7 +1332,7 @@ vec4 forge_animationTexel(uint i) {
 }
 
 void forge_readDeformationRecord() {
-  vec4 record = forge_animationTexel(uint(forge_objectTexel3.w) >> 2u); // §6.10.3
+  vec4 record = forge_animationTexel(uint(forge_objectTexel3.w) >> 2u);
   forge_paletteStart = uint(record.x);
   forge_morphListStart = uint(record.y);
   forge_morphCount = uint(record.z);
@@ -1482,12 +1504,16 @@ driven by speech. Weights outside `[0, 1]` are allowed, as in glTF.
 Each morphed mesh gets an `rgba32float` 2D array texture, created from the
 CPU deltas when the mesh is first drawn with weights: texel
 `(target × attributeCount + attribute) × vertexCount + vertex`, `xyz` the
-delta. Layers are 2,048 × 2,048 texels, WebGL2's guaranteed size, and the
-texture has as many as it needs (WebGL2 guarantees 256, about a billion
-texels); a texel's coordinate is `ivec3(i & 2047u, (i >> 11u) & 2047u,
-i >> 22u)`. A 10,000-vertex face with 52 targets of positions and normals
-is 1,040,000 texels: one layer, 508 rows used. The texture is a GPU
-resource of the mesh, released with it.
+delta. The texture is sized from the data, since a full 2,048 × 2,048
+`rgba32float` layer is 64 MiB: rows are 2,048 texels wide; a texture that
+fits in one layer is `ceil(texelCount / 2048)` rows tall, and a larger
+one has `ceil(texelCount / 2048²)` layers of 2,048 rows, WebGL2's
+guaranteed size (it guarantees 256 layers, about a billion texels). A
+texel's coordinate is `ivec3(i & 2047u, (i >> 11u) & 2047u, i >> 22u)` in
+both cases, since a one-layer texture's rows are all below 2,048. A
+10,000-vertex face with 52 targets of positions and normals is 1,040,000
+texels: one layer of 2,048 × 508 texels, 16.6 MB allocated. The texture
+is a GPU resource of the mesh, released with it.
 
 Per instance, the deformation extraction compares the weights with the
 copy it last processed (design 04's compare-instead-of-mark approach, since
@@ -1680,7 +1706,7 @@ export interface PlaybackStatesEcsComponent<TParameters = unknown> {
   parameters: TParameters;
   /** One entry per layer a machine drives. */
   readonly layers: readonly PlaybackStatesLayer<TParameters>[];
-  /** Triggers set since the last run; cleared by the states system (AN16). */
+  /** Triggers set since the last run; cleared by the states system. */
   readonly triggers: ReadonlySet<string>;
 }
 
@@ -1715,7 +1741,7 @@ interface Locomotion {
 const idle = createPlaybackState<Locomotion>({ name: 'idle', motion: 'Idle' });
 const move = createPlaybackState<Locomotion>({
   name: 'move',
-  motion: locomotion, // the ClipBlend1d of §6.5.1
+  motion: locomotion, // a ClipBlend1d
   blendParameter: (p) => p.speed,
 });
 const jump = createPlaybackState<Locomotion>({

@@ -135,7 +135,15 @@ Tone mapping, auto exposure and screen-space ambient occlusion are design
 
 ## 3. Phases
 
+Each phase adds its `#### Added` changelog bullets for the API it ships
+(Phase 2: `createEnvironmentMap`, `decodeRgbe`; Phase 3: the sky and fog
+components; Phase 4: the extension objects; Phase 5: transmission, volume
+and dispersion; Phase 6: KTX2 environment sources).
+
 ### Phase 1: The core material, exposure and procedural environments
+
+Adds `PbrMaterial` with its BRDF, exposure and procedural environments:
+the minimum for a correctly lit metallic-roughness material.
 
 | #    | Task                              | Description                                                                                                                                                                  | Size |
 | ---- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
@@ -162,6 +170,9 @@ no exposure or environment setup.
 
 ### Phase 2: Environment maps
 
+Loads `.hdr` environment maps and processes them on the GPU into the
+specular cube and spherical harmonics for image-based lighting.
+
 | #   | Task                         | Description                                                                                                                                      | Size |
 | --- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
 | 2.1 | RGBE decoder                 | §6.9.2: Radiance `.hdr` header, flat and run-length-encoded rows, orientation, downsampling past the device's texture size, the largest exponent | M    |
@@ -183,6 +194,8 @@ environment matches its reference render.
 
 ### Phase 3: Sky and fog
 
+Adds the sky pass and height fog.
+
 | #   | Task                | Description                                                                                                                                                                                     | Size |
 | --- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 3.1 | Sky pass            | §6.10: environment source, gradient, color and blurred skies behind opaque geometry                                                                                                             | M    |
@@ -196,6 +209,9 @@ sloped view; unlit and lit materials at the same distance receive the
 same fog.
 
 ### Phase 4: Layered extensions
+
+Adds the layered glTF material extensions: IOR, specular, clearcoat,
+sheen, iridescence and anisotropy.
 
 | #   | Task              | Description                                                                                        | Size |
 | --- | ----------------- | -------------------------------------------------------------------------------------------------- | ---- |
@@ -214,6 +230,9 @@ warning.
 
 ### Phase 5: Transmission, volume and dispersion
 
+Adds transmission, volume and dispersion, with the transmissive phase
+that copies the scene behind them.
+
 | #   | Task                     | Description                                                                                                                                 | Size |
 | --- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 5.1 | Transmissive phase       | §6.12: a sorted phase drawn after the sky; the half-resolution scene-color copy with mips, made only when the phase has items               | M    |
@@ -230,6 +249,9 @@ copy meets its budget on the integrated-GPU reference, or the budget is
 replaced with the measured value and PB20 revisited.
 
 ### Phase 6: KTX2 environments and sample-model goldens (with design 11)
+
+Adds KTX2 environment sources and the sample-model goldens, once design
+11 loads glTF.
 
 | #   | Task                 | Description                                                                                                                                                             | Size |
 | --- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
@@ -261,7 +283,7 @@ checks are recorded; B5 meets its budget with the Sponza glTF.
 | PB13 | Environment brightness                      | (a) `illuminance`: the lux a white, up-facing surface receives from it; (b) a raw multiplier on the source's values                                                                                                                                                                                                                                                                                                                                                                                                     | (a)                                             | Most HDR images are not calibrated, so a multiplier gives each image a different brightness and nothing relates it to the sun's lux. Normalizing to illuminance makes images interchangeable and puts ambient light in the same unit as design 09's directional light; Unity HDRP offers the same "lux" mode. A calibrated image keeps its own brightness with `illuminance: map.illuminance`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | PB14 | Diffuse environment light                   | (a) Nine spherical-harmonic coefficients in the view block, projected on the CPU (PB33) and windowed (PB34); (b) an irradiance cube map                                                                                                                                                                                                                                                                                                                                                                                 | (a)                                             | (b) costs a fragment texture unit, which design 05 doesn't reserve. Nine coefficients represent irradiance with an average error of a few percent at most, and about 1% for typical environments (Ramamoorthi and Hanrahan 2001), in 144 bytes of uniforms. A small, very bright sun is the worst case: the error is largest on the side facing away from it, where the projection rings negative; windowing (PB34) removes the ringing at the cost of some directional contrast. Filament and Unity's ambient probes use harmonics.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | PB15 | Specular environment light                  | (a) One GGX-prefiltered cube, roughness per mip, made on the GPU when the map is created (split-sum approximation); (b) prefiltered offline by a tool                                                                                                                                                                                                                                                                                                                                                                   | (a)                                             | Forge is code-only; a game drops in a `.hdr` file. GPU prefiltering of a 256 cube takes a few milliseconds (§6.15). Unreal's split sum is the established method.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| PB16 | Sheen environment term                      | (a) Sample the GGX cube at the sheen roughness, scaled by the sheen albedo from the lookup table; (b) a second, Charlie-prefiltered cube, as the Sample Viewer does                                                                                                                                                                                                                                                                                                                                                     | (a)                                             | (b) costs a texture unit and a second prefilter. Filament and Three.js use (a). Trade-off: sheen reflections of the environment are slightly sharper than the Sample Viewer's; a known deviation in reference checks.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| PB16 | Sheen environment term                      | (a) Sample the GGX cube at the sheen roughness, scaled by the sheen albedo from the lookup table; (b) a second, Charlie-prefiltered cube, as the Sample Viewer does                                                                                                                                                                                                                                                                                                                                                     | (a)                                             | (b) costs a texture unit and a second prefilter. Filament samples the prefiltered specular cube at the sheen roughness (option a); Three.js uses diffuse irradiance times a fitted sheen DG term. Trade-off: sheen reflections of the environment are slightly sharper than the Sample Viewer's; a known deviation in reference checks.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | PB17 | Environment rotation                        | (a) An angle about `+Y`; (b) a quaternion                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | (a)                                             | Environment images are captured level; tilting one puts the horizon at an angle. A rotation about Y keeps the up-facing illuminance (PB13) unchanged and costs one 2D rotation in the shader. Unity and Unreal rotate skies about the vertical axis only.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | PB18 | RGBE data                                   | (a) Decode run-length encoding in TypeScript, recording the largest exponent; upload the RGBE bytes and decode exponents on the GPU; (b) convert to floats on the CPU                                                                                                                                                                                                                                                                                                                                                   | (a)                                             | The CPU work is a byte copy loop, and the largest exponent is a comparison in it (PB32 needs it); (b) adds a float conversion per texel (tens of milliseconds for a 4K image) and doubles the upload. The source texture stays 4 bytes per texel and serves the sky at full resolution and full range.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | PB19 | What the sky draws                          | (a) The camera's environment, or the default environment, drawn only when the camera has a sky component; (b) a separate sky texture or material; (c) also draw the default environment for lit views without a sky component                                                                                                                                                                                                                                                                                           | (a)                                             | When the sky is drawn, reflections, ambient light and background agree, because they come from one source. Without a sky component the background is the camera's clear color even though the default environment lights the scene; the guide says so and shows the one line that adds the sky. (c) would make the sky an effect without a component (against design 06 R12) and would cover what a camera with `clearColor: null` draws over, such as a 3D layer over a 2D background. A game that wants a background unrelated to its lighting uses the camera's clear color or its own pass at `afterOpaque`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -305,8 +327,9 @@ In priority order.
    11's worker pool; (b) leave it to loading screens. Proposal: (a) once
    design 11's pool exists.
 4. **Several layers of transmission.** Glass seen through glass shows the
-   opaque scene only. Bevy re-copies the scene color between transmissive
-   steps. Proposal: single layer now; a later change if demos need it.
+   opaque scene only. Options: (a) one transmission layer; (b) re-copy the
+   scene color between transmissive steps, as Bevy does. Proposal: (a);
+   (b) if demos need it.
 
 ---
 
@@ -400,18 +423,18 @@ const material = new PbrMaterial(renderContext, {
   emissiveStrength: 1,
   emissiveTexture: null,
   ior: 1.5,
-  blendMode: 'opaque', // 'opaque' | 'mask' | 'blend' (design 08 §6.4)
+  blendMode: 'opaque', // 'opaque' | 'mask' | 'blend'
   alphaCutoff: 0.5,
   doubleSided: false,
-  fog: true, // design 08's material option (§6.11 here)
-  clearcoat: null, // extension objects, §6.3
+  fog: true, // applies height fog
+  clearcoat: null, // extension objects
   sheen: null,
   specular: null,
   transmission: null,
   volume: null,
   iridescence: null,
   anisotropy: null,
-  hooks: {}, // design 08 §6.8; light and ambient hooks replace the engine's terms (§6.5.2)
+  hooks: {}, // light and ambient hooks replace the engine's terms
 });
 
 material.roughness = 0.25; // writes the block, bumps version; no new variant
@@ -595,21 +618,21 @@ struct ForgeSurface {
 
 ```glsl
 void main() {
-  ForgeSurfaceInput input = forge_surfaceInput();      // design 08: position, view vector, uvs, color0, tangent frame
+  ForgeSurfaceInput input = forge_surfaceInput();      // position, view vector, uvs, color0, tangent frame
   ForgeSurface surface = forge_defaultSurface();
-  forge_pbrSurface(surface, input);                    // PbrMaterial's factors and textures (this design)
+  forge_pbrSurface(surface, input);                    // PbrMaterial's factors and textures
 #ifdef FORGE_HOOK_SURFACE
   forge_surface(surface, input);                       // the material's hook sees the textured values
 #endif
   forge_alphaTest(surface);                            // mask only
-  vec3 own = forge_shade(surface, input) * forge_exposure;     // physical units, then pre-exposure (§6.7.3)
-  ForgeTransmitted transmitted = forge_transmitted(surface, input); // §6.12; zero without transmission
-  vec4 color = forge_composeFog(own, transmitted, surface.alpha, input); // §6.11; a plain sum without fog
-  color = forge_clampOutput(color);                    // §6.6.6
+  vec3 own = forge_shade(surface, input) * forge_exposure;     // physical units, then pre-exposure
+  ForgeTransmitted transmitted = forge_transmitted(surface, input); // zero without transmission
+  vec4 color = forge_composeFog(own, transmitted, surface.alpha, input); // a plain sum without fog
+  color = forge_clampOutput(color);                    // clamps to 64,000 and replaces NaN with 0
 #ifdef FORGE_HOOK_FINAL_COLOR
-  color = forge_finalColor(color, input);              // design 08: the last word
+  color = forge_finalColor(color, input);              // the material's final-color hook runs last
 #endif
-  forge_writeColor(color);                             // straight alpha (design 08 §6.7)
+  forge_writeColor(color);                             // straight alpha
 }
 ```
 
@@ -695,7 +718,8 @@ single-scattering lobe for a white `f0`.
 - **Punctual lights**: the specular lobe is multiplied by
   `1 + f0 (1/Ess − 1)` (Filament's form of Kulla and Conty's
   compensation).
-- **Environment**: Fdez-Agüera (2019), as the Sample Viewer does:
+- **Environment**: Fdez-Agüera's multiple-scattering model for
+  image-based lighting (2019):
   `FssEss = kS·A + B` with `kS` Schlick's roughness-aware Fresnel;
   `Ems = 1 − Ess`; `F_avg = f0 + (1 − f0)/21`;
   `FmsEms = Ems · FssEss · F_avg / (1 − F_avg·Ems)`. Specular is
@@ -851,7 +875,7 @@ behind §6.1's example and open question 1.
 ```ts
 interface EnvironmentEcsComponent {
   source: EnvironmentSource;
-  /** Lux on a white, up-facing surface (decision PB13). Default 2,500. */
+  /** Lux on a white, up-facing surface. Default 2,500. */
   illuminance: number;
   /** Radians about +Y, counter-clockwise seen from above. Default 0. */
   rotation: number;
@@ -968,8 +992,9 @@ It's bound in the frame group (design 05 §6.6) and regenerated when design
 05's restore notification runs after a context restore (§6.19). Rendering
 it needs a half-float color buffer, so `lighting()` throws on a device
 without one, with the error design 05 gives for HDR views (README P4,
-design 05 D11): every view of a pipeline with `lighting()` is HDR anyway
-(design 06 §6.4.2).
+design 05 D11): a pipeline with `lighting()` exists to draw lit views,
+which are HDR (design 09 L17); its UI and 2D views stay 8-bit (design 06
+§6.4.2) but cannot be used with the feature on such a device.
 
 ### 6.9 Environment maps
 
@@ -1432,8 +1457,12 @@ test:reference` compares each Forge golden with its reference at a looser
 tolerance than goldens (a 0.15 threshold over at most 2% of pixels) and
 reports known deviations separately: punctual multiple scattering (PB2),
 specular anti-aliasing at silhouettes (PB24), sheen environment
-reflections (PB16), the half-resolution transmission copy (PB20) and
-windowed harmonics for sun-dominated environments (PB34). It runs when a
+reflections (PB16), the half-resolution transmission copy (PB20),
+windowed harmonics for sun-dominated environments (PB34), and the
+environment's multiple scattering: Forge adds `irradiance · FmsEms`
+(§6.6.2), while the current Sample Viewer multiplies the prefiltered
+radiance by `FssEss + FmsEms`. White-furnace results are the same; the
+reference comparison can differ slightly on rough metals. It runs when a
 golden is created or changed, as design 01 §6.4.3 requires, not on every
 pull request.
 

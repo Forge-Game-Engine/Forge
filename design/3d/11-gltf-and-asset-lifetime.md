@@ -12,24 +12,28 @@
 
 ## 0. Targeted modules
 
-| Path                                                              | Change        | Notes                                                                                                                                                                                                                                                                     |
-| ----------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/asset-loading/` (`@forge-game-engine/forge/asset-loading`)   | Modified      | `AssetStore`, `AssetHandle`, `AssetKind`, the load context, byte and JSON fetching with progress and cancellation, the worker pool; `AssetHandlesEcsComponent`, its index singleton, the collection system and `registerAssets`; `binaryAsset`, `jsonAsset`, `imageAsset` |
-| `src/asset-loading/asset-cache.ts`, `asset-caches/image-cache.ts` | Removed       | `AssetCache<T>` and `ImageCache` are replaced by asset kinds in one store. `AssetRegistry` is unchanged                                                                                                                                                                   |
-| `src/rendering/texture-cache.ts`                                  | Removed       | Replaced by the `textureAsset` kind                                                                                                                                                                                                                                       |
-| `src/rendering/textures/` (new)                                   | New           | `textureAsset`; KTX2 parsing and Basis Universal transcoding with format selection from design 05's capabilities                                                                                                                                                          |
-| `src/rendering/render-context.ts`                                 | Modified      | `imageCache` and `textureCache` removed (and `RenderContextOptions.imageCache`); the upload queue (§6.3.4)                                                                                                                                                                |
-| `src/audio/sound-asset-cache.ts`                                  | Removed       | Replaced by the `soundAsset` kind                                                                                                                                                                                                                                         |
-| `src/text/font-atlas/font-atlas-cache.ts`                         | Removed       | Replaced by the `fontAtlasAsset` kind                                                                                                                                                                                                                                     |
-| `src/gltf/` (new module, `@forge-game-engine/forge/gltf`)         | New           | `modelAsset`, `Model`, validation, accessors, meshes, materials, nodes, the model template, `instantiateModel`, model components, extensions, mesh decompression                                                                                                          |
-| `src/gltf/vendor/`, `src/rendering/textures/vendor/` (new)        | New           | Pinned upstream builds of the meshopt decoder, the Draco glTF decoder and the Basis Universal transcoder, with their licenses                                                                                                                                             |
-| `scripts/build-decoders.js` (new), `package.json`                 | New, Modified | Builds the lazily imported decoder chunks; the `gltf` export path; `src/index.ts` exports the module                                                                                                                                                                      |
-| `THIRD_PARTY_NOTICES.md` (new)                                    | New           | Licenses of the vendored decoders (Apache-2.0 for Draco and Basis Universal, MIT for meshoptimizer)                                                                                                                                                                       |
-| `demo/`, `e2e/`, `documentation-site/src/pages/demos/**`          | Modified      | About 55 files move from the caches to the asset store (plus about 30 in `/src` and 15 guides)                                                                                                                                                                            |
-| `e2e/golden/models/`, `e2e/specs/gltf-*.spec.ts` (new)            | New           | Golden renders of the sample models, loading and lifetime specs                                                                                                                                                                                                           |
-| `bench/`                                                          | Modified      | B9; load-time and instantiation benchmarks                                                                                                                                                                                                                                |
-| `documentation-site/docs/docs/asset-loading/`                     | Modified      | Rewritten for the store and handles                                                                                                                                                                                                                                       |
-| `documentation-site/docs/docs/models/` (new)                      | New           | The models section                                                                                                                                                                                                                                                        |
+| Path                                                                                                                     | Change   | Notes                                                                                                                                                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/asset-loading/` (`@forge-game-engine/forge/asset-loading`)                                                          | Modified | `AssetStore`, `AssetHandle`, `AssetKind`, the load context, byte and JSON fetching with progress and cancellation, the worker pool; `AssetHandlesEcsComponent`, its index singleton, the collection system and `registerAssets`; `binaryAsset`, `jsonAsset`, `imageAsset` |
+| `src/asset-loading/asset-cache.ts`, `asset-caches/image-cache.ts`                                                        | Removed  | `AssetCache<T>` and `ImageCache` are replaced by asset kinds in one store. `AssetRegistry` is unchanged                                                                                                                                                                   |
+| `src/rendering/texture-cache.ts`                                                                                         | Removed  | Replaced by the `textureAsset` kind                                                                                                                                                                                                                                       |
+| `src/rendering/textures/` (new)                                                                                          | New      | `textureAsset`; KTX2 parsing and Basis Universal transcoding with format selection from design 05's capabilities                                                                                                                                                          |
+| `src/rendering/render-context.ts`                                                                                        | Modified | `imageCache` and `textureCache` removed (and `RenderContextOptions.imageCache`); the upload queue (§6.3.4)                                                                                                                                                                |
+| `src/audio/sound-asset-cache.ts`                                                                                         | Removed  | Replaced by the `soundAsset` kind                                                                                                                                                                                                                                         |
+| `src/text/font-atlas/font-atlas-cache.ts`                                                                                | Removed  | Replaced by the `fontAtlasAsset` kind                                                                                                                                                                                                                                     |
+| `src/gltf/` (new module, `@forge-game-engine/forge/gltf`)                                                                | New      | `modelAsset`, `Model`, validation, accessors, meshes, materials, nodes, the model template, `instantiateModel`, model components, extensions, mesh decompression                                                                                                          |
+| `src/gltf/vendor/`, `src/rendering/textures/vendor/` (new)                                                               | New      | Pinned upstream builds of the meshopt decoder, the Draco glTF decoder and the Basis Universal transcoder, with their licenses                                                                                                                                             |
+| `scripts/build-decoders.js` (new)                                                                                        | New      | Builds the lazily imported decoder chunks                                                                                                                                                                                                                                 |
+| `package.json`                                                                                                           | Modified | The `gltf` export path; `src/index.ts` exports the module                                                                                                                                                                                                                 |
+| `THIRD_PARTY_NOTICES.md` (new)                                                                                           | New      | Licenses of the vendored decoders (Apache-2.0 for Draco and Basis Universal, MIT for meshoptimizer)                                                                                                                                                                       |
+| `demo/`, `e2e/`, `documentation-site/src/pages/demos/**`                                                                 | Modified | About 55 files move from the caches to the asset store (plus about 30 in `/src` and 15 guides)                                                                                                                                                                            |
+| `e2e/golden/models/`, `e2e/specs/gltf-*.spec.ts` (new)                                                                   | New      | Golden renders of the sample models, loading and lifetime specs                                                                                                                                                                                                           |
+| `bench/`                                                                                                                 | Modified | B9; load-time and instantiation benchmarks                                                                                                                                                                                                                                |
+| `documentation-site/docs/docs/asset-loading/`                                                                            | Modified | Rewritten for the store and handles                                                                                                                                                                                                                                       |
+| `documentation-site/docs/docs/models/` (new)                                                                             | New      | The models section                                                                                                                                                                                                                                                        |
+| `documentation-site/src/pages/demos/models/` (new), `documentation-site/src/pages/demos/category/models/index.tsx` (new) | New      | The model viewer demo and its category page (§6.19)                                                                                                                                                                                                                       |
+| `documentation-site/src/data/demo-categories.ts`, `demos.ts`                                                             | Modified | The `models` category and the demo's entry                                                                                                                                                                                                                                |
+| `documentation-site/static/img/demos/categories/models.svg` (new)                                                        | New      | The category's card image                                                                                                                                                                                                                                                 |
 
 ---
 
@@ -168,6 +172,9 @@ samplers is fetched, decoded and uploaded once.
 
 ### Phase 2: glTF core and instantiation
 
+Reads glTF and GLB files, builds models from their meshes, materials and
+textures, and instantiates them as entities.
+
 | #   | Task                   | Description                                                                                                                                                                       | Size |
 | --- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 2.1 | Containers             | §6.6.1: `.glb` chunks, `.gltf` with external and data-URI buffers and images, URI resolution                                                                                      | S    |
@@ -192,6 +199,9 @@ instance's root frees the model at that frame's collection.
 
 ### Phase 3: Extensions without decoders
 
+Supports the glTF extensions that need no decoder: material, geometry
+and scene extensions.
+
 | #   | Task               | Description                                                                                                                                                 | Size |
 | --- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 3.1 | Extension registry | §6.15, §6.16: built-in handlers, custom handlers, supported-name checks                                                                                     | S    |
@@ -208,6 +218,8 @@ uncompressed goldens within their tolerance.
 
 ### Phase 4: Skins, morph targets and animations (ships with design 12 Phase 1)
 
+Loads skins, morph targets and animations for design 12 to play.
+
 | #   | Task          | Description                                                                                                                                      | Size |
 | --- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
 | 4.1 | Skins         | Joints, inverse bind matrices and skeleton roots into design 12's skin type; up to eight influences (§6.8.5); joint bounds per (mesh, skin) pair | M    |
@@ -220,6 +232,9 @@ uncompressed goldens within their tolerance.
 §6.18.2 match their goldens at every sampled time.
 
 ### Phase 5: Workers, compression and paced uploads
+
+Moves parsing and decoding into workers, adds compressed meshes and KTX2
+textures, and paces GPU uploads, so loading doesn't block frames.
 
 | #   | Task                 | Description                                                                                                                                                                                           | Size |
 | --- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
@@ -239,13 +254,17 @@ created.
 
 ### Phase 6: Performance, conformance and documentation
 
-| #   | Task                     | Description                                                                                                                                                                                                | Size |
-| --- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 6.1 | B9                       | §6.17: the Sponza KTX2 asset, the measurement, the budget breakdown                                                                                                                                        | M    |
-| 6.2 | Sample Viewer comparison | The sample models added to design 10's reference renders (§6.16.3 there): the pinned Khronos Sample Renderer draws each with the golden's camera and environment, and the difference is reported (§6.18.3) | M    |
-| 6.3 | Benchmarks               | Accessor reading, interleaving, transcoding throughput per format, instantiation per node (§6.18.5)                                                                                                        | S    |
-| 6.4 | Guides and demo          | The models section (§6.19); a model viewer demo in a new `models` demo category                                                                                                                            | M    |
-| 6.5 | Changelog                | `#### Added` for the `gltf` module                                                                                                                                                                         | S    |
+Measures B9, compares the results against the Sample Viewer, and adds
+the guides and demo.
+
+| #   | Task                     | Description                                                                                                                                                                                                       | Size |
+| --- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 6.1 | B9                       | §6.17: the Sponza KTX2 asset, the measurement, the budget breakdown                                                                                                                                               | M    |
+| 6.2 | Sample Viewer comparison | The sample models added to design 10's reference renders (§6.16.3 there): the pinned Khronos Sample Renderer draws each with the golden's camera and environment, and the difference is reported (§6.18.3)        | M    |
+| 6.3 | Benchmarks               | Accessor reading, interleaving, transcoding throughput per format, instantiation per node (§6.18.5)                                                                                                               | S    |
+| 6.4 | Guides and demo          | The models section (§6.19); a model viewer demo in a new `models` demo category, with `static/img/demos/categories/models.svg` and `documentation-site/src/pages/demos/category/models/index.tsx`                 | M    |
+| 6.5 | Quick-start scene        | `e2e/fixtures/scenes/quick-start-gltf.ts`, whose body is the `models/index.md` snippet verbatim; its spec asserts the snippet is at most 20 statements and renders a lit, shadowed model (a relative measurement) | S    |
+| 6.6 | Changelog                | `#### Added` for the `gltf` module                                                                                                                                                                                | S    |
 
 **Definition of done:** B9 meets its budget on the desktop reference and
 is no slower than Three.js on the same asset; every golden in §6.18.2 was
@@ -260,7 +279,7 @@ checked against the Sample Viewer; the guides and demo are on the docs site.
 | GA1  | Asset lifetime                                                   | (a) Handles with reference counts: game code holds and releases its own, and an `AssetHandlesEcsComponent` holds an entity's, released by the collection system from its fixed query's `removed` journal; (b) caches that keep everything (today); (c) release through `FinalizationRegistry`; (d) `(world, entity)` keep-alive records on the store, polled with `isAlive` (first draft); (e) a handle in every component that uses an asset | (a)    | GPU memory needs a release the game controls, and JavaScript has no destructors: `FinalizationRegistry` callbacks may run late or never. Bevy frees an asset when its last strong handle is dropped, which happens when the component holding it is removed. Design 03's `removed` journal is Forge's equivalent of that drop, and design 08 already frees GPU scene slots from it, so a component that holds handles behaves the same way with no hook on component removal. Unity's Addressables count handles and instances in the same spirit. (d) leaked: an entry with a live record was taken off the unused list, and nothing put it back when the entity died. It also kept world state in a service (README §4.4). (e) would change design 08's mesh component and the sprite components to hold handles, and a model's meshes and materials aren't store entries of their own. |
 | GA2  | When an unused asset is freed                                    | (a) In the collection system's run in the `last` stage, after it has released the handles of components removed since its previous run; (b) as soon as a count reaches zero                                                                                                                                                                                                                                                                   | (a)    | Nothing is freed while the frame's bins still reference it (mesh extraction dropped removed entities' slots in the `render` stage); releasing and loading the same asset within a frame reuses it; component removals are applied in one place. Bevy also frees unused assets from a system that runs each frame. Trade-off: memory comes back at the end of the frame, not at the release call.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | GA3  | One store or a cache per asset type                              | (a) One `AssetStore` with asset kinds imported from their modules; (b) a cache per type, as today                                                                                                                                                                                                                                                                                                                                             | (a)    | A loading screen needs one progress value and one way to cancel; a model's textures and a sprite's texture share entries; dependencies are released with the asset that loaded them. Bevy's asset server, Godot's resource loader and PlayCanvas's asset registry are single stores. Kinds are values a game imports, rather than loaders registered by file extension, so a 2D game never bundles the glTF loader.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| GA4  | Loading images                                                   | (a) Fetch the bytes, clear any EXIF orientation in them, decode with `createImageBitmap(blob, { colorSpaceConversion: 'none', premultiplyAlpha: 'none' })`; decode through an image element from a Blob URL where those options aren't honored; (b) image elements with `crossOrigin`, as today                                                                                                                                               | (a)    | glTF says color information in images MUST be ignored and EXIF SHOULD be, and design 05 stores images as authored. Clearing the orientation tag in the bytes works on every decode path, where `imageOrientation: 'none'` doesn't: before Firefox 111 and the matching WebKit change it meant "take the orientation from the image" (Firefox bug 1809740, WebKit bug 250476), and image elements apply EXIF orientation regardless. Fetching the bytes gives progress, cancellation, data URIs and a game-supplied `fetch`, and a cross-origin file without CORS headers fails at load with a clear message instead of a `SecurityError` at upload. A Blob URL is same-origin, so `crossOrigin` is never needed. Older Safari (README open question 4) takes the image-element path with design 05's unpack settings.                                                                     |
+| GA4  | Loading images                                                   | (a) Fetch the bytes, clear any EXIF orientation in them, decode with `createImageBitmap(blob, { colorSpaceConversion: 'none', premultiplyAlpha: 'none' })`; decode through an image element from a Blob URL where those options aren't honored; (b) image elements with `crossOrigin`, as today                                                                                                                                               | (a)    | glTF says color information in images MUST be ignored and EXIF SHOULD be, and design 05 stores images as authored. Clearing the orientation tag in the bytes works on every decode path, where `imageOrientation: 'none'` doesn't: before Firefox 111 and the matching WebKit change it meant "take the orientation from the image" (Firefox bug 1809740, WebKit bug 250476), and image elements apply EXIF orientation regardless. Fetching the bytes gives progress, cancellation, data URIs and a game-supplied `fetch`, and a cross-origin file without CORS headers fails at load with a clear message instead of a `SecurityError` at upload. A Blob URL is same-origin, so `crossOrigin` is never needed. Older Safari (README open question 2) takes the image-element path with design 05's unpack settings.                                                                     |
 | GA5  | What a texture keeps for context loss                            | (a) The encoded file bytes, decoded or transcoded again on restore; (b) the decoded pixels; (c) nothing, fetching the URL again on restore                                                                                                                                                                                                                                                                                                    | (a)    | Encoded images are typically 5 to 10 times smaller than decoded ones, and browsers may keep Blobs outside the JavaScript heap. (c) fails offline, after cache eviction and for embedded images. Restore becomes asynchronous (§6.4.2), which design 05 §6.10 supports; nothing draws until it completes, which is acceptable after a GPU reset.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | GA6  | Which work runs in workers                                       | (a) Geometry processing, tangents, joint bounds, mesh decompression and KTX2 transcoding in a worker pool; JSON parsing, image decoding (already off-thread inside `createImageBitmap`) and GPU work on the main thread; (b) everything on the main thread; (c) the whole loader in a worker                                                                                                                                                  | (a)    | (b) blocks the main thread for hundreds of milliseconds on Sponza-sized files. (c) still needs materials, GPU objects and entities created on the main thread, and would move small JSON work across threads for nothing. Worker tasks are pure functions, so unit tests run them in-process.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | GA7  | How decoders are provided                                        | (a) Pinned upstream builds vendored in Forge's package, loaded by dynamic `import()` only when a file needs them, run in Blob-URL workers; (b) optional peer dependencies; (c) URLs the game configures and hosts, as Three.js's `setDecoderPath` and Babylon's decoder URLs                                                                                                                                                                  | (a)    | No configuration, decoder versions tested with Forge's goldens, no third-party CDN at runtime, and no npm dependency added. Bevy and Godot compile their decoders in, which is the native-engine form of (a). (b) can't cover Basis Universal, whose transcoder has no official npm package, and leaves version matching to every game. (c) fails at runtime when a game forgets to copy files. Trade-offs: the installed package grows (§6.12); a site's Content Security Policy must allow `worker-src blob:` and `'wasm-unsafe-eval'`; decoder updates arrive with Forge releases. Open question 1.                                                                                                                                                                                                                                                                                    |
@@ -318,8 +337,10 @@ In priority order.
    URL-backed files on restore and keep only embedded ones. Proposal: (a),
    revisited with mobile measurements in M4.
 5. **Loading textures low resolution first.** Large scenes could show
-   small mips while full ones load. Proposal: a later design, since it
-   needs KTX2 level ranges and residency tracking.
+   small mips while full ones load. Options: (a) a later design, once
+   KTX2 level ranges and residency tracking exist; (b) in Phase 5,
+   uploading the smallest KTX2 levels first. (a) keeps Phase 5's scope;
+   (b) shows textures sooner in large scenes. Proposal: (a).
 
 ---
 
@@ -346,8 +367,8 @@ const helmet = await assets.load(modelAsset, '/models/DamagedHelmet.glb', {
 const root = instantiateModel(world, helmet, {
   position: { x: 0, y: 1, z: 0 },
 });
-await renderContext.prepare(world); // design 08: compile what the scene needs
-helmet.release(); // the instance's entities keep the model loaded (§6.2.5)
+await renderContext.prepare(world); // compile what the scene needs
+helmet.release(); // the instance's entities keep the model loaded
 ```
 
 ```mermaid
@@ -381,7 +402,7 @@ export interface AssetStoreServices {
 }
 
 export function createAssetStore(services?: AssetStoreServices): AssetStore;
-/** Adds the handle index singleton and the collection system (stage `last`) to the world (§6.2.5). */
+/** Adds the handle index singleton and the collection system (stage `last`) to the world. */
 export function registerAssets(world: EcsWorld, assets: AssetStore): void;
 
 export interface AssetStore {
@@ -397,9 +418,9 @@ export interface AssetStore {
     url: string,
     options?: Partial<TOptions>,
   ): AssetHandle<T>;
-  /** Every load in progress, for loading screens (§6.3.1). */
+  /** Every load in progress, for loading screens. */
   readonly progress: AssetProgress;
-  /** Counts and bytes per kind, for the stats overlay (design 06). */
+  /** Counts and bytes per kind, for the stats overlay. */
   stats(): readonly AssetKindStats[];
   /**
    * Frees every asset no handle holds. Each registered world's collection system calls it once per frame;
@@ -466,7 +487,7 @@ export interface AssetLoadContext {
     url: string,
     options?: Partial<UOptions>,
   ): Promise<U>;
-  /** Runs a task in the store's worker pool (§6.3.3). */
+  /** Runs a task in the store's worker pool. */
   runTask<TOutput>(
     program: WorkerProgram,
     task: string,
@@ -581,7 +602,7 @@ run(world, result):
     index.recorded[entity] = the entity's AssetHandlesEcsComponent
   for each (entity, component) in the pending lists, then empty them:
     if index.recorded[entity] isn't this component:
-      release its handles                           // added and gone before this run (design 03 E8)
+      release its handles                           // added and gone before this run
   assets.collect()
 
 cleanup(world):                                     // the system removed, or the world stopped
@@ -792,8 +813,9 @@ Loss" describes them):
   code creates in that window record their data, as they do while lost,
   and are created when the restore finishes.
 - A source that fails (a worker refused by a tightened policy, for
-  example) is reported with the restore's other failures, as rebuild
-  failures are thrown together today, and its texture stays empty.
+  example) is reported with the restore's other failures through the
+  diagnostics channel's `onError` (README §4.6, design 05 §6.10), and its
+  texture stays empty.
 
 The `webgl-context-loss` e2e spec gains a scene with a loaded model,
 including KTX2 textures.
@@ -898,7 +920,8 @@ SHORT with KHR_mesh_quantization, which this file doesn't use).
   parents); scene roots are roots; a node with `matrix` isn't the target of
   translation, rotation or scale channels.
 - **Sparse**: indices strictly increase and stay below the count.
-- **Animation**: sampler inputs are scalar floats that never decrease;
+- **Animation**: sampler inputs are scalar floats that strictly increase,
+  as the glTF 2.0 specification requires;
   output counts match the interpolation (three values per key for cubic
   spline).
 - Problems the specification allows a viewer to tolerate (a missing
@@ -1106,9 +1129,9 @@ applies it:
   (design 05 §6.6). When its textures don't fit, design 10 §6.4 leaves out
   extensions by priority and warns once per material, naming its label.
 - Lit materials draw only in HDR views, which need float color buffers
-  (README P4); on a device without them, the render pipeline throws when it
-  creates the view (design 05 D11), naming the extension. Unlit-only
-  models draw in any view.
+  (README P4); on a device without them, `lighting()` throws when it's
+  created (design 10 §6.8.5) and HDR views throw when set up (design 05
+  D11), naming the extension. Unlit-only models draw in any view.
 - **Pipelines start compiling at parse time** (GA28). Everything a variant
   key takes from the file is known once the JSON is parsed: material
   features (bound slots with their UV sets and transforms, alpha mode,
@@ -1290,10 +1313,10 @@ export interface Model {
   readonly defaultMaterial: Material;
   readonly textures: readonly Texture[]; // every Texture its materials bind, one per (image, color space, sampler)
   readonly cameras: readonly ModelCamera[];
-  readonly lights: readonly ModelLight[]; // KHR_lights_punctual, converted to design 09's units and scaled by photometricScale
-  readonly photometricScale: number; // the scale applied to emissive strength and lights at load (GA29)
-  readonly skins: readonly Skin[]; // design 12
-  readonly animations: readonly KeyframeClip[]; // design 12
+  readonly lights: readonly ModelLight[]; // KHR_lights_punctual, converted to Forge's light units and scaled by photometricScale
+  readonly photometricScale: number; // the scale applied to emissive strength and lights at load
+  readonly skins: readonly Skin[]; // skinning data
+  readonly animations: readonly KeyframeClip[]; // keyframe clips
   readonly nodes: readonly ModelNode[];
   readonly scenes: readonly ModelScene[];
   readonly defaultScene: number;
@@ -1386,10 +1409,10 @@ The template is built once per scene at load and stores, in flat arrays:
 ```ts
 export interface InstantiateModelOptions {
   scene?: number | string; // default model.defaultScene
-  position?: Vector2 & { z?: number }; // the root's transform, as addTransformComponent takes it (design 04 §6.2)
+  position?: Vector2 & { z?: number }; // the root's transform, as addTransformComponent takes it
   rotation?: Quaternion | number;
   scale?: Vector2 & { z?: number };
-  isStatic?: boolean; // default false (GA16)
+  isStatic?: boolean; // default false
   variant?: string | null; // default null: the file's materials
 }
 
@@ -1814,7 +1837,9 @@ transmission and the rest) to its own goldens through this loader.
   `loading-assets.md` (load, progress, cancel, the game-supplied fetch,
   bytes the game already has), `asset-lifetime.md` (release,
   `addAssetHandlesComponent` and what instantiation adds, level
-  transitions, what context loss keeps), `asset-registry.md` unchanged.
+  transitions, what context loss keeps; the rule that a component that
+  draws an asset needs a handle, and the diagnostics error a draw of a
+  freed resource raises, design 08 §6.1.1), `asset-registry.md` unchanged.
   `loading-images.md` is replaced; `rendering/textures.md` (with
   `withSampler` and EXIF orientation), `audio/loading-sounds.md` and
   `text/loading-a-font-atlas.md` use the kinds.
@@ -1836,7 +1861,9 @@ transmission and the rest) to its own goldens through this loader.
   - `supported-extensions.md`: §6.15's table.
   - `custom-extensions.md`: handlers and extras.
 - **Demo**: a model viewer in a new `models` demo category (a card in
-  `demo-categories.ts`, entries in `demos.ts`) that loads a few sample
+  `demo-categories.ts`, its SVG at `static/img/demos/categories/models.svg`,
+  the `src/pages/demos/category/models/index.tsx` wrapper, entries in
+  `demos.ts`) that loads a few sample
   models, switches variants and plays their animations (once design 12
   lands), and shows load time and progress.
 

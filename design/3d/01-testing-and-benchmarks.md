@@ -1,12 +1,12 @@
 # Design 01: Testing and Benchmarks
 
-|                                       |                                                                          |
-| ------------------------------------- | ------------------------------------------------------------------------ |
-| **Status**                            | Draft, for review                                                        |
-| **Kind**                              | Infrastructure                                                           |
-| **Engine version at time of writing** | `0.26.1`                                                                 |
-| **Program**                           | [Forge 3D](./README.md), milestones M0 (Phases 1 and 2) and M1 (Phase 3) |
-| **Related**                           | Every other design in this folder lists the tests it adds here           |
+|                                       |                                                                                                                  |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review                                                                                                |
+| **Kind**                              | Infrastructure                                                                                                   |
+| **Engine version at time of writing** | `0.26.1`                                                                                                         |
+| **Program**                           | [Forge 3D](./README.md), milestones M0 (Phases 1 and 2), M1 (Phase 3, first), M2 (Phase 6); Phases 4 and 5 by M3 |
+| **Related**                           | Every other design in this folder lists the tests it adds here                                                   |
 
 ## 0. Targeted modules
 
@@ -21,7 +21,8 @@
 | `src/math/test-helpers/`                      | New      | Tolerance matchers and seeded generators for vectors, quaternions and matrices                                                              |
 | `vite.config.base.js`                         | Modified | `benchmark` configuration for Vitest                                                                                                        |
 | `package.json`                                | Modified | `bench`, `bench:micro`, `bench:compare`, `test:golden`, `test:golden:update`, `test:allocation` scripts; `three` as a pinned dev dependency |
-| `.github/workflows/ci.yml`                    | Modified | `bench-micro`, `bench-scenes`, `test-golden`, `test-allocation`, `bundle-size` jobs                                                         |
+| `.github/workflows/ci.yml`                    | Modified | `bench-micro`, `bench-scenes`, `test-golden`, `test-allocation`, `bundle-size`, `test-backends` jobs                                        |
+| `e2e/playwright.config.ts`                    | Modified | `firefox` and `webkit` projects (Phase 6)                                                                                                   |
 | `tsconfig.build.json`, `package.json` `files` | Modified | `bench/` never ships                                                                                                                        |
 
 ---
@@ -80,10 +81,10 @@ noise of shared runners.
   say nothing about real GPUs. GPU budgets are checked on reference
   hardware at each milestone (§6.6).
 - **Building Unity in CI.** It needs a license and a Unity install; the
-  comparison builds live outside this repository (open question 2).
+  comparison builds live outside this repository (decision T8).
 - **Cross-browser golden images.** Goldens are valid in one pinned
-  environment (§6.4). Other browsers are covered by the behavioral e2e
-  suite, which already runs there or can.
+  environment (§6.4). Other browsers and GPU backends run the behavioral
+  and analytic specs in Phase 6's matrix.
 - **Fuzzing shaders or glTF files.** The glTF loader validates its input
   (design 11) and has malformed-file unit tests; fuzzing can come later.
 
@@ -110,13 +111,18 @@ slowdown in a test branch and passes on an unchanged one.
 
 ### Phase 2: Scene benchmarks and the 2D baseline (M0)
 
-| #   | Task                    | Description                                                                                                                         | Size |
-| --- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 2.1 | `bench/` app and runner | Vite app, scene registry, scripted camera paths, Playwright runner with uncapped frame rate, JSON and Markdown reports (§6.2)       | M    |
-| 2.2 | Device counters         | Draw calls, triangles, program and texture binds counted in Forge (a counter object on the render context, zero cost when not read) | S    |
-| 2.3 | B7 sprites, B8 UI       | Forge versions, and a Three.js version of B7                                                                                        | M    |
-| 2.4 | Baseline report         | Run on the reference hardware and in CI; commit `bench/reports/0.26.1.md`                                                           | S    |
-| 2.5 | Bundle-size check       | Build the 2D demos' bundles on base and head; fail when gzip size grows past 5%                                                     | S    |
+Builds the scene benchmark app and records the 2D baselines (B7, B8)
+before any renderer code changes, so later designs are measured against
+today's engine.
+
+| #   | Task                    | Description                                                                                                                                                                         | Size |
+| --- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 2.0 | Reference devices       | Provision the reference devices (README P6) and record their specs, browser channel and driver policy in `bench/reports/README.md`                                                  | S    |
+| 2.1 | `bench/` app and runner | Vite app, scene registry, scripted camera paths, Playwright runner with uncapped frame rate, JSON and Markdown reports (§6.2)                                                       | M    |
+| 2.2 | Device counters         | Draw calls, triangles, program and texture binds counted in Forge (a counter object on the render context, zero cost when not read); `#### Added` for the render context's counters | S    |
+| 2.3 | B7 sprites, B8 UI       | Forge versions, and a Three.js version of B7                                                                                                                                        | M    |
+| 2.4 | Baseline report         | Run on the reference hardware and in CI; commit `bench/reports/0.26.1.md`                                                                                                           | S    |
+| 2.5 | Bundle-size check       | Build the 2D demos' bundles on base and head; fail when gzip size grows past 5%                                                                                                     | S    |
 
 **Definition of done:** M0 as in the README: the B7 and B8 baselines are
 committed and CI fails a pull request that makes either more than 10%
@@ -124,8 +130,9 @@ slower.
 
 ### Phase 3: Golden-image suite
 
-Lands during M1, so the renderer rewrite (designs 05 to 07) is checked
-against today's output.
+Lands at the start of M1, before design 03 Phase 4 and design 04 Phase
+1, so the stage reordering, the transform migration and the renderer
+rewrite (designs 05 to 07) are all checked against today's output.
 
 | #   | Task                      | Description                                                                                                                                                                                                                                 | Size |
 | --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
@@ -141,59 +148,86 @@ against today's output.
 ### Phase 4: 3D scenes
 
 The harness and content generators for every 3D scene, so each design can
-turn its scene on as its features land.
+turn its scene on as its features land. The Forge version of each scene is
+added by the design that makes it possible; until then the runner reports
+it as pending.
 
 | #   | Task                              | Description                                                                                                                         | Size |
 | --- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 4.1 | Scene generators                  | Seeded generators for B1 to B6 that write a scene description both engines build from (§6.2.2)                                      | M    |
 | 4.2 | Three.js versions of B1 to B5, B9 | A plain version and an optimized version of each (§6.2.3)                                                                           | L    |
-| 4.3 | Forge versions                    | Added by the designs that make each scene possible; until then the runner reports them as pending                                   | –    |
-| 4.4 | Physics scenarios                 | Node-run scenario tests and benchmarks for design 14 (§6.5)                                                                         | M    |
-| 4.5 | Analytic rendering test harness   | Helpers to sample regions of the canvas and compare against computed values; the init script that masks `EXT_clip_control` (§6.4.4) | S    |
-| 4.6 | Audio render time                 | The runner's second measurement kind, an `OfflineAudioContext` driven frame by frame (§6.2.2), for design 15                        | S    |
+| 4.3 | Physics scenarios                 | Node-run scenario tests and benchmarks for design 14 (§6.5)                                                                         | M    |
+| 4.4 | Analytic rendering test harness   | Helpers to sample regions of the canvas and compare against computed values; the init script that masks `EXT_clip_control` (§6.4.4) | S    |
+| 4.5 | Audio render time                 | The runner's second measurement kind, an `OfflineAudioContext` driven frame by frame (§6.2.2), for design 15                        | S    |
 
 **Definition of done:** the runner runs every scene for Three.js and reports
 Forge's as pending or measured.
 
 ### Phase 5: Reference hardware and Unity
 
-| #   | Task                    | Description                                                                                                 | Size |
-| --- | ----------------------- | ----------------------------------------------------------------------------------------------------------- | ---- |
-| 5.1 | Reference run procedure | A documented `npm run bench -- --report` procedure on the reference devices, with GPU timing when available | S    |
-| 5.2 | Unity comparison        | Unity web builds of B1 to B5 (outside this repository) measured by the same runner from a URL               | L    |
-| 5.3 | Milestone reports       | `bench/reports/<milestone>.md` at M3, M4, M5 and M6                                                         | S    |
+Fixes the reference hardware and the procedure for running on it, and
+adds the Unity comparison, so milestone reports compare Forge, Three.js
+and Unity on the same machines.
+
+| #   | Task                    | Description                                                                                                                                                                                                                                                                                     | Size |
+| --- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 5.1 | Reference run procedure | A documented `npm run bench -- --report` procedure on the reference devices (README G9), with GPU timing when available; on the phones, the mobile variants of README §5 with resident GPU memory (design 05's resident counters) and a 10-minute run per scene that records thermal throttling | S    |
+| 5.2 | Unity comparison        | Unity web builds of B1 to B5 and B9 (outside this repository, decision T8) measured by the same runner from a URL                                                                                                                                                                               | L    |
+| 5.3 | Milestone reports       | `bench/reports/<milestone>.md` at M3, M4, M5 and M6, desktop and mobile; the Unity and mobile columns gate the milestone as README §7 says                                                                                                                                                      | S    |
 
 **Definition of done:** the M3 report covers Forge, Three.js and Unity for
-B1 to B5 on the reference hardware.
+B1, B2, B3 and the hand-built B5 on the reference hardware, desktop and
+mobile, and its Unity numbers gate M3 (README §7); B4 and the Sponza B5
+join in the M4 report (README §7).
+
+### Phase 6: Backend and browser matrix (M2, before design 05 Phase 4)
+
+CI runs Chromium on Linux with SwiftShader only, so specs that depend on
+a GPU backend or a browser run on one of each. This phase runs them where
+the designs' assumptions differ: ANGLE's D3D11, Metal and OpenGL
+backends, Firefox and WebKit.
+
+| #   | Task                        | Description                                                                                                                                                                                                                                                                                                                                                 | Size |
+| --- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 6.1 | `test-backends` job         | A CI job on `windows-latest` (Chromium with `--use-angle=d3d11`), `macos-latest` (`--use-angle=metal`) and `ubuntu-24.04` (`--use-angle=gl` and SwiftShader) that runs the specs tagged `@backend`: shader variants, stage-precision link, std140 offsets, one depth texture on two samplers, prepass invariance, depth precision, alpha-to-coverage (§6.8) | M    |
+| 6.2 | Firefox and WebKit projects | Playwright `firefox` and `webkit` projects in `e2e/playwright.config.ts`, running the behavioral and analytic specs; goldens and the DevTools Protocol allocation specs stay Chromium-only                                                                                                                                                                  | M    |
+| 6.3 | Required checks             | Both jobs required from M2; the browser gate table (§6.8) in the `write-e2e-test` skill                                                                                                                                                                                                                                                                     | S    |
+
+**Definition of done:** `test-backends` and the Firefox and WebKit
+projects pass and are required checks; a spec tagged `@backend` that fails
+on one backend fails the pull request.
 
 ---
 
 ## 4. Decision log
 
-| #   | Decision                       | Options                                                                                                                 | Chosen | Rationale, trade-offs, assumptions                                                                                                                                                                                                                                                                                                                                       |
-| --- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| T1  | Microbenchmark tool            | (a) Vitest's benchmark mode; (b) a custom harness; (c) a separate benchmark library                                     | (a)    | Forge already runs Vitest; benchmark mode reuses its TypeScript and module setup and reports per-task statistics. No new dependency.                                                                                                                                                                                                                                     |
-| T2  | Performance gate               | (a) Absolute thresholds; (b) base versus head in the same job                                                           | (b)    | Shared runners vary by 20% or more between machines. Running both commits on the same machine in the same job, interleaved, compares like with like. Trade-off: the job takes about twice as long. Absolute budgets are checked on reference hardware instead (§6.6).                                                                                                    |
-| T3  | Golden-image environment       | (a) Pinned Docker image with SwiftShader; (b) a hosted visual-testing service; (c) no goldens, relative assertions only | (a)    | SwiftShader is a CPU rasterizer, so the same build gives the same pixels on any machine. Pinning the image pins its build, which addresses the CI-only SwiftShader discrepancy `AGENTS.md` records: if a SwiftShader update changes output, it changes in a reviewed update to the image, not between runs. (b) costs money and needs secrets. (c) can't verify shading. |
-| T4  | Fair Three.js comparison       | (a) The Three.js code a typical developer writes; (b) the most optimized Three.js code; (c) both                        | (c)    | Forge instances and batches automatically; Three.js does when the developer uses `InstancedMesh` or `BatchedMesh`. Reporting both shows the default experience and the ceiling. Forge's target is the optimized version.                                                                                                                                                 |
-| T5  | Allocation detection           | (a) JS heap size before and after; (b) the sampling heap profiler through the DevTools Protocol                         | (b)    | Heap size deltas are hidden by garbage collection and say nothing about where an allocation happened. The sampling profiler attributes allocations to call stacks, so a failure names the function.                                                                                                                                                                      |
-| T6  | Property tests for math        | (a) A property-testing library; (b) seeded loops with Forge's own `Random`                                              | (b)    | Math properties (an inverse undoes, a decomposition recomposes) only need many seeded inputs and tolerant comparison. No new dependency, and failures print the seed to reproduce.                                                                                                                                                                                       |
-| T7  | Frame rate in scene benchmarks | (a) Measure frames per second at the display's rate; (b) uncap the frame rate and measure CPU time per frame            | (b)    | At a capped 60 fps, every engine that fits in 16 ms scores the same. Chromium's `--disable-gpu-vsync` and `--disable-frame-rate-limit` uncap the loop, and the runner measures the main thread's time per frame.                                                                                                                                                         |
+| #   | Decision                       | Options                                                                                                                 | Chosen | Rationale, trade-offs, assumptions                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T1  | Microbenchmark tool            | (a) Vitest's benchmark mode; (b) a custom harness; (c) a separate benchmark library                                     | (a)    | Forge already runs Vitest; benchmark mode reuses its TypeScript and module setup and reports per-task statistics. No new dependency.                                                                                                                                                                                                                                                                                                     |
+| T2  | Performance gate               | (a) Absolute thresholds; (b) base versus head in the same job                                                           | (b)    | Shared runners vary by 20% or more between machines. Running both commits on the same machine in the same job, interleaved, compares like with like. Trade-off: the job takes about twice as long. Absolute budgets are checked on reference hardware instead (§6.6).                                                                                                                                                                    |
+| T3  | Golden-image environment       | (a) Pinned Docker image with SwiftShader; (b) a hosted visual-testing service; (c) no goldens, relative assertions only | (a)    | SwiftShader is a CPU rasterizer, so the same build gives the same pixels on any machine. Pinning the image pins its build, which addresses the CI-only SwiftShader discrepancy `AGENTS.md` records: if a SwiftShader update changes output, it changes in a reviewed update to the image, not between runs. (b) costs money and needs secrets. (c) can't verify shading.                                                                 |
+| T4  | Fair Three.js comparison       | (a) The Three.js code a typical developer writes; (b) the most optimized Three.js code; (c) both                        | (c)    | Forge instances and batches automatically; Three.js does when the developer uses `InstancedMesh` or `BatchedMesh`. Reporting both shows the default experience and the ceiling. Forge's target is the optimized version.                                                                                                                                                                                                                 |
+| T5  | Allocation detection           | (a) JS heap size before and after; (b) the sampling heap profiler through the DevTools Protocol                         | (b)    | Heap size deltas are hidden by garbage collection and say nothing about where an allocation happened. The sampling profiler attributes allocations to call stacks, so a failure names the function. It must be started with `includeObjectsCollectedByMinorGC` and `includeObjectsCollectedByMajorGC`: without them the profile shows only objects still alive when sampling stops, not the per-frame garbage this test exists to catch. |
+| T6  | Property tests for math        | (a) A property-testing library; (b) seeded loops with Forge's own `Random`                                              | (b)    | Math properties (an inverse undoes, a decomposition recomposes) only need many seeded inputs and tolerant comparison. No new dependency, and failures print the seed to reproduce.                                                                                                                                                                                                                                                       |
+| T7  | Frame rate in scene benchmarks | (a) Measure frames per second at the display's rate; (b) uncap the frame rate and measure CPU time per frame            | (b)    | At a capped 60 fps, every engine that fits in 16 ms scores the same. Chromium's `--disable-gpu-vsync` and `--disable-frame-rate-limit` uncap the loop, and the runner measures the main thread's time per frame.                                                                                                                                                                                                                         |
+| T8  | Where Unity builds live        | (a) A separate repository owned by the maintainers; (b) no Unity builds                                                 | (a)    | README G10: the product owner's target includes Unity web builds, and (a) is the only fair comparison. It needs a Unity license and an owner; the repository records the Unity version and render pipeline settings with each report.                                                                                                                                                                                                    |
 
 ---
 
 ## 5. Open questions
+
+In priority order.
 
 1. **A self-hosted GPU runner.** Options: (a) one machine with a real GPU
    running the scene benchmarks nightly with GPU timing; (b) GPU numbers only
    from milestone reports. (a) catches GPU regressions within a day; (b)
    costs nothing. Proposal: (a) once M3 lands, since that's when GPU cost
    becomes the bottleneck.
-2. **Regression threshold.** 10% on scene medians and microbenchmark
-   medians, with one automatic re-run before failing. Tighter thresholds
-   flake on shared runners. Revisit once there's a month of data.
-3. **Where Unity builds live.** Options: a separate repository owned by
-   the maintainers, or not at all (README open question 3).
+2. **Regression threshold.** Options: (a) 10% on scene and
+   microbenchmark medians, with one automatic re-run before failing; (b) a
+   tighter threshold, such as 5%. (a) doesn't flake on shared runners; (b)
+   catches smaller regressions. Proposal: (a); revisit once there's a
+   month of data.
 
 ---
 
@@ -224,9 +258,9 @@ three helpers:
 What jsdom can't test (GLSL compilation, real rasterization) is covered by
 the browser suites below. Every shader variant the engine can generate is
 compiled and linked in a browser test (`e2e/specs/shader-variants.spec.ts`)
-so a variant that only some materials reach can't ship broken. The same
-spec runs design 07's attribute-budget check: every sprite and text layout
-uses at most 8 per-instance locations and 16 attributes in total.
+so a variant that only some materials reach can't ship broken. The same spec
+runs design 07's attribute-budget check: every sprite, text and particle
+layout uses at most 8 per-instance locations and 16 attributes in total.
 
 ### 6.2 Performance
 
@@ -314,8 +348,9 @@ and is gated base versus head like CPU frame times.
 
 In CI, scenes run on SwiftShader, so only CPU numbers are meaningful. The
 gate is the same as for microbenchmarks: base versus head, plus Forge
-versus Three.js optimized on the same run, which must stay at or under
-`1.0×` for the scenes with a Three.js target (README §5).
+versus Three.js on the same run, which must stay within each scene's
+README §5 ratio (≤ 1.0× against the optimized version; B1 also ≤ 0.5×
+against the plain version).
 
 #### 6.2.3 Three.js versions
 
@@ -343,8 +378,13 @@ production build, gzips the output, and fails when a demo grows more than
 An allocation spec loads a scene from the e2e harness, runs 2,000 frames
 to reach steady state, then:
 
-1. starts `HeapProfiler.startSampling` through a Chrome DevTools Protocol
-   session, with a 512-byte sampling interval;
+1. starts sampling through a Chrome DevTools Protocol session with
+   `HeapProfiler.startSampling({ samplingInterval: 512,
+includeObjectsCollectedByMinorGC: true,
+includeObjectsCollectedByMajorGC: true })`. Without the two flags the
+   profile shows only objects still alive when sampling stops, so the
+   per-frame garbage this test exists to catch, collected by scavenges
+   before then, would never appear;
 2. steps 2,000 frames;
 3. stops sampling and walks the profile;
 4. fails if any sample's stack has a frame from Forge's source (matched by
@@ -352,8 +392,28 @@ to reach steady state, then:
 
 The allow-list starts with what Phase 1 finds in the `0.26.1` code (for
 example, `EcsWorld.query` builds new arrays every call). Design 03 removes
-those entries. After M1, the allow-list for the 2D scenes is empty, and
+the ECS entries and design 04 the transform system's in M1. Every other
+entry is tagged with the design and phase that removes it:
+
+| Allocator in the 2D scenes                                                                                                                                                                                                                                           | Removed by                                           |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| The render system's per-quad allocations                                                                                                                                                                                                                             | Design 07 Phase 1 (M2)                               |
+| Particles as entities                                                                                                                                                                                                                                                | Design 15 Phase 2 (M6)                               |
+| The 2D solver                                                                                                                                                                                                                                                        | The follow-up of design 14's open question 3         |
+| UI layout, layout-group, canvas-group and navigation systems (`new Set(entities)` per tick in `ui-layout-system.ts`, `ui-layout-group-system.ts` and `ui-canvas-group-system.ts`; the `new Map` caches in `ui-layout-group-system.ts` and `ui-navigation-system.ts`) | Design 15 Phase 4, with its rewrite of these systems |
+| The UI interaction system's `new Map` per tick                                                                                                                                                                                                                       | Design 15 Phase 4, which deletes the system          |
+
+After M6, the 2D allow-list is empty except the 2D solver's entry, and
 every new per-frame system ships with an allocation spec.
+
+**Lifetime soak** (`e2e/allocation/lifetime-soak.spec.ts`). Allocation
+specs catch per-frame garbage; this one catches leaks across asset and
+world lifetimes. It runs 50 cycles of: load a model, instantiate it 100
+times, `prepare()`, remove the instances, release the model, and create
+and stop a world. After a DevTools-forced garbage collection, the JS heap
+is within 2% of the first cycle's, and design 05's resident GPU bytes and
+resource counts (§6.12 there) equal their baseline. It runs in CI from M2
+with textures only, and from M4 with the asset store and models.
 
 ### 6.4 Golden-image tests
 
@@ -415,6 +475,13 @@ math, not against a capture. Examples from designs 09 and 10:
   occluded side and lit on the other, at sampled points away from the edge.
 - **Depth precision:** two planes 1 mm apart, 5 km from the origin, viewed
   from 1 m away, never z-fight (the camera-relative path in design 06).
+- **Far origin** (`far-origin.spec.ts`): a camera and scene at
+  (10,000 km, 0, 10,000 km) with a mesh, a sprite, a masked UI panel and a
+  shadowed cube. The camera steps 1 mm per frame for 60 frames; the
+  landmarks' rendered bounds move monotonically, within 0.5 px of the
+  expected path, and the shadow edge stays put (relative measurements).
+  It runs under both depth conventions. This is README §4.3's large-world
+  claim, which otherwise only physics tests (design 14).
 
 Analytic lighting and shadow tests run under both depth conventions
 (README G8): reversed depth where the browser has `EXT_clip_control`, and
@@ -437,7 +504,7 @@ kinds, set out in design 14:
   on positions and sleep state.
 - **Determinism:** the same scenario run twice in one process produces
   bit-identical body states. Forge doesn't promise determinism across
-  machines (README non-goals), but repeatability on one machine is what
+  machines (README §2, out of scope), but repeatability on one machine is what
   makes the other tests stable.
 
 The scenario list in design 14 §6.23.2 also includes sensor pickups (a
@@ -456,14 +523,14 @@ design 14's Phase 2.
 
 ### 6.6 Reference hardware and Unity
 
-Absolute budgets (README §5) apply to reference devices (README open
-question 2). At each milestone a maintainer runs `npm run bench --
---report` on each device; the runner enables GPU timing when the browser
-exposes `EXT_disjoint_timer_query_webgl2` and records the browser version,
-GPU and driver. The report goes to `bench/reports/<milestone>.md`.
+Absolute budgets (README §5) apply to reference devices (README G9). At each
+milestone a maintainer runs `npm run bench -- --report` on each device; the
+runner enables GPU timing when the browser exposes
+`EXT_disjoint_timer_query_webgl2` and records the browser version, GPU and
+driver. The report goes to `bench/reports/<milestone>.md`.
 
 Unity comparison builds are made from Unity projects that build B1 to B5
-from the same scene descriptions (an importer script in the Unity project
+and B9 from the same scene descriptions (an importer script in the Unity project
 reads the JSON), with the Universal render pipeline and WebGL2. The runner
 opens each build from a URL and measures frame times through Chrome's
 tracing, since a Unity build's frame loop isn't instrumented by Forge's
@@ -483,3 +550,18 @@ runtime behavior includes:
 - the guide page and demo (`CLAUDE.md` steps 8 and 9).
 
 The other designs' test sections list these specifically.
+
+### 6.8 Backend and browser matrix
+
+Phase 6's jobs, and which specs gate which configuration:
+
+| Specs                                                                                                                                                        | Chromium, SwiftShader (Linux) | Chromium, ANGLE D3D11 (Windows), Metal (macOS), OpenGL (Linux) | Firefox | WebKit |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- | -------------------------------------------------------------- | ------- | ------ |
+| Golden images                                                                                                                                                | Gate                          | –                                                              | –       | –      |
+| Allocation (DevTools Protocol)                                                                                                                               | Gate                          | –                                                              | –       | –      |
+| `@backend`: shader variants, stage-precision link, std140 offsets, one depth texture on two samplers, prepass invariance, depth precision, alpha-to-coverage | Gate                          | Gate                                                           | Gate    | Gate   |
+| Behavioral and analytic specs (input, picking, audio, lighting values)                                                                                       | Gate                          | –                                                              | Gate    | Gate   |
+
+Designs that assume behavior on a backend or browser (designs 05, 06, 08,
+09, 13 and 15) cite this matrix rather than "every backend CI offers".
+Reference devices (§6.6) add real GPUs at each milestone.
