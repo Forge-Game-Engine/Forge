@@ -1,24 +1,35 @@
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { TriggerAction } from '@forge-game-engine/forge/input';
 import { GameOverEcsComponent, gameOverId } from './_game-over.component';
-import { asteroidId } from './_asteroid.component';
-import { bulletId } from './_bullet.component';
+import { AsteroidEcsComponent, asteroidId } from './_asteroid.component';
+import { BulletEcsComponent, bulletId } from './_bullet.component';
 
 export const createGameOverEcsSystem = (
   restartInput: TriggerAction,
   respawnPlayer: () => void,
-): EcsSystem<[GameOverEcsComponent]> => ({
+): EcsSystem<
+  [GameOverEcsComponent],
+  { asteroids: [AsteroidEcsComponent]; bullets: [BulletEcsComponent] }
+> => ({
   query: [gameOverId],
-  update: (world, { components: [gameOverComponents] }) => {
+  queries: {
+    asteroids: { query: [asteroidId] },
+    bullets: { query: [bulletId] },
+  },
+  update: (
+    world,
+    { components: [gameOverComponents] },
+    { asteroids, bullets },
+  ) => {
     for (const gameOverComponent of gameOverComponents) {
       if (gameOverComponent.isGameOver && restartInput.isTriggered) {
         gameOverComponent.isGameOver = false;
 
-        for (const entity of world.query([asteroidId]).entities) {
+        for (const entity of asteroids.entities) {
           world.removeEntity(entity);
         }
 
-        for (const entity of world.query([bulletId]).entities) {
+        for (const entity of bullets.entities) {
           world.removeEntity(entity);
         }
 

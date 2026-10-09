@@ -10,6 +10,7 @@ import { Vector2 } from '../../math/index.js';
 import {
   addMaskComponent,
   MaskDefaultedOptions,
+  maskId,
 } from '../components/mask-component.js';
 import {
   createInstanceMaskResolver,
@@ -77,7 +78,9 @@ describe('createInstanceMaskResolver', () => {
   it('returns null for every entity when the world has no masks', () => {
     const entity = world.createEntity();
 
-    expect(createInstanceMaskResolver(world)(entity)).toBeNull();
+    expect(
+      createInstanceMaskResolver(world, world.query([maskId]))(entity),
+    ).toBeNull();
   });
 
   it('returns null for an entity with no mask on it or its ancestors', () => {
@@ -85,7 +88,9 @@ describe('createInstanceMaskResolver', () => {
 
     const entity = world.createEntity();
 
-    expect(createInstanceMaskResolver(world)(entity)).toBeNull();
+    expect(
+      createInstanceMaskResolver(world, world.query([maskId]))(entity),
+    ).toBeNull();
   });
 
   it('clips the masked entity itself and its descendants to the rect', () => {
@@ -96,7 +101,7 @@ describe('createInstanceMaskResolver', () => {
     world.setParent(child, masked);
     world.setParent(grandchild, child);
 
-    const resolve = createInstanceMaskResolver(world);
+    const resolve = createInstanceMaskResolver(world, world.query([maskId]));
     const expectedClip = { min: { x: 8, y: 19 }, max: { x: 12, y: 21 } };
 
     expect(resolve(masked)?.clip).toEqual(expectedClip);
@@ -111,7 +116,9 @@ describe('createInstanceMaskResolver', () => {
       { pivot: { x: 0, y: 0 } },
     );
 
-    expect(createInstanceMaskResolver(world)(masked)?.clip).toEqual({
+    expect(
+      createInstanceMaskResolver(world, world.query([maskId]))(masked)?.clip,
+    ).toEqual({
       min: { x: 0, y: 0 },
       max: { x: 4, y: 2 },
     });
@@ -126,7 +133,9 @@ describe('createInstanceMaskResolver', () => {
       outer,
     );
 
-    expect(createInstanceMaskResolver(world)(inner)?.clip).toEqual({
+    expect(
+      createInstanceMaskResolver(world, world.query([maskId]))(inner)?.clip,
+    ).toEqual({
       min: { x: 2, y: -5 },
       max: { x: 5, y: 5 },
     });
@@ -137,7 +146,10 @@ describe('createInstanceMaskResolver', () => {
 
     addRotationComponent(world, masked, { local: Math.PI / 2 });
 
-    const clip = createInstanceMaskResolver(world)(masked)?.clip;
+    const clip = createInstanceMaskResolver(
+      world,
+      world.query([maskId]),
+    )(masked)?.clip;
 
     expect(clip?.min.x).toBeCloseTo(-1);
     expect(clip?.min.y).toBeCloseTo(-2);
@@ -154,7 +166,9 @@ describe('createInstanceMaskResolver', () => {
       outer,
     );
 
-    expect(createInstanceMaskResolver(world)(inner)?.visible).toBe(false);
+    expect(
+      createInstanceMaskResolver(world, world.query([maskId]))(inner)?.visible,
+    ).toBe(false);
   });
 
   it('hides content under a mask with no area', () => {
@@ -162,7 +176,9 @@ describe('createInstanceMaskResolver', () => {
 
     addScaleComponent(world, masked, { local: { x: 0, y: 1 } });
 
-    expect(createInstanceMaskResolver(world)(masked)?.visible).toBe(false);
+    expect(
+      createInstanceMaskResolver(world, world.query([maskId]))(masked)?.visible,
+    ).toBe(false);
   });
 
   it.each([
@@ -182,7 +198,9 @@ describe('createInstanceMaskResolver', () => {
         { x: 4, y: 2 },
         { shape: { kind: 'linear', origin, amount: 0.25 } },
       );
-      const shape = requireShape(createInstanceMaskResolver(world)(masked));
+      const shape = requireShape(
+        createInstanceMaskResolver(world, world.query([maskId]))(masked),
+      );
 
       expect(shape.kind).toBe('linear');
       expect(toMaskCoordinates(shape, start).x).toBeCloseTo(-1);
@@ -197,7 +215,9 @@ describe('createInstanceMaskResolver', () => {
       { x: 4, y: 2 },
       { shape: { kind: 'linear', origin: 'left', amount: 1 } },
     );
-    const shape = requireShape(createInstanceMaskResolver(world)(masked));
+    const shape = requireShape(
+      createInstanceMaskResolver(world, world.query([maskId]))(masked),
+    );
 
     expect(shape.kind === 'linear' && shape.edge).toBeGreaterThan(1);
   });
@@ -213,7 +233,7 @@ describe('createInstanceMaskResolver', () => {
       { x: 4, y: 2 },
       { shape: { kind: 'radial', startAngle: 0, sweep: Math.PI, amount: 3 } },
     );
-    const resolve = createInstanceMaskResolver(world);
+    const resolve = createInstanceMaskResolver(world, world.query([maskId]));
     const overfullShape = requireShape(resolve(overfull));
 
     expect(resolve(empty)?.visible).toBe(false);
@@ -235,7 +255,9 @@ describe('createInstanceMaskResolver', () => {
     addRotationComponent(world, masked, { local: Math.PI / 2 });
     addScaleComponent(world, masked, { local: { x: 2, y: 1 } });
 
-    const shape = requireShape(createInstanceMaskResolver(world)(masked));
+    const shape = requireShape(
+      createInstanceMaskResolver(world, world.query([maskId]))(masked),
+    );
 
     // The rect is 8 wide after scaling, reaching up from the pivot at
     // (5, 5): its left edge is at the pivot, its center 4 above it.
@@ -259,7 +281,9 @@ describe('createInstanceMaskResolver', () => {
 
     addFlipComponent(world, masked, { flipX: true });
 
-    const shape = requireShape(createInstanceMaskResolver(world)(masked));
+    const shape = requireShape(
+      createInstanceMaskResolver(world, world.query([maskId]))(masked),
+    );
 
     expect(toMaskCoordinates(shape, { x: 2, y: 0 }).x).toBeCloseTo(-1);
   });
@@ -278,7 +302,9 @@ describe('createInstanceMaskResolver', () => {
       },
     );
 
-    expect(createInstanceMaskResolver(world)(masked)?.shape).toMatchObject({
+    expect(
+      createInstanceMaskResolver(world, world.query([maskId]))(masked)?.shape,
+    ).toMatchObject({
       kind: 'radial',
       startAngle: Math.PI / 2,
       filledSweep: -Math.PI / 2,
@@ -298,7 +324,10 @@ describe('createInstanceMaskResolver', () => {
       {},
       fill,
     );
-    const mask = createInstanceMaskResolver(world)(viewport);
+    const mask = createInstanceMaskResolver(
+      world,
+      world.query([maskId]),
+    )(viewport);
 
     expect(mask?.shape?.kind).toBe('linear');
     expect(mask?.clip).toEqual({ min: { x: -1, y: -5 }, max: { x: 1, y: 5 } });
@@ -321,9 +350,9 @@ describe('createInstanceMaskResolver', () => {
       outer,
     );
 
-    expect(() => createInstanceMaskResolver(world)(inner)).toThrow(
-      'at most one linear or radial mask',
-    );
+    expect(() =>
+      createInstanceMaskResolver(world, world.query([maskId]))(inner),
+    ).toThrow('at most one linear or radial mask');
   });
 
   it('throws for a mask on an entity with no position', () => {
@@ -331,8 +360,8 @@ describe('createInstanceMaskResolver', () => {
 
     addMaskComponent(world, entity, { width: 1, height: 1 });
 
-    expect(() => createInstanceMaskResolver(world)(entity)).toThrow(
-      'no position',
-    );
+    expect(() =>
+      createInstanceMaskResolver(world, world.query([maskId]))(entity),
+    ).toThrow('no position');
   });
 });

@@ -1,5 +1,5 @@
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import { EcsWorld } from '../../ecs/ecs-world.js';
+import { QueryMatches } from '../../ecs/query-result.js';
 import {
   UiToggleEcsComponent,
   uiToggleId,
@@ -25,15 +25,10 @@ function setToggleValue(toggle: UiToggleEcsComponent, isOn: boolean): void {
  * the only one on.
  */
 function clearOtherToggles(
-  world: EcsWorld,
+  { entities, components: [toggles] }: QueryMatches<[UiToggleEcsComponent]>,
   group: number,
   keepOn: number,
 ): void {
-  const {
-    entities,
-    components: [toggles],
-  } = world.query<[UiToggleEcsComponent]>([uiToggleId]);
-
   for (let i = 0; i < entities.length; i++) {
     if (entities[i] !== keepOn && toggles[i].group === group) {
       setToggleValue(toggles[i], false);
@@ -57,11 +52,17 @@ function clearOtherToggles(
  * @returns The UI toggle ECS system.
  */
 export const createUiToggleEcsSystem = (): EcsSystem<
-  [UiToggleEcsComponent, UiInteractableEcsComponent]
+  [UiToggleEcsComponent, UiInteractableEcsComponent],
+  { allToggles: [UiToggleEcsComponent] }
 > => ({
   name: 'uiToggle',
   query: [uiToggleId, uiInteractableId],
-  update: (world, { entities, components: [toggles, interactables] }) => {
+  queries: { allToggles: { query: [uiToggleId] } },
+  update: (
+    world,
+    { entities, components: [toggles, interactables] },
+    { allToggles },
+  ) => {
     for (let i = 0; i < entities.length; i++) {
       const toggle = toggles[i];
       const interactable = interactables[i];
@@ -80,7 +81,7 @@ export const createUiToggleEcsSystem = (): EcsSystem<
         setToggleValue(toggle, !toggle.isOn);
 
         if (toggle.isOn) {
-          clearOtherToggles(world, toggle.group, entities[i]);
+          clearOtherToggles(allToggles, toggle.group, entities[i]);
         }
 
         continue;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { raycastUiCanvas } from './raycast-ui-canvas.js';
 import { addPositionComponent } from '../../common/index.js';
-import { EcsWorld } from '../../ecs/index.js';
+import { EcsWorld, QueryMatches } from '../../ecs/index.js';
 import {
   addCameraComponent,
   addDrawOrderComponent,
@@ -11,8 +11,16 @@ import {
   Texture,
 } from '../../rendering/index.js';
 import { addCanvasComponent } from '../components/canvas-component.js';
-import { addRectTransformComponent } from '../components/rect-transform-component.js';
-import { addUiInteractableComponent } from '../components/ui-interactable-component.js';
+import {
+  addRectTransformComponent,
+  RectTransformEcsComponent,
+  rectTransformId,
+} from '../components/rect-transform-component.js';
+import {
+  addUiInteractableComponent,
+  UiInteractableEcsComponent,
+  uiInteractableId,
+} from '../components/ui-interactable-component.js';
 
 const renderContext = {
   width: 800,
@@ -54,6 +62,11 @@ function addElement(
   return entity;
 }
 
+const queryInteractables = (
+  world: EcsWorld,
+): QueryMatches<[UiInteractableEcsComponent, RectTransformEcsComponent]> =>
+  world.query([uiInteractableId, rectTransformId]);
+
 describe('raycastUiCanvas', () => {
   it('skips the part of an element an ancestor rect mask clips away', () => {
     const world = new EcsWorld();
@@ -71,11 +84,23 @@ describe('raycastUiCanvas', () => {
 
     // Canvas (400, 280) is world (0, 20): inside the mask.
     expect(
-      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 280 }),
+      raycastUiCanvas(
+        world,
+        canvas,
+        renderContext,
+        { x: 400, y: 280 },
+        queryInteractables(world),
+      ),
     ).toBe(item);
     // Canvas (400, 320) is world (0, -20): on the item, but clipped.
     expect(
-      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 320 }),
+      raycastUiCanvas(
+        world,
+        canvas,
+        renderContext,
+        { x: 400, y: 320 },
+        queryInteractables(world),
+      ),
     ).toBeNull();
   });
 
@@ -91,7 +116,13 @@ describe('raycastUiCanvas', () => {
     });
 
     expect(
-      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 300 }),
+      raycastUiCanvas(
+        world,
+        canvas,
+        renderContext,
+        { x: 400, y: 300 },
+        queryInteractables(world),
+      ),
     ).toBe(item);
   });
 
@@ -105,10 +136,22 @@ describe('raycastUiCanvas', () => {
     addElement(world, canvas, false);
 
     expect(
-      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 300 }),
+      raycastUiCanvas(
+        world,
+        canvas,
+        renderContext,
+        { x: 400, y: 300 },
+        queryInteractables(world),
+      ),
     ).toBe(top);
     expect(
-      raycastUiCanvas(world, canvas, renderContext, { x: 10, y: 10 }),
+      raycastUiCanvas(
+        world,
+        canvas,
+        renderContext,
+        { x: 10, y: 10 },
+        queryInteractables(world),
+      ),
     ).toBeNull();
   });
 
@@ -121,7 +164,13 @@ describe('raycastUiCanvas', () => {
     addCanvasComponent(world, canvas, { camera: world.createEntity() });
 
     expect(
-      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 300 }),
+      raycastUiCanvas(
+        world,
+        canvas,
+        renderContext,
+        { x: 400, y: 300 },
+        queryInteractables(world),
+      ),
     ).toBeNull();
   });
 
@@ -133,7 +182,13 @@ describe('raycastUiCanvas', () => {
     addElement(world, otherCanvas);
 
     expect(
-      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 300 }),
+      raycastUiCanvas(
+        world,
+        canvas,
+        renderContext,
+        { x: 400, y: 300 },
+        queryInteractables(world),
+      ),
     ).toBeNull();
   });
 
@@ -146,7 +201,13 @@ describe('raycastUiCanvas', () => {
     addDrawOrderComponent(world, raised, { order: 1 });
 
     expect(
-      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 300 }),
+      raycastUiCanvas(
+        world,
+        canvas,
+        renderContext,
+        { x: 400, y: 300 },
+        queryInteractables(world),
+      ),
     ).toBe(raised);
   });
 
@@ -160,7 +221,13 @@ describe('raycastUiCanvas', () => {
     addDrawOrderComponent(world, window, { order: 1 });
 
     expect(
-      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 300 }),
+      raycastUiCanvas(
+        world,
+        canvas,
+        renderContext,
+        { x: 400, y: 300 },
+        queryInteractables(world),
+      ),
     ).toBe(button);
   });
 
@@ -178,7 +245,13 @@ describe('raycastUiCanvas', () => {
     });
 
     expect(
-      raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 300 }),
+      raycastUiCanvas(
+        world,
+        canvas,
+        renderContext,
+        { x: 400, y: 300 },
+        queryInteractables(world),
+      ),
     ).toBe(onTopLayer);
   });
 });

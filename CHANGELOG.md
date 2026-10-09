@@ -12,6 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **ecs:** Systems declare every query they read, and the world keeps each declaration's matching entities up to date as components are added and removed, instead of scanning the world for every system on every tick. `EcsSystem.without` excludes entities that have a component or tag, and `EcsSystem.queries` declares named secondary queries, each with its own `query`, `tags` and `without`, whose results `update` receives as its third argument (`update(world, primary, { lights })`). Systems that declare the same query share one membership
+- **ecs:** A system's `QueryResult` also reports what changed since the system last ran: `added` (entities that started matching, every match on its first run) and `removed` (entities that stopped matching, which may no longer be alive). `world.changeTick` advances before each system runs and `QueryResult.lastRunTick` is the tick of the system's previous run, so the owner of a value can stamp it with `world.changeTick` when it changes it, and a reader can test `stamp > lastRunTick`
+
+#### Changed
+
+- **ecs:** A system's query result arrays now belong to the world and are reused from tick to tick, patched with what changed. They still don't change during the `update` that received them, but don't keep them after `update` returns. Their order is unspecified
+- **ecs:** `EcsWorld.query` now returns a `QueryMatches` (`entities` and `components`); `QueryResult` is what a system receives. Systems no longer call `world.query` inside `update`: declare a secondary query in `queries` and read it from `update`'s third argument. Code outside a system's `update` (setup, `cleanup`, DOM handlers) keeps using `world.query`. A test that called `system.update(world, queryResult)` directly registers the system and calls `world.update()` instead
+- **ecs:** `EcsWorld.addSystem` throws when the system is already registered. To order an existing system against a new one, pass the ordering when adding the new one
+- **ui:** `raycastUiCanvas` takes the interactables to test as a fifth parameter: pass a system's declared query on `uiInteractableId` and `rectTransformId`, or `world.query([uiInteractableId, rectTransformId])` outside a system
+
 #### Fixed
 
 - **text:** Rotated and scaled text keeps its layout. A `RotationEcsComponent` or `ScaleEcsComponent` on a text entity now turns and scales the whole text about the entity's position, instead of turning and scaling each glyph about its own center along an unrotated, unscaled line

@@ -307,6 +307,9 @@ export const createUiTextInputEcsSystem = (
     const world = currentWorld;
     const viewportPosition = toViewportPosition(event);
     const hits: number[] = [];
+    const interactables = world.query<
+      [UiInteractableEcsComponent, RectTransformEcsComponent]
+    >([uiInteractableId, rectTransformId]);
 
     for (const canvasEntity of world.query([canvasId]).entities) {
       const hit = raycastUiCanvas(
@@ -314,6 +317,7 @@ export const createUiTextInputEcsSystem = (
         canvasEntity,
         renderContext,
         viewportPosition,
+        interactables,
       );
 
       if (hit !== null) {

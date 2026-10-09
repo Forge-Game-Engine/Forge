@@ -57,6 +57,7 @@ describe('EcsWorld', () => {
         entities: [entity1],
         components: [[pos1], [rot1]],
       }),
+      {},
     );
   });
 
@@ -129,6 +130,7 @@ describe('EcsWorld', () => {
         entities: [entity2],
         components: [[position2], [speed2]],
       }),
+      {},
     );
   });
 
@@ -174,6 +176,7 @@ describe('EcsWorld', () => {
     expect(update).toHaveBeenCalledWith(
       world,
       expect.objectContaining({ entities: [entity1, entity2] }),
+      {},
     );
   });
 
@@ -196,6 +199,7 @@ describe('EcsWorld', () => {
     expect(update).toHaveBeenCalledWith(
       world,
       expect.objectContaining({ entities: [], components: [[]] }),
+      {},
     );
   });
 
@@ -482,10 +486,14 @@ describe('EcsWorld', () => {
       const a: EcsSystem<[]> = { name: 'a', query: [], update: () => {} };
       const b: EcsSystem<[]> = { name: 'b', query: [], update: () => {} };
 
+      const c: EcsSystem<[]> = { name: 'c', query: [], update: () => {} };
+
       world.addSystem(a);
       world.addSystem(b, { after: [a] });
 
-      expect(() => world.addSystem(a, { after: [b] })).toThrow(/cycle/);
+      expect(() => world.addSystem(c, { before: [a], after: [b] })).toThrow(
+        /cycle/,
+      );
     });
 
     it('orders systems with no "name" without throwing', () => {
@@ -511,12 +519,13 @@ describe('EcsWorld', () => {
       const world = new EcsWorld();
       const a: EcsSystem<[]> = { query: [], update: () => {} };
       const b: EcsSystem<[]> = { query: [], update: () => {} };
+      const c: EcsSystem<[]> = { query: [], update: () => {} };
 
       world.addSystem(a);
       world.addSystem(b, { after: [a] });
 
-      expect(() => world.addSystem(a, { after: [b] })).toThrow(
-        /unnamed system/,
+      expect(() => world.addSystem(c, { before: [a], after: [b] })).toThrow(
+        /cycle: unnamed system/,
       );
     });
 

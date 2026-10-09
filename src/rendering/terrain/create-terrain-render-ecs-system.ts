@@ -89,13 +89,21 @@ function drawTerrainMeshesForCamera(
  */
 export const createTerrainRenderEcsSystem = (
   renderContext: RenderContext,
-): EcsSystem<[CameraEcsComponent, PositionEcsComponent]> => ({
+): EcsSystem<
+  [CameraEcsComponent, PositionEcsComponent],
+  { terrainMeshes: [TerrainMeshEcsComponent] }
+> => ({
   query: [cameraId, positionId],
-  update: (world, { components: [cameraComponents, positionComponents] }) => {
-    const {
-      components: [terrainMeshComponents],
-    } = world.query<[TerrainMeshEcsComponent]>([terrainMeshId]);
-
+  queries: { terrainMeshes: { query: [terrainMeshId] } },
+  update: (
+    _world,
+    { components: [cameraComponents, positionComponents] },
+    {
+      terrainMeshes: {
+        components: [terrainMeshComponents],
+      },
+    },
+  ) => {
     if (terrainMeshComponents.length === 0) {
       return;
     }

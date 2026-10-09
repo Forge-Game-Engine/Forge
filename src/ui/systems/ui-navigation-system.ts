@@ -291,19 +291,24 @@ function applySubmitInput(world: EcsWorld, canvas: CanvasEcsComponent): void {
  * @returns The UI navigation ECS system.
  */
 export const createUiNavigationEcsSystem = (): EcsSystem<
-  [CanvasEcsComponent]
+  [CanvasEcsComponent],
+  { interactables: [UiInteractableEcsComponent, RectTransformEcsComponent] }
 > => ({
   name: 'uiNavigation',
   query: [canvasId],
-  update: (world, { entities: canvasEntities, components: [canvases] }) => {
-    const {
-      entities: interactableEntities,
-      components: [interactables, rectTransforms],
-    } = world.query<[UiInteractableEcsComponent, RectTransformEcsComponent]>([
-      uiInteractableId,
-      rectTransformId,
-    ]);
-
+  queries: {
+    interactables: { query: [uiInteractableId, rectTransformId] },
+  },
+  update: (
+    world,
+    { entities: canvasEntities, components: [canvases] },
+    {
+      interactables: {
+        entities: interactableEntities,
+        components: [interactables, rectTransforms],
+      },
+    },
+  ) => {
     for (const interactable of interactables) {
       interactable.wasInvokedThisFrame = false;
     }

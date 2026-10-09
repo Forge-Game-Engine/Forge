@@ -5,3 +5,4 @@ export * from './ecs-world.js';
 export * from './hierarchy.js';
 export * from './entity.js';
 export * from './run-condition.js';
+export * from './query-result.js';
