@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Material } from './material';
 import { ImageCache } from '../../asset-loading/index.js';
-import { Matrix3x3 } from '../../math/index.js';
+import { Mat3, Mat4, Matrix3x3 } from '../../math/index.js';
 import { Color } from '../color.js';
 import { ForgeShaderSource, ShaderCache } from '../index.js';
 import { RenderContext } from '../render-context.js';
@@ -376,7 +376,7 @@ describe('Material', () => {
         expect(() =>
           material.setUniform('u_projection', { x: 1, y: 2 }),
         ).toThrow(
-          'Uniform "u_projection" is declared as mat3 and expects a Matrix3x3 or a Float32Array of length 9, but received a Vector2.',
+          'Uniform "u_projection" is declared as mat3 and expects a Matrix3x3 or a Matrix3 or a Float32Array of length 9, but received a Vector2.',
         );
         expect(() =>
           material.setUniform(
@@ -386,6 +386,27 @@ describe('Material', () => {
         ).toThrow('but received a Matrix3x3.');
         expect(() => material.setUniform('u_ints', new Uint32Array(2))).toThrow(
           'but received a Uint32Array of length 2.',
+        );
+      });
+
+      it('should describe a mismatched Matrix3 or Matrix4 value', () => {
+        const material = createMaterial([
+          { name: 'u_world', type: glTypes.mat4 },
+          { name: 'u_normal', type: glTypes.mat3 },
+          { name: 'u_vectors', type: glTypes.vec4, size: 4 },
+        ]);
+
+        expect(() => material.setUniform('u_world', Mat3.create())).toThrow(
+          'Uniform "u_world" is declared as mat4 and expects a Matrix4 or a Float32Array of length 16, but received a Matrix3.',
+        );
+        expect(() => material.setUniform('u_normal', Mat4.create())).toThrow(
+          'but received a Matrix4.',
+        );
+        expect(() => material.setUniform('u_vectors', Mat4.create())).toThrow(
+          'Uniform "u_vectors" is declared as vec4[4] and expects a Float32Array whose length is a multiple of 4, up to 16, but received a Matrix4.',
+        );
+        expect(() => material.setUniform('u_world', [1, 2, 3])).toThrow(
+          'but received an array of length 3.',
         );
       });
 
@@ -991,6 +1012,45 @@ describe('Material', () => {
           locationOf('u_projection'),
           false,
           new Float32Array([5, 0, 0, 0, 1, 0, 0, 0, 1]),
+        );
+      });
+
+      it('should upload the current contents of a Matrix4 to a mat4 uniform as 32-bit floats', () => {
+        const material = createMaterial([
+          { name: 'u_world', type: glTypes.mat4 },
+        ]);
+        const matrix = Mat4.fromTranslation(Mat4.create(), {
+          x: 1,
+          y: 2,
+          z: 3,
+        });
+
+        material.setUniform('u_world', matrix);
+        matrix[0] = 0.1;
+        material.bind(gl);
+
+        expect(gl.uniformMatrix4fv).toHaveBeenCalledWith(
+          locationOf('u_world'),
+          false,
+          new Float32Array([0.1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 2, 3, 1]),
+        );
+      });
+
+      it('should upload a Matrix3 to a mat3 uniform', () => {
+        const material = createMaterial([
+          { name: 'u_normal', type: glTypes.mat3 },
+        ]);
+
+        material.setUniform(
+          'u_normal',
+          Mat3.fromScale(Mat3.create(), { x: 2, y: 3, z: 4 }),
+        );
+        material.bind(gl);
+
+        expect(gl.uniformMatrix3fv).toHaveBeenCalledWith(
+          locationOf('u_normal'),
+          false,
+          new Float32Array([2, 0, 0, 0, 3, 0, 0, 0, 4]),
         );
       });
     });
