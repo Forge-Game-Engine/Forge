@@ -10,7 +10,6 @@ import {
   JointBody,
   resolveJointBody,
 } from '../joints/resolve-joint-body.js';
-import { velocityAtPoint } from '../joints/velocity-at-point.js';
 import { getSoftConstraintParams } from '../solve-soft-constraint.js';
 import { withDefaults } from '../../utilities/with-defaults.js';
 
@@ -33,8 +32,6 @@ interface PreparedPrismaticJoint {
   joint: PrismaticJointEcsComponent;
   bodyA: JointBody;
   bodyB: JointBody;
-  rA: Vector2;
-  rB: Vector2;
   axis: Vector2;
   perp: Vector2;
   s1: number;
@@ -158,8 +155,6 @@ function prepareJoint(
     joint,
     bodyA,
     bodyB,
-    rA,
-    rB,
     axis,
     perp,
     s1,
@@ -175,11 +170,21 @@ function prepareJoint(
   };
 }
 
-function relativeVelocity(prepared: PreparedPrismaticJoint): Vector2 {
-  return Vec2.subtract(
-    velocityAtPoint(prepared.bodyB.rigidBody, prepared.rB),
-    velocityAtPoint(prepared.bodyA.rigidBody, prepared.rA),
-  );
+/**
+ * The bodies' relative center-of-mass velocity, `vB - vA`. The
+ * perpendicular and limit constraints carry each body's turning in their own
+ * angular terms (`s1`/`s2` and `a1`/`a2`), so their velocity error reads
+ * the centers' linear velocities. An anchor's velocity already includes
+ * `ω × r`, and reading it would count the turning twice.
+ * @param prepared - The joint being solved.
+ * @returns `vB - vA`, freshly allocated.
+ */
+function centerVelocityDifference(prepared: PreparedPrismaticJoint): Vector2 {
+  const velocityA = prepared.bodyA.rigidBody?.velocity ?? Vec2.zero;
+  const velocityB = prepared.bodyB.rigidBody?.velocity ?? Vec2.zero;
+
+  // Clone before subtracting: `velocityB` may be the body's live velocity.
+  return Vec2.subtract(Vec2.clone(velocityB), velocityA);
 }
 
 function applyAxisImpulse(
@@ -246,7 +251,7 @@ function solvePerpendicular(
     return;
   }
 
-  const relVel = relativeVelocity(prepared);
+  const relVel = centerVelocityDifference(prepared);
   const velocityError =
     Vec2.dot(relVel, perp) +
     s2 * (prepared.bodyB.rigidBody?.angularVelocity ?? 0) -
@@ -329,7 +334,7 @@ function solveLimit(prepared: PreparedPrismaticJoint, dt: number): void {
     return;
   }
 
-  const relVel = relativeVelocity(prepared);
+  const relVel = centerVelocityDifference(prepared);
   const velocityError =
     Vec2.dot(relVel, axis) +
     a2 * (prepared.bodyB.rigidBody?.angularVelocity ?? 0) -
