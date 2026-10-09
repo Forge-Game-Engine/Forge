@@ -102,6 +102,18 @@ export const DemoPage: FC<DemoPageProps> = ({
         <header className={styles.header}>
           <h1 className={styles.title}>{title}</h1>
           <p className={styles.summary}>{summary}</p>
+          {docLinks.length > 0 && (
+            <nav className={styles.docLinks} aria-label="Related docs">
+              <span>
+                <i className="fa-solid fa-book"></i> Docs:
+              </span>
+              {docLinks.map((docLink) => (
+                <Link key={docLink.to} to={docLink.to}>
+                  {docLink.label}
+                </Link>
+              ))}
+            </nav>
+          )}
         </header>
 
         <div className={styles.stage}>
@@ -157,16 +169,6 @@ export const DemoPage: FC<DemoPageProps> = ({
                   </li>
                 ))}
               </ul>
-              {docLinks.length > 0 && (
-                <div className={styles.docLinks}>
-                  <span>Docs:</span>
-                  {docLinks.map((docLink) => (
-                    <Link key={docLink.to} to={docLink.to}>
-                      {docLink.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
             </section>
           </aside>
         </div>
