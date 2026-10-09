@@ -4,8 +4,7 @@ import gameCode from '!!raw-loader!./_create-game';
 import createAnchorPlaygroundCode from '!!raw-loader!./_create-anchor-playground';
 import playgroundControlsCode from '!!raw-loader!./_PlaygroundControls';
 
-import { Demo } from '@site/src/components/Demo';
-import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
+import { DemoPage, DemoPanel } from '@site/src/components/demo-page';
 import {
   AnchorPlayground,
   anchorPlaygroundDefaults,
@@ -16,17 +15,6 @@ import {
   setAnchorPlaygroundSizeOrMargin,
 } from './_create-anchor-playground';
 import { PlaygroundControls } from './_PlaygroundControls';
-
-const badgeStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 20,
-  height: 20,
-  borderRadius: '50%',
-  backgroundColor: 'var(--ifm-color-emphasis-300)',
-  fontSize: 12,
-};
 
 export default function UiAnchors(): JSX.Element {
   const playgroundRef = useRef<AnchorPlayground | null>(null);
@@ -113,17 +101,11 @@ export default function UiAnchors(): JSX.Element {
   const { isStretchX, isStretchY } = getAnchorStretchAxes(presetName);
 
   return (
-    <Demo
-      metaData={{
-        title: 'UI Anchors',
-        description:
-          'A demo showcasing RectTransformEcsComponent anchors and pivots from the ui module: corner-pinned, edge-stretched, and centered panels, plus a live-controllable anchor playground.',
-      }}
-      header="UI Anchors"
-      blurb="Four corner-pinned reference panels (topLeft, topRight, bottomLeft, bottomRight) and a full-width top bar (stretchTop), plus one orange playground panel you can drive yourself with the controls above: pick any UiAnchor preset, then drag its position and size/margin sliders to see exactly how each axis's anchor, pivot, anchoredPosition, and size (or margin, for a stretched axis) interact. Every panel's RectTransformEcsComponent resolves fresh every frame from the canvas's current aspect ratio, so toggling fullscreen keeps each one exactly where its own anchor says it should be, at any window shape - no manual reflow code required."
+    <DemoPage
+      slug="ui-anchors"
       createGame={createGame}
-      interactions={
-        <>
+      panels={
+        <DemoPanel title="Playground" icon="fa-sliders">
           <PlaygroundControls
             presetName={presetName}
             anchoredPositionX={anchoredPositionX}
@@ -142,25 +124,59 @@ export default function UiAnchors(): JSX.Element {
             onSizeOrMarginXChange={handleSizeOrMarginXChange}
             onSizeOrMarginYChange={handleSizeOrMarginYChange}
           />
-          <InteractionInstruction
-            displayElement={
-              <div style={badgeStyle}>
-                <i className="fa-solid fa-expand" />
-              </div>
-            }
-            text="Toggle fullscreen to see the orange playground panel (and every reference panel) hold its anchor at a different aspect ratio."
-          />
-        </>
+        </DemoPanel>
       }
-      codeFiles={[
-        { name: 'game.ts', content: gameCode },
+      highlights={[
         {
-          name: 'create-anchor-playground.ts',
-          content: createAnchorPlaygroundCode,
+          text: 'Each panel has an anchor that pins it to a corner or stretches it along an edge of the canvas.',
+          file: 'create-game.ts',
         },
         {
-          name: 'PlaygroundControls.tsx',
-          content: playgroundControlsCode,
+          text: 'The orange panel takes its anchor, position and size straight from the playground controls, written into its live rect transform.',
+          file: 'create-anchor-playground.ts',
+        },
+        {
+          text: 'On a point axis the slider sets a fixed size; on a stretched axis it sets a margin from the anchored span.',
+          file: 'create-anchor-playground.ts',
+        },
+        {
+          text: 'Layout is resolved every frame, so in fullscreen every panel still sits where its anchor says, at any aspect ratio.',
+          file: 'create-game.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Anchors and layout', to: '/docs/docs/ui/anchors-and-layout' },
+        { label: 'Responsive UI', to: '/docs/docs/ui/responsive-ui' },
+        { label: 'Creating a canvas', to: '/docs/docs/ui/creating-a-canvas' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Builds the canvas, the five reference panels and the orange playground panel.',
+              content: gameCode,
+            },
+          ],
+        },
+        {
+          title: 'Playground',
+          files: [
+            {
+              name: 'create-anchor-playground.ts',
+              summary:
+                "The anchor presets and functions that write the controls into the panel's rect transform.",
+              content: createAnchorPlaygroundCode,
+            },
+            {
+              name: 'PlaygroundControls.tsx',
+              summary:
+                'The React preset picker and position and size sliders beside the game.',
+              content: playgroundControlsCode,
+            },
+          ],
         },
       ]}
     />
