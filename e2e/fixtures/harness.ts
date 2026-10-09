@@ -33,10 +33,13 @@ function renderFatalError(message: string): void {
 
 try {
   // Loaded eagerly so Vite can statically discover every scene module; the
-  // matching entry is picked at runtime by the `?scene=` query param.
-  const sceneLoaders = import.meta.glob<{ createScene: CreateScene }>(
+  // matching entry is picked at runtime by the `?scene=` query param. Golden
+  // scenes live next to their specs and reference images, and are named
+  // `golden/<name>`.
+  const sceneLoaders = import.meta.glob<{ createScene: CreateScene }>([
     './scenes/*.ts',
-  );
+    '../golden/scenes/*.ts',
+  ]);
 
   const sceneName = new URLSearchParams(window.location.search).get('scene');
 
@@ -52,7 +55,9 @@ try {
   // afterwards - the latter is indistinguishable from an unvalidated
   // dynamic dispatch to static analysis, even though the outcome is the
   // same.
-  const sceneKey = `./scenes/${sceneName}.ts`;
+  const sceneKey = sceneName.startsWith('golden/')
+    ? `../golden/scenes/${sceneName.slice('golden/'.length)}.ts`
+    : `./scenes/${sceneName}.ts`;
 
   if (!Object.hasOwn(sceneLoaders, sceneKey)) {
     throw new Error(`Unknown scene "${sceneName}"`);
