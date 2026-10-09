@@ -3,11 +3,6 @@
   flex-wrap: wrap;
   gap: 16px;
   align-items: center;
-  padding: 8px 12px;
-  margin-right: 10px;
-  vertical-align: top;
-
-  background-color: var(--card-background-color);
 }
 
 .control {

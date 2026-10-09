@@ -4,31 +4,72 @@ import gameCode from '!!raw-loader!./_create-game';
 import createCursorEffectsCode from '!!raw-loader!./_create-cursor-effects';
 import createEmberFountainCode from '!!raw-loader!./_create-ember-fountain';
 
-import { Demo } from '@site/src/components/Demo';
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function Particles(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'Particles Demo',
-        description:
-          "A demo showcasing Forge's particle system using Kenney's particle pack.",
-      }}
-      header="Particles"
-      blurb="This demo showcases the particle system using Kenney's particle pack. A fountain of embers at the bottom streams upward on its own at a steady emissionRate, slowing with drag as it rises and fading out. Click anywhere to burst a ring of sparks that fly outward from the cursor, slow down and fall under gravity, and hold and drag the mouse to trail smoke that rises, grows and fades. The spark and smoke emitters live on the same entity as two named emitters, the same pattern used for running several independent effects, like an attack and a footstep, off one entity, and every effect spawns around its entity's position."
+    <DemoPage
+      slug="particles"
       createGame={createParticlesGame}
-      codeFiles={[
+      controls={[
         {
-          name: 'game.ts',
-          content: gameCode,
+          inputs: [{ device: 'mouse', label: 'Click' }],
+          action: 'Burst sparks',
         },
         {
-          name: 'create-cursor-effects.ts',
-          content: createCursorEffectsCode,
+          inputs: [{ device: 'mouse', label: 'Hold and drag' }],
+          action: 'Trail smoke',
+        },
+      ]}
+      highlights={[
+        {
+          text: 'The ember fountain runs forever on a steady emissionRate, with drag slowing the embers as they rise and fade.',
+          file: 'create-ember-fountain.ts',
         },
         {
-          name: 'create-ember-fountain.ts',
-          content: createEmberFountainCode,
+          text: 'A click fires one burst of sparks outward from a ring, and gravity pulls them down as they fade.',
+          file: 'create-cursor-effects.ts',
+        },
+        {
+          text: 'The spark and smoke emitters are two named emitters on one entity, a pattern for running several effects from one object.',
+          file: 'create-cursor-effects.ts',
+        },
+        {
+          text: "Emitters spawn around their entity's world position, so moving the cursor entity moves the effects.",
+          file: 'create-game.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Particles', to: '/docs/docs/particles' },
+        { label: 'Configuring emitters', to: '/docs/docs/particles/emitters' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Creates both effects, registers the particle systems and wires up mouse input.',
+              content: gameCode,
+            },
+          ],
+        },
+        {
+          title: 'Effects',
+          files: [
+            {
+              name: 'create-ember-fountain.ts',
+              summary: 'An emitter that streams embers upward on its own.',
+              content: createEmberFountainCode,
+            },
+            {
+              name: 'create-cursor-effects.ts',
+              summary:
+                'One entity with spark and smoke emitters, driven by the mouse.',
+              content: createCursorEffectsCode,
+            },
+          ],
         },
       ]}
     />

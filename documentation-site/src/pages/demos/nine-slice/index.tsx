@@ -5,64 +5,99 @@ import createPanelsCode from '!!raw-loader!./_create-panels';
 import panelComponentCode from '!!raw-loader!./_panel.component';
 import panelSystemCode from '!!raw-loader!./_panel.system';
 
-import { Demo } from '@site/src/components/Demo';
-import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
-
-const badgeStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 20,
-  height: 20,
-  borderRadius: '50%',
-  backgroundColor: 'var(--ifm-color-emphasis-300)',
-  fontSize: 12,
-  fontWeight: 700,
-};
+import {
+  DemoLegend,
+  DemoPage,
+  DemoPanel,
+} from '@site/src/components/demo-page';
 
 export default function NineSlice(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'Nine-Slice Sprites',
-        description:
-          'A demo comparing a naively-stretched sprite against nine-sliced sprites with stretch and tile edge/center modes.',
-      }}
-      header="Nine-Slice Sprites"
-      blurb="The same 96x96 panel artwork (a flat white fill with a thin inset frame line and cross-shaped corner notches, from Kenney's Fantasy UI Borders pack) drives all three panels, which all breathe between the same minimum and maximum size together. The left panel is a plain, unsliced sprite: as it grows, its corner notches and frame line stretch right along with it, smearing out of shape. The middle and right panels are nine-sliced with 'stretch' and 'tile' edge/center modes respectively: both keep their corner notches a crisp, fixed size no matter how large the panel gets. Because this artwork's edges and center are a flat, untextured fill rather than a repeating pattern, 'stretch' and 'tile' render identically here - the difference between those two modes only becomes visible with source art that has repeating detail (a brick or wood-grain edge, for example) for tiling to preserve."
+    <DemoPage
+      slug="nine-slice"
       createGame={createNineSliceGame}
-      interactions={
-        <>
-          <InteractionInstruction
-            displayElement={<div style={badgeStyle}>1</div>}
-            text="Naive stretch (no slicing)"
+      panels={
+        <DemoPanel title="Legend" icon="fa-list">
+          <DemoLegend
+            items={[
+              {
+                marker: (
+                  <i className="fa-solid fa-arrow-up" aria-hidden="true" />
+                ),
+                label: 'Plain sprite, stretched',
+              },
+              {
+                marker: (
+                  <i className="fa-solid fa-arrow-down" aria-hidden="true" />
+                ),
+                label: 'Nine-sliced sprite',
+              },
+            ]}
           />
-          <InteractionInstruction
-            displayElement={<div style={badgeStyle}>2</div>}
-            text="Nine-slice: stretch"
-          />
-          <InteractionInstruction
-            displayElement={<div style={badgeStyle}>3</div>}
-            text="Nine-slice: tile (looks identical to #2 with this flat-fill artwork)"
-          />
-        </>
+        </DemoPanel>
       }
-      codeFiles={[
+      highlights={[
         {
-          name: 'game.ts',
-          content: gameCode,
+          text: "Both panels use the same 96x96 frame artwork from Kenney's Fantasy UI Borders pack.",
+          file: 'create-panels.ts',
         },
         {
-          name: 'create-panels.ts',
-          content: createPanelsCode,
+          text: 'The plain sprite stretches as a single quad, so its corner notches and frame line smear as it grows.',
+          file: 'create-panels.ts',
         },
         {
-          name: 'panel.component.ts',
-          content: panelComponentCode,
+          text: 'The nine-sliced sprite keeps its corners a fixed size and stretches only its edges and center.',
+          file: 'create-panels.ts',
         },
         {
-          name: 'panel.system.ts',
-          content: panelSystemCode,
+          text: 'A system grows and shrinks both panels together while turning them, so only the slicing differs.',
+          file: 'panel.system.ts',
+        },
+      ]}
+      docLinks={[
+        {
+          label: 'Nine-slice sprites',
+          to: '/docs/docs/rendering/nine-slice-sprites',
+        },
+        { label: 'Sprites', to: '/docs/docs/rendering/sprites' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary: 'Creates the panels and registers the systems.',
+              content: gameCode,
+            },
+          ],
+        },
+        {
+          title: 'Building the scene',
+          files: [
+            {
+              name: 'create-panels.ts',
+              summary:
+                'Builds a plain and a nine-sliced sprite from the same panel texture.',
+              content: createPanelsCode,
+            },
+          ],
+        },
+        {
+          title: 'Animation',
+          files: [
+            {
+              name: 'panel.component.ts',
+              summary: 'The smallest and largest size a panel grows between.',
+              content: panelComponentCode,
+            },
+            {
+              name: 'panel.system.ts',
+              summary:
+                "Animates each panel's width on a sine wave and slowly rotates it.",
+              content: panelSystemCode,
+            },
+          ],
         },
       ]}
     />

@@ -9,10 +9,12 @@ import createLiveMaxWidthExampleCode from '!!raw-loader!./_create-live-max-width
 import liveMaxWidthComponentCode from '!!raw-loader!./_live-max-width.component';
 import liveMaxWidthSystemCode from '!!raw-loader!./_live-max-width.system';
 import createEffectsExamplesCode from '!!raw-loader!./_create-effects-examples';
+import createEffectsHeroExampleCode from '!!raw-loader!./_create-effects-hero-example';
+import createRichTextExampleCode from '!!raw-loader!./_create-rich-text-example';
 import createPlaygroundCode from '!!raw-loader!./_create-playground';
 import playgroundControlsCode from '!!raw-loader!./_PlaygroundControls';
 
-import { Demo } from '@site/src/components/Demo';
+import { DemoPage, DemoPanel } from '@site/src/components/demo-page';
 import {
   Playground,
   playgroundDefaults,
@@ -150,88 +152,175 @@ export default function Text(): JSX.Element {
   };
 
   return (
-    <Demo
-      metaData={{
-        title: 'Text Rendering Demo',
-        description:
-          'A demo showcasing MSDF text rendering, multi-line layout, alignment, live reflow, rich text tags, an interactive playground, and outline/soft-shadow effects with addTextComponent and createTextShapingEcsSystem.',
-      }}
-      header="Text Rendering"
-      blurb="A showcase of MSDF text rendering using the engine's shipped default font atlas (Liberation Sans, SIL OFL 1.1 - zero font setup required): every horizontalAlign value (left/center/right/justify) wrapping the same sentence, every verticalAlign value (top/middle/bottom/baseline/capline) positioned against a shared anchor line, with middle centering the cap-height-to-baseline band, a few lineHeight multipliers compared side by side, a paragraph whose maxWidth oscillates every frame (driving createTextShapingEcsSystem to reflow it live), a paragraph styled with <b> and <color> rich text tags, an interactive playground you can type into using the controls above, and - at the bottom - outline/soft-shadow effects at a conservative, documented-safe size (see the Text Effects guide for why). Every guide box/line is sized from shapeText's own computed bounds, not guessed."
+    <DemoPage
+      slug="text"
       createGame={createGame}
-      interactions={
-        <PlaygroundControls
-          text={text}
-          size={size}
-          minSize={playgroundDefaults.minSize}
-          maxSize={playgroundDefaults.maxSize}
-          horizontalAlign={horizontalAlign}
-          wrapEnabled={wrapEnabled}
-          outlineEnabled={outlineEnabled}
-          outlineWidth={outlineWidth}
-          minOutlineWidth={playgroundDefaults.minOutlineWidth}
-          maxOutlineWidth={playgroundDefaults.maxOutlineWidth}
-          glowEnabled={glowEnabled}
-          glowOffsetX={glowOffsetX}
-          glowOffsetY={glowOffsetY}
-          minGlowOffset={playgroundDefaults.minGlowOffset}
-          maxGlowOffset={playgroundDefaults.maxGlowOffset}
-          glowSoftness={glowSoftness}
-          minGlowSoftness={playgroundDefaults.minGlowSoftness}
-          maxGlowSoftness={playgroundDefaults.maxGlowSoftness}
-          onTextChange={handleTextChange}
-          onSizeChange={handleSizeChange}
-          onHorizontalAlignChange={handleHorizontalAlignChange}
-          onWrapEnabledChange={handleWrapEnabledChange}
-          onOutlineEnabledChange={handleOutlineEnabledChange}
-          onOutlineWidthChange={handleOutlineWidthChange}
-          onGlowEnabledChange={handleGlowEnabledChange}
-          onGlowOffsetXChange={handleGlowOffsetXChange}
-          onGlowOffsetYChange={handleGlowOffsetYChange}
-          onGlowSoftnessChange={handleGlowSoftnessChange}
-        />
+      panels={
+        <DemoPanel title="Playground" icon="fa-sliders">
+          <PlaygroundControls
+            text={text}
+            size={size}
+            minSize={playgroundDefaults.minSize}
+            maxSize={playgroundDefaults.maxSize}
+            horizontalAlign={horizontalAlign}
+            wrapEnabled={wrapEnabled}
+            outlineEnabled={outlineEnabled}
+            outlineWidth={outlineWidth}
+            minOutlineWidth={playgroundDefaults.minOutlineWidth}
+            maxOutlineWidth={playgroundDefaults.maxOutlineWidth}
+            glowEnabled={glowEnabled}
+            glowOffsetX={glowOffsetX}
+            glowOffsetY={glowOffsetY}
+            minGlowOffset={playgroundDefaults.minGlowOffset}
+            maxGlowOffset={playgroundDefaults.maxGlowOffset}
+            glowSoftness={glowSoftness}
+            minGlowSoftness={playgroundDefaults.minGlowSoftness}
+            maxGlowSoftness={playgroundDefaults.maxGlowSoftness}
+            onTextChange={handleTextChange}
+            onSizeChange={handleSizeChange}
+            onHorizontalAlignChange={handleHorizontalAlignChange}
+            onWrapEnabledChange={handleWrapEnabledChange}
+            onOutlineEnabledChange={handleOutlineEnabledChange}
+            onOutlineWidthChange={handleOutlineWidthChange}
+            onGlowEnabledChange={handleGlowEnabledChange}
+            onGlowOffsetXChange={handleGlowOffsetXChange}
+            onGlowOffsetYChange={handleGlowOffsetYChange}
+            onGlowSoftnessChange={handleGlowSoftnessChange}
+          />
+        </DemoPanel>
       }
-      codeFiles={[
-        { name: 'game.ts', content: gameCode },
+      highlights={[
         {
-          name: 'create-guide-box.ts',
-          content: createGuideBoxCode,
+          text: "All the text uses the engine's built-in MSDF font atlas, so it stays sharp at any size with no font setup.",
+          file: 'create-game.ts',
         },
         {
-          name: 'create-horizontal-alignment-examples.ts',
-          content: createHorizontalAlignmentExamplesCode,
+          text: 'Every horizontal and vertical alignment lays out the same text, framed by guide boxes sized from shapeText bounds.',
+          file: 'create-horizontal-alignment-examples.ts',
         },
         {
-          name: 'create-vertical-alignment-examples.ts',
-          content: createVerticalAlignmentExamplesCode,
+          text: "A system changes one paragraph's maxWidth every frame, and the text shaping system rewraps it live.",
+          file: 'live-max-width.system.ts',
         },
         {
-          name: 'create-line-height-examples.ts',
-          content: createLineHeightExamplesCode,
+          text: '<b> and <color> tags style part of a string without changing how it wraps.',
+          file: 'create-rich-text-example.ts',
         },
         {
-          name: 'create-live-max-width-example.ts',
-          content: createLiveMaxWidthExampleCode,
+          text: 'The playground controls write straight into a live text component, including its outline and glow.',
+          file: 'create-playground.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Rendering text', to: '/docs/docs/text/rendering-text' },
+        { label: 'Text effects', to: '/docs/docs/text/text-effects' },
+        {
+          label: 'Loading a font atlas',
+          to: '/docs/docs/text/loading-a-font-atlas',
+        },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Loads the default font, stacks every example section and registers the systems.',
+              content: gameCode,
+            },
+          ],
         },
         {
-          name: 'live-max-width.component.ts',
-          content: liveMaxWidthComponentCode,
+          title: 'Layout examples',
+          files: [
+            {
+              name: 'create-guide-box.ts',
+              summary: 'Draws the dark box that frames a block of text.',
+              content: createGuideBoxCode,
+            },
+            {
+              name: 'create-horizontal-alignment-examples.ts',
+              summary:
+                'Wraps one sentence with each horizontalAlign value side by side.',
+              content: createHorizontalAlignmentExamplesCode,
+            },
+            {
+              name: 'create-vertical-alignment-examples.ts',
+              summary:
+                'Places text against an anchor line with each verticalAlign value.',
+              content: createVerticalAlignmentExamplesCode,
+            },
+            {
+              name: 'create-line-height-examples.ts',
+              summary:
+                'Compares one paragraph at three lineHeight multipliers.',
+              content: createLineHeightExamplesCode,
+            },
+          ],
         },
         {
-          name: 'live-max-width.system.ts',
-          content: liveMaxWidthSystemCode,
+          title: 'Live reflow',
+          files: [
+            {
+              name: 'create-live-max-width-example.ts',
+              summary:
+                'Builds the paragraph, guide box and caption whose width changes live.',
+              content: createLiveMaxWidthExampleCode,
+            },
+            {
+              name: 'live-max-width.component.ts',
+              summary:
+                'Stores the width range, timing and guide box of the live paragraph.',
+              content: liveMaxWidthComponentCode,
+            },
+            {
+              name: 'live-max-width.system.ts',
+              summary:
+                "Swings the paragraph's maxWidth on a sine wave and updates its guide box.",
+              content: liveMaxWidthSystemCode,
+            },
+          ],
         },
         {
-          name: 'create-playground.ts',
-          content: createPlaygroundCode,
+          title: 'Rich text and effects',
+          files: [
+            {
+              name: 'create-rich-text-example.ts',
+              summary:
+                'Styles a paragraph with <b> and <color> tags, and outlines bold text.',
+              content: createRichTextExampleCode,
+            },
+            {
+              name: 'create-effects-examples.ts',
+              summary:
+                'Compares plain text with an outline and a soft shadow at small, safe sizes.',
+              content: createEffectsExamplesCode,
+            },
+            {
+              name: 'create-effects-hero-example.ts',
+              summary:
+                'Draws one large word with a thick outline and a soft glow.',
+              content: createEffectsHeroExampleCode,
+            },
+          ],
         },
         {
-          name: 'PlaygroundControls.tsx',
-          content: playgroundControlsCode,
-        },
-        {
-          name: 'create-effects-examples.ts',
-          content: createEffectsExamplesCode,
+          title: 'Playground',
+          files: [
+            {
+              name: 'create-playground.ts',
+              summary:
+                'Creates the editable text and helpers for its wrap, outline and glow.',
+              content: createPlaygroundCode,
+            },
+            {
+              name: 'PlaygroundControls.tsx',
+              summary:
+                'The React inputs that edit the playground text while the game runs.',
+              content: playgroundControlsCode,
+            },
+          ],
         },
       ]}
     />
