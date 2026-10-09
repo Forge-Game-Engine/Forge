@@ -26,8 +26,8 @@
 | `src/rendering/deformation/` (new)                                                                                                                                          | New           | `Skin`, `SkinEcsComponent`, `MorphWeightsEcsComponent`, joint bounds, the deformation extraction system, the animation data texture and deformation records, `computeDeformedPositions`, skeleton debug drawing                                                                                                                                                       |
 | `src/rendering/meshes/`                                                                                                                                                     | Modified      | `joints1` and `weights1` attributes; `Mesh.morphTargets`; joint-influence count and highest joint index on `Mesh`                                                                                                                                                                                                                                                     |
 | `src/rendering/shaders/forge/`                                                                                                                                              | Modified      | `forge/skinning` and `forge/morphing` includes; `forge/vertex` calls them; `forge/object` reads the deformation record that texel 3 references                                                                                                                                                                                                                        |
-| `src/rendering/gpu-scene/`, `src/rendering/components/mesh-component.ts`                                                                                                    | Modified      | Texel 3 references a deformation record in place of the skinned flag; deformed slots' world culling spheres come from the mesh-space bound the deformation extraction supplies; deformed slots never take the static path; `MeshEcsComponent.lastVisibleFrame` from culling results (cross-doc, design 06)                                                            |
-| `src/lighting/shadows/`                                                                                                                                                     | Modified      | A kept cached tile counts the dynamic casters of its last render as visible (cross-doc, design 09)                                                                                                                                                                                                                                                                    |
+| `src/rendering/gpu-scene/`, `src/rendering/components/mesh-component.ts`                                                                                                    | Modified      | Texel 3 references a deformation record in place of the skinned flag; deformed slots' world culling spheres come from the mesh-space bound the deformation extraction supplies; deformed slots never take the static path; `MeshEcsComponent.lastVisibleFrame` from culling results (design 06 §6.8.1)                                                            |
+| `src/lighting/shadows/`                                                                                                                                                     | Modified      | A kept cached tile counts the dynamic casters of its last render as visible (design 09 §6.5.6)                                                                                                                                                                                                                                                                    |
 | `src/gltf/`                                                                                                                                                                 | Modified      | With design 11 Phase 4: skins, morph data and clips into these types; up to eight joint influences; skinned and morphed nodes never static; instantiation adds the components (§6.4.4)                                                                                                                                                                                |
 | `AGENTS.md`                                                                                                                                                                 | Modified      | "Transforms": the pose pipeline (sampling, then adjustments in group order) as the one sanctioned exception to one writer per value (§6.13.1)                                                                                                                                                                                                                         |
 | `documentation-site/docs/docs/animations/`, `finite-state-machine/` (new), `asset-loading/asset-registry.md`, `events/index.md`                                             | Modified      | §6.19                                                                                                                                                                                                                                                                                                                                                                 |
@@ -217,7 +217,7 @@ to 240 fps; every event fires exactly once per crossing.
 
 | #   | Task                                 | Description                                                                                                                                                                                                                                 | Size |
 | --- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 4.1 | Visibility feedback                  | `MeshEcsComponent.lastVisibleFrame` from culling results: camera views, shadow views and the casters of kept cached tiles (cross-doc, designs 06 and 09); sampling skipped for hidden instances (§6.7.4)                                    | M    |
+| 4.1 | Visibility feedback                  | `MeshEcsComponent.lastVisibleFrame` from culling results: camera views, shadow views and the casters of kept cached tiles (design 06 §6.8.1, design 09 §6.5.6); sampling skipped for hidden instances (§6.7.4)                                    | M    |
 | 4.2 | Change-driven deformation            | Joint matrices recomputed and uploaded only for visible instances whose joints changed; hidden instances refresh only their mesh-space bound; morph lists only when weights changed; dirty row ranges; the deformation tick design 09 reads | M    |
 | 4.3 | Shared palettes                      | Skin components with the same skin, joints and mesh world matrix share one palette (several skinned meshes on one skeleton)                                                                                                                 | S    |
 | 4.4 | B4                                   | The generated character with translation, rotation and scale on every joint (§6.17.1), the Forge scene, plain and optimized Three.js versions, measured budgets replacing the estimates                                                     | M    |
@@ -240,7 +240,7 @@ with. Design 14's rag dolls build on this phase.
 
 | #   | Task               | Description                                                                                                                          | Size |
 | --- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ | ---- |
-| 5.1 | Pose-space helpers | §6.13.1: model-space matrices from current local values; the root's current world matrix; model-space writes                         | S    |
+| 5.1 | Pose-space helpers | §6.13.1: model-space matrices from current local values; the root's current world matrix through design 04's `getCurrentWorldMatrix`; model-space writes | S |
 | 5.2 | Game adjustments   | The contract tested with an adjustment system in `poseAdjustmentGroup`; the demo's character leans into turns with one               | S    |
 | 5.3 | Guide              | `procedural-adjustments.md`: the group and its order, the helpers, writing an adjustment, hidden characters, customizing a rest pose | S    |
 
@@ -275,7 +275,7 @@ reaches a reachable target within `1e-6` m.
 | AN3  | When joint matrices are computed      | (a) In the render stage, from world transforms, straight into the render context's staging mirror; (b) in `postUpdate`, into an array on the skin component                                                                                                                                                                                                                                          | (a)    | They're derived GPU data (README §4.4). Computing them where they're uploaded avoids an intermediate copy of 48 bytes per joint, keeps nothing on the component, and lets the render stage skip them for instances no view saw (AN20). CPU code that needs deformed vertices uses `computeDeformedPositions`, which reads transforms.                                                                                                                                                                                                                                                                                                                                          |
 | AN4  | Where palettes live on the GPU        | (a) One `rgba32float` animation data texture per world, 2,048 texels wide, three texels per joint, found per instance through a deformation record (AN31); (b) a uniform block per draw; (c) a texture per skin instance                                                                                                                                                                             | (a)    | Instanced draws of many characters need per-instance palettes, which a per-draw block can't give, and blocks are guaranteed only 16 KB (about 340 joints as 3x4 matrices). A texture per instance costs a bind per instance and breaks instancing. One texture per world, like the GPU scene (design 06, R3, R4), keeps 100 characters in one draw. 2,048 is WebGL2's guaranteed `MAX_TEXTURE_SIZE`. Three.js reads bones from a texture per skeleton; this extends that to instancing.                                                                                                                                                                                        |
 | AN5  | Frame of reference for joint matrices | (a) Relative to the skinned mesh entity: `inverse(meshWorld) × jointWorld × inverseBind`, in 64-bit; the shader applies the entity's transform from the GPU scene; (b) absolute world matrices                                                                                                                                                                                                       | (a)    | The mesh entity's transform cancels, so the result is exactly glTF's, which says "the transform of the skinned mesh node MUST be ignored", while large translations stay on the GPU scene's camera-relative path (README §4.3). `float32` world matrices would jitter far from the origin. Three.js changes frame with its `bindMatrixInverse` the same way. A mesh-relative palette also doesn't change when the whole character moves rigidly.                                                                                                                                                                                                                               |
-| AN6  | Influences per vertex                 | (a) Four, or eight when the mesh has `joints1`/`weights1` (attribute locations 8 and 9), as variants; more reduced to the eight largest at load; (b) always four (design 11's GA20); (c) any number, from a texture                                                                                                                                                                                  | (a)    | Four covers most content; scanned characters and some exporters write eight, and glTF allows any number of sets. The second set costs two attribute locations and 12 more texel fetches, only in its own variant. (c) needs per-vertex loops and a texture fetch per influence. Changes design 11's GA20 and adds two rows to design 05's location table (cross-doc).                                                                                                                                                                                                                                                                                                          |
+| AN6  | Influences per vertex                 | (a) Four, or eight when the mesh has `joints1`/`weights1` (attribute locations 8 and 9), as variants; more reduced to the eight largest at load; (b) always four (design 11's GA20); (c) any number, from a texture                                                                                                                                                                                  | (a)    | Four covers most content; scanned characters and some exporters write eight, and glTF allows any number of sets. The second set costs two attribute locations and 12 more texel fetches, only in its own variant. (c) needs per-vertex loops and a texture fetch per influence. Design 11's GA20 and design 05's location table (§6.5 there) include the second set.                                                                                                                                                                                                                                                                                                          |
 | AN7  | Skinning method                       | (a) Linear blend skinning; (b) dual quaternion skinning                                                                                                                                                                                                                                                                                                                                              | (a)    | glTF defines skinning as a weighted sum of joint matrices, and content is authored and checked against that (the Sample Viewer). Dual quaternions change the result (no candy-wrapper twists, but no scale). A later variant could add them.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | AN8  | Culling bounds of skinned meshes      | (a) Per joint, the sphere of the vertices it moves, in its bind space, computed at load; each frame the joints' world matrices pose them, and their union becomes a bound in the mesh entity's space that the GPU scene transforms like any mesh's bounds; (b) bind-pose bounds with a margin; (c) CPU skinning of every vertex                                                                      | (a)    | (b) misses poses far from the bind pose (crouching, lying down) and culls visible characters. (c) costs per vertex per frame. (a) costs a point transform per joint, is conservative for any pose (radii scale with the matrices' largest axis scale), and is what Godot 4's per-bone bounds do. Handing the GPU scene a mesh-space bound, rather than a world sphere, leaves world spheres to one writer for every slot (design 06).                                                                                                                                                                                                                                          |
 | AN9  | Morph target storage and limit        | (a) Deltas in a float texture per mesh; per instance, a list of at most 16 active targets, the largest weights first; (b) deltas as vertex attributes, a few targets per draw; (c) every target for every vertex                                                                                                                                                                                     | (a)    | Attributes cap targets at the free locations and force rebinding buffers as weights change. (c) costs per vertex per target even at weight 0, and face rigs carry 50 or more targets. A sorted, capped list bounds the cost and drops only the smallest contributions. Babylon.js and current Three.js keep deltas in textures. The cap is open question 1.                                                                                                                                                                                                                                                                                                                    |
@@ -323,8 +323,10 @@ In priority order.
 3. **Playback in the fixed step.** A physics-driven character reads root
    motion as a velocity one frame late (§6.9.3). Options: (a) keep that; (b)
    let a playback component advance in `fixedUpdate`, like Unity's
-   physics update mode. Proposal: (a); revisit with design 14's character
-   controller scenarios.
+   physics update mode. Design 14's `animated` bodies no longer need (b):
+   they spread each frame's motion over its steps (design 14 PH33), so
+   root-motion latency is the only reason left (design 14 open question
+   8). Proposal: (a); revisit with design 14's character mover scenarios.
 4. **Lower sampling rates for small characters.** Characters far away could
    sample every second or fourth frame, staggered. It needs a screen-size
    output from design 06's level-of-detail selection. Proposal: after B4
@@ -646,9 +648,12 @@ export interface PoseTargetEcsComponent {
 ```
 
 Adding it to an entity that already has one from another root throws,
-naming both roots (AN24). Design 14's physics write-back excludes entities
-with it, so a body on a pose target is written as a pose adjustment
-(§6.13.1), never by the write-back.
+naming both roots (AN24). Design 14's physics write-backs (2D and 3D)
+exclude entities with it, so a body on a pose target is written as a pose
+adjustment (§6.13.1), never by a write-back; until design 14's rag dolls
+(its Phase 10), physics throws for a dynamic or kinematic body on a pose
+target, since nothing would write it. Both land with design 12 Phase 1 or
+design 14 Phase 2, whichever ships later (design 14 §6.2.2).
 
 The rest pose comes from the model, so an instance whose game code changed a
 bound node's `local` at spawn (longer legs for a character creator) would
@@ -658,7 +663,8 @@ instance, and the guide shows it.
 
 #### 6.4.4 At instantiation
 
-With design 11 Phase 4, `instantiateModel` adds, per instance:
+With design 11 Phase 4, `instantiateModel(world, model, options)`, which
+takes an `AssetHandle<Model>` (design 11 §6.14.1), adds, per instance:
 
 - on the root, when the model has clips, a `ClipPlaybackEcsComponent` with
   the model's clip set bound and nothing playing;
@@ -666,9 +672,15 @@ With design 11 Phase 4, `instantiateModel` adds, per instance:
 - on each node with a skin, a `SkinEcsComponent` (§6.10.1); on each node
   whose mesh has morph targets, a `MorphWeightsEcsComponent` (§6.11.2).
 
-With design 11's `isStatic`, animated nodes, joints and now skinned and
-morphed nodes stay dynamic (cross-doc for design 11): a deformed mesh's
-bounds change while its node may not move (§6.10.5).
+With design 11's `isStatic`, animated nodes, joints, and skinned and
+morphed nodes stay dynamic (design 11 GA16): a deformed mesh's bounds
+change while its node may not move (§6.10.5).
+
+A binding's entity table is filled from the instance's node table through
+design 11's `getModelNodeEntity`, which checks `world.isAlive`, so a node
+the game removed before a clip is bound gets `-1`, including when a later
+binding grows the table (§6.4.2). `Model.animations` holds the file's
+`KeyframeClip`s.
 
 A model without clips gets no playback component; its skins still draw in
 whatever pose game code gives the joints.
@@ -992,7 +1004,7 @@ sampled (`poseTick` is 0), when the binding lists no meshes, or when any of
 its meshes that is still alive has `lastVisibleFrame ≥ time.frames − 1`.
 
 `lastVisibleFrame` is written by the render pipeline from culling results,
-not from what passes drew (AN26, cross-doc for designs 06, 08 and 09). After
+not from what passes drew (AN26; design 06 §6.8.1, design 08 §6.2.1, design 09 §6.5.6). After
 culling, every mesh whose slot is visible in a camera view or a shadow view
 gets the current frame, and so does every dynamic caster that a kept cached
 shadow tile drew at its last render. The last rule closes a gap: a cached
@@ -1117,21 +1129,27 @@ in the pose; the forward motion and turning go to the component.
   `local.scale` to `local.position`, and multiplies `local.rotation` by
   `deltaRotation`. It's the only animation code that writes a root's
   transform, and only for tagged roots.
-- **Physics-driven characters** (design 14's character controller) don't
-  carry the tag. The controller reads `velocity` and `angularVelocity` in
-  `fixedUpdate`, rotates them into world space, and moves the body. Reading
-  a velocity rather than a delta stays correct whether a frame runs zero,
-  one or several fixed steps, at one frame of latency (open question 3).
-  Unity exposes `Animator.velocity` for the same purpose.
-- **Not both.** A root with `applyRootMotionTag` must not have a 2D or 3D
-  body, whose write-back would be a second writer of its `local`, and must
-  not be a character mover's `rootMotionSource`, which would apply the same
-  motion twice. Physics enforces both (cross-doc for design 14): its sync
-  systems throw when an entity has a body and the tag, whichever was added
-  first (a declared query of bodies with the tag; its `added` journal), and
-  the mover throws when its source has the tag. The check lives in physics
-  because physics already imports this module (`poseTargetId`,
-  `RootMotionEcsComponent`) and this module doesn't import physics.
+- **Physics-driven characters** (design 14's character mover) don't
+  carry the tag. The mover system reads `velocity` and `angularVelocity` in
+  `fixedPostUpdate`, before the step (design 14 §6.16.3), rotates them into
+  world space, and moves the body. Reading a velocity rather than a delta
+  stays correct whether a frame runs zero, one or several fixed steps, at
+  one frame of latency (open question 3). Unity exposes `Animator.velocity`
+  for the same purpose.
+- **Not both.** A root with `applyRootMotionTag` must not have a body that
+  physics owns (dynamic or kinematic, 2D or 3D, the ones with
+  `physicsOwnedTransformTag`), whose write-back would be a second writer
+  of its `local`, and must not be a character mover's `rootMotionSource`,
+  which would apply the same motion twice. An `animated` body follows its
+  entity's transform (design 14 PH33), so it may carry the tag. Physics
+  enforces both: its 2D and 3D sync systems declare bodies with
+  `physicsOwnedTransformTag` and `applyRootMotionTag` and throw from that
+  query's `added` journal, whichever was added first, and the mover throws
+  when its source has the tag (design 14 §6.2.2). The check lives in
+  physics because physics already imports this module (`poseTargetId`,
+  `RootMotionEcsComponent`) and this module doesn't import physics. It
+  lands with design 12 Phase 3 or design 14 Phase 2, whichever ships
+  later.
 - A removed root motion joint (§6.4.5) leaves the outputs at zero.
 
 ### 6.10 Skins
@@ -1246,7 +1264,7 @@ instance owns one contiguous range of it:
 texel 3 holds the low parts of the translation and, in its fourth value,
 flags as an integer. This design packs the record index into that value in
 place of design 06's "skinned" flag, which duplicated what the slot's
-variant bits already say (AN31, cross-doc for design 06):
+variant bits already say (AN31, design 06 §6.7.2):
 
 ```text
 texel3.w = receivesShadows + 2 × mirrored + 4 × recordIndex     // recordIndex < 2²², 0 when not deformed
@@ -1332,7 +1350,7 @@ void forge_applySkin(inout ForgeVertex vertex) {
 - Depth and shadow variants skin too (design 08 MS4), so shadows follow the
   animated pose.
 
-Attribute locations (cross-doc for design 05's table, decision D10):
+Attribute locations (design 05 §6.5's table, decision D10):
 `joints1` at 8 and `weights1` at 9. Locations 8 to 15 are otherwise
 per-instance data (sprites and text, design 07; mesh particles, design 15),
 and no pipeline reads both, so the overlap is safe.
@@ -1374,17 +1392,17 @@ entity's space, the same space as a mesh's own bounds. The deformation
 extraction supplies it to the GPU scene as the slot's local bound, in place
 of the mesh's, and the GPU scene turns local bounds into world culling
 spheres for every slot, whenever a slot's transform or its local bound
-changed (cross-doc for design 06, whose §6.7.2 and this design's first
-draft both wrote deformed slots' spheres). When the whole character moves
+changed (design 06 §6.7.2; this design's first draft and design 06's had
+both written deformed slots' spheres). When the whole character moves
 rigidly, the mesh-space bound doesn't change and the GPU scene moves the
 sphere as it moves any mesh's.
 
 **Deformed slots are never static.** Their local bound changes while their
 transform may not. Design 06 culls slots with `staticTransformTag` through a
 tree built from fixed bounds and never scans their rows again, so the GPU scene
-keeps every deformed slot on the dynamic path whatever its tags (cross-doc
-for design 06), and design 11 doesn't tag skinned or morphed nodes when a
-model is instantiated with `isStatic` (cross-doc for design 11).
+keeps every deformed slot on the dynamic path whatever its tags (design 06
+§6.7.2), and design 11 doesn't tag skinned or morphed nodes when a model is
+instantiated with `isStatic` (design 11 GA16).
 
 #### 6.10.6 Removed joints
 
@@ -1518,8 +1536,8 @@ morphs in bind space and then follows the head.
 #### 6.11.5 Bounds
 
 Design 11 keeps a mesh's bounds for its base shape and records each target's
-longest position delta in `maxDisplacement` (cross-doc: instead of widening
-the bounds at load for weights in `[0, 1]`). An instance's **growth** is
+longest position delta in `maxDisplacement` (design 11 §6.8.4), instead of
+widening the bounds at load for weights in `[0, 1]`. An instance's **growth** is
 `G = Σ |w[i]| × maxDisplacement[i]` over its active targets, in mesh units,
 which holds for any weights, including those outside `[0, 1]`.
 
@@ -1821,8 +1839,8 @@ An adjustment applies to a character only on frames whose pose was sampled
 (`poseTick > lastRunTick`, design 03 §6.3). On other frames the targets
 still hold last frame's adjusted values, and adjusting them again would
 compound, so a hidden character keeps last frame's adjusted pose. Design
-14's rag doll pose follows the same rule for blend weights below 1
-(cross-doc); at weight 1 the physics pose doesn't depend on the sampled one,
+14's rag doll pose follows the same rule for blend weights below 1 (its
+§6.17); at weight 1 the physics pose doesn't depend on the sampled one,
 so it's written whenever the bodies move.
 
 World transforms aren't current in this group (propagation hasn't run), so
@@ -1832,9 +1850,9 @@ values:
 | Helper                                           | What it does                                                                                                          |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
 | `getModelSpaceMatrix(out, world, entity)`        | The pose target's transform relative to its playback root, composed from `local` values up the chain                  |
-| `getRootWorldMatrix(out, world, root)`           | The root's world matrix this frame: its parent's `world.matrix` (from the last propagation) times its current `local` |
+| `getCurrentWorldMatrix(out, world, root)`        | Design 04's helper (§6.5 there): the root's world matrix this frame, composed from current `local` values up the chain, so a root that moved this frame counts |
 | `setModelSpaceRotation(world, entity, rotation)` | Writes `local.rotation` so the target's model-space rotation is `rotation`                                            |
-| `worldToModelSpace(out, world, root, point)`     | A world point (a look-at target) in the root's model space, through `getRootWorldMatrix`                              |
+| `worldToModelSpace(out, world, root, point)`     | A world point (a look-at target) in the root's model space, through `getCurrentWorldMatrix`                           |
 
 A limb is three to five multiplies. A game's own adjustment (a spine leaning
 into a turn, a turret bone following the mouse, a hand on a door handle) is
@@ -1880,6 +1898,12 @@ and its joints' transform references. Per run:
    the slot's record index and its deformation: the slot moves to the bin
    of its skinned or morphed variant (design 06), and stays on the dynamic
    path (§6.10.5).
+   Design 08's `updateMeshComponent` can change a skinned or morphed
+   entity's mesh without a journal entry (its MS11), so for the instances
+   it iterates, the system also compares `MeshEcsComponent.changedTick`
+   with its `lastRunTick` and, when the mesh changed, reallocates the
+   palette or morph ranges for the new mesh's joint and target counts and
+   rewrites the record.
 2. For each morphed instance whose weights differ from the processed copy,
    rebuild its active list and growth (§6.11.3, §6.11.5). Morphed instances
    without a skin give the GPU scene their grown base sphere when the
@@ -1896,9 +1920,12 @@ and its joints' transform references. Per run:
      palette tick stays old, so the palette is recomputed on the frame
      after a view first sees it again.
 4. For every slot whose palette or morph list changed, stamp its
-   **deformation tick** in the GPU scene and add it to the change list
-   design 09's shadow cache reads (cross-doc), since a character can deform
-   in place without its transform changing.
+   **deformation tick** in the GPU scene. The GPU scene's update, which runs
+   next, records each slot whose tick advanced in its per-frame change list
+   with its previous and new culling sphere (design 06 §6.7.2), since a
+   character can deform in place without its transform changing. Design
+   09's shadow cache reads that list (its §6.5.6, rule 4) instead of
+   comparing deformation stamps per tile.
 5. Upload the mirror's dirty rows with `texSubImage2D`, once.
 
 Visibility is last frame's because this system runs before this frame's
@@ -1975,8 +2002,7 @@ Blender's glTF exporter writes for every bone by default (its option to
 drop unchanging channels is off by default), so the benchmark samples what
 real content makes it sample: 180 channels per clip, 36,000 channel samples
 per frame for 100 characters blending two clips. Both engines load the same
-file (cross-doc for design 01, whose asset list names a Khronos model for
-B4). The scene places 100 instances, each blending walk and run by a speed
+file (design 01 §6.2.2). The scene places 100 instances, each blending walk and run by a speed
 parameter that changes over time, under one shadowed sun.
 
 - **Forge:** instances of one model; one blend definition and one state
@@ -2304,3 +2330,16 @@ code were checked against `src/` and hold. Changes made:
 - **Scope.** Look-at and two-bone IK move to Phase 6, after M4. Phase 5
   keeps the group, its order and the helpers, which games write adjustments
   with and design 14's rag dolls need.
+
+Changes from designs 04, 06, 08, 09, 11 and 14, applied when the program
+was reconciled: the pose-space helpers use design 04's
+`getCurrentWorldMatrix` in place of `getRootWorldMatrix`; the mover reads
+root motion in `fixedPostUpdate`, and the "not both" check covers only
+bodies physics owns, so an `animated` body may carry `applyRootMotionTag`;
+the pose-target exclusion and the tag check land with whichever of this
+design's and design 14's phases ships later; the GPU scene records
+deforming slots in its change list (design 06 §6.7.2); the deformation
+extraction notices a mesh changed through `updateMeshComponent` by its
+`changedTick`; entity tables are filled through design 11's liveness
+checks; the cross-doc changes this design asked of designs 01, 05, 06, 08,
+09, 11 and 14 are now in those designs.

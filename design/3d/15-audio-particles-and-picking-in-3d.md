@@ -472,7 +472,7 @@ this state, so any later stage serves them. Sounds and particles read
 this frame's world transforms after propagation. Nothing in this design
 runs in the fixed stages, and nothing audio runs in `preUpdate`: the mixer
 unlocks audio itself from DOM gesture listeners (§6.2.1), so design 03
-§6.6.2's "audio unlock" entry there goes (a cross-doc change).
+§6.6.2's "audio unlock" entry there is gone.
 
 ### 6.2 Spatial audio
 
@@ -899,9 +899,11 @@ to linear once (design 07 §6.5), and freezes the result. A
 `ParticleEffect` is immutable and shared (GP9).
 
 `createParticleMaterial` returns an `UnlitMaterial` (design 08 §6.6) with
-the texture, vertex colors on (the particle's color multiplies it, as a
-mesh's tint does, design 08 MS6), the blend mode (default `'blend'`) and
-`softDistance` (§6.3.11). Any other material works too: a `PbrMaterial`
+the texture, the blend mode (default `'blend'`) and `softDistance`
+(§6.3.11). `UnlitMaterial` has no vertex-color option: vertex colors come
+from a mesh's `color0` (design 10 PB6), and the particle's color reaches
+the material as its per-instance tint, multiplying it as a mesh's tint
+does (design 08 MS6). Any other material works too: a `PbrMaterial`
 for lit smoke, or a material with design 08 hooks (a dissolve, a
 heat-haze tint). The billboard's shape comes from `aspectRatio`, never
 from a texture, since a material may have several textures or none.
@@ -1131,8 +1133,10 @@ simulation and `createParticleExtractionEcsSystem(renderContext)` in the
    alpha-tested phase beside its bins (and to the depth prepass and, with
    `castsShadows` in Phase 7, the shadow views). Blended particles go to the
    transparent phase as **one item per emitter**, ordered by design 07's
-   keys (`layer`, world order, distance of the bounds' center, root Y,
-   hierarchy order);
+   keys (`layer`, world order, depth of the bounds' center, or of the
+   nearest ancestor with `DrawOrderEcsComponent.depthGroup` when the
+   emitter is inside a depth group (design 07 S14), root Y, hierarchy
+   order);
 3. sorts the emitter's particles when the material needs it (§6.3.10);
 4. writes one instance per particle into the device's per-frame staging
    (design 05 §6.3, decision D9), as sprites do (design 07 S4), with sizes
@@ -1230,8 +1234,11 @@ design 12's `joints1` and `weights1` at 8 and 9 never apply to them.
   billboards are.
 - Shadows (Phase 7): with `castsShadows`, instances also go into shadow
   views (design 09, which already accepts casters drawn from an instance
-  stream). Moving casters invalidate cached local shadow tiles, so it's off
-  by default. Until Phase 7, mesh particles cast no shadows.
+  stream). They have no GPU scene slots, so design 09 treats them as
+  hooked casters: a cached local tile they were drawn into re-renders
+  every frame (design 09 §6.5.6, rule 3). Moving casters invalidate cached
+  local shadow tiles anyway, so it's off by default. Until Phase 7, mesh
+  particles cast no shadows.
 
 #### 6.3.13 2D particles and the migration
 
@@ -1567,7 +1574,7 @@ rayIndex, tester)`, which returns a pooled hit to fill. Games write their
 own the same way (a height-map terrain, a voxel world), naming their
 tester.
 
-`hits` is a **message stream** (design 03 §6.5, a cross-doc change; Bevy
+`hits` is a **message stream** (design 03 §6.5; Bevy
 sends picking backends' hits as `PointerHits` messages the same way), not
 a field with several owners: hit testers only append, nothing edits or
 removes an appended hit, testers never read each other's hits, the pointer
@@ -1610,9 +1617,11 @@ for each ray r (camera c):
 - **Skinned meshes.** For each joint `j`, design 12's `jointBounds` holds a
   sphere in the joint's bind space; its world center is the joint entity's
   `world.matrix × center`, its radius times the matrix's largest axis
-  scale. The nearest sphere hit gives the distance, a normal from the
-  sphere's center and `joint`. About 60 sphere tests per character whose
-  culling sphere the ray crosses (GP21).
+  scale. Joints whose entity is no longer alive are skipped, as design 12
+  leaves their spheres out of the bound (its §6.10.6). The nearest sphere
+  hit gives the distance, a normal from the sphere's center and `joint`.
+  About 60 sphere tests per character whose culling sphere the ray
+  crosses (GP21).
 - **Morph targets and vertex hooks** are not applied: a morphed or
   hook-displaced mesh is hit as its base shape. Alpha-tested materials are
   hit on the whole triangle. The guide says both.
@@ -1621,13 +1630,15 @@ for each ray r (camera c):
 14 builds for mesh colliders in M5 (§6.7.4: a binned surface-area
 heuristic with 12 bins, leaves of up to four triangles, flat arrays with
 `float32` bounds rounded outwards, a fixed-size traversal stack). Design
-14 places it in `math` from the start (a cross-doc change), so picking and
+14 places it in `math` from the start (its §0 and §6.7.4), so picking and
 physics share one implementation without depending on each other and
 nothing moves in M6. Its ray query visits children nearest first, stops at
 the first hit nearer than the next child's entry, and takes which faces
 count from the caller (front only or both, with the winding flipped for a
-mirrored instance): physics passes the mesh shape's `doubleSided`, picking
-the part's material. This design adds no code to it. A `Mesh` builds one
+mirrored instance). Physics hits front faces of one-sided mesh shapes and
+both sides of `doubleSided` ones, and its height fields from above
+(design 14 §6.7.4, PH32); picking passes the part's material's
+`doubleSided`. This design adds no code to it. A `Mesh` builds one
 on first request and releases it in `dispose`; it's counted in the stats
 overlay's CPU memory.
 
@@ -1640,7 +1651,10 @@ skips colliders with `pointerTransparentTag` and keeps the nearest, and
 appends it (`tester: 'collider3d'`, the collider entity, its target). The broad phase holds bodies at the last fixed step's
 pose, while the drawn pose is interpolated, so a fast body can be hit up
 to one step's motion away from where it's drawn (GP22); invisible
-colliders (click areas) are hit as they should be.
+colliders (click areas) are hit as they should be. Design 14's rays hit
+mesh colliders from the front only unless the shape is `doubleSided`, and
+height fields from above (its PH32), so a pointer ray from below a
+one-sided floor passes through it, as it does for the drawn floor.
 
 ##### 6.4.6.3 2D colliders
 
@@ -1987,7 +2001,7 @@ wall time of `startRendering()` minus the time spent in those frames, per
 second of audio. Audio rendering is CPU work, so unlike GPU timings the CI
 numbers mean something, and the scene takes design 01's base-versus-head
 gate; the reference devices run it at each milestone (design 01's runner
-gains this measurement kind, a cross-doc change).
+gains this measurement kind, §6.2.2 there).
 
 #### 6.8.2 Particles
 
@@ -2302,3 +2316,12 @@ Points not taken, with reasons:
   design, and its phases are already independent per subsystem
   (Phase 3 doesn't need Phase 4), so it stays one document with the
   extras deferred to Phase 7.
+
+Changes from designs 07, 08, 09, 12 and 14, applied when the program was
+reconciled: `createParticleMaterial` no longer claims a vertex-color
+option (design 08); an emitter in a depth group sorts at the group's depth
+(design 07 S14); mesh particles that cast shadows are hooked casters for
+design 09's tile cache; skinned-mesh picking skips removed joints (design
+12); the triangle tree's face rules and physics-based picking's one-sided
+meshes follow design 14 PH32. The design 01, 03, 04, 06 and 14 changes
+this design asked for are now in those designs.

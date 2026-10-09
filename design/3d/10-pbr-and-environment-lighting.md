@@ -126,7 +126,7 @@ Tone mapping, auto exposure and screen-space ambient occlusion are design
   ratified, at the time of writing) and **`KHR_materials_pbrSpecularGlossiness`**
   (archived by Khronos; convert with glTF-Transform).
 - **Subsurface scattering**, **more than one layer of transmission**
-  (glass seen through glass, open question 5) and **colored or partial
+  (glass seen through glass, open question 4) and **colored or partial
   shadows through transmissive surfaces**.
 - **An LDR shading path.** Lit views need float color buffers (README P4).
 - **2D lighting.** Sprites, text and UI stay display content (design 07).
@@ -254,7 +254,7 @@ checks are recorded; B5 meets its budget with the Sponza glTF.
 | PB6  | Vertex colors                                    | (a) Applied when the mesh has `color0`, as glTF specifies; (b) a material flag                                                                                     | (a)    | glTF says `COLOR_0` multiplies base color, and one glTF material can be shared by meshes with and without it; a flag would force the importer to split materials. Bevy also decides from the mesh. The mesh features in design 08's variant key already carry it, and design 08's `UnlitMaterial` works the same way (§6.6 there).                             |
 | PB7  | Where exposure lives                             | (a) A camera component holding EV100; (b) a multiplier on the tone-mapping component, as today; (c) a pipeline setting               | (a)    | Exposure is a property of the camera, and each camera can have its own (design 06 R12). EV100 is the unit design 09 promised. Filament, Bevy and Unity's HDRP all expose EV100. Today's `ToneMappingEcsComponent.exposure` (`src/rendering/components/tone-mapping-component.ts:19`, default 1 at `:32`, read at `src/rendering/systems/tone-map-system.ts:71`) would be a second exposure; design 13 Phase 5 removes it in the release that adds this component. |
 | PB8  | Where exposure is applied                        | (a) In lit shaders, before writing (pre-exposure); (b) in the output pass                                                                                          | (a)    | Physical values overflow `rgba16float`: a 100,000 lux sun on a smooth surface reaches several million before exposure, past half-float's 65,504. Pre-exposure is what Frostbite, Filament and Bevy do, and it keeps bloom and anti-aliasing working on displayable magnitudes.                                                                              |
-| PB9  | Emissive units                                   | (a) Nits, multiplied by exposure, as the glTF specification defines emissive; (b) relative to exposure (always visible); (c) (a) plus an exposure-weight option, as Unity HDRP and Bevy have | (a), pending open question 1 | glTF defines emissive factor times texture in candela per square meter. Treating it as nits keeps emitters consistent with lights under any exposure and under design 13's auto exposure. Exposure-independent glow is what `UnlitMaterial` is for. Open question 1 asks the product owner how content authored for an exposure of 1 is imported, before M4. |
+| PB9  | Emissive units                                   | (a) Nits, multiplied by exposure, as the glTF specification defines emissive; (b) relative to exposure (always visible); (c) (a) plus an exposure-weight option, as Unity HDRP and Bevy have | (a)    | glTF defines emissive factor times texture in candela per square meter. Treating it as nits keeps emitters consistent with lights under any exposure and under design 13's auto exposure. Exposure-independent glow is what `UnlitMaterial` is for. Content authored for an exposure of 1 is scaled when it's imported (PB39). |
 | PB10 | Unlit and 2D content under exposure              | (a) Display-referred: written as authored, not multiplied by exposure; (b) multiplied like lit content                                                            | (a)    | A sprite, a world-space label or `Color.white` on an unlit mesh should look the same at any exposure, as it does today. Bevy treats unlit materials the same way. HDR colors above 1 still bloom.                                                                                                                                                                 |
 | PB11 | Where the environment is set                     | (a) A component on the camera; (b) a world singleton                                                                                                               | (a)    | Matches design 06's per-camera effects; two cameras (a level and an inventory preview) can light differently. Bevy puts its environment light on the camera; Godot lets a camera override the world's environment. A world-wide default is the default environment (PB12).                                                                                      |
 | PB12 | A lit view with no environment component         | (a) The default environment: a gradient at 2,500 lux that lights but isn't drawn; (b) no ambient light                                                             | (a)    | With no ambient, every shadow and every surface facing away from the sun is black, and a metal reflects nothing, so the README's "lit model in under 20 lines" would look broken. Unity (a default procedural sky that also lights) and Bevy (a default ambient light) light a scene that sets nothing up. Godot 4 does only in its editor preview: at runtime a scene without a `WorldEnvironment` has none, and its users meet that as objects turning black when the game runs. Three.js has none. The default isn't drawn, so the background stays the camera's clear color until the camera gets a sky component (PB19), as in Bevy, whose default clear color doesn't match its ambient light either. Adding any environment component replaces the default, including a black color for scenes that want none. |
@@ -265,7 +265,7 @@ checks are recorded; B5 meets its budget with the Sponza glTF.
 | PB17 | Environment rotation                             | (a) An angle about `+Y`; (b) a quaternion                                                                                                                          | (a)    | Environment images are captured level; tilting one puts the horizon at an angle. A rotation about Y keeps the up-facing illuminance (PB13) unchanged and costs one 2D rotation in the shader. Unity and Unreal rotate skies about the vertical axis only.                                                                                                     |
 | PB18 | RGBE data                                        | (a) Decode run-length encoding in TypeScript, recording the largest exponent; upload the RGBE bytes and decode exponents on the GPU; (b) convert to floats on the CPU | (a)    | The CPU work is a byte copy loop, and the largest exponent is a comparison in it (PB32 needs it); (b) adds a float conversion per texel (tens of milliseconds for a 4K image) and doubles the upload. The source texture stays 4 bytes per texel and serves the sky at full resolution and full range.                                                       |
 | PB19 | What the sky draws                               | (a) The camera's environment, or the default environment, drawn only when the camera has a sky component; (b) a separate sky texture or material; (c) also draw the default environment for lit views without a sky component | (a)    | When the sky is drawn, reflections, ambient light and background agree, because they come from one source. Without a sky component the background is the camera's clear color even though the default environment lights the scene; the guide says so and shows the one line that adds the sky. (c) would make the sky an effect without a component (against design 06 R12) and would cover what a camera with `clearColor: null` draws over, such as a 3D layer over a 2D background. A game that wants a background unrelated to its lighting uses the camera's clear color or its own pass at `afterOpaque`. |
-| PB20 | Transmission                                     | (a) A copy of the opaque scene color at half the view's width and height, with mips, read by a sorted transmissive phase drawn after the sky; (b) the same at full resolution; (c) screen-space ray marching; (d) no transmission | (a)    | The Sample Viewer, Three.js and Bevy all use a copy, and glTF's transmission is specified for it. At 1080p a full-resolution `rgba16float` copy and its mips move about 50 MB per frame, plus the MSAA resolve's, which doesn't fit a fraction of a millisecond on the integrated-GPU reference; the Sample Viewer copies into a fixed 1024 × 1024 texture for the same reason. Half resolution reads the resolved color once and writes a quarter of it. Trade-off: smooth glass shows its background slightly softer, a known deviation in reference checks; Phase 5 measures both resolutions. Transmissive objects don't see each other or alpha-blended objects behind them (open question 5). |
+| PB20 | Transmission                                     | (a) A copy of the opaque scene color at half the view's width and height, with mips, read by a sorted transmissive phase drawn after the sky; (b) the same at full resolution; (c) screen-space ray marching; (d) no transmission | (a)    | The Sample Viewer, Three.js and Bevy all use a copy, and glTF's transmission is specified for it. At 1080p a full-resolution `rgba16float` copy and its mips move about 50 MB per frame, plus the MSAA resolve's, which doesn't fit a fraction of a millisecond on the integrated-GPU reference; the Sample Viewer copies into a fixed 1024 × 1024 texture for the same reason. Half resolution reads the resolved color once and writes a quarter of it. Trade-off: smooth glass shows its background slightly softer, a known deviation in reference checks; Phase 5 measures both resolutions. Transmissive objects don't see each other or alpha-blended objects behind them (open question 4). |
 | PB21 | The scene-color texture's unit                   | (a) The unit ambient occlusion uses in opaque variants; (b) an eighth engine unit; (c) a unit from the material's share                                          | (a)    | Screen-space ambient occlusion is computed from the prepass depth of opaque geometry, so transmissive and transparent surfaces never sample it (§6.8.4). Sharing the unit keeps design 05's reservation at seven and leaves the material's share unchanged.                                                                                              |
 | PB22 | Fog model and where it's applied                 | (a) Exponential height fog, integrated analytically along the view ray from where fog starts, applied per fragment in the final-color stage; (b) a full-screen pass reading depth | (a)    | A full-screen pass can't fog transparent surfaces, which have no depth. The analytic integral of a density that falls off with height is Unreal's exponential height fog, which also starts its integral at the excluded distance; a falloff of zero gives plain exponential distance fog, so one model covers both.                                     |
 | PB23 | Fog color                                        | (a) Either lit by the environment (physical, follows exposure) or a fixed color that is display-referred like the clear color; (b) always physical                | (a)    | Environment-lit fog matches the sky automatically. A stylized game picks one color for its clear color and its fog and expects them to match at any exposure; physical fog would need the game to divide by exposure. Bevy's fog color behaves like (a)'s fixed color.                                                                                          |
@@ -284,6 +284,7 @@ checks are recorded; B5 meets its budget with the Sponza glTF.
 | PB36 | Creating environment maps                        | (a) `createEnvironmentMap(renderContext, source)` taking a file's bytes (format detected from them) or a `Texture`; design 11's `environmentMapAsset` wraps it; (b) a URL loader now, deleted when design 11 lands | (a)    | (b) ships an API planned for deletion one milestone later. Detecting the format from the bytes, as design 11's `textureAsset` does, removes a `kind` field the game could get wrong. A `Texture` source keeps six-image and LDR panorama skies possible, as Three.js's prefilter generator and Godot's panorama sky accept textures. Until design 11, a game fetches the bytes itself, in one line. |
 | PB37 | Fog on transmissive surfaces                     | (a) Fog the surface's own light, add in-scattered fog only for the share it doesn't transmit, and add the transmitted copy as it is; (b) fog the whole output     | (a)    | The copy is already fogged along the whole ray from the camera, so (b) fogs the background twice and glass looks foggier than the air around it. (a) equals fogging the camera-to-glass and glass-to-background segments separately for thin-walled transmission (§6.11). |
 | PB38 | Normal maps on mirrored objects                  | (a) Negate the bitangent when the object's transform mirrors, by multiplying `tangent.w` by −1 in the vertex path from the GPU scene's mirrored flag; (b) use `cross(n, t) · w` as it is                                   | (a)    | A reflection flips the cross product of transformed vectors, so with (b) a mirrored object's bumps are lit from the wrong side. Unity multiplies the tangent sign by its odd-negative-scale flag in the vertex shader for this reason. The flag already exists for winding (design 06 §6.7.2), so the fix costs one multiply. |
+| PB39 | Imported emissive and light values               | (a) One photometric scale per loaded model, applied by design 11 to emissive and to the model's lights together; its default makes a file look under Forge's default exposure as it does in the Khronos glTF Sample Viewer, and `1` takes glTF's physical units literally; (b) glTF's units with no scale, and the guide shows raising `emissiveStrength` and light intensities; (c) a per-material exposure weight from 0 (nits) to 1 (relative to exposure), as Unity's HDRP and Bevy have, set on imported materials | (a), decided with the product owner (README P5) | glTF defines emissive in nits and lights in candela and lux but has no exposure, so most files are authored for viewers that show a value of 1 as white (the Sample Viewer's default exposure is a multiplier of 1); glTFast's documentation notes that authors use physically implausible light intensities for the same reason. Under the default EV100 12 the exposure multiplier is `1 / (1.2 · 2^12)` (§6.7.1), so with (b) an emitter of 1 nit writes about 0.0002 and DamagedHelmet's emissive panels are invisible, against the README's "lit glTF model in under 20 lines". The default scale is that multiplier's reciprocal, `1.2 · 2^12 ≈ 4,915`, so a file's emitters and lights write, under EV100 12, the values the Sample Viewer writes before tone mapping. One scale for emissive and lights keeps the file's ratio between them and keeps one physical model under manual and auto exposure (PB9); content made for a physically lit scene loads with `1`. (c) makes emissive mean something different per material and gives design 13's metering pixels it can't interpret (its open question 2). glTFast's light intensity factor scales imported lights the same way. Trade-off: an imported model's values aren't the file's numbers unless it's loaded with `1`, which the models guide says. |
 
 ---
 
@@ -291,40 +292,19 @@ checks are recorded; B5 meets its budget with the Sponza glTF.
 
 In priority order.
 
-1. **Imported emissive and light values under physical exposure. To be
-   decided with the product owner before M4** (design 11 Phase 2 maps core
-   materials). glTF defines emissive in candela per square meter and
-   lights in physical units, but glTF has no exposure, so most files are
-   authored for viewers that show a value of 1 as white (the Sample
-   Viewer's default exposure is a multiplier of 1); glTFast's
-   documentation notes that authors use physically implausible light
-   intensities for the same reason. Under the default EV100 12, an emitter
-   of 1 nit writes about 0.0002: DamagedHelmet's emissive panels are
-   invisible, which undercuts the README's "lit glTF model in under 20
-   lines", and imported lights authored the same way are too dim. Options:
-   (a) keep glTF's units; the guide shows raising `emissiveStrength` and
-   light intensities; (b) a per-material exposure weight from 0 (nits) to
-   1 (relative to exposure: 1 is a fully exposed pixel), as Unity's HDRP
-   and Bevy have, which design 11 sets on imported materials; (c) a
-   photometric scale per loaded model, applied by design 11 to emissive and
-   lights alike, as glTFast's light intensity factor does for lights.
-   Proposal: (c), which keeps one physical model under manual and auto
-   exposure (PB9) and corrects emitters and lights from the same file
-   together; whether its default is 1 (glTF's units) or a value that
-   matches EV100 12 is the product owner's call.
-2. **Default exposure and default environment values.** EV100 12 and a
+1. **Default exposure and default environment values.** EV100 12 and a
    2,500 lux gradient are chosen to suit design 09's 10,000 lux sun
    (§6.7.4). Options: confirm them on the reference devices with design 13's
    default tone mapping, or adjust both together. Proposal: confirm at the
    M3 golden review.
-3. **Specular cube size.** 256 per face (4.2 MB) blurs flat mirrors. Options:
+2. **Specular cube size.** 256 per face (4.2 MB) blurs flat mirrors. Options:
    (a) 256 default with the per-map `specularSize` option; (b) 512 on
    desktop. Proposal: (a).
-4. **Decoding large `.hdr` files on the main thread.** A 4096 × 2048 image
+3. **Decoding large `.hdr` files on the main thread.** A 4096 × 2048 image
    takes about 150 ms to decode. Options: (a) decode in a worker from design
    11's worker pool; (b) leave it to loading screens. Proposal: (a) once
    design 11's pool exists.
-5. **Several layers of transmission.** Glass seen through glass shows the
+4. **Several layers of transmission.** Glass seen through glass shows the
    opaque scene only. Bevy re-copies the scene color between transmissive
    steps. Proposal: single layer now; a later change if demos need it.
 
@@ -523,14 +503,19 @@ from the material's share.
 
 When a material's variant is built:
 
-1. **Deduplicate.** Slots bound to the same `Texture` (the same GPU
-   texture and sampler) share one sampler uniform and one unit. glTF files
-   often pack occlusion, roughness and metallic into one image, clearcoat
-   and its roughness into another, and so on, so most materials need far
-   fewer units than slots.
+1. **Deduplicate.** Slots bound to the same GPU texture with the same
+   sampler share one sampler uniform and one unit. The key is the pair, not
+   the `Texture` object: design 05's `withSampler` returns a separate
+   object per use, and design 11 creates one per (image, color space,
+   sampler), so two slots reading one image the same way hold two objects.
+   glTF files often pack occlusion, roughness and metallic into one image,
+   clearcoat and its roughness into another, and so on, so most materials
+   need far fewer units than slots.
 2. **Required units**: the core slots and the material's hook samplers.
-   If they don't fit, creating the variant throws, naming the counts. This
-   can't happen with core maps alone; it can with many hook samplers.
+   If they don't fit, creating the material throws, naming the counts
+   (design 08 §6.3.5, MS20): its samplers are known then, so the error
+   doesn't wait for a variant on some device mid-game. This can't happen
+   with core maps alone; it can with many hook samplers.
 3. **Extensions, by priority**: transmission (with volume), clearcoat,
    sheen, iridescence, anisotropy, specular. For each, its gating map (the
    one that scales the effect across the surface: `transmission.texture`,
@@ -643,7 +628,7 @@ void main() {
 | Include              | Provides                                                                                          |
 | -------------------- | ------------------------------------------------------------------------------------------------- |
 | `forge/brdf`         | Distribution, visibility and Fresnel functions; anisotropic, Charlie and thin-film variants      |
-| `forge/pbr-surface`  | `forge_pbrSurface`: texture coordinates and transforms, sampling, normal mapping, vertex colors   |
+| `forge/pbr-surface`  | `forge_pbrSurface`: texture coordinates and transforms, sampling, normal mapping, vertex colors; it ends by multiplying base color and alpha by `input.tint`, the object's tint (design 08 §6.8.1) |
 | `forge/pbr-lighting` | `forge_pbrLight` (one light, all layers) and `forge_pbrAmbient` (environment, all layers)         |
 | `forge/environment`  | Harmonics evaluation, specular cube lookup with rotation, the lookup table, specular occlusion    |
 | `forge/fog`          | `forge_fog` (opacity and color along the view ray), `forge_applyFog`, `forge_composeFog`          |
@@ -835,11 +820,12 @@ the indoor presets and design 13's auto exposure for scenes lit by bulbs.
 | Environment-lit fog                        | Multiplied                                                       |
 | Fixed-color fog, clear color               | Not multiplied: display-referred                                 |
 | `UnlitMaterial`, sprites, text, UI         | Not multiplied: display-referred (decision PB10)                 |
+| `ColorGradingEcsComponent.postExposure`    | Design 13's display adjustment (its §6.8.1): multiplies everything in the view, lit and display-referred, in the output pass before tone mapping; it isn't exposure and metering doesn't see it |
 
 Emissive is in nits (decision PB9): `emissive × emissiveStrength` is the
 surface's luminance. A screen at 300 nits glows under indoor exposure and
-is dim in sunlight, as a real one is. Open question 1 covers content
-authored for an exposure of 1.
+is dim in sunlight, as a real one is. Content authored for an exposure
+of 1 is scaled when design 11 imports it (PB39).
 
 #### 6.7.4 Defaults that work together
 
@@ -847,7 +833,7 @@ Under EV100 12, design 09's 10,000 lux sun at 45° on a white (0.8)
 surface plus the default environment gives about 0.5 before tone mapping;
 a surface in shadow, lit only by the default environment's 2,500 lux, gives
 about 0.13. Shadows read clearly and nothing clips. These are the values
-behind §6.1's example and open question 2.
+behind §6.1's example and open question 1.
 
 ### 6.8 Environment lighting
 
@@ -990,7 +976,7 @@ map.dispose();
   faces, which is how a game uses six sky images or an LDR panorama. A
   32-bit float texture throws, naming the format, since its values can't
   be checked against half-float range before conversion (§6.9.3).
-- The options are `specularSize` (open question 3) and `label`.
+- The options are `specularSize` (open question 2) and `label`.
 - The promise resolves when processing and the harmonics readback have
   finished (§6.15). The readback's fence is polled on a timer, not by the
   game loop (§6.19), so a game can await the map before `game.run()`
@@ -1271,6 +1257,10 @@ already says so, and design 05 §6.6 changes to match (§6.19).
 the BRDF lookup table (frame group), the environment's specular cube (view
 group), and the scene-color copy in transmissive variants on the ambient
 occlusion unit. The sky's source texture is bound only by the sky pass.
+With design 09's four (the cluster texture, the light data texture, and
+the shadow map array through a comparison sampler and a raw one) and
+design 13's ambient occlusion, a lit program uses seven engine units,
+design 05 §6.6's reservation.
 
 **Variant key** bits this design adds to design 08's: each core and
 extension texture slot present, two-channel normal map, `uv1` per slot,
@@ -1287,7 +1277,7 @@ plus depth and shadow variants.
 | `pbrMetallicRoughness.baseColorFactor` (linear)       | `baseColor = Color.fromLinear(...)`                                         |
 | `baseColorTexture`, `metallicRoughnessTexture`, `normalTexture` (+`scale`), `occlusionTexture` (+`strength`), `emissiveTexture` | The matching slots, as `MaterialTextureBinding`s with `texCoord` and `KHR_texture_transform` |
 | `metallicFactor`, `roughnessFactor`                   | `metallic`, `roughness`                                                     |
-| `emissiveFactor` (linear), `KHR_materials_emissive_strength` | `emissive = Color.fromLinear(...)`, `emissiveStrength` (open question 1 may add a per-model scale) |
+| `emissiveFactor` (linear), `KHR_materials_emissive_strength` | `emissive = Color.fromLinear(...)`, `emissiveStrength` times the model's photometric scale (PB39, design 11 §6.9.1) |
 | `alphaMode` `OPAQUE`, `MASK`, `BLEND`; `alphaCutoff`  | `blendMode` `'opaque'`, `'mask'`, `'blend'`; `alphaCutoff`                  |
 | `doubleSided`                                         | `doubleSided`                                                               |
 | `KHR_materials_*` above                               | §6.3's objects; linear colors through `Color.fromLinear`                    |
@@ -1364,7 +1354,8 @@ replaced with measured targets (as design 04 did):
   color-space validation, texture transform composition against the
   extension's examples.
 - `Color.fromLinear` inverts design 07's conversion, including values
-  above 1.
+  above 1, and keeps hue: a linear `(4, 2, 1)` round-trips with its
+  channel ratios, and `Color.fromLinear(l).linear` is `l` exactly.
 - Fog: the closed form against numeric integration, including `f = 0`
   and a `startDistance` on rays that climb and descend; the transmissive
   composition against fogging two segments separately.
@@ -1548,6 +1539,9 @@ This design needs these changes elsewhere, listed once here:
   size. The engine's loop fills it from the light data it already reads,
   so `forge_pbrLight`, called from a material's light hook, keeps the
   representative point (§6.6.4).
+- **Design 11**: `modelAsset`'s photometric scale (PB39, README P5),
+  applied to imported emissive strength and lights; `environmentMapAsset`
+  passes a file's bytes to `createEnvironmentMap` (PB36).
 - **Design 13**:
   - §6.12.1: a camera has manual or automatic exposure, not both;
     `addAutoExposureComponent` throws when the camera has an
@@ -1555,7 +1549,9 @@ This design needs these changes elsewhere, listed once here:
     instead of the `ExposureEcsComponent`'s" (PB31).
   - §6.11.4's note that transparent surfaces don't read ambient occlusion
     is now in §6.8.4 here, so that cross-doc item is done.
-  - Open question 1's option (c) depends on this design's open question 1.
+  - Its open question on display-referred content under auto exposure
+    can't use a per-material exposure weight: imported values are scaled
+    per model instead (PB39).
 
 ---
 
@@ -1629,7 +1625,9 @@ checked against the code and the other designs. Changes made:
   NegativeScaleTest in the Phase 6 goldens.
 - **Open question 1** (emissive, and imported lights, under physical
   exposure) is to be decided with the product owner before M4, not
-  after it.
+  after it. The product owner decided it as README P5, recorded as PB39:
+  one photometric scale per loaded model, defaulting to the Sample
+  Viewer's look under EV100 12.
 
 Also fixed while revising:
 
@@ -1643,6 +1641,13 @@ Also fixed while revising:
   device without float color buffers (§6.8.5).
 - Awaiting a map before the game loop needs design 05's readback to poll
   without frames (§6.19).
+
+Changes from designs 07, 08, 09, 11 and 13, applied when the program was
+reconciled: texture slots deduplicate by GPU texture and sampler (design
+11's `withSampler`); required units over budget throw when the material
+is created (design 08 MS20); `forge_pbrSurface` applies the object's tint;
+the exposure table names design 13's post exposure; §6.13 counts the seven
+engine units; the `Color.fromLinear` test checks hue (design 07 S10).
 
 Points not acted on as written:
 

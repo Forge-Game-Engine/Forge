@@ -6,7 +6,7 @@
 | **Kind**                              | Feature and breaking refactor                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | **Program**                           | [Forge 3D](./README.md), milestone M5, built in parallel with M2 to M4. Task 9.4 (root motion) needs design 12's Phase 3; Phase 10 (rag dolls) needs design 12's Phases 1 and 5 (§6.2.2)                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| **Depends on**                        | [02 Math](./02-math.md), [03 ECS foundations](./03-ecs-foundations.md) (with `Time.fixedStepIndex`, cross-doc), [04 Transforms](./04-transforms.md) (with `getCurrentWorldMatrix`, cross-doc)                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **Depends on**                        | [02 Math](./02-math.md), [03 ECS foundations](./03-ecs-foundations.md) (with `Time.fixedStepIndex`, §6.7.1 there), [04 Transforms](./04-transforms.md) (with `getCurrentWorldMatrix`, §6.5 there)                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Related**                           | [01 Testing and benchmarks](./01-testing-and-benchmarks.md) (B6, physics scenarios, allocation specs), [06 Render pipeline](./06-render-pipeline.md) (debug drawing), [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md) (mesh data for colliders, matching primitives), [11 glTF and asset lifetime](./11-gltf-and-asset-lifetime.md) (no physics extension), [12 Skeletal and morph animation](./12-skeletal-and-morph-animation.md) (root motion, pose adjustments, rag dolls), [15 Audio, particles and picking](./15-audio-particles-and-picking-in-3d.md) (picking through physics queries, impact sounds) |
 
 ## 0. Targeted modules
@@ -23,6 +23,7 @@
 | `src/common/collision-categories.ts`                                                                                  | New                  | `allCollisionCategories`, moved from `physics`, shared by both physics modules and picking (design 15)                                                                                                                                                          |
 | `src/common/physics-owned-transform-tag.ts`                                                                           | New                  | `physicsOwnedTransformTag`, on every dynamic and kinematic body of either module, written only by the physics modules (§6.6.4, PH36)                                                                                                                            |
 | `src/physics-3d/` (new)                                                                                               | New                  | The 3D engine: components, shapes, broad phase, narrow phase, solver, joints, islands, continuous collision, sensors, queries, character mover, rag dolls, debug drawing, `registerPhysics3d` (§6.2.2)                                                          |
+| `src/math/geometry/triangle-tree.ts`, `triangle-tree.bench.ts` (new)                                                | New                  | `TriangleTree`, the binned-SAH tree over positions and indices that mesh shapes and design 15's mesh picking share; build and ray-query benchmarks at 1,000, 100,000 and 1,000,000 triangles (§6.7.4) |
 | `src/index.ts`, `package.json` `exports`                                                                              | Modified             | `./physics` becomes `./physics-2d`; `./physics-3d` added                                                                                                                                                                                                        |
 | `documentation-site/docs/docs/physics/` → `physics-2d/`                                                               | Renamed and modified | Fixed step, interpolation, world gravity, `registerPhysics2d`, `teleportBody2d`, body functions, sensors, suffixed names                                                                                                                                        |
 | `documentation-site/docs/docs/physics-3d/` (new)                                                                      | New                  | Guides listed in §6.24                                                                                                                                                                                                                                          |
@@ -33,8 +34,10 @@
 | `AGENTS.md`, `CHANGELOG.md`                                                                                           | Modified             | Repository structure, "Transforms" (physics-owned transforms), a "Physics" section under "Common Patterns"; changelog entries per phase                                                                                                                         |
 
 `getCurrentWorldMatrix` (`src/common/transform-helpers.ts`) is design 04's
-(cross-doc) and `Time.fixedStepIndex` design 03's (cross-doc); this design
-uses both.
+(§6.5 there) and `Time.fixedStepIndex` design 03's (§6.7.1 there); this
+design uses both. `TriangleTree` (`src/math/geometry/triangle-tree.ts`) is
+built here, in `math` rather than `physics-3d`, because design 15's mesh
+picking uses it too (§6.7.4).
 
 ---
 
@@ -254,7 +257,7 @@ against brute-force sampling; the microbenchmarks meet §6.22.
 
 | #   | Task                | Description                                                                                                                                   | Size |
 | --- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 7.1 | Triangle mesh shape | Binned-SAH tree, one-sided and double-sided triangles, ray casts, `createTriangleMeshShapeFromMesh` (§6.7.4)                                  | M    |
+| 7.1 | Triangle mesh shape | `TriangleTree` in `src/math/geometry/` with its benchmark at 1,000, 100,000 and 1,000,000 triangles; one-sided and double-sided triangles, ray casts, `createTriangleMeshShapeFromMesh` (§6.7.4) | M    |
 | 7.2 | Convex against mesh | Per-triangle contacts and manifold merging                                                                                                    | M    |
 | 7.3 | Internal edges      | Active-edge flags and normal correction (§6.9.6)                                                                                              | M    |
 | 7.4 | Height fields       | Grid, holes, upward contacts at any depth, a min-max tree for ray casts and bounds queries (§6.7.5)                                           | M    |
@@ -951,7 +954,7 @@ when it wakes.
 Registration, `animated` targets and the write-back need an entity's
 current world transform, including `local` values written this frame that
 propagation hasn't composed yet. They use design 04's
-`getCurrentWorldMatrix(out, world, entity)` (cross-doc), which composes
+`getCurrentWorldMatrix(out, world, entity)` (§6.5 there), which composes
 `local` values up the chain. Design 12's pose adjustments use the same
 helper, so there is one definition of "where this entity is now".
 
@@ -1068,7 +1071,7 @@ export type CollisionShape =
 | `createCompoundShape({ children })`                                   |             | Convex children, each with a `Pose3d`                              |
 
 The defaults and orientations match design 08's mesh primitives, so a
-`createBoxMesh()` and a `createBoxShape()` line up (cross-doc). Shapes are
+`createBoxMesh()` and a `createBoxShape()` line up (design 08 §6.1.5). Shapes are
 immutable, are shared between colliders, and hold their derived data:
 bounds, mass properties per unit density, hull topology, trees.
 
@@ -1110,10 +1113,17 @@ Support functions and mass properties have closed forms. With density `ρ`:
 
 - **Data.** Positions (`Float32Array`), triangle indices (`Uint32Array`),
   a tree, and per-triangle active-edge flags (§6.9.6).
-- **Tree.** Built top-down with a binned surface-area heuristic (12 bins),
-  leaves of up to four triangles, nodes in flat arrays with `float32`
-  bounds rounded outwards and child indices, traversed with a fixed-size
-  integer stack.
+- **Tree.** A `TriangleTree` (`src/math/geometry/triangle-tree.ts`): a
+  general tree over positions and indices, built here in M5 and shared
+  with design 15's mesh picking, so neither module depends on the other
+  and nothing moves in M6. It's built top-down with a binned surface-area
+  heuristic (12 bins), leaves of up to four triangles, nodes in flat
+  arrays with `float32` bounds rounded outwards and child indices,
+  traversed with a fixed-size integer stack. Its ray query takes which
+  faces count (front only or both) and a flag that flips the winding for
+  a mirrored instance, visits children nearest first, and stops at the
+  first hit nearer than the next child's entry. Physics passes the mesh
+  shape's `doubleSided`; picking passes the part's material's.
 - **Memory.** About 12 bytes per vertex, 13 per triangle and 40 per node
   (roughly one node per two triangles): a 100,000-triangle level is about
   4 MB.
@@ -1469,7 +1479,7 @@ above, with `e` the larger of the two colliders' restitutions (PH16).
   since the last propagation counts. The body is driven to
   `lerp(pose, T, 1 / r)` (the rotation with `slerp` by the same fraction),
   where `r = time.fixedStepsThisFrame − time.fixedStepIndex` is the number
-  of steps left this frame, this one included (cross-doc for design 03). Its
+  of steps left this frame, this one included (design 03 §6.7.1). Its
   velocities are that motion over `dt` (the angular one from the logarithm
   of the relative rotation), which is what contacts see. A transform
   written once per frame is reached at the frame's last step at constant
@@ -1917,11 +1927,15 @@ overlaps are reported through `Contacts3dEcsComponent` like any other body.
 With `rootMotionSource` set, the mover system reads that entity's
 `RootMotionEcsComponent.velocity` (model space, `+Z` the model front) and
 `angularVelocity` (design 12 §6.9) in `fixedPostUpdate`, before the step
-(design 12 §6.9.3 says `fixedUpdate`; cross-doc). Reading a velocity rather
-than a delta stays correct whether a frame runs zero, one or several steps,
-at one frame of latency (open question 8). The source is usually the model root, a child
-of the mover entity offset down so its feet meet the capsule's bottom; it
-must not carry `applyRootMotionTag`.
+(design 12 §6.9.3). Reading a velocity rather than a delta stays correct
+whether a frame runs zero, one or several steps, at one frame of latency
+(open question 8). The source is usually the model root, a child of the
+mover entity offset down so its feet meet the capsule's bottom. A source
+carrying `applyRootMotionTag` would apply the same motion twice, so the
+mover system throws for one, and the 2D and 3D sync systems throw for a
+body physics owns that carries the tag: each declares bodies with
+`physicsOwnedTransformTag` and `applyRootMotionTag` and throws from that
+query's `added` journal, whichever was added first (§6.2.2).
 
 ### 6.17 Rag dolls
 
@@ -2017,8 +2031,8 @@ draws shapes at the interpolated poses into design 06's debug drawing
 singleton, so outlines sit exactly on meshes. Queries and mover probes
 happen inside fixed steps, so they draw into design 06's fixed-step buffer,
 which is kept until the next fixed step and so doesn't flicker on frames
-without one (cross-doc: design 06 §6.9 names physics shapes as the
-fixed-step buffer's user). With every flag off, the system does nothing.
+without one (design 06 §6.9 names physics shapes as the fixed-step
+buffer's user). With every flag off, the system does nothing.
 
 Games and the demos read `stats` directly; design 06's stats overlay shows
 rendering counters only.
@@ -2167,8 +2181,8 @@ column, so the figures B6 depends on are known in Phase 2:
 | GJK distance, two 32-vertex hulls                                 | ≤ 1 µs              | 6     |
 | EPA, cylinder into box                                            | ≤ 5 µs              | 6     |
 | Hull-hull, 32 vertices each                                       | ≤ 4 µs              | 6     |
-| Mesh tree build, 100,000 triangles                                | ≤ 100 ms            | 7     |
-| Ray cast, 100,000-triangle mesh                                   | ≤ 5 µs              | 7     |
+| `TriangleTree` build, 100,000 triangles (also measured at 1,000 and 1,000,000) | ≤ 100 ms | 7     |
+| `TriangleTree` ray cast, 100,000 triangles (also at 1,000 and 1,000,000) | ≤ 5 µs     | 7     |
 | Box against mesh manifold                                         | ≤ 10 µs             | 7     |
 | Mover step on a mesh level                                        | ≤ 20 µs             | 9     |
 
@@ -2472,3 +2486,11 @@ Two points were done differently from the review's wording:
 - Unlike Box2D v3.1, sensors also detect other sensors (PH30), as 2D does
   today and Godot's areas do, because hit boxes and hurt boxes are both
   sensors.
+
+Changes from designs 03, 04, 12 and 15, applied when the program was
+reconciled: `Time.fixedStepIndex` and `getCurrentWorldMatrix` are now in
+designs 03 and 04, so their markers point there; `TriangleTree` lives in
+`src/math/geometry/` from M5 with its own benchmark, and its ray query
+takes the faces that count and a mirrored-winding flag (design 15); the
+mover's and the sync systems' root-motion checks are stated in §6.16.3 as
+enforcement, not a rule for games (design 12).

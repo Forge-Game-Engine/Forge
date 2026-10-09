@@ -369,9 +369,10 @@ In priority order.
    unexposed content (an unlit sky dome) meters wrongly and drifts to the
    EV100 limit. Options: (a) document it, and rely on the limits; (b)
    exclude unexposed pixels with a stencil bit written by lit materials,
-   which costs a stencil attachment and a test in every lit draw; (c) the
-   per-material exposure weight of design 10's open question 1. Proposal:
-   (a) now, (c) if design 10 adopts it.
+   which costs a stencil attachment and a test in every lit draw; (c) a
+   per-material exposure weight, which design 10 didn't adopt: README P5
+   settled imported content with a per-model photometric scale instead
+   (design 10 PB39). Proposal: (a); (b) if a game's metering suffers.
 3. **Effects in display space written by games.** `createPostEffect` runs
    before the output pass, on HDR color. A CRT or palette effect on a
    tone-mapped camera wants the displayed values. Options: (a) an output
@@ -406,7 +407,7 @@ In priority order.
    Proposal: a cross-design task once alpha-to-coverage lands.
 8. **Bloom defaults.** `intensity: 1` and `spread: 0.7` are starting
    values. Confirm at the M3 golden review together with design 10's open
-   question 2.
+   question 1.
 
 ---
 
@@ -499,9 +500,11 @@ output pass's stages are part of every pipeline (decision PP2).
 
 Design 06's camera extraction declares one secondary query per engine
 effect component (`[cameraId, bloomId]`, `[cameraId, gaussianBlurId]`,
-`[cameraId, ambientOcclusionId]`, `[cameraId, autoExposureId]`). When one
-matches a camera and the pipeline lacks the feature, setting up the view
-throws:
+`[cameraId, ambientOcclusionId]`, `[cameraId, autoExposureId]`), and the
+same for design 10's camera components and design 09's
+`[cameraId, lightingDebugViewId]`, which need `lighting()` (design 06
+§6.4.1). When one matches a camera and the pipeline lacks the feature,
+setting up the view throws:
 
 ```text
 Camera entity 12 has a BloomEcsComponent, but its render pipeline has no bloom() feature.
@@ -628,7 +631,7 @@ view's color and depth multisampled renderbuffers (design 05 D6), clamped to
 what the format supports. Post-processing changes two things:
 
 - **Resolves happen before every read that follows a write**, not only
-  before the first read (a cross-doc change to design 06 §6.5): design 10's
+  before the first read (design 06 §6.5): design 10's
   transmission copy resolves the color mid-frame, the transparent phase
   then draws into the multisampled color again, and post-processing
   resolves it a second time.
@@ -671,7 +674,10 @@ float forge_coverageAlpha(float alpha, float cutoff) {
 The coverage edge sits exactly at the cutoff and is one pixel wide, so the
 silhouette matches the single-sampled discard but with four coverage
 levels. Shadow passes, which are never multisampled, and single-sampled
-views keep the discard.
+views keep the discard. Alpha-to-coverage applies to `mask` materials
+only: an `opaque` material whose surface hook discards draws in the
+`alphaTested` phase and keeps its discard (design 08 §6.8.3), since the
+engine can't turn an arbitrary discard into a coverage value.
 
 The prepass and the color pass compute the same alpha at the same pixel,
 so they produce the same coverage, and the color pass's depth test finds
@@ -1324,15 +1330,19 @@ light (design 10 §6.8.4), and `lighting()` registers it.
 #### 6.11.2 Prepass normals
 
 When a view's camera has ambient occlusion, its depth prepass (design 06
-R13) uses the `depthNormals` pass variant (a cross-doc change to design 08's
-pass list) and writes, at location 0, view-space normals as `n · 0.5 + 0.5`
-into an `rgba8unorm` attachment, multisampled like the view:
+R13) uses design 08's `depthNormals` pass variant (§6.5.2 there) and
+writes, at location 0, view-space normals as `n · 0.5 + 0.5` into an
+`rgba8unorm` attachment, multisampled like the view:
 
 - the normal is the interpolated vertex normal after the material's
   vertex hook, flipped towards the viewer on double-sided materials, with
-  no normal map (decision PP19);
-- alpha-tested items write their sharpened alpha into the alpha channel
-  (§6.4.2); others write 1.
+  no normal map (decision PP19); flat-normal meshes write the derivative
+  normal (design 08 §6.1.4);
+- `mask` items write their sharpened alpha into the alpha channel
+  (§6.4.2); others write 1;
+- custom materials compile the variant from their `depth` sources, whose
+  fragment shader calls `forge_writeDepthOutput(viewNormal)` (design 08
+  §6.9), so they need nothing more for ambient occlusion.
 
 Under MSAA the frame graph resolves depth and normals before the
 occlusion passes read them; the averaged normals are renormalized when
@@ -1457,9 +1467,8 @@ flowchart LR
 5. **Readback**: the result is copied into a pixel buffer with a fence
    through design 05's asynchronous readback, polled each frame. The
    pixel buffers and fences are a derived GPU cache kept per camera in the
-   world's rendering state beside the GPU scene, reused every frame (no
-   promise per frame; a cross-doc change to design 05 task 4.2's
-   `readTextureAsync`).
+   world's rendering state beside the GPU scene, reused every frame: a
+   readback slot (design 05 §6.13), with no promise per frame.
 
 No fragment makes more than 64 dependent fetches, and none keeps an array:
 loops have constant bounds and accumulate into scalars, so nothing spills
@@ -1850,7 +1859,10 @@ the same values.
 
 ### 6.19 Changes to other designs
 
-This design needs these changes elsewhere, listed once here:
+This design needs these changes elsewhere, listed once here. They were
+applied to those designs when the program was reconciled, except the
+amendment of README P4 and design 05 D11, which waits for the product
+owner (open question 1, README open question 1):
 
 - **README**:
   - §3 P4: "2D is unaffected" becomes "2D cameras without bloom, tone
@@ -1997,3 +2009,11 @@ each was acted on; none was rejected. Changes made:
   follows design 09's lit views; a custom effect's material leaves at
   least 13 fragment units to the game; the auto exposure system is ordered
   before the pipeline system in the `render` stage.
+
+Changes from designs 07 to 10, applied when the program was reconciled:
+design 08's `depthNormals` variant, flat-normal and custom-material
+normals are cited in §6.11.2; alpha-to-coverage is limited to `mask`
+materials (design 08 §6.8.3); design 09's lighting debug view and design
+10's camera components join the missing-feature check; open question 2's
+option (c) reflects design 10's PB39 (README P5); cross-doc markers point
+at the sections that now hold the changes.

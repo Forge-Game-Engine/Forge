@@ -6,24 +6,27 @@
 | **Kind**                              | Program index: the ordered set of designs that take Forge from 2D to 2D _and_ 3D  |
 | **Engine version at time of writing** | `0.26.1`                                                                          |
 | **Documents**                         | 15 designs in this folder, numbered in implementation order (see §6 and §7)       |
-| **Decided with the product owner**    | WebGL2 backend built WebGPU-ready; one 3D transform; native TypeScript 3D physics; float color buffers required for lit 3D |
+| **Decided with the product owner**    | WebGL2 backend built WebGPU-ready; one 3D transform; native TypeScript 3D physics; float color buffers required for lit 3D; one photometric scale per imported glTF model (§3) |
 
 ## 0. Targeted modules
 
 | Module (export path)                                 | Change                                        | Designs        |
 | ---------------------------------------------------- | --------------------------------------------- | -------------- |
-| `math`                                               | Modified: quaternions, 4x4 and 3x3 matrices, 3D geometry primitives | 02             |
-| `ecs`                                                | Modified: cached queries, change journals, ticks, singletons, frame stages, fixed step | 03             |
-| `common`                                             | Modified: one `TransformEcsComponent` replaces position, rotation and scale; fixed-step `Time` | 03, 04         |
-| `rendering`                                          | Modified (rebuilt internally): GPU device layer, render pipeline, cameras, meshes, materials, shader hooks, 2D phases, post-processing, debug drawing | 05, 06, 07, 08, 13 |
-| `lighting`                                           | **New**: lights, shadows, PBR materials, environment lighting | 09, 10         |
-| `asset-loading`                                      | Modified: binary and JSON loading, asset handles with a lifetime | 11             |
-| `gltf`                                               | **New**: glTF 2.0 loading and model instantiation | 11             |
-| `animations`                                         | Modified: skeletal and morph-target animation, clip blending | 12             |
-| `physics` → `physics-2d`                             | Renamed and modified: suffixed names, fixed step, interpolation | 14             |
+| `math`                                               | Modified: quaternions, 4x4 and 3x3 matrices, 3D geometry primitives; `TriangleTree`, shared by mesh colliders and mesh picking | 02, 14         |
+| `ecs`                                                | Modified: cached queries, change journals, ticks, singletons, frame stages, fixed step, message streams | 03             |
+| `common`                                             | Modified: one `TransformEcsComponent` replaces position, rotation and scale, with world-space helpers (`getCurrentWorldMatrix`); fixed-step `Time` (`fixedStepIndex`); `allCollisionCategories` and `physicsOwnedTransformTag` | 03, 04, 14     |
+| `rendering`                                          | Modified (rebuilt internally): GPU device layer, render pipeline, cameras, meshes, materials and material blocks, shader hooks, 2D phases and the mask table, skins and morph targets (`src/rendering/deformation/`), post-processing, render scale, debug drawing | 05, 06, 07, 08, 12, 13 |
+| `lighting`                                           | **New**: lights, shadows, PBR materials, environment lighting, sky and fog, exposure; ambient occlusion and auto exposure | 09, 10, 13     |
+| `asset-loading`                                      | Modified: one asset store with kinds, binary and JSON loading, asset handles that entities hold, asynchronous context-loss restore | 11             |
+| `gltf`                                               | **New**: glTF 2.0 loading, model instantiation, the per-model photometric scale | 11, 12         |
+| `animations`                                         | Modified: keyframe clips, playback layers and blends, root motion, playback states on shared machines, pose adjustments; sprite and property animations renamed | 12             |
+| `finite-state-machine`                               | Modified: a machine becomes a shared, immutable definition; each user keeps its current state | 12             |
+| `physics` → `physics-2d`                             | Renamed and modified: suffixed names, fixed step, interpolation, read-only velocities changed through functions, a sensor pass | 14             |
 | `physics-3d`                                         | **New**: native 3D rigid-body physics           | 14             |
-| `audio`, `particles`, `input`, `ui`, `text`          | Modified: spatial audio, 3D emitters, picking, migrated to 3D transforms | 04, 07, 15     |
-| `e2e`, `bench` (new), `.github/workflows`            | Modified and new: visual, golden-image and performance suites | 01             |
+| `picking`                                            | **New**: pointer rays, hit testers, `PointerTargetEcsComponent` for UI elements and world objects, one pointer state machine | 15             |
+| `ui`                                                 | Modified: pointer handling moves onto `picking`; UI keeps focus, navigation and invocation | 15             |
+| `audio`, `particles`, `input`, `text`                | Modified: spatial audio, 3D particle emitters, pointer lock and Y-up mouse motion, migrated to 3D transforms | 04, 07, 15     |
+| `e2e`, `bench` (new), `.github/workflows`            | Modified and new: visual, golden-image and performance suites, audio render time | 01             |
 
 ---
 
@@ -96,7 +99,8 @@ The result is:
 | P1  | Graphics backend                             | WebGL2 now. The device layer, render pipeline and resource model are shaped after WebGPU (pipelines, bind groups, passes, uniform buffers) so a WebGPU backend can follow without public API changes. Custom shaders are GLSL ES 3.00. |
 | P2  | How 2D and 3D transforms relate              | One 3D transform for every entity. 2D games use `x`/`y`, `z` for depth, and rotate about Z through 2D helpers.                                                                   |
 | P3  | How the 3D physics engine is built           | Native TypeScript, data-oriented, in the ECS. No WASM engine, no second copy of the world.                                                                                       |
-| P4  | Devices without float color buffers          | Lit 3D and HDR effects require `EXT_color_buffer_float` or `EXT_color_buffer_half_float`; without one, creating an HDR view throws a clear error. No LDR shading path. 2D is unaffected. |
+| P4  | Devices without float color buffers          | Lit 3D and HDR effects require `EXT_color_buffer_float` or `EXT_color_buffer_half_float`; without one, creating an HDR view throws a clear error. No LDR shading path. 2D is unaffected. (Design 13 asks to extend this to 2D cameras with bloom, tone mapping or auto exposure; open question 1.) |
+| P5  | Emissive and light values in imported glTF files | One photometric scale per loaded model, applied to its emissive values and its lights together. Its default makes files look under Forge's default exposure (EV100 12) as they do in the Khronos glTF Sample Viewer (`1.2 · 2^12 ≈ 4,915`, the reciprocal of that exposure's multiplier); `1` takes glTF's physical units literally (design 10 PB39, design 11 GA29). |
 
 ---
 
@@ -140,9 +144,13 @@ yet when design 02 lands.
 - **`Color` holds straight alpha; destinations hold premultiplied alpha.**
   This is the existing contract in `AGENTS.md` and is unchanged.
 - **Physical light units.** Directional lights in lux, point and spot lights
-  in lumens, exposure in EV100, so values copied from reference renderers
-  mean the same thing in Forge and glTF's lights (`KHR_lights_punctual`,
-  in candela) convert exactly (design 09).
+  in lumens, exposure in EV100 (design 09, design 10). glTF's lights
+  (`KHR_lights_punctual`, in candela and lux) convert exactly, and values
+  carry over from Bevy, which uses the same spot convention: a spot of `Φ`
+  lumens has a point light's intensity `Φ / 4π`, masked to the cone
+  (design 09 L4). A Three.js spot light's lumens (`power = π · I`) must be
+  multiplied by 4. Imported glTF models are scaled by their photometric
+  scale (P5) unless loaded with `1`.
 
 ### 4.3 Precision
 
@@ -168,6 +176,16 @@ A system may keep scratch arrays that it fully overwrites before reading
 each tick (so no tick depends on the previous one's contents), purely to
 avoid allocating. Those live with the service the system draws through,
 or in the singleton component of the subsystem, never in module scope.
+
+Every component field has one writer. The one named pattern beside it is
+a **per-frame message stream** (design 03 §6.5): an append-only list on a
+singleton that several systems append to, where no system edits or
+removes another's entry, one owning system clears it once per frame, and
+readers run after the writers (debug-draw shapes, design 06; pointer
+hits, design 15). Design 12's pose pipeline is the one sanctioned
+exception to one writer: pose sampling writes a pose target's `local`,
+then pose adjustments change it in a fixed group order on frames with a
+fresh pose (design 12 §6.13.1).
 
 ### 4.5 Naming
 
@@ -224,21 +242,25 @@ Unity build can't run in CI. Design 01 covers it.
 
 | #   | Design                                                                 | Delivers                                                                                                         | Depends on        | Size |
 | --- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------- | ---- |
-| 01  | [Testing and benchmarks](./01-testing-and-benchmarks.md)               | Benchmark harness and scenes, Three.js comparisons, allocation tests, golden-image visual tests, CI gates         | –                 | L    |
+| 01  | [Testing and benchmarks](./01-testing-and-benchmarks.md)               | Benchmark harness and scenes (CPU frame time and audio render time), Three.js comparisons, allocation tests, golden-image and analytic visual tests, CI gates | –                 | L    |
 | 02  | [3D math](./02-math.md)                                                | Quaternions, 4x4 and 3x3 matrices, rays, planes, frustums, boxes, spheres; conventions in `AGENTS.md`              | –                 | M    |
-| 03  | [ECS foundations](./03-ecs-foundations.md)                             | Allocation-free cached queries, change journals, world ticks, singleton components, frame stages, fixed step     | –                 | L    |
-| 04  | [Transforms](./04-transforms.md)                                       | `TransformEcsComponent`; propagation with change detection; every module migrated; 2D helpers                     | 02, 03            | L    |
-| 05  | [GPU device layer](./05-gpu-device.md)                                 | WebGPU-shaped resources over WebGL2: buffers, textures, samplers, pipelines, bind groups, passes, state cache      | –                 | XL   |
-| 06  | [Render pipeline](./06-render-pipeline.md)                             | Passes and the frame graph, cameras and projections, visibility, sorting, instancing, GPU scene, debug drawing    | 04, 05            | XL   |
-| 07  | [2D on the render pipeline](./07-2d-on-the-render-pipeline.md)         | Sprites, text, UI, masks, terrain and particles drawn as pipeline phases; 2D in 3D and 3D in 2D                   | 06                | L    |
-| 08  | [Meshes, materials and shaders](./08-meshes-materials-and-shaders.md)  | Mesh assets and primitives, material system on uniform buffers, shader variants, shader hooks, unlit materials    | 06                | XL   |
-| 09  | [Lighting and shadows](./09-lighting-and-shadows.md)                   | Directional, point and spot lights; clustered light lists; cascaded and atlas shadows with caching               | 08                | XL   |
-| 10  | [PBR and environment lighting](./10-pbr-and-environment-lighting.md)   | Metallic-roughness BRDF, glTF material extensions, image-based lighting, sky, exposure                           | 09                | L    |
-| 11  | [glTF and asset lifetime](./11-gltf-and-asset-lifetime.md)             | Binary loading, asset handles that can be released, glTF 2.0 with extensions and compression, model instancing   | 08 (10 for materials) | XL |
-| 12  | [Skeletal and morph animation](./12-skeletal-and-morph-animation.md)   | Skins, GPU skinning, morph targets, clip sampling, blending, layers, animation events                            | 04, 08, 11        | L    |
-| 13  | [Post-processing and anti-aliasing](./13-post-processing-and-anti-aliasing.md) | MSAA, FXAA, ambient occlusion, bloom, tone mapping and color grading on the pipeline                      | 06 (09 for normals) | L  |
-| 14  | [Physics 3D](./14-physics-3d.md)                                       | Native 3D rigid bodies, shapes, BVH broad phase, GJK/EPA and SAT, soft-step solver, joints, sleeping, CCD, queries, character controller; 2D physics on the same stepping model | 02, 03, 04 | XL+ |
-| 15  | [Audio, particles and picking in 3D](./15-audio-particles-and-picking-in-3d.md) | Spatial audio, 3D particle emitters, pointer picking against meshes and physics                      | 04, 06, 14        | M    |
+| 03  | [ECS foundations](./03-ecs-foundations.md)                             | Allocation-free cached queries, change journals, world ticks, singleton components, message streams, frame stages, fixed step | –                 | L    |
+| 04  | [Transforms](./04-transforms.md)                                       | `TransformEcsComponent`; propagation with change detection; every module migrated; 2D and world-space helpers (`getCurrentWorldMatrix`) | 02, 03            | L    |
+| 05  | [GPU device layer](./05-gpu-device.md)                                 | WebGPU-shaped resources over WebGL2: buffers, textures, samplers, pipelines, bind groups, passes, state cache; material uniform blocks (design 08 §6.3, built in its Phase 3); asynchronous context-loss restore; readback | –                 | XL   |
+| 06  | [Render pipeline](./06-render-pipeline.md)                             | Passes and the frame graph, cameras and projections, visibility, sorting, instancing, GPU scene and its change list, debug drawing | 04, 05            | XL   |
+| 07  | [2D on the render pipeline](./07-2d-on-the-render-pipeline.md)         | Sprites, text, UI, the mask table and terrain as transparent-phase items; linear blending; billboards and depth groups; 2D in 3D and 3D in 2D; the rotated-text fix (Phase 0) | 05, 06            | L    |
+| 08  | [Meshes, materials and shaders](./08-meshes-materials-and-shaders.md)  | Mesh assets and primitives, the material system on uniform blocks (specified here, built with design 05), shader variants and pass variants, shader hooks, custom and unlit materials, `prepare()` | 05, 06            | XL   |
+| 09  | [Lighting and shadows](./09-lighting-and-shadows.md)                   | Directional, point and spot lights in physical units; clustered light lists for lit views; cascades per lit view and local light tiles in one shadow map array, with caching; soft shadows | 08 (03, 05, 06)   | XL   |
+| 10  | [PBR and environment lighting](./10-pbr-and-environment-lighting.md)   | Metallic-roughness BRDF, glTF material extensions, image-based lighting, sky, fog, exposure, transmission        | 08, 09            | XL   |
+| 11  | [glTF and asset lifetime](./11-gltf-and-asset-lifetime.md)             | One asset store with handles entities hold, binary loading, glTF 2.0 with extensions and compression, model instancing, the photometric scale (P5) | 03, 05, 08 (10 for materials, 12 for skins and clips) | XL |
+| 12  | [Skeletal and morph animation](./12-skeletal-and-morph-animation.md)   | Keyframe clips, skins, GPU skinning, morph targets, blending, layers, events, root motion, shared state machines, pose adjustments | 04, 08, 11        | XL   |
+| 13  | [Post-processing and anti-aliasing](./13-post-processing-and-anti-aliasing.md) | MSAA, alpha-to-coverage, FXAA, render scale, ambient occlusion, bloom, blur, tone mapping, color grading, auto exposure on the pipeline | 06, 08, 10 | XL |
+| 14  | [Physics 3D](./14-physics-3d.md)                                       | Native 3D rigid bodies, shapes, BVH broad phase, GJK/EPA and SAT, soft-step solver, joints, sleeping, sensors, gyroscopic torque, CCD, queries, character mover, rag dolls; 2D physics on the same stepping model | 02, 03, 04 (12 for root motion and rag dolls) | XL+ |
+| 15  | [Audio, particles and picking in 3D](./15-audio-particles-and-picking-in-3d.md) | Spatial audio, 3D particle emitters, pointer picking against meshes, physics and UI with one pointer state machine | 04, 06, 14 (12 for the sample game) | XL |
+
+Sizes follow each design's own phase tables. 10, 12, 13 and 15 were
+estimated L or M before their phases were written, and their task tables
+come to about twice design 05's or 08's.
 
 ### Dependency graph
 
@@ -265,23 +287,38 @@ flowchart LR
   D03 --> D04
   D04 --> D06
   D05 --> D06
+  D05 --> D07
   D06 --> D07
+  D05 --> D08
   D06 --> D08
   D08 --> D09
+  D08 --> D10
   D09 --> D10
+  D03 --> D11
+  D05 --> D11
   D08 --> D11
   D10 -. materials .-> D11
-  D11 --> D12
+  D04 --> D12
+  D08 --> D12
+  D11 -. ship together .- D12
   D06 --> D13
+  D08 --> D13
+  D10 --> D13
   D02 --> D14
   D03 --> D14
   D04 --> D14
+  D12 -. root motion, rag dolls .-> D14
+  D04 --> D15
   D06 --> D15
   D14 --> D15
+  D12 -. sample game .-> D15
 ```
 
 Physics (14) only needs the foundations (02 to 04), so it can be built in
-parallel with the renderer (05 to 13).
+parallel with the renderer (05 to 13); its root motion task and rag dolls
+wait for design 12's Phases 3 and 5. Design 11's asset store (its Phase 1)
+needs only designs 03 and 05 and can ship in M2; the rest of design 11
+ships in M4 with design 12, each needing the other's types.
 
 ---
 
