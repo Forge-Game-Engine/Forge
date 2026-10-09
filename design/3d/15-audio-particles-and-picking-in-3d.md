@@ -1,57 +1,57 @@
 # Design 15: Audio, Particles and Picking in 3D
 
-|                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review (revised after solution review, §7)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| **Kind**                              | Feature and breaking refactor                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| **Program**                           | [Forge 3D](./README.md), milestone M6                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| **Depends on**                        | [04 Transforms](./04-transforms.md), [06 Render pipeline](./06-render-pipeline.md), [14 Physics 3D](./14-physics-3d.md) (collider queries and the shared `TriangleTree`); [12 Skeletal and morph animation](./12-skeletal-and-morph-animation.md) for the sample game                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+|                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review (revised after solution review, §7)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Kind**                              | Feature and breaking refactor                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **Program**                           | [Forge 3D](./README.md), milestone M6                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Depends on**                        | [04 Transforms](./04-transforms.md), [06 Render pipeline](./06-render-pipeline.md), [14 Physics 3D](./14-physics-3d.md) (collider queries and the shared `TriangleTree`); [12 Skeletal and morph animation](./12-skeletal-and-morph-animation.md) for the sample game                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **Related**                           | [03 ECS foundations](./03-ecs-foundations.md) (journals, change ticks, singletons, stages, message streams), [05 GPU device layer](./05-gpu-device.md) (instance attribute locations, texture units), [07 2D on the render pipeline](./07-2d-on-the-render-pipeline.md) (transparent sort keys, billboards, world-space canvases), [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md) (kept CPU mesh data, materials, variants), [11 glTF and asset lifetime](./11-gltf-and-asset-lifetime.md) (sound and model assets), [13 Post-processing](./13-post-processing-and-anti-aliasing.md) (resolved scene depth), [01 Testing and benchmarks](./01-testing-and-benchmarks.md) (benchmarks, goldens, allocation specs, the comparison report) |
 
 ## 0. Targeted modules
 
-| Path | Change | Notes |
-| ---- | ------ | ----- |
-| `src/audio/components/sound-component.ts` | Modified | `whenFinished` input; `positionSeconds` output |
-| `src/audio/components/spatial-sound-component.ts` | New | `SpatialSoundEcsComponent`, `addSpatialSoundComponent` |
-| `src/audio/components/audio-listener-component.ts` | New | `AudioListenerEcsComponent`, `addAudioListenerComponent` |
-| `src/audio/systems/sound-system.ts` | Modified | Rewritten: journals instead of `trackedSounds`/`updateCount`; spatial processing; `postUpdate`; takes the mixer and the clock |
-| `src/audio/internal/sound-instance.ts`, `audio-internals.ts` | Modified | A spatial stage between the instance's gain and the bus: a `PannerNode`, or a `StereoPannerNode` with its own attenuation `GainNode`; position, orientation and pan parameters at `k-rate`, moved by ramps that end; `detune` for doppler; the mixer keeps one sound table per world |
-| `src/audio/internal/spatial-math.ts` | New | Listener-relative positions, distance models, cones, doppler |
-| `src/audio/play-sound-at.ts`, `register-audio.ts` | New | One-shot spatial sounds as entities; the audio group and system |
-| `src/audio/test-helpers/fake-audio-context.ts` | Modified | Fake `PannerNode` and `StereoPannerNode`; records `automationRate` and parameter calls |
-| `src/particles/particle-effect.ts`, `shapes.ts`, `curves.ts` | New | `ParticleEffect`, `createParticleEffect`, spawn shapes, directions, curves and gradients |
-| `src/particles/components/particle-emitter-component.ts` | Modified | One effect per component, structure-of-arrays particle storage, emission state |
-| `src/particles/components/particle-component.ts`, `particle-emitter.ts` | Removed | Particles stop being entities; `ParticleEmitter` (class) becomes `ParticleEffect` |
-| `src/particles/systems/particle-emitter-system.ts`, `particle-position-system.ts`, `particle-opacity-system.ts` | Removed | Replaced by one simulation system |
-| `src/particles/systems/particle-simulation-system.ts`, `particle-extraction-system.ts` | New | Simulation in `postUpdate`; per-view instances in `render` |
-| `src/particles/utilities/` | Modified | `emitParticles`, `spawnParticleBurst`, `detachParticleEmitter`, `createParticleMaterial`; `emit-particle-burst.ts`, `spawn-particle.ts` replaced |
-| `src/particles/register-particles.ts` | New | The particle group, simulation and extraction systems |
-| `src/common/components/age-scale-component.ts`, `src/common/systems/age-scale-system.ts` | Removed | Their only user was particles (§6.3.13) |
-| `src/picking/` (new module, `@forge-game-engine/forge/picking`) | New | The picking singleton, `PointerTargetEcsComponent` (UI elements and world objects), rays, the mesh hit tester, resolution and the one pointer interaction system, `raycastMeshes`, `preparePicking`; `package.json` `exports` and `src/index.ts` |
-| `src/rendering/meshes/mesh.ts` | Modified | A `TriangleTree` (design 14, `src/math/geometry/triangle-tree.ts`) built on first use and released with the mesh |
-| `src/rendering/gpu-scene/` | Modified | `raycastBounds`: a ray query over the static tree and dynamic spheres |
-| `src/rendering/shaders/forge/`, `src/rendering/materials/unlit-material.ts` | Modified | Particle instance variants of `forge/vertex` and `forge/object`; `softDistance` reading the view's scene depth |
-| `src/rendering/pipeline/` | Modified | `sceneDepth` view resource, shared with ambient occlusion (design 13) |
-| `src/input/pointer-source.ts` | New | `PointerSource`, moved from `src/ui/types/ui-pointer-source.ts`, with `buttonsHeld` (which `MouseInputSource` already has) and `isLocked` |
-| `src/input/mouse/input-sources/mouse-input-source.ts` | Modified | Pointer lock (`pointerLock`, `isLocked`), raw movement where the browser offers it; the Y-down `delta` getter removed (§6.4.3) |
-| `src/input/mouse/bindings/mouse-motion-binding.ts` | New | `MouseMotionBinding`: per-frame movement for an `Axis2dAction`, Y-up |
-| `src/ui/types/ui-pointer-source.ts`, `src/ui/systems/ui-raycast-system.ts`, `src/ui/systems/ui-interaction-system.ts` | Removed | Replaced by `PointerSource`, the canvas hit tester and hover system, and picking's pointer interaction system (§6.4.10) |
-| `src/ui/components/ui-interactable-component.ts` | Modified | Keeps `interactable`, `focusable`, `isFocused`, `onInvoke`, `wasInvokedThisFrame`. The pointer events, `isHovered`, `isPressed`, `isDragging`, `pressCapture`, `dragThreshold` and `receivesDrag` move to `PointerTargetEcsComponent`; `blocksRaycasts` becomes `pointerTransparentTag` |
-| `src/ui/systems/ui-canvas-hit-test-system.ts`, `ui-hover-system.ts` | New | UI canvases as a hit tester; `hoveredEntity` and `isPointerOverUi` from the resolved hit |
-| `src/ui/systems/ui-navigation-system.ts` | Modified | The one writer of focus and invocation: submit and navigation actions, and pointer clicks and hover focus read from the picking singleton; `preUpdate` |
-| `src/ui/systems/ui-slider-system.ts`, `ui-scroll-rect-system.ts`, `ui-toggle-system.ts`, `ui-transition-system.ts`, `ui-tooltip-system.ts`, `src/ui/types/ui-interaction-visual-state.ts` | Modified | Read pointer state from the element's `PointerTargetEcsComponent` and the pointer from the picking singleton; sliders and scroll views check their own element's interactable state |
-| `src/ui/utilities/create-button.ts`, `create-slider.ts`, `create-toggle.ts`, `create-scroll-view.ts`, `create-text-input.ts`, `create-tooltip.ts` | Modified | Add a `PointerTargetEcsComponent` beside the interactable and return it; the tooltip reads its source's target |
-| `src/ui/utilities/raycast-ui-canvas.ts`, `resolve-canvas-pointer-position.ts`, `sort-by-draw-order.ts`, `register-ui-systems.ts` | Modified | Ray-plane hits in the canvas root's space; pointer targets tested; no allocation; no module-scope resolver; no `pointerSource` option |
-| `src/physics-3d/picking/`, `src/physics-2d/picking/` (modules from design 14), `src/physics-2d/overlap/overlap-point-2d.ts` | New | Collider hit testers; `overlapPoint2d`, the 2D point query the 2D tester needs |
-| `documentation-site/docs/docs/audio/`, `particles/`, `picking/` (new), `input/mouse.md`, `ui/buttons-and-interaction.md`, `ui/controls.md`, `ui/scroll-views.md`, `ui/creating-a-canvas.md`, `ui/canvas-groups-and-tooltips.md`, `rendering/visibility.md`, `common/index.md`, `3d/` | Modified | §6.10 |
-| `documentation-site/src/pages/demos/particles/`, `visibility/`, `courtyard/` (new), `src/data/demos.ts` | Modified | Migrated particle demos; the M6 sample game |
-| `documentation-site/src/pages/demos/` `ui-button/`, `ui-slider/`, `ui-scroll-view/`, `ui-dropdown/`, `ui-text-input/`, `ui-canvas-group/`, `ui-main-menu/`, `ui-toggle/`, `ui-nested-resize/`, `layout-groups/`, `persistent-state/` | Modified | `registerPicking` instead of `registerUiSystems`'s `pointerSource`; `ui-main-menu` reads hover from pointer targets |
-| `e2e/fixtures/scenes/ui-text-input.ts`, `ui-scroll-view.ts` | Modified | `registerPicking`; the scroll view scene adds its interactables' pointer targets |
-| `e2e/specs/`, `e2e/fixtures/scenes/`, `e2e/golden/`, `e2e/allocation/`, `bench/` | Modified | §6.9 |
-| `.claude/skills/create-component/SKILL.md` | Modified | Its naming example (`ageScaleId`/`'ageScale'`) names a component that no longer exists; `particleEmitterId`/`'particleEmitter'` replaces it |
-| `AGENTS.md` | Modified | `/picking` in the repository structure; particles aren't entities; UI elements and world objects take pointer input through `PointerTargetEcsComponent` |
+| Path                                                                                                                                                                                                                                                                                 | Change   | Notes                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/audio/components/sound-component.ts`                                                                                                                                                                                                                                            | Modified | `whenFinished` input; `positionSeconds` output                                                                                                                                                                                                                                          |
+| `src/audio/components/spatial-sound-component.ts`                                                                                                                                                                                                                                    | New      | `SpatialSoundEcsComponent`, `addSpatialSoundComponent`                                                                                                                                                                                                                                  |
+| `src/audio/components/audio-listener-component.ts`                                                                                                                                                                                                                                   | New      | `AudioListenerEcsComponent`, `addAudioListenerComponent`                                                                                                                                                                                                                                |
+| `src/audio/systems/sound-system.ts`                                                                                                                                                                                                                                                  | Modified | Rewritten: journals instead of `trackedSounds`/`updateCount`; spatial processing; `postUpdate`; takes the mixer and the clock                                                                                                                                                           |
+| `src/audio/internal/sound-instance.ts`, `audio-internals.ts`                                                                                                                                                                                                                         | Modified | A spatial stage between the instance's gain and the bus: a `PannerNode`, or a `StereoPannerNode` with its own attenuation `GainNode`; position, orientation and pan parameters at `k-rate`, moved by ramps that end; `detune` for doppler; the mixer keeps one sound table per world    |
+| `src/audio/internal/spatial-math.ts`                                                                                                                                                                                                                                                 | New      | Listener-relative positions, distance models, cones, doppler                                                                                                                                                                                                                            |
+| `src/audio/play-sound-at.ts`, `register-audio.ts`                                                                                                                                                                                                                                    | New      | One-shot spatial sounds as entities; the audio group and system                                                                                                                                                                                                                         |
+| `src/audio/test-helpers/fake-audio-context.ts`                                                                                                                                                                                                                                       | Modified | Fake `PannerNode` and `StereoPannerNode`; records `automationRate` and parameter calls                                                                                                                                                                                                  |
+| `src/particles/particle-effect.ts`, `shapes.ts`, `curves.ts`                                                                                                                                                                                                                         | New      | `ParticleEffect`, `createParticleEffect`, spawn shapes, directions, curves and gradients                                                                                                                                                                                                |
+| `src/particles/components/particle-emitter-component.ts`                                                                                                                                                                                                                             | Modified | One effect per component, structure-of-arrays particle storage, emission state                                                                                                                                                                                                          |
+| `src/particles/components/particle-component.ts`, `particle-emitter.ts`                                                                                                                                                                                                              | Removed  | Particles stop being entities; `ParticleEmitter` (class) becomes `ParticleEffect`                                                                                                                                                                                                       |
+| `src/particles/systems/particle-emitter-system.ts`, `particle-position-system.ts`, `particle-opacity-system.ts`                                                                                                                                                                      | Removed  | Replaced by one simulation system                                                                                                                                                                                                                                                       |
+| `src/particles/systems/particle-simulation-system.ts`, `particle-extraction-system.ts`                                                                                                                                                                                               | New      | Simulation in `postUpdate`; per-view instances in `render`                                                                                                                                                                                                                              |
+| `src/particles/utilities/`                                                                                                                                                                                                                                                           | Modified | `emitParticles`, `spawnParticleBurst`, `detachParticleEmitter`, `createParticleMaterial`; `emit-particle-burst.ts`, `spawn-particle.ts` replaced                                                                                                                                        |
+| `src/particles/register-particles.ts`                                                                                                                                                                                                                                                | New      | The particle group, simulation and extraction systems                                                                                                                                                                                                                                   |
+| `src/common/components/age-scale-component.ts`, `src/common/systems/age-scale-system.ts`                                                                                                                                                                                             | Removed  | Their only user was particles (§6.3.13)                                                                                                                                                                                                                                                 |
+| `src/picking/` (new module, `@forge-game-engine/forge/picking`)                                                                                                                                                                                                                      | New      | The picking singleton, `PointerTargetEcsComponent` (UI elements and world objects), rays, the mesh hit tester, resolution and the one pointer interaction system, `raycastMeshes`, `preparePicking`; `package.json` `exports` and `src/index.ts`                                        |
+| `src/rendering/meshes/mesh.ts`                                                                                                                                                                                                                                                       | Modified | A `TriangleTree` (design 14, `src/math/geometry/triangle-tree.ts`) built on first use and released with the mesh                                                                                                                                                                        |
+| `src/rendering/gpu-scene/`                                                                                                                                                                                                                                                           | Modified | `raycastBounds`: a ray query over the static tree and dynamic spheres                                                                                                                                                                                                                   |
+| `src/rendering/shaders/forge/`, `src/rendering/materials/unlit-material.ts`                                                                                                                                                                                                          | Modified | Particle instance variants of `forge/vertex` and `forge/object`; `softDistance` reading the view's scene depth                                                                                                                                                                          |
+| `src/rendering/pipeline/`                                                                                                                                                                                                                                                            | Modified | `sceneDepth` view resource, shared with ambient occlusion (design 13)                                                                                                                                                                                                                   |
+| `src/input/pointer-source.ts`                                                                                                                                                                                                                                                        | New      | `PointerSource`, moved from `src/ui/types/ui-pointer-source.ts`, with `buttonsHeld` (which `MouseInputSource` already has) and `isLocked`                                                                                                                                               |
+| `src/input/mouse/input-sources/mouse-input-source.ts`                                                                                                                                                                                                                                | Modified | Pointer lock (`pointerLock`, `isLocked`), raw movement where the browser offers it; the Y-down `delta` getter removed (§6.4.3)                                                                                                                                                          |
+| `src/input/mouse/bindings/mouse-motion-binding.ts`                                                                                                                                                                                                                                   | New      | `MouseMotionBinding`: per-frame movement for an `Axis2dAction`, Y-up                                                                                                                                                                                                                    |
+| `src/ui/types/ui-pointer-source.ts`, `src/ui/systems/ui-raycast-system.ts`, `src/ui/systems/ui-interaction-system.ts`                                                                                                                                                                | Removed  | Replaced by `PointerSource`, the canvas hit tester and hover system, and picking's pointer interaction system (§6.4.10)                                                                                                                                                                 |
+| `src/ui/components/ui-interactable-component.ts`                                                                                                                                                                                                                                     | Modified | Keeps `interactable`, `focusable`, `isFocused`, `onInvoke`, `wasInvokedThisFrame`. The pointer events, `isHovered`, `isPressed`, `isDragging`, `pressCapture`, `dragThreshold` and `receivesDrag` move to `PointerTargetEcsComponent`; `blocksRaycasts` becomes `pointerTransparentTag` |
+| `src/ui/systems/ui-canvas-hit-test-system.ts`, `ui-hover-system.ts`                                                                                                                                                                                                                  | New      | UI canvases as a hit tester; `hoveredEntity` and `isPointerOverUi` from the resolved hit                                                                                                                                                                                                |
+| `src/ui/systems/ui-navigation-system.ts`                                                                                                                                                                                                                                             | Modified | The one writer of focus and invocation: submit and navigation actions, and pointer clicks and hover focus read from the picking singleton; `preUpdate`                                                                                                                                  |
+| `src/ui/systems/ui-slider-system.ts`, `ui-scroll-rect-system.ts`, `ui-toggle-system.ts`, `ui-transition-system.ts`, `ui-tooltip-system.ts`, `src/ui/types/ui-interaction-visual-state.ts`                                                                                            | Modified | Read pointer state from the element's `PointerTargetEcsComponent` and the pointer from the picking singleton; sliders and scroll views check their own element's interactable state                                                                                                     |
+| `src/ui/utilities/create-button.ts`, `create-slider.ts`, `create-toggle.ts`, `create-scroll-view.ts`, `create-text-input.ts`, `create-tooltip.ts`                                                                                                                                    | Modified | Add a `PointerTargetEcsComponent` beside the interactable and return it; the tooltip reads its source's target                                                                                                                                                                          |
+| `src/ui/utilities/raycast-ui-canvas.ts`, `resolve-canvas-pointer-position.ts`, `sort-by-draw-order.ts`, `register-ui-systems.ts`                                                                                                                                                     | Modified | Ray-plane hits in the canvas root's space; pointer targets tested; no allocation; no module-scope resolver; no `pointerSource` option                                                                                                                                                   |
+| `src/physics-3d/picking/`, `src/physics-2d/picking/` (modules from design 14), `src/physics-2d/overlap/overlap-point-2d.ts`                                                                                                                                                          | New      | Collider hit testers; `overlapPoint2d`, the 2D point query the 2D tester needs                                                                                                                                                                                                          |
+| `documentation-site/docs/docs/audio/`, `particles/`, `picking/` (new), `input/mouse.md`, `ui/buttons-and-interaction.md`, `ui/controls.md`, `ui/scroll-views.md`, `ui/creating-a-canvas.md`, `ui/canvas-groups-and-tooltips.md`, `rendering/visibility.md`, `common/index.md`, `3d/` | Modified | §6.10                                                                                                                                                                                                                                                                                   |
+| `documentation-site/src/pages/demos/particles/`, `visibility/`, `courtyard/` (new), `src/data/demos.ts`                                                                                                                                                                              | Modified | Migrated particle demos; the M6 sample game                                                                                                                                                                                                                                             |
+| `documentation-site/src/pages/demos/` `ui-button/`, `ui-slider/`, `ui-scroll-view/`, `ui-dropdown/`, `ui-text-input/`, `ui-canvas-group/`, `ui-main-menu/`, `ui-toggle/`, `ui-nested-resize/`, `layout-groups/`, `persistent-state/`                                                 | Modified | `registerPicking` instead of `registerUiSystems`'s `pointerSource`; `ui-main-menu`'s rows, built with `addUiInteractableComponent`, add a pointer target                                                                                                                                |
+| `e2e/fixtures/scenes/ui-text-input.ts`, `ui-scroll-view.ts`                                                                                                                                                                                                                          | Modified | `registerPicking`; elements built with `addUiInteractableComponent` (the scroll view's items, the text input scene's button and the cover that blocks the pointer) add a pointer target                                                                                                 |
+| `e2e/specs/`, `e2e/fixtures/scenes/`, `e2e/golden/`, `e2e/allocation/`, `bench/`                                                                                                                                                                                                     | Modified | §6.9                                                                                                                                                                                                                                                                                    |
+| `.claude/skills/create-component/SKILL.md`                                                                                                                                                                                                                                           | Modified | Its naming example (`ageScaleId`/`'ageScale'`) names a component that no longer exists; `particleEmitterId`/`'particleEmitter'` replaces it                                                                                                                                             |
+| `AGENTS.md`                                                                                                                                                                                                                                                                          | Modified | `/picking` in the repository structure; particles aren't entities; UI elements and world objects take pointer input through `PointerTargetEcsComponent`                                                                                                                                 |
 
 ---
 
@@ -101,7 +101,8 @@ This design adds:
   particles draw: camera-facing, velocity-stretched or upright billboards,
   or instanced meshes, through design 08 materials, sorted for blending,
   with soft edges against opaque geometry. The 2D particle API is replaced
-  outright; 2D effects keep their look.
+  outright; a migrated 2D effect's particles start with the same values and
+  draw in the same order as before (§6.3.13).
 - **Picking.** One pointer pipeline per world. Each frame, rays from the
   cameras under the pointer go to **hit testers**: meshes (design 06's
   bounds tree, then triangle trees over design 08's kept CPU data, joint
@@ -114,9 +115,10 @@ This design adds:
   and invocation. Pointer lock and raw mouse motion complete first-person
   input.
 
-The last phase builds the M6 **sample game**, a small third-person scene on
-the docs site that uses every design in the program together, and the
-milestone's **comparison report** against Three.js and Unity.
+Phase 6 builds the M6 **sample game**, a small third-person scene on the
+docs site that uses every design in the program together, and the
+milestone's **comparison report** against Three.js and Unity. Phase 7 adds
+the particle features the sample game doesn't need.
 
 ---
 
@@ -186,9 +188,9 @@ milestone's **comparison report** against Three.js and Unity.
 
 Every phase lands after M5 (all earlier designs are in place, including
 design 14's `TriangleTree` in `src/math/geometry`) and is releasable on its
-own. Phases 1 to 3 (audio and particles) and Phases 4 and 5 (picking) don't
-depend on each other; Phase 6 needs all of them; Phase 7 needs only
-Phases 2 and 3.
+own. The audio phase (1), the particle phases (2 and 3) and the picking
+phases (4 and 5) don't depend on one another; Phase 6 needs all of them;
+Phase 7 needs only Phases 2 and 3.
 
 ### Phase 1: Spatial audio
 
@@ -197,11 +199,11 @@ Phases 2 and 3.
 | 1.1 | Sound system state         | §6.2.3: journals replace `trackedSounds`'s removal scan; the mixer's per-world table; `positionSeconds`; `whenFinished`; `postUpdate`                                                              | M    |
 | 1.2 | Listener and spatial sound | §6.2.2: components, factories, the one-listener check                                                                                                                                              | S    |
 | 1.3 | 3D panning                 | §6.2.4, §6.2.5: listener-relative positions and orientations on a `PannerNode`; cones; distance models                                                                                             | M    |
-| 1.4 | Stereo panning             | §6.2.6: a `StereoPannerNode` and an attenuation `GainNode` of the spatial stage's own, with CPU attenuation, for 2D games                                                                            | S    |
-| 1.5 | Parameter updates          | §6.2.8: first values set exactly before start; `k-rate` position, orientation and pan parameters; later values by ramps that end; updates only on change                                          | S    |
+| 1.4 | Stereo panning             | §6.2.6: a `StereoPannerNode` and an attenuation `GainNode` of the spatial stage's own, with CPU attenuation, for 2D games                                                                          | S    |
+| 1.5 | Parameter updates          | §6.2.8: first values set exactly before start; `k-rate` position, orientation and pan parameters; later values by ramps that end; updates only on change                                           | S    |
 | 1.6 | Doppler                    | §6.2.9: per-sound level, detune, clamps                                                                                                                                                            | S    |
 | 1.7 | `playSoundAt`, debug draw  | §6.2.10, §6.2.11                                                                                                                                                                                   | S    |
-| 1.8 | Audio render benchmark     | §6.8.1: an `OfflineAudioContext` scene benchmark of the audio thread's render time, driven by the real sound system                                                                               | S    |
+| 1.8 | Audio render benchmark     | §6.8.1: an `OfflineAudioContext` scene benchmark of the audio thread's render time, driven by the real sound system                                                                                | S    |
 | 1.9 | Tests, guide, changelog    | Unit tests with the fake context's panner nodes; `spatial-audio` e2e and allocation specs; `spatial-audio.md`; `#### Added`, `#### Changed` (`createSoundEcsSystem(mixer, time)`, `registerAudio`) | M    |
 
 **Definition of done:** the spatial-audio e2e spec measures a louder right
@@ -214,16 +216,16 @@ registration updated.
 
 ### Phase 2: Particle storage and simulation
 
-| #   | Task                       | Description                                                                                                                                                                                         | Size |
-| --- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 2.1 | `ParticleEffect`           | §6.3.2: options, validation, baked curves and gradients                                                                                                                                             | M    |
-| 2.2 | Shapes and directions      | §6.3.3: point, sphere, hemisphere, cone, box, circle, edge; outward, cone, arc; random draws in today's order                                                                                        | M    |
-| 2.3 | Emitter component, storage | §6.3.4: one effect per component; typed arrays sized to `maxParticles`; swap removal; spawn sequence numbers                                                                                        | M    |
-| 2.4 | Emission                   | §6.3.5: rate, `emitParticles` with `overSeconds`; sub-frame spreading for streams only                                                                                                              | M    |
-| 2.5 | Simulation                 | §6.3.6, §6.3.7: world and local space, bounds, `whenEmpty`, visibility                                                                                                                              | M    |
-| 2.6 | View-facing billboards     | §6.3.9: extraction into the transparent phase with `view` and `emitter` alignment, through `createParticleMaterial`                                                                                 | M    |
+| #   | Task                       | Description                                                                                                                                                                                                | Size |
+| --- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 2.1 | `ParticleEffect`           | §6.3.2: options, validation, baked curves and gradients                                                                                                                                                    | M    |
+| 2.2 | Shapes and directions      | §6.3.3: point, sphere, hemisphere, cone, box, circle, edge; outward, cone, arc; random draws in today's order                                                                                              | M    |
+| 2.3 | Emitter component, storage | §6.3.4: one effect per component; typed arrays sized to `maxParticles`; swap removal; spawn sequence numbers                                                                                               | M    |
+| 2.4 | Emission                   | §6.3.5: rate, `emitParticles` with `overSeconds`; sub-frame spreading for streams only                                                                                                                     | M    |
+| 2.5 | Simulation                 | §6.3.6, §6.3.7: world and local space, bounds, `whenEmpty`, visibility                                                                                                                                     | M    |
+| 2.6 | View-facing billboards     | §6.3.9: extraction into the transparent phase with `view` and `emitter` alignment, through `createParticleMaterial`                                                                                        | M    |
 | 2.7 | Migration                  | §6.3.13: the particles and visibility demos, guides, e2e and allocation scenes; age scale removed, and the `create-component` skill's example that names it; `spawnParticleBurst`, `detachParticleEmitter` | M    |
-| 2.8 | Benchmarks and changelog   | The 2D particle stress scene measured by design 01's runner on `0.26.1` (its own version of the scene) and on the head; `#### Changed` and `#### Removed` with the migration                         | S    |
+| 2.8 | Benchmarks and changelog   | The 2D particle stress scene measured by design 01's runner on `0.26.1` (its own version of the scene) and on the head; `#### Changed` and `#### Removed` with the migration                               | S    |
 
 **Definition of done:** the spawn-equivalence test (§6.3.13) shows a
 seeded burst producing the same start values as the entity-per-particle
@@ -235,14 +237,14 @@ than on `0.26.1`.
 
 ### Phase 3: Particles in 3D
 
-| #   | Task                 | Description                                                                                    | Size |
-| --- | -------------------- | ---------------------------------------------------------------------------------------------- | ---- |
-| 3.1 | Alignments           | §6.3.9: `velocity` (stretched) and `upright` billboards                                        | S    |
-| 3.2 | Sorting              | §6.3.10: back to front by depth, then oldest first, for blended materials; none for additive and multiply | S    |
-| 3.3 | Flipbooks            | Frames over lifetime or at a frame rate                                                        | S    |
-| 3.4 | Soft particles       | §6.3.11: `UnlitMaterial.softDistance`, the shared `sceneDepth` view resource                   | M    |
+| #   | Task                 | Description                                                                                                     | Size |
+| --- | -------------------- | --------------------------------------------------------------------------------------------------------------- | ---- |
+| 3.1 | Alignments           | §6.3.9: `velocity` (stretched) and `upright` billboards                                                         | S    |
+| 3.2 | Sorting              | §6.3.10: back to front by depth, then oldest first, for blended materials; none for additive and multiply       | S    |
+| 3.3 | Flipbooks            | Frames over lifetime or at a frame rate                                                                         | S    |
+| 3.4 | Soft particles       | §6.3.11: `UnlitMaterial.softDistance`, the shared `sceneDepth` view resource                                    | M    |
 | 3.5 | Mesh particles       | §6.3.12: instanced meshes with any material and orientation, in the opaque, alpha-tested and transparent phases | M    |
-| 3.6 | Goldens, guide, demo | §6.9; `rendering-particles.md`; a 3D effects demo (fire, smoke, sparks, debris, rain)          | M    |
+| 3.6 | Goldens, guide, demo | §6.9; `rendering-particles.md`; a 3D effects demo (fire, smoke, sparks, debris, rain)                           | M    |
 
 **Definition of done:** the particle goldens pass; the soft-particle
 analytic test shows a fade along the intersection; the particle benchmark
@@ -255,19 +257,19 @@ button over a 3D target blocks it from the first release that has 3D
 targets, and there is one pointer state machine from that release on,
 with no interim rule to delete later.
 
-| #    | Task                         | Description                                                                                                                                                                                                                                          | Size |
-| ---- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 4.1  | `PointerSource`              | §6.4.3: moved to `input` with `buttonsHeld` and `isLocked` (false until Phase 5); `UiPointerSource` deleted, callers updated                                                                                                                       | S    |
-| 4.2  | Singleton, targets, rays     | §6.4.4, §6.4.5: `registerPicking`, `PickingEcsComponent`, `PointerTargetEcsComponent`, `pointerTransparentTag`, `pointerHitTestGroup`                                                                                                                | M    |
-| 4.3  | Mesh triangle trees          | `Mesh` builds design 14's `TriangleTree` on first request and releases it in `dispose`                                                                                                                                                              | S    |
-| 4.4  | Mesh hit tester              | §6.4.6.1: `raycastBounds` on the GPU scene; triangles; joint spheres for skinned meshes                                                                                                                                                             | M    |
-| 4.5  | Resolution and interaction   | §6.4.7, §6.4.8: ordering across cameras and ties; the one state machine: hover, press, click, drag with hand-off to a receiving ancestor, cancellation                                                                                             | M    |
-| 4.6  | UI hit tester and hover      | §6.4.9: canvases append hits for pointer targets; `createUiHoverEcsSystem` writes `hoveredEntity`; `createUiRaycastEcsSystem` deleted; no per-frame allocation                                                                                    | M    |
-| 4.7  | World-space canvases in 3D   | Ray against the canvas root's plane; rect space from the root's local space (the parented-canvas fix); back faces ignored                                                                                                                         | M    |
-| 4.8  | UI on pointer targets        | §6.4.10: the interactable's pointer fields move to the target; `createUiInteractionEcsSystem` deleted; navigation becomes the one writer of focus and invocation; sliders, scroll views, toggles, transitions and tooltips read targets; `blocksRaycasts` becomes the tag; `registerUiSystems` loses `pointerSource` | L |
-| 4.9  | UI migration                 | The eleven UI demos and `visibility` (§0), the `ui-text-input` and `ui-scroll-view` e2e scenes, the `ui/` and `rendering/visibility.md` guides                                                                                                    | M    |
-| 4.10 | Game queries                 | §6.4.11: `raycastMeshes`, `preparePicking`, `drawHits`                                                                                                                                                                                              | S    |
-| 4.11 | Tests, guides, changelog     | Unit and property tests; `picking-3d`, `picking-high-dpi` and `ui-world-space-3d` specs with real mouse events; allocation specs; `picking/` guides; `#### Added`, `#### Changed`, `#### Removed`, `#### Fixed`                                       | L    |
+| #    | Task                       | Description                                                                                                                                                                                                                                                                                                          | Size |
+| ---- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 4.1  | `PointerSource`            | §6.4.3: moved to `input` with `buttonsHeld` and `isLocked` (false until Phase 5); `UiPointerSource` deleted, callers updated                                                                                                                                                                                         | S    |
+| 4.2  | Singleton, targets, rays   | §6.4.4, §6.4.5: `registerPicking`, `PickingEcsComponent`, `PointerTargetEcsComponent`, `pointerTransparentTag`, `pointerHitTestGroup`                                                                                                                                                                                | M    |
+| 4.3  | Mesh triangle trees        | `Mesh` builds design 14's `TriangleTree` on first request and releases it in `dispose`                                                                                                                                                                                                                               | S    |
+| 4.4  | Mesh hit tester            | §6.4.6.1: `raycastBounds` on the GPU scene; triangles; joint spheres for skinned meshes                                                                                                                                                                                                                              | M    |
+| 4.5  | Resolution and interaction | §6.4.7, §6.4.8: ordering across cameras and ties; the one state machine: hover, press, click, drag with hand-off to a receiving ancestor, cancellation                                                                                                                                                               | M    |
+| 4.6  | UI hit tester and hover    | §6.4.9: canvases append hits for pointer targets; `createUiHoverEcsSystem` writes `hoveredEntity`; `createUiRaycastEcsSystem` deleted; no per-frame allocation                                                                                                                                                       | M    |
+| 4.7  | World-space canvases in 3D | Ray against the canvas root's plane; rect space from the root's local space (the parented-canvas fix); back faces ignored                                                                                                                                                                                            | M    |
+| 4.8  | UI on pointer targets      | §6.4.10: the interactable's pointer fields move to the target; `createUiInteractionEcsSystem` deleted; navigation becomes the one writer of focus and invocation; sliders, scroll views, toggles, transitions and tooltips read targets; `blocksRaycasts` becomes the tag; `registerUiSystems` loses `pointerSource` | L    |
+| 4.9  | UI migration               | The eleven UI demos and `visibility` (§0), the `ui-text-input` and `ui-scroll-view` e2e scenes, the `ui/` and `rendering/visibility.md` guides                                                                                                                                                                       | M    |
+| 4.10 | Game queries               | §6.4.11: `raycastMeshes`, `preparePicking`, `drawHits`                                                                                                                                                                                                                                                               | S    |
+| 4.11 | Tests, guides, changelog   | Unit and property tests; `picking-3d`, `picking-high-dpi` and `ui-world-space-3d` specs with real mouse events; allocation specs; `picking/` guides; `#### Added`, `#### Changed`, `#### Removed`, `#### Fixed`                                                                                                      | L    |
 
 **Definition of done:** every existing UI e2e spec passes with only its
 scene's registration and target components updated; in the `picking-3d`
@@ -283,11 +285,11 @@ slower than the baseline and the UI pointer path allocates nothing.
 
 ### Phase 5: Colliders and pointer lock
 
-| #   | Task                     | Description                                                                                                                       | Size |
-| --- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 5.1 | Collider hit testers     | §6.4.6.2, §6.4.6.3: design 14's `castRayAll` (3D) and `overlapPoint2d` (2D, added here), registered by the physics modules         | S    |
+| #   | Task                     | Description                                                                                                                            | Size |
+| --- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 5.1 | Collider hit testers     | §6.4.6.2, §6.4.6.3: design 14's `castRayAll` (3D) and `overlapPoint2d` (2D, added here), registered by the physics modules             | S    |
 | 5.2 | Pointer lock and motion  | §6.4.3: `pointerLock`, `isLocked`, raw movement, `MouseMotionBinding`; the locking press is consumed; `MouseInputSource.delta` removed | M    |
-| 5.3 | Tests, guides, changelog | Collider picking unit tests; `pointer-lock` spec; `input/mouse.md`, `picking/index.md`; `#### Added`, `#### Removed`                 | S    |
+| 5.3 | Tests, guides, changelog | Collider picking unit tests; `pointer-lock` spec; `input/mouse.md`, `picking/index.md`; `#### Added`, `#### Removed`                   | S    |
 
 **Definition of done:** an invisible collider on a target takes clicks; a
 2D collider under a pointer target in an orthographic view is hovered and
@@ -315,12 +317,12 @@ checked against it.
 Features the sample game doesn't need, kept out of the path to the M6
 proof. Each task ships on its own.
 
-| #   | Task                  | Description                                                                                                                                      | Size |
-| --- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
-| 7.1 | Distance emission     | §6.3.5: `ratePerMeter`, spread along the emitter's path                                                                                          | S    |
-| 7.2 | Prewarm               | `prewarmSeconds`: the first run simulates that long in 1/30 s steps                                                                              | S    |
-| 7.3 | Mesh particle shadows | §6.3.12: `castsShadows`; instance streams in design 09's shadow views; moving casters invalidate cached local shadow tiles                       | M    |
-| 7.4 | Tests, guides, golden | Distance emission per meter at any speed; prewarming equals simulating; a mesh-particle shadow golden; `effects.md`, `rendering-particles.md`; `#### Added` | S |
+| #   | Task                  | Description                                                                                                                                                 | Size |
+| --- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 7.1 | Distance emission     | §6.3.5: `ratePerMeter`, spread along the emitter's path                                                                                                     | S    |
+| 7.2 | Prewarm               | `prewarmSeconds`: the first run simulates that long in 1/30 s steps                                                                                         | S    |
+| 7.3 | Mesh particle shadows | §6.3.12: `castsShadows`; instance streams in design 09's shadow views; moving casters invalidate cached local shadow tiles                                  | M    |
+| 7.4 | Tests, guides, golden | Distance emission per meter at any speed; prewarming equals simulating; a mesh-particle shadow golden; `effects.md`, `rendering-particles.md`; `#### Added` | S    |
 
 **Definition of done:** a fast emitter with `ratePerMeter` leaves evenly
 spaced particles at 20 to 240 fps; a prewarmed emitter's first frame
@@ -332,46 +334,46 @@ emitter casts.
 
 ## 4. Decision log
 
-| #    | Decision                                   | Options                                                                                                                                                                                                    | Chosen | Rationale, trade-offs, assumptions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ---- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GP1  | How many listeners                         | (a) One `AudioListenerEcsComponent` per world, enforced; (b) several, with an `active` flag; (c) a singleton component                                                                                     | (a)    | Web Audio has one listener per context, and Unity warns on two. The listener belongs on a camera or character entity with a transform, which a singleton (an entity of its own, design 03 §6.4) can't be. The factory throws on a second; the sound system throws if it finds two added another way. Switching listeners is removing one and adding the other.                                                                                                                                                            |
-| GP2  | Where spatial settings live                | (a) A `SpatialSoundEcsComponent` next to the `SoundEcsComponent`; (b) fields on `SoundEcsComponent`; (c) separate 2D and 3D components                                                                     | (a)    | Composition: a sound without it costs no panner and reads exactly as today. Adding or removing it is structural, so journals see it, and the sound keeps playing while its panner is inserted or removed. Godot splits players by kind; Unity blends with a slider on one component. One component with a `panning` value covers 2D and 3D, following README §4.5 (audio has no suffix).                                                                                                                                  |
-| GP3  | How positions reach Web Audio | (a) Each panner gets the sound's position and orientation relative to the listener; the Web Audio listener stays at its default; (b) write the listener's position and orientation to `AudioListener` | (a) | `AudioListener`'s position and orientation parameters aren't available in Firefox (assumption, from the compatibility tables and PlayCanvas's reports; only the deprecated `setPosition` exists there), so (b) needs two code paths and can't be smoothed in Firefox. Relative positions are also the audio form of README §4.3: `float32` parameters stay precise near the listener in a world 10,000 km wide. Cost: a moving listener updates every spatial sound, which is 3 parameter calls per sound, 6 with a cone (§6.8.1). |
-| GP4  | Panning for 2D | (a) A `StereoPannerNode` panned by the listener-space X offset over `stereoWidth`, with attenuation computed on the CPU by the same distance models and applied by an attenuation `GainNode` of the spatial stage's own; (b) a `PannerNode` with sounds in the XY plane; (c) attenuation written to the instance's gain | (a) | With (b), a listener in the plane of its sounds (a 2D camera at `z = 0`) hears any sound slightly to the right at 90° azimuth, fully right: equal-power panning projects onto the listener's horizontal plane. Godot's 2D player pans by screen-relative X the same way (a). (c) would give the instance's gain two writers: `setVolume` ramps it for volume changes and `stop` fades it out (`sound-instance.ts`), and an attenuation write would cancel either. The spatial stage owns its own node, as the `PannerNode` owns its distance gain in 3D. |
-| GP5  | Doppler                                    | (a) A per-sound `dopplerLevel`, default 0, applied as `detune`; (b) none; (c) on by default as in Unity                                                                                                    | (a)    | The Web Audio specification removed its built-in doppler, so any doppler is computed. On by default shifts the pitch of every voice and footstep whenever the camera moves, which is why Godot defaults it off. `detune` leaves `rate` exact, so `positionSeconds` stays exact for sounds without doppler and drifts by the shift's integral for those with it (documented).                                                                                                                                              |
-| GP6  | Sound system state                         | (a) Removals from journals; playing instances and the values last applied to them in a table the mixer owns per world; the playback position on the component; (b) keep the closure map                    | (a)    | Design 03's state rule. An instance and the values applied to it are a derived cache of an audio resource, which belongs to its service (README §4.4). Where a paused sound resumes changes behavior and games want to read it, so it's a component output.                                                                                                                                                                                                                                                               |
-| GP7  | When sounds update                         | (a) One system in `postUpdate` after transform propagation, for playback and spatial processing; (b) playback in `update`, spatial processing in `postUpdate`                                              | (a)    | A sound started before its panner has a position would play its first block from the listener's own position. One system configures the panner before `start`. Sounds added in `update` or a fixed step still start the same frame.                                                                                                                                                                                                                                                                                       |
-| GP8  | Particle storage                           | (a) Structure-of-arrays storage owned by the emitter, inside its component; (b) an entity per particle, as today                                                                                           | (a)    | Every engine with a particle system stores particles in arrays its system owns (Unity, Godot, Unreal's Niagara, the Hanabi crate for Bevy). An entity per particle pays a structural change per spawn and expiry, per-particle transform propagation and per-particle extraction. State stays in a component (README §4.4). Trade-off: particles can't carry game components; `onParticleSpawned` goes, and nothing in `/src`, `/demo`, `/e2e` or the docs site uses it.                                                  |
-| GP9  | Effect description                         | (a) An immutable `ParticleEffect`, validated and baked once, shared by any number of emitters; (b) mutable per-emitter options with `setOptions`, as today                                                 | (a)    | Fifty torches share one fire. Curves and gradients bake to lookup tables once, which a mutable object would have to re-bake on every write. Changing an effect is assigning another one (`emitter.effect = brighter`). Godot's process material is shared the same way.                                                                                                                                                                                                                                                   |
-| GP10 | Emitters per entity                        | (a) One effect per component; several effects on child entities; (b) a map of named emitters per component, as today                                                                                       | (a)    | In 3D each effect wants its own offset (a muzzle flash and its smoke), which a child entity gives. One emitter per component also means one draw item, one bounds and one sort per component. Unity and Godot attach one particle system per object.                                                                                                                                                                                                                                                                      |
-| GP11 | Shapes and directions                      | (a) A spawn shape for positions and a direction rule (outward, cone, arc); defaults are today's point and full circle in the emitter's XY plane; (b) direction always from the shape, as Unity's shapes do | (a)    | Keeps today's `directionRange` and `emitOutward` expressible one-to-one, so 2D effects migrate without changing their look, and lets a 3D shape emit in any rule. Defaults are 2D because a 2D effect with a 3D default would drift in `z` (README §2: 2D stays first-class); 3D effects set `direction`.                                                                                                                                                                                                                 |
-| GP12 | Which way shapes point                     | (a) Cones, hemispheres and cone directions open along the emitter's `-Z`; planar shapes lie in its XY plane; (b) along `+Y`                                                                                | (a)    | README §4.1: anything that aims uses `-Z`, as spot lights and sound cones do. A fountain rotates its emitter up. XY planar shapes are where 2D effects already live.                                                                                                                                                                                                                                                                                                                                                      |
-| GP13 | How particles draw                         | (a) A per-view instance stream (like sprites, design 07 S4) through design 08 materials with particle instance variants; (b) GPU scene slots per particle                                                  | (a)    | Particles change every frame, so a persistent GPU copy would be rewritten whole each frame. Instance variants of the engine shader library mean `UnlitMaterial`, `PbrMaterial` and hooked materials all draw particles, with lights, shadows and fog intact.                                                                                                                                                                                                                                                              |
-| GP14 | Sorting | (a) Each emitter is one transparent item; inside it, blended materials sort back to front per view by depth, then oldest first by spawn sequence; additive and multiply don't sort; (b) one global per-particle sort; (c) depth then normalized age | (a) | A global sort of every particle against every transparent surface costs a sort over everything and breaks batching. Per-emitter sorting is what Unity and Godot do; overlapping emitters can pop, which `layer` resolves. Additive and multiply blending are order-independent, so sorting them is wasted work. Normalized age (c) puts a 1 s particle at 0.6 of its life above a 3 s particle spawned later, so a 2D view, where depths tie, wouldn't reproduce "later spawns on top". The spawn sequence is absolute-age order and also breaks ties within a burst. |
-| GP15 | Soft particles                             | (a) A shared, single-sample `sceneDepth` view resource after the prepass, read by materials with `softDistance`; (b) a depth copy owned by the particle module; (c) none                                   | (a)    | Hard lines where smoke meets the ground are the most visible particle artifact in 3D. WebGL2 can't sample the depth attachment the transparent pass is testing against, so a copy or resolve is needed. Design 13 already resolves depth for ambient occlusion; sharing one resource means at most one copy per view.                                                                                                                                                                                                     |
-| GP16 | Where particles simulate                   | (a) On the CPU, in `postUpdate` after propagation, at the frame delta; (b) transform feedback on the GPU; (c) the fixed step                                                                               | (a)    | Emitters on animated joints need this frame's world transforms. Particles are presentation, so they follow the frame's (scaled) delta as Unity's and Godot's CPU particles do. GPU simulation waits for WebGPU compute (open question 5).                                                                                                                                                                                                                                                                                 |
-| GP17 | Hidden and removed emitters                | (a) Hidden: no spawning, no drawing, simulation continues; removed: particles go with it; `detachParticleEmitter` lets them finish; (b) particles outlive the emitter, as entities do today                | (a)    | Particles belong to the emitter, as in Unity and Godot. The common case for (b), a trail on a projectile that's destroyed, is `detachParticleEmitter` plus `whenEmpty: 'removeEntity'`. The visibility demo's sparks now hide with their beacon (§6.3.13).                                                                                                                                                                                                                                                                |
-| GP18 | How picking finds what's under the pointer | (a) CPU rays against bounds, triangles and colliders; (b) a GPU ID buffer read back asynchronously                                                                                                         | (a)    | Runtime picking in Unity, Godot and Unreal is ray-based. A WebGL2 readback is a frame or more late (or stalls), gives no hit point or normal without more targets, can't hit invisible colliders, and costs a draw pass. CPU rays answer the same frame with point, normal, triangle and joint. Trade-off: alpha-tested texels and vertex-hook displacement aren't exact (open question 6).                                                                                                                               |
-| GP19 | Picking architecture | (a) One pipeline: rays per camera, hit testers owned by the modules that own the geometry, one resolution, one interaction system; (b) separate pickers for UI, meshes and physics | (a) | Bevy's picking (backends, one hover map) and Unity's event system (one raycaster per camera, one sorted result) work this way. It's the only way a world-space canvas and a mesh in front of it, or a screen UI over a 3D target, resolve correctly. Games add hit testers for their own geometry (height-map terrain, voxels). GP30 covers the state machine that consumes the result. |
-| GP20 | What blocks the pointer                    | (a) Every visible mesh and every non-sensor collider; only targets react; (b) only targets are tested                                                                                                      | (a)    | With (b) a click goes through a wall to a target behind it. Bevy tests every visible mesh by default; Unity and Godot test every collider. Cost stays proportional to what's along the ray (bounds tree first). `pointerTransparentTag` opts an entity out.                                                                                                                                                                                                                                                               |
-| GP21 | Skinned meshes                             | (a) Design 12's per-joint bounding spheres, posed by the joints' world matrices; (b) CPU skinning with `computeDeformedPositions` per pick                                                                 | (a)    | Joint spheres follow the pose, report which joint was hit, and cost about 60 sphere tests per character on the ray. CPU skinning of a 10,000-vertex character costs about half a millisecond per candidate. Games needing exact hits (head shots) use per-joint colliders, such as design 14's rag doll bodies, as Unity and Unreal games use physics hit boxes.                                                                                                                                                          |
-| GP22 | When picking runs                          | (a) `preUpdate`, after input, against last frame's transforms, layout and GPU scene; (b) `postUpdate`, after propagation                                                                                   | (a)    | The player clicked on last frame's image, which is exactly what (a) tests, and game code in `update` sees this frame's clicks. Bevy picks in `PreUpdate` for the same reason. Colliders are at the last fixed step's pose, which can differ from the interpolated drawn pose by one step of motion (documented).                                                                                                                                                                                                          |
-| GP23 | Which entity gets pointer events | (a) The nearest of the hit entity and its ancestors with a `PointerTargetEcsComponent`; a drag goes to the nearest of the pressed target and its ancestors with `receivesDrag`; (b) every ancestor in turn (bubbling) | (a) | A glTF model is a tree of mesh entities; one target on its root makes the whole model clickable. Unity routes each event to the first handler up the hierarchy the same way, including a drag that starts on a button in a scroll view going to the scroll view, which is today's UI rule. Bubbling to every ancestor adds ordering and stop-propagation rules nothing needs yet. |
-| GP24 | Pointer lock                               | (a) The game sets `pointerLock: 'locked'`; the mouse source requests the lock in its next press handler, with raw movement where supported, and consumes that press; (b) a `requestPointerLock()` call     | (a)    | Browsers require user activation for the request, and game code runs in systems, not event handlers. Unity's web builds defer a cursor lock to the next user-initiated event for the same reason (assumption, from its documentation). The press that captures the mouse is the player asking for control, not an action. Raw movement (`unadjustedMovement`) is Chromium-only (assumption); elsewhere the lock falls back to accelerated movement.                                                                       |
-| GP25 | Mouse motion as an action | (a) `MouseMotionBinding`, the frame's movement with `y` up, and `MouseInputSource.delta` removed; (b) a third cursor value type on `MouseAxis2dBinding`; (c) keep `delta` (Y-down) beside the binding | (a) | Positions are DOM measurements (Y-down, as `MouseAxis2dBinding` reports); motion feeds look actions in engine space, where up is positive (`AGENTS.md`: sources translate at the boundary). One binding type with two conventions would be a trap. `delta` would be a second, Y-down way to read the same movement, and nothing in `/src`, `/demo`, `/e2e` or the docs site reads it (only its own test), so it goes. |
-| GP26 | Broad phase for mesh picking               | (a) The GPU scene's static tree and dynamic sphere arrays (design 06 §6.8); (b) a separate tree owned by picking                                                                                           | (a)    | The GPU scene already keeps every mesh's world bounds, hidden flags and categories, updated only on change. A second tree would duplicate that upkeep. Dynamic spheres are scanned brute force, which is how culling scans them (R9); 10,000 ray-sphere tests cost tens of microseconds.                                                                                                                                                                                                                                  |
-| GP27 | Triangle trees | (a) Design 14's `TriangleTree` in `src/math/geometry`, built for a `Mesh` on first use and kept with its CPU data, with `preparePicking` to build them behind a loading screen; (b) built for every mesh at load; (c) a picking-specific tree | (a) | Most meshes are never under the pointer; building for all would add to B9's load time. Three.js users attach trees to geometries the same way (three-mesh-bvh). The tree is derived from the mesh's own data, so the mesh owns it. One implementation serves mesh colliders and picking; design 14 places it in `math` from M5, so neither module depends on the other and nothing moves later. Open question 3 covers moving builds to workers. |
-| GP28 | The age-scale component                    | (a) Remove it; (b) keep it                                                                                                                                                                                 | (a)    | Its only user was particles, which now scale through `sizeOverLifetime`. A game scaling an entity over time uses a property animation (design 12). Removing what a fix made unnecessary is the change philosophy.                                                                                                                                                                                                                                                                                                         |
-| GP29 | The sample game's content                  | (a) A level built from primitives and a few CC0 assets, one CC0 animated glTF character; (b) a purchased or bespoke asset set                                                                              | (a)    | Assets must be redistributable on the docs site. Primitives keep the download small and show design 08's meshes. Assumption: a suitable CC0 rigged character with idle, walk, run and jump clips exists (Kenney and Quaternius publish such packs); open question 8.                                                                                                                                                                                                                                                      |
-| GP30 | How many pointer state machines | (a) One `PointerTargetEcsComponent` and one pointer interaction system for UI elements and world objects; UI keeps focus, navigation and invocation; (b) a picking state machine for world targets beside UI's own on `UiInteractableEcsComponent` | (a) | The first draft had (b): two components with the same events, threshold, hover, press and capture, and two systems running the same rules for one pointer. Unity's event system and Bevy's picking run one state machine for UI and world objects. With one, the rules UI already gets right (enter and press in one frame, capture until release, the drag threshold, hand-off to a receiving ancestor, cancellation on hide) exist once, and a world-space canvas and the mesh behind it can't both believe they're hovered. Trade-off: a UI element that reacts to the pointer carries two components (the `create*` factories add both), and `createUiInteractionEcsSystem` and the UI raycast are deleted, not ported. |
-| GP31 | Disabling pointer reactions | (a) A pointer target has no `interactable` flag: it always hovers, presses and blocks, and whoever reacts checks its own state (UI controls their interactable and canvas groups, game listeners their own); (b) an `interactable` flag on the target as well as on the UI interactable | (a) | With (b) a disabled button would need two flags set, or one system writing the other's input. Unity's event system delivers pointer events to a non-interactable `Selectable`, which ignores them; Bevy's `Pickable` controls hovering and blocking, not pressing. A UI element's visual state already shows `disabled` before `pressed` (`ui-interaction-visual-state.ts`), invocation checks interactability, and sliders and scroll views check it before moving (as Unity's `Slider.MayDrag` does). Behavior change: a drag starting inside a disabled scroll view is handed to it and ignored, where today the pressed element keeps it; neither invokes. |
-| GP32 | Drag threshold units | (a) CSS pixels of pointer movement on the page; (b) the canvas's reference pixels, as UI's `dragThreshold` is today | (a) | A threshold measures the player's hand, which moves on the screen. A 3D target has no canvas, and a world-space canvas's units shrink with distance from the camera, so (b) would make the same flick a drag up close and a click far away. Unity's `pixelDragThreshold` is in screen pixels. On a screen-space canvas whose reference resolution matches the page, nothing changes; sliders and scroll views use 0 either way. |
-| GP33 | How hit testers report | (a) Append to `picking.hits`, a per-frame message stream (design 03 §6.5): many systems append, none edits an appended hit, the rays system clears it once per frame, the resolution reads it; each hit names its `tester` as a string; (b) one component per hit tester; (c) a closed `kind` union | (a) | Bevy's backends send `PointerHits` messages that the hover system reads, and Unity's raycasters return results naming their module. A per-tester component would make resolution know every tester, which game testers (terrain, voxels) couldn't join. A closed `kind` union of mesh, collider and UI leaves game testers no value; a string names any tester, and only the UI hover system compares it (with `'ui'`). |
-| GP34 | How moving audio parameters update | (a) Position, orientation and pan parameters at `k-rate`, moved each frame by a linear ramp that ends one frame delta later; (b) `setTargetAtTime` each frame on `a-rate` parameters (the first draft); (c) values set once per frame with no smoothing | (a) | A parameter with automation in progress puts a `PannerNode` on its per-sample path in Chromium and WebKit, which recomputes azimuth, elevation and distance gain for every sample; an exponential target never finishes, so (b) keeps every panner there for good, at a cost the main-thread budget never sees. `k-rate` gives one value per 128-sample block, and a ramp that ends leaves still sounds with no automation at all. Three.js's positional audio ramps the same way. (c) steps the gain every frame and clicks. Assumption: where a browser doesn't implement `automationRate`, the assignment has no effect and the render benchmark reports that browser's cost. |
-| GP35 | Which spawns spread over the frame | (a) Streams only: rate, distance and `overSeconds` emission; a burst spawns at the current pose with age 0; (b) every spawn | (a) | Spreading turns a stream into an even trail behind a fast emitter. A burst is an event at one instant (an explosion, an impact); spreading it would stagger its particles' ages and smear it along the emitter's path. Unity and Godot emit bursts at one time and interpolate only continuous emission. |
-| GP36 | A billboard's height | (a) `aspectRatio` (width over height, default 1) on the effect's billboard settings; (b) from the texture's or flipbook frame's aspect | (a) | The material is any design 08 material: a `PbrMaterial`, a hooked material or a material with several textures has no one texture to measure, and a texture may be shared by sprites of other shapes. An explicit value is the same for every material. Migrated 2D effects set it from the sprite's width and height (§6.3.13). |
-| GP37 | Distance emission, prewarm and mesh-particle shadows | (a) A seventh phase after the sample game; (b) inside the particle phases before it | (a) | The M6 proof doesn't use them: the sample game's dust is bursts, its fire can start cold, and its debris doesn't need shadows. Each is small and additive, so it ships on its own without holding up M6, and remains part of this design. |
-| GP38 | Proving 2D effects keep their look | (a) A data-level test: a seeded burst produces the same start values as the entity-per-particle code; the 2D golden is re-captured with the reasons for each difference; (b) the new golden must match the old one within the default tolerance (the first draft) | (a) | (b) can't hold: stream emission now spreads spawns over the frame (GP35) and the draw path changes from sprite entities to billboards, so pixels change for reasons that are intended. What must not change is what each particle starts with, which (a) checks exactly: shapes, directions and ranges draw random numbers in today's order (§6.3.3), and a new draw (a color blend) happens only when an effect uses it. Design 01 §6.4.3 makes a re-captured golden show old and new images with the reason. |
+| #    | Decision                                             | Options                                                                                                                                                                                                                                                                                                                 | Chosen | Rationale, trade-offs, assumptions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GP1  | How many listeners                                   | (a) One `AudioListenerEcsComponent` per world, enforced; (b) several, with an `active` flag; (c) a singleton component                                                                                                                                                                                                  | (a)    | Web Audio has one listener per context, and Unity warns on two. The listener belongs on a camera or character entity with a transform, which a singleton (an entity of its own, design 03 §6.4) can't be. The factory throws on a second; the sound system throws if it finds two added another way. Switching listeners is removing one and adding the other.                                                                                                                                                                                                                                                                                                                                                              |
+| GP2  | Where spatial settings live                          | (a) A `SpatialSoundEcsComponent` next to the `SoundEcsComponent`; (b) fields on `SoundEcsComponent`; (c) separate 2D and 3D components                                                                                                                                                                                  | (a)    | Composition: a sound without it costs no panner and reads exactly as today. Adding or removing it is structural, so journals see it, and the sound keeps playing while its panner is inserted or removed. Godot splits players by kind; Unity blends with a slider on one component. One component with a `panning` value covers 2D and 3D, following README §4.5 (audio has no suffix).                                                                                                                                                                                                                                                                                                                                    |
+| GP3  | How positions reach Web Audio                        | (a) Each panner gets the sound's position and orientation relative to the listener; the Web Audio listener stays at its default; (b) write the listener's position and orientation to `AudioListener`                                                                                                                   | (a)    | `AudioListener`'s position and orientation parameters aren't available in Firefox (assumption, from the compatibility tables and PlayCanvas's reports; only the deprecated `setPosition` exists there), so (b) needs two code paths and can't be smoothed in Firefox. Relative positions are also the audio form of README §4.3: `float32` parameters stay precise near the listener in a world 10,000 km wide. Cost: a moving listener updates every spatial sound, which is 3 parameter calls per sound, 6 with a cone (§6.8.1).                                                                                                                                                                                          |
+| GP4  | Panning for 2D                                       | (a) A `StereoPannerNode` panned by the listener-space X offset over `stereoWidth`, with attenuation computed on the CPU by the same distance models and applied by an attenuation `GainNode` of the spatial stage's own; (b) a `PannerNode` with sounds in the XY plane; (c) attenuation written to the instance's gain | (a)    | With (b), a listener in the plane of its sounds (a 2D camera at `z = 0`) hears any sound slightly to the right at 90° azimuth, fully right: equal-power panning projects onto the listener's horizontal plane. Godot's 2D player pans by screen-relative X the same way (a). (c) would give the instance's gain two writers: `setVolume` ramps it for volume changes and `stop` fades it out (`sound-instance.ts`), and an attenuation write would cancel either. The spatial stage owns its own node, as the `PannerNode` owns its distance gain in 3D.                                                                                                                                                                    |
+| GP5  | Doppler                                              | (a) A per-sound `dopplerLevel`, default 0, applied as `detune`; (b) none; (c) on by default as in Unity                                                                                                                                                                                                                 | (a)    | The Web Audio specification removed its built-in doppler, so any doppler is computed. On by default shifts the pitch of every voice and footstep whenever the camera moves, which is why Godot defaults it off. `detune` leaves `rate` exact, so `positionSeconds` stays exact for sounds without doppler and drifts by the shift's integral for those with it (documented).                                                                                                                                                                                                                                                                                                                                                |
+| GP6  | Sound system state                                   | (a) Removals from journals; playing instances and the values last applied to them in a table the mixer owns per world; the playback position on the component; (b) keep the closure map                                                                                                                                 | (a)    | Design 03's state rule. An instance and the values applied to it are a derived cache of an audio resource, which belongs to its service (README §4.4). Where a paused sound resumes changes behavior and games want to read it, so it's a component output.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| GP7  | When sounds update                                   | (a) One system in `postUpdate` after transform propagation, for playback and spatial processing; (b) playback in `update`, spatial processing in `postUpdate`                                                                                                                                                           | (a)    | A sound started before its panner has a position would play its first block from the listener's own position. One system configures the panner before `start`. Sounds added in `update` or a fixed step still start the same frame.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| GP8  | Particle storage                                     | (a) Structure-of-arrays storage owned by the emitter, inside its component; (b) an entity per particle, as today                                                                                                                                                                                                        | (a)    | Every engine with a particle system stores particles in arrays its system owns (Unity, Godot, Unreal's Niagara, the Hanabi crate for Bevy). An entity per particle pays a structural change per spawn and expiry, per-particle transform propagation and per-particle extraction. State stays in a component (README §4.4). Trade-off: particles can't carry game components; `onParticleSpawned` goes, and nothing in `/src`, `/demo`, `/e2e` or the docs site uses it.                                                                                                                                                                                                                                                    |
+| GP9  | Effect description                                   | (a) An immutable `ParticleEffect`, validated and baked once, shared by any number of emitters; (b) mutable per-emitter options with `setOptions`, as today                                                                                                                                                              | (a)    | Fifty torches share one fire. Curves and gradients bake to lookup tables once, which a mutable object would have to re-bake on every write. Changing an effect is assigning another one (`emitter.effect = brighter`). Godot's process material is shared the same way.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| GP10 | Emitters per entity                                  | (a) One effect per component; several effects on child entities; (b) a map of named emitters per component, as today                                                                                                                                                                                                    | (a)    | In 3D each effect wants its own offset (a muzzle flash and its smoke), which a child entity gives. One emitter per component also means one draw item, one bounds and one sort per component. Unity and Godot attach one particle system per object.                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| GP11 | Shapes and directions                                | (a) A spawn shape for positions and a direction rule (outward, cone, arc); defaults are today's point and full circle in the emitter's XY plane; (b) direction always from the shape, as Unity's shapes do                                                                                                              | (a)    | Keeps today's `directionRange` and `emitOutward` expressible one-to-one, so 2D effects migrate without changing their look, and lets a 3D shape emit in any rule. Defaults are 2D because a 2D effect with a 3D default would drift in `z` (README §2: 2D stays first-class); 3D effects set `direction`.                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| GP12 | Which way shapes point                               | (a) Cones, hemispheres and cone directions open along the emitter's `-Z`; planar shapes lie in its XY plane; (b) along `+Y`                                                                                                                                                                                             | (a)    | README §4.1: anything that aims uses `-Z`, as spot lights and sound cones do. A fountain rotates its emitter up. XY planar shapes are where 2D effects already live.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| GP13 | How particles draw                                   | (a) A per-view instance stream (like sprites, design 07 S4) through design 08 materials with particle instance variants; (b) GPU scene slots per particle                                                                                                                                                               | (a)    | Particles change every frame, so a persistent GPU copy would be rewritten whole each frame. Instance variants of the engine shader library mean `UnlitMaterial`, `PbrMaterial` and hooked materials all draw particles, with lights, shadows and fog intact.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| GP14 | Sorting                                              | (a) Each emitter is one transparent item; inside it, blended materials sort back to front per view by depth, then oldest first by spawn sequence; additive and multiply don't sort; (b) one global per-particle sort; (c) depth then normalized age                                                                     | (a)    | A global sort of every particle against every transparent surface costs a sort over everything and breaks batching. Per-emitter sorting is what Unity and Godot do; overlapping emitters can pop, which `layer` resolves. Additive and multiply blending are order-independent, so sorting them is wasted work. Normalized age (c) puts a 1 s particle at 0.6 of its life above a 3 s particle spawned later, so a 2D view, where depths tie, wouldn't reproduce "later spawns on top". The spawn sequence is absolute-age order and also breaks ties within a burst.                                                                                                                                                       |
+| GP15 | Soft particles                                       | (a) A shared, single-sample `sceneDepth` view resource after the prepass, read by materials with `softDistance`; (b) a depth copy owned by the particle module; (c) none                                                                                                                                                | (a)    | Hard lines where smoke meets the ground are the most visible particle artifact in 3D. WebGL2 can't sample the depth attachment the transparent pass is testing against, so a copy or resolve is needed. Design 13 already resolves depth for ambient occlusion; sharing one resource means at most one copy per view.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| GP16 | Where particles simulate                             | (a) On the CPU, in `postUpdate` after propagation, at the frame delta; (b) transform feedback on the GPU; (c) the fixed step                                                                                                                                                                                            | (a)    | Emitters on animated joints need this frame's world transforms. Particles are presentation, so they follow the frame's (scaled) delta as Unity's and Godot's CPU particles do. GPU simulation waits for WebGPU compute (open question 5).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| GP17 | Hidden and removed emitters                          | (a) Hidden: no spawning, no drawing, simulation continues; removed: particles go with it; `detachParticleEmitter` lets them finish; (b) particles outlive the emitter, as entities do today                                                                                                                             | (a)    | Particles belong to the emitter, as in Unity and Godot. The common case for (b), a trail on a projectile that's destroyed, is `detachParticleEmitter` plus `whenEmpty: 'removeEntity'`. The visibility demo's sparks now hide with their beacon (§6.3.13).                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| GP18 | How picking finds what's under the pointer           | (a) CPU rays against bounds, triangles and colliders; (b) a GPU ID buffer read back asynchronously                                                                                                                                                                                                                      | (a)    | Runtime picking in Unity, Godot and Unreal is ray-based. A WebGL2 readback is a frame or more late (or stalls), gives no hit point or normal without more targets, can't hit invisible colliders, and costs a draw pass. CPU rays answer the same frame with point, normal, triangle and joint. Trade-off: alpha-tested texels and vertex-hook displacement aren't exact (open question 6).                                                                                                                                                                                                                                                                                                                                 |
+| GP19 | Picking architecture                                 | (a) One pipeline: rays per camera, hit testers owned by the modules that own the geometry, one resolution, one interaction system; (b) separate pickers for UI, meshes and physics                                                                                                                                      | (a)    | Bevy's picking (backends, one hover map) and Unity's event system (one raycaster per camera, one sorted result) work this way. It's the only way a world-space canvas and a mesh in front of it, or a screen UI over a 3D target, resolve correctly. Games add hit testers for their own geometry (height-map terrain, voxels). GP30 covers the state machine that consumes the result.                                                                                                                                                                                                                                                                                                                                     |
+| GP20 | What blocks the pointer                              | (a) Every visible mesh and every non-sensor collider; only targets react; (b) only targets are tested                                                                                                                                                                                                                   | (a)    | With (b) a click goes through a wall to a target behind it. Bevy tests every visible mesh by default; Unity and Godot test every collider. Cost stays proportional to what's along the ray (bounds tree first). `pointerTransparentTag` opts an entity out.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| GP21 | Skinned meshes                                       | (a) Design 12's per-joint bounding spheres, posed by the joints' world matrices; (b) CPU skinning with `computeDeformedPositions` per pick                                                                                                                                                                              | (a)    | Joint spheres follow the pose, report which joint was hit, and cost about 60 sphere tests per character on the ray. CPU skinning of a 10,000-vertex character costs about half a millisecond per candidate. Games needing exact hits (head shots) use per-joint colliders, such as design 14's rag doll bodies, as Unity and Unreal games use physics hit boxes.                                                                                                                                                                                                                                                                                                                                                            |
+| GP22 | When picking runs                                    | (a) `preUpdate`, after input, against last frame's transforms, layout and GPU scene; (b) `postUpdate`, after propagation                                                                                                                                                                                                | (a)    | The player clicked on last frame's image, which is exactly what (a) tests, and game code in `update` sees this frame's clicks. Bevy picks in `PreUpdate` for the same reason. Colliders are at the last fixed step's pose, which can differ from the interpolated drawn pose by one step of motion (documented).                                                                                                                                                                                                                                                                                                                                                                                                            |
+| GP23 | Which entity gets pointer events                     | (a) The nearest of the hit entity and its ancestors with a `PointerTargetEcsComponent`; a drag goes to the nearest of the pressed target and its ancestors with `receivesDrag`; (b) every ancestor in turn (bubbling)                                                                                                   | (a)    | A glTF model is a tree of mesh entities; one target on its root makes the whole model clickable. Unity routes each event to the first handler up the hierarchy the same way, including a drag that starts on a button in a scroll view going to the scroll view, which is today's UI rule. Bubbling to every ancestor adds ordering and stop-propagation rules nothing needs yet.                                                                                                                                                                                                                                                                                                                                           |
+| GP24 | Pointer lock                                         | (a) The game sets `pointerLock: 'locked'`; the mouse source requests the lock in its next press handler, with raw movement where supported, and consumes that press; (b) a `requestPointerLock()` call                                                                                                                  | (a)    | Browsers require user activation for the request, and game code runs in systems, not event handlers. Unity's web builds defer a cursor lock to the next user-initiated event for the same reason (assumption, from its documentation). The press that captures the mouse is the player asking for control, not an action. Raw movement (`unadjustedMovement`) is Chromium-only (assumption); elsewhere the lock falls back to accelerated movement.                                                                                                                                                                                                                                                                         |
+| GP25 | Mouse motion as an action                            | (a) `MouseMotionBinding`, the frame's movement with `y` up, and `MouseInputSource.delta` removed; (b) a third cursor value type on `MouseAxis2dBinding`; (c) keep `delta` (Y-down) beside the binding                                                                                                                   | (a)    | Positions are DOM measurements (Y-down, as `MouseAxis2dBinding` reports); motion feeds look actions in engine space, where up is positive (`AGENTS.md`: sources translate at the boundary). One binding type with two conventions would be a trap. `delta` would be a second, Y-down way to read the same movement, and nothing in `/src`, `/demo`, `/e2e` or the docs site reads it (only its own test), so it goes.                                                                                                                                                                                                                                                                                                       |
+| GP26 | Broad phase for mesh picking                         | (a) The GPU scene's static tree and dynamic sphere arrays (design 06 §6.8); (b) a separate tree owned by picking                                                                                                                                                                                                        | (a)    | The GPU scene already keeps every mesh's world bounds, hidden flags and categories, updated only on change. A second tree would duplicate that upkeep. Dynamic spheres are scanned brute force, which is how culling scans them (R9); 10,000 ray-sphere tests cost tens of microseconds.                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| GP27 | Triangle trees                                       | (a) Design 14's `TriangleTree` in `src/math/geometry`, built for a `Mesh` on first use and kept with its CPU data, with `preparePicking` to build them behind a loading screen; (b) built for every mesh at load; (c) a picking-specific tree                                                                           | (a)    | Most meshes are never under the pointer; building for all would add to B9's load time. Three.js users attach trees to geometries the same way (three-mesh-bvh). The tree is derived from the mesh's own data, so the mesh owns it. One implementation serves mesh colliders and picking; design 14 places it in `math` from M5, so neither module depends on the other and nothing moves later. Open question 3 covers moving builds to workers.                                                                                                                                                                                                                                                                            |
+| GP28 | The age-scale component                              | (a) Remove it; (b) keep it                                                                                                                                                                                                                                                                                              | (a)    | Its only user was particles, which now scale through `sizeOverLifetime`. A game scaling an entity over time uses a property animation (design 12). Removing what a fix made unnecessary is the change philosophy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| GP29 | The sample game's content                            | (a) A level built from primitives and a few CC0 assets, one CC0 animated glTF character; (b) a purchased or bespoke asset set                                                                                                                                                                                           | (a)    | Assets must be redistributable on the docs site. Primitives keep the download small and show design 08's meshes. Assumption: a suitable CC0 rigged character with idle, walk, run and jump clips exists (Kenney and Quaternius publish such packs); open question 8.                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| GP30 | How many pointer state machines                      | (a) One `PointerTargetEcsComponent` and one pointer interaction system for UI elements and world objects; UI keeps focus, navigation and invocation; (b) a picking state machine for world targets beside UI's own on `UiInteractableEcsComponent`                                                                      | (a)    | The first draft had (b): two components with the same events, threshold, hover, press and capture, and two systems running the same rules for one pointer. Unity's event system and Bevy's picking run one state machine for UI and world objects. With one, the rules UI already gets right (enter and press in one frame, capture until release, the drag threshold, hand-off to a receiving ancestor, cancellation on hide) exist once, and a world-space canvas and the mesh behind it can't both believe they're hovered. Trade-off: a UI element that reacts to the pointer carries two components (the `create*` factories add both), and `createUiInteractionEcsSystem` and the UI raycast are deleted, not ported. |
+| GP31 | Disabling pointer reactions                          | (a) A pointer target has no `interactable` flag: it always hovers, presses and blocks, and whoever reacts checks its own state (UI controls their interactable and canvas groups, game listeners their own); (b) an `interactable` flag on the target as well as on the UI interactable                                 | (a)    | With (b) a disabled button would need two flags set, or one system writing the other's input. Unity's event system delivers pointer events to a non-interactable `Selectable`, which ignores them; Bevy's `Pickable` controls hovering and blocking, not pressing. A UI element's visual state already shows `disabled` before `pressed` (`ui-interaction-visual-state.ts`), invocation checks interactability, and sliders and scroll views check it before moving (as Unity's `Slider.MayDrag` does). Behavior change: a drag starting inside a disabled scroll view is handed to it and ignored, where today the pressed element keeps it; neither invokes.                                                              |
+| GP32 | Drag threshold units                                 | (a) CSS pixels of pointer movement on the page; (b) the canvas's reference pixels, as UI's `dragThreshold` is today                                                                                                                                                                                                     | (a)    | A threshold measures the player's hand, which moves on the screen. A 3D target has no canvas, and a world-space canvas's units shrink with distance from the camera, so (b) would make the same flick a drag up close and a click far away. Unity's `pixelDragThreshold` is in screen pixels. On a screen-space canvas whose reference resolution matches the page, nothing changes; sliders and scroll views use 0 either way.                                                                                                                                                                                                                                                                                             |
+| GP33 | How hit testers report                               | (a) Append to `picking.hits`, a per-frame message stream (design 03 §6.5): many systems append, none edits an appended hit, the rays system clears it once per frame, the resolution reads it; each hit names its `tester` as a string; (b) one component per hit tester; (c) a closed `kind` union                     | (a)    | Bevy's backends send `PointerHits` messages that the hover system reads, and Unity's raycasters return results naming their module. A per-tester component would make resolution know every tester, which game testers (terrain, voxels) couldn't join. A closed `kind` union of mesh, collider and UI leaves game testers no value; a string names any tester, and only the UI hover system compares it (with `'ui'`).                                                                                                                                                                                                                                                                                                     |
+| GP34 | How moving audio parameters update                   | (a) Position, orientation and pan parameters at `k-rate`, moved each frame by a linear ramp that ends one frame delta later; (b) `setTargetAtTime` each frame on `a-rate` parameters (the first draft); (c) values set once per frame with no smoothing                                                                 | (a)    | A parameter with automation in progress puts a `PannerNode` on its per-sample path in Chromium and WebKit, which recomputes azimuth, elevation and distance gain for every sample; an exponential target never finishes, so (b) keeps every panner there for good, at a cost the main-thread budget never sees. `k-rate` gives one value per 128-sample block, and a ramp that ends leaves still sounds with no automation at all. Three.js's positional audio ramps the same way. (c) steps the gain every frame and clicks. Assumption: where a browser doesn't implement `automationRate`, the assignment has no effect and the render benchmark reports that browser's cost.                                            |
+| GP35 | Which spawns spread over the frame                   | (a) Streams only: rate, distance and `overSeconds` emission; a burst spawns at the current pose with age 0; (b) every spawn                                                                                                                                                                                             | (a)    | Spreading turns a stream into an even trail behind a fast emitter. A burst is an event at one instant (an explosion, an impact); spreading it would stagger its particles' ages and smear it along the emitter's path. Unity and Godot emit bursts at one time and interpolate only continuous emission.                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| GP36 | A billboard's height                                 | (a) `aspectRatio` (width over height, default 1) on the effect's billboard settings; (b) from the texture's or flipbook frame's aspect                                                                                                                                                                                  | (a)    | The material is any design 08 material: a `PbrMaterial`, a hooked material or a material with several textures has no one texture to measure, and a texture may be shared by sprites of other shapes. An explicit value is the same for every material. Migrated 2D effects set it from the sprite's width and height (§6.3.13).                                                                                                                                                                                                                                                                                                                                                                                            |
+| GP37 | Distance emission, prewarm and mesh-particle shadows | (a) A seventh phase after the sample game; (b) inside the particle phases before it                                                                                                                                                                                                                                     | (a)    | The M6 proof doesn't use them: the sample game's dust is bursts, its fire can start cold, and its debris doesn't need shadows. Each is small and additive, so it ships on its own without holding up M6, and remains part of this design.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| GP38 | Proving 2D effects keep their look                   | (a) A data-level test: a seeded burst produces the same start values as the entity-per-particle code; the 2D golden is re-captured with the reasons for each difference; (b) the new golden must match the old one within the default tolerance (the first draft)                                                       | (a)    | (b) can't hold: stream emission now spreads spawns over the frame (GP35) and the draw path changes from sprite entities to billboards, so pixels change for reasons that are intended. What must not change is what each particle starts with, which (a) checks exactly: shapes, directions and ranges draw random numbers in today's order (§6.3.3), and a new draw (a color blend) happens only when an effect uses it. Design 01 §6.4.3 makes a re-captured golden show old and new images with the reason.                                                                                                                                                                                                              |
 
 ---
 
@@ -481,9 +483,10 @@ unlocks audio itself from DOM gesture listeners (§6.2.1), so design 03
   (`src/audio/sound-mixer.ts`). There is no audio system in `preUpdate`.
 - A `SoundInstance` is one `AudioBufferSourceNode` into its own `GainNode`
   into the bus's gain (`src/audio/internal/sound-instance.ts`). Volume
-  changes ramp with `setTargetAtTime` and a 10 ms time constant
-  (`gainSmoothingSeconds`, `smoothParamTo` in `audio-internals.ts`); rate
-  changes are set exactly so the playback position stays computable.
+  changes ramp that gain with `setTargetAtTime` and a 10 ms time constant
+  (`setVolume`; `gainSmoothingSeconds`, `smoothParamTo` in
+  `audio-internals.ts`), and `stop` fades the same gain to 0 over 20 ms;
+  rate changes are set exactly so the playback position stays computable.
 - `createSoundEcsSystem()` keeps a `Map<SoundEcsComponent, TrackedSound>`
   holding each instance, the values last applied, the resume position and
   `lastSeenUpdate`; `updateCount` advances each run and entries not seen
@@ -1171,10 +1174,10 @@ particles per view, back to front, then oldest first; `'additive'` and
 64 bits, two 32-bit words, sorted with the transparent phase's stable radix
 sort (design 07 §6.3.1) in the render context's frame scratch:
 
-| Word  | Contents                                                                                                                                                                                                                                       |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Depth | `dot(position − cameraPosition, cameraForward)` in 64-bit, negated and stored as a sortable `float32`, the encoding design 07 §6.3.2 uses for item depth, far first. Nothing is quantized, so there is no depth range to divide by             |
-| Spawn | `(sequence − nextSequence) >>> 0`: the spawn sequence relative to the emitter's counter, older first. Exact while no live particle outlives 2³² later spawns of its emitter                                                                   |
+| Word  | Contents                                                                                                                                                                                                                           |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Depth | `dot(position − cameraPosition, cameraForward)` in 64-bit, negated and stored as a sortable `float32`, the encoding design 07 §6.3.2 uses for item depth, far first. Nothing is quantized, so there is no depth range to divide by |
+| Spawn | `(sequence − nextSequence) >>> 0`: the spawn sequence relative to the emitter's counter, older first. Exact while no live particle outlives 2³² later spawns of its emitter                                                        |
 
 Spawn order is absolute-age order (a particle spawned later is younger,
 whatever its lifetime), and it also orders the particles of one burst,
@@ -1330,6 +1333,7 @@ flowchart LR
   end
   subgraph ui
     UHT[Canvas hit tester, hover system]
+    UNV[Navigation: focus and invocation; controls]
   end
   subgraph physics3d [physics-3d]
     C3[Collider hit tester]
@@ -1341,17 +1345,22 @@ flowchart LR
   PS --> PC
   PC --> PRS
   PC --> UHT
+  PC --> UNV
   PC --> C3
   PC --> C2
 ```
 
 - **Picking** owns the pointer state, rays, the mesh hit tester (it
   depends on rendering, which owns meshes and the GPU scene), resolution
-  and the target state machine.
+  and the one target state machine, for UI elements and world objects
+  alike (GP30).
+- **UI** owns what only UI has: canvases as a hit tester, focus,
+  navigation, invocation and its controls, which read pointer targets
+  (§6.4.10).
 - **Hit testers** for other geometry live with the module that owns it, as
   Bevy's picking backends do: UI canvases in `ui`, colliders in
   `physics-3d` and `physics-2d`. They import only the picking component
-  file and the group constant. Picking never imports `ui` or a physics
+  files and the group constant. Picking never imports `ui` or a physics
   module, so a game without physics bundles none of it.
 - Each module's register function adds its hit tester to
   `pointerHitTestGroup` (adding the group to `preUpdate` if the world
@@ -1506,7 +1515,9 @@ export const pointerTargetId: ComponentKey<PointerTargetEcsComponent>;
 export function addPointerTargetComponent(
   world: EcsWorld,
   entity: number,
-  options?: Partial<Pick<PointerTargetEcsComponent, 'dragThreshold' | 'receivesDrag'>>,
+  options?: Partial<
+    Pick<PointerTargetEcsComponent, 'dragThreshold' | 'receivesDrag'>
+  >,
 ): PointerTargetEcsComponent;
 ```
 
@@ -1721,11 +1732,12 @@ if p:
   buttons don't drive targets: a right-click order reads `picking.hover`
   when its own input action triggers.
 
-#### 6.4.9 UI on the picking pipeline
+#### 6.4.9 UI canvases on the picking pipeline
 
 **Canvas hit tester** (`createUiCanvasHitTestEcsSystem(renderContext)`, in
-`pointerHitTestGroup`, declared queries for canvases and interactables).
-For each canvas whose `camera` cast a ray:
+`pointerHitTestGroup`, declared queries for canvases and for pointer
+targets with a `RectTransformEcsComponent`). For each canvas whose
+`camera` cast a ray:
 
 1. Intersect the ray with the plane of the canvas root entity: through its
    world position, normal along its world `+Z`. A ray from behind the
@@ -1736,9 +1748,11 @@ For each canvas whose `camera` cast a ray:
    space the layout system resolves `rect`s in (it visits each root with a
    zero parent pivot and writes `local = pivot − parentPivot`,
    `ui-layout-system.ts`).
-3. Run today's tests (interactable, `blocksRaycasts`, canvas groups,
-   visibility, camera culling, rect masks) topmost first, with candidates,
-   draw order and rect lookups in scratch arrays on the picking singleton.
+3. Run today's tests on the canvas's pointer targets, topmost first:
+   `pointerTransparentTag` (in place of the interactable's
+   `blocksRaycasts`), canvas groups' `blocksRaycasts`, visibility, camera
+   culling and rect masks. Candidates, draw order and rect lookups use
+   scratch arrays on the picking singleton.
 4. Append the topmost element as a `tester: 'ui'` hit at the plane's
    distance.
 
@@ -1755,25 +1769,84 @@ place. Step 2 makes the comparison in the right space for any parent,
 rotation or scale. The `ui-world-space-canvas` demo has no interactables,
 which is why it never showed.
 
-**Hover** (`createUiHoverEcsSystem`, after resolution): for every canvas,
-`hoveredEntity = hover.entity` when the hover is a UI hit on that canvas,
-otherwise null; `isPointerOverUi = hoveredEntity !== null`. Their meaning
-is unchanged, so `createUiInteractionEcsSystem`, navigation, sliders and
-scroll views work as before, reading the pointer from
-`picking.pointerSource` through a secondary declared query on `pickingId`
-(empty when picking isn't registered: no pointer interaction, as today
-without a `pointerSource`). `registerUiSystems` loses its `pointerSource`
-option.
+**Hover** (`createUiHoverEcsSystem`, after the pointer interaction
+system): for every canvas, `hoveredEntity = hover.entity` when
+`hover.tester` is `'ui'` and the element is on that canvas, otherwise null;
+`isPointerOverUi = hoveredEntity !== null`. There is now one hover across
+every canvas and the world, so where two screen-space canvases overlap,
+only the top canvas's element is hovered (today each canvas computed its
+own). Scroll views keep using `hoveredEntity` to route the wheel.
 
-`resolveCanvasPointerPosition` uses the same plane conversion, so drag
-thresholds, sliders and scroll views work on world-space canvases in 3D.
-`raycastUiCanvas` stays a plain function for code that must answer inside a
-DOM handler (the text input focusing on a tap), with the plane hit of
-steps 1 and 2. It doesn't see 3D geometry in front of the canvas, which only the
-resolution knows; the guide says so. The module-scope resolver in
+`resolveCanvasPointerPosition` uses the same plane conversion, so sliders
+and scroll views work on world-space canvases in 3D. `raycastUiCanvas`
+stays a plain function for code that must answer inside a DOM handler (the
+text input focusing on a tap), with the plane hit of steps 1 and 2 and the
+tests of step 3. It doesn't see 3D geometry in front of the canvas, which
+only the resolution knows; the guide says so. The module-scope resolver in
 `sort-by-draw-order.ts` moves to the caller's scratch.
 
-#### 6.4.10 Queries for game code
+#### 6.4.10 UI on pointer targets
+
+UI keeps what is UI's: focus, navigation and invocation. Everything the
+pointer does moves to the pointer target (GP30):
+
+| `UiInteractableEcsComponent` keeps                                          | `PointerTargetEcsComponent` takes over                                                                                                                                                                                                        |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `interactable`, `focusable`, `onInvoke`, `isFocused`, `wasInvokedThisFrame` | `onPointerEnter`, `onPointerExit`, `onPointerDown`, `onPointerUp`, `onBeginDrag`, `onDrag`, `onEndDrag`, `isHovered`, `isPressed`, `isDragging`, `pressCapture`, `dragThreshold`, `receivesDrag`; `onClick` and `wasClickedThisFrame` are new |
+| `blocksRaycasts` is removed                                                 | `pointerTransparentTag` replaces it                                                                                                                                                                                                           |
+
+- **Composition.** A UI element that takes focus and is invoked has an
+  interactable; one that reacts to the pointer has a target; a button has
+  both. `createButton`, `createSlider`, `createToggle`, `createScrollView`
+  and `createTextInput` add both and return both (`Button` gains
+  `pointerTarget`). An element with only an interactable is reachable by
+  gamepad and keyboard only; one with only a target (a draggable panel, a
+  panel that stops clicks reaching the world) reacts to the pointer and
+  blocks it but never takes focus.
+- **Focus and invocation have one writer.** `createUiNavigationEcsSystem`
+  runs in `preUpdate`'s `uiInputGroup`, after the UI hover system. Each
+  run it clears `wasInvokedThisFrame`, applies cancel, navigation and
+  submit as today, then reads two singleton outputs. When the entity in
+  `picking.enteredTarget` has an interactable that is enabled (its own
+  `interactable` and its canvas groups), focusable and visible, it focuses
+  it: today's hover-focus policy, still edge-triggered so a resting
+  pointer doesn't fight the gamepad. When the entity in
+  `picking.clickedTarget` has an enabled interactable, it sets
+  `wasInvokedThisFrame` and raises `onInvoke`. Today the interaction and
+  navigation systems both write these; after this change only navigation
+  does, and `createUiInteractionEcsSystem` is deleted.
+- **Controls check their own state.** A slider moves its value only while
+  its track's target holds a press and the slider is interactable,
+  including its canvas groups, as Unity's `Slider` checks `MayDrag`. A
+  scroll view drags only when its viewport's target is dragging and it is
+  interactable. Toggles keep reading `wasInvokedThisFrame`. These systems
+  run in `uiInputGroup` after navigation, so game code in `update` sees
+  this frame's values.
+- **Visual state.** `deriveUiInteractionVisualState(interactable, target)`
+  returns `disabled` when the interactable isn't interactable, `pressed`
+  while the target `isPressed`, `hover` while the target `isHovered` or the
+  interactable `isFocused`, and `normal` otherwise: today's order, with
+  pointer state read from the target. Transitions and tooltips call it.
+- **The pointer position.** Sliders and scroll views read the pointer from
+  `picking.pointerSource` through a secondary declared query on
+  `pickingId`, and convert it with `resolveCanvasPointerPosition`'s plane
+  conversion, so they work on world-space canvases in 3D. When picking
+  isn't registered the query is empty and there is no pointer
+  interaction, as today without a `pointerSource`. `registerUiSystems`
+  loses its `pointerSource` option; a game calls
+  `registerPicking(world, renderContext, { pointerSource: mouse })`
+  instead, which twelve demos and two e2e scenes change (§0).
+- **Drag threshold** is in CSS pixels (GP32). On a screen-space canvas
+  whose reference resolution matches the page it means the same distance
+  as today's 8 reference pixels; sliders and scroll views use 0.
+- **What changes for players.** A disabled scroll view now receives a
+  drag that starts inside it and ignores it, where today the pressed
+  element kept the drag; neither invokes (GP31). Overlapping screen-space
+  canvases hover only the top one. Everything else behaves as today, and
+  the existing UI e2e specs pass with only their scenes' registration and
+  target components updated.
+
+#### 6.4.11 Queries for game code
 
 ```ts
 /** The nearest mesh hit along any ray, with the mesh hit tester's rules. */
@@ -1796,26 +1869,30 @@ design 14's queries. `preparePicking` goes behind the loading screen with
 
 ### 6.5 Systems, stages and ownership
 
-| System                                   | Stage, group                                    | Declares                                                  | Sole writer of                                                                                                               |
-| ---------------------------------------- | ----------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Pointer rays                             | `preUpdate`, after the input update             | `[cameraId, transformId]` without `pointerTransparentTag` | `picking.rays`; resets `picking.hits`                                                                                        |
-| Mesh, collider and UI canvas hit testers | `preUpdate`, `pointerHitTestGroup`              | `[pickingId]`; UI: canvases and interactables             | Their own appended hits                                                                                                      |
-| Pointer interaction                      | `preUpdate`, after `pointerHitTestGroup`        | `[pickingId]`                                             | `picking.hover`, `hoveredTarget`, `pressedTarget`; every `PointerTargetEcsComponent` output                                  |
-| UI hover                                 | `preUpdate`, after pointer interaction          | `[canvasId]`, `picking: [pickingId]`                      | `CanvasEcsComponent.hoveredEntity`, `isPointerOverUi`                                                                        |
-| Sound system                             | `postUpdate`, `audioGroup` after propagation    | `[soundId]`; `spatial`; `listeners`                       | `hasFinished`, `positionSeconds`, both `lastPosition`s; the mixer's sound table; removal of finished `'removeEntity'` sounds |
-| Particle simulation                      | `postUpdate`, `particleGroup` after propagation | `[particleEmitterId, transformId]`                        | Every `ParticleEmitterEcsComponent` output; removal of empty `'removeEntity'` emitters                                       |
-| Particle extraction                      | `render`, with the other extraction systems     | `[particleEmitterId, transformId]`                        | Particle instances and draw items (render context frame scratch)                                                             |
+| System                                   | Stage, group                                    | Declares                                                              | Sole writer of                                                                                                                                                   |
+| ---------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pointer rays                             | `preUpdate`, after the input update             | `[cameraId, transformId]` without `pointerTransparentTag`             | `picking.rays`; clears the `picking.hits` stream                                                                                                                 |
+| Mesh, collider and UI canvas hit testers | `preUpdate`, `pointerHitTestGroup`              | `[pickingId]`; UI: canvases, and pointer targets with rect transforms | Nothing: they append to the `hits` stream (§6.4.6)                                                                                                               |
+| Pointer interaction                      | `preUpdate`, after `pointerHitTestGroup`        | `[pickingId]`                                                         | `picking.hover`, `hoveredTarget`, `pressedTarget`, `enteredTarget`, `clickedTarget`; every `PointerTargetEcsComponent` output, for UI elements and world objects |
+| UI hover                                 | `preUpdate`, after pointer interaction          | `[canvasId]`, `picking: [pickingId]`                                  | `CanvasEcsComponent.hoveredEntity`, `isPointerOverUi`                                                                                                            |
+| UI navigation                            | `preUpdate`, `uiInputGroup`, first              | `[canvasId]`; interactables; `picking: [pickingId]`                   | `UiInteractableEcsComponent.isFocused` and `wasInvokedThisFrame`, `onInvoke`, `CanvasEcsComponent.focusedEntity` (through `setUiFocus`)                          |
+| UI toggles, sliders, scroll views        | `preUpdate`, `uiInputGroup`, after navigation   | Their components; `picking: [pickingId]`                              | Toggle, slider and scroll rect state, as today                                                                                                                   |
+| Sound system                             | `postUpdate`, `audioGroup` after propagation    | `[soundId]`; `spatial`; `listeners`                                   | `hasFinished`, `positionSeconds`, both `lastPosition`s; the mixer's sound table; removal of finished `'removeEntity'` sounds                                     |
+| Particle simulation                      | `postUpdate`, `particleGroup` after propagation | `[particleEmitterId, transformId]`                                    | Every `ParticleEmitterEcsComponent` output; removal of empty `'removeEntity'` emitters                                                                           |
+| Particle extraction                      | `render`, with the other extraction systems     | `[particleEmitterId, transformId]`                                    | Particle instances and draw items (render context frame scratch)                                                                                                 |
 
 Inputs written by games: sound and spatial settings; the listener's
 `speedOfSound`; `pointerLock`; an emitter's `effect`, `isEmitting`,
 `emissionScale`, `category`, `layer`, `whenEmpty`; a target's
-`interactable` and `dragThreshold`; `colliderCategories` and `drawHits`.
-`emitParticles` and `detachParticleEmitter` are particle-module functions,
-like `propagateTransform` is the transform module's (design 04 X8). Every
-factory declares its stage; registration order doesn't matter (design 03).
-`pointerLock` sits on the mouse source with the source's other device state
-(button sets, position), since the source owns the DOM listeners that have
-to act on it.
+`dragThreshold` and `receivesDrag`; an interactable's `interactable` and
+`focusable`; `colliderCategories` and `drawHits`. `emitParticles` and
+`detachParticleEmitter` are particle-module functions, like
+`propagateTransform` is the transform module's (design 04 X8). `setUiFocus`
+stays UI's function for game code that moves focus. Every factory declares
+its stage; registration order doesn't matter (design 03). `pointerLock`
+sits on the mouse source with the source's other device state (button
+sets, position), since the source owns the DOM listeners that have to act
+on it.
 
 ### 6.6 The sample game
 
@@ -1876,6 +1953,8 @@ an estimate with a measurement before it's merged, as design 04 does.
 
 #### 6.8.1 Audio
 
+Main thread, per frame:
+
 | Work                                           | Budget                                                 |
 | ---------------------------------------------- | ------------------------------------------------------ |
 | 64 spatial sounds, all moving, listener moving | ≤ 0.3 ms                                               |
@@ -1883,8 +1962,32 @@ an estimate with a measurement before it's merged, as design 04 does.
 | 200 spatial sounds, all moving                 | Measured and reported; ≤ 1× Three.js `PositionalAudio` |
 | Allocation per frame                           | None                                                   |
 
-Parameter calls dominate: a moving 3D sound costs 6 calls (cancel and
-target for three coordinates), 12 with a cone.
+Parameter calls dominate: a moving 3D sound costs 3 calls (one ramp per
+coordinate), 6 with a cone.
+
+Audio thread, in milliseconds of render time per second of audio (a
+48 kHz block is 2.7 ms long, so 100 ms per second is a tenth of the
+real-time budget). Starting estimates, replaced in Phase 1 by measurements
+as the main-thread figures are:
+
+| Work                                                                                | Budget                                             |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------- |
+| 64 equal-power spatial sounds, all moving, listener moving                          | ≤ 60 ms, and ≤ 1.5× the same sounds standing still |
+| 200 equal-power spatial sounds, nothing moving                                      | ≤ 100 ms                                           |
+| 16 HRTF sounds, all moving                                                          | Measured and reported                              |
+| The 64-sound scene with `a-rate` parameters and `setTargetAtTime` (the first draft) | Measured and reported, to record what GP34 saves   |
+| 64 sounds versus Three.js `PositionalAudio` on the same motion                      | Informational                                      |
+
+The `spatial-audio-render` scene benchmark drives the real sound system
+against an `OfflineAudioContext` (stereo, 48 kHz, 10 s of looping mono
+sounds). It suspends the context at every 1/60 s of audio time
+(`suspend(t)`), runs one frame of the world there, and resumes, so the
+parameter calls are exactly the ones a live frame makes. It reports the
+wall time of `startRendering()` minus the time spent in those frames, per
+second of audio. Audio rendering is CPU work, so unlike GPU timings the CI
+numbers mean something, and the scene takes design 01's base-versus-head
+gate; the reference devices run it at each milestone (design 01's runner
+gains this measurement kind, a cross-doc change).
 
 #### 6.8.2 Particles
 
@@ -1925,35 +2028,58 @@ five times faster.
   `StereoPannerNode` (recording parameter calls): listener-relative
   positions and orientations against a moved listener for random
   transforms (property test, design 01 §6.1); each distance model against
-  the specification's formulas; cone mapping; stereo pan and attenuation;
-  first values set exactly before `start`; no calls when nothing changed;
+  the specification's formulas; cone mapping; stereo pan and attenuation
+  on the stage's own gain node, with `setVolume` and `stop` still ramping
+  the instance's gain while a sound moves; position, orientation and pan
+  parameters created at `k-rate`; first values set exactly before
+  `start`, later ones as ramps ending one frame delta later and never
+  before the previous ramp; no calls when nothing changed;
   removal from journals stops the instance; replacement restarts it; pause
   and resume at `positionSeconds`; `whenFinished: 'removeEntity'`; two
   listeners throw; doppler for approaching and receding sounds, and sounds
   that jump; `cleanup` stops the world's sounds and only its sounds.
-- **Particles**: shape sampling distributions (radial CDFs for spheres,
-  circles and shells; the hemisphere's sign; cone directions within the
-  angle and uniform in solid angle; the outward cone's apex), seeded;
+- **Particles**: the spawn-equivalence test (§6.3.13: start values of
+  seeded bursts against values recorded from the `0.26` spawn code, for
+  every shape and direction rule); shape sampling distributions (radial
+  CDFs for spheres, circles and shells; the hemisphere's sign; cone
+  directions within the angle and uniform in solid angle; the outward
+  cone's apex), seeded;
   integration against closed-form motion with acceleration and drag at
   varying `dt`; swap removal keeps every live particle once; capacity and
   `droppedCount`; rate accumulation over a second at 20 to 240 fps gives
-  the same count; `overSeconds` spreads evenly; distance emission per
-  meter; sub-frame spreading leaves even spacing behind a fast emitter;
-  local space follows the emitter; hidden emitters; `whenEmpty`;
-  `detachParticleEmitter`; prewarming equals simulating; curve and
-  gradient baking; sort keys; instance layout; effect validation errors.
-- **Picking**: `TriangleTree` against brute force for random meshes and
-  rays (property test), back-face and mirrored rules; mesh hit tester
-  against brute force with static, dynamic, hidden, culled and transparent
-  entities; joint spheres posed by random joint transforms; resolution
-  across camera orders, distances and ties; every path through the target
-  state machine (enter and press in one frame, press and release in one
-  frame, drag, cancel on hide, removal mid-press); rays for both
-  projections and viewports; the locked center; UI plane hits for parented,
-  rotated and scaled world-space canvases (the defect's regression test).
+  the same count; `overSeconds` spreads evenly; sub-frame spreading leaves
+  even spacing behind a fast emitter, and an instant burst spawns every
+  particle at the current pose with age 0; local space follows the
+  emitter; hidden emitters; `whenEmpty`; `detachParticleEmitter`; curve
+  and gradient baking; sort keys (spawn order across lifetimes from 1 to
+  3 s, ties within a burst, equal depths in a 2D view, and wrapping of the
+  sequence counter); billboard height from `aspectRatio`; instance layout;
+  effect validation errors. Phase 7 adds distance emission per meter and
+  prewarming equals simulating.
+- **Picking**: picking's face rules on design 14's `TriangleTree`
+  (double-sided parts, mirrored instances) against brute force; mesh hit
+  tester against brute force with static, dynamic, hidden, culled and
+  transparent entities; joint spheres posed by random joint transforms;
+  resolution across camera orders, distances, ties and game testers'
+  names; every path through the target state machine (enter and press in
+  one frame, press and release in one frame, drag, hand-off to a receiving
+  ancestor with and without a release in the same frame, cancel on hide,
+  removal mid-press), ported from `ui-interaction-system.test.ts` so each
+  case UI covers today is covered for every target; rays for both
+  projections and viewports, with a mocked `RenderContext` whose CSS and
+  drawing-buffer sizes differ (`AGENTS.md`); the locked center; UI plane
+  hits for parented, rotated and scaled world-space canvases (the defect's
+  regression test).
+- **UI**: focus and invocation from `enteredTarget` and `clickedTarget`
+  through navigation only; no invocation, focus or slider movement for a
+  disabled element or one under a non-interactable canvas group, while its
+  target still hovers and presses; visual state from the interactable and
+  the target; `pointerTransparentTag` and canvas groups' `blocksRaycasts`
+  in the canvas hit tester; one hover across overlapping canvases.
 - **Input**: pointer-lock requests only inside the press handler, the
   `NotSupportedError` fallback, the consumed press, unlock, `isLocked`;
-  `MouseMotionBinding` sign, accumulation and withdrawal at reset.
+  `MouseMotionBinding` sign, accumulation and withdrawal at reset;
+  `MouseInputSource` has no `delta`.
 
 #### 6.9.2 Browser tests
 
@@ -1965,6 +2091,13 @@ computed from the scene handle's `worldToViewport`:
   dragged box follows the pointer; the hovered box's rendered color
   changes (a relative, same-run pixel measurement, as `AGENTS.md`
   requires, not an absolute color).
+- `picking-high-dpi.spec.ts`: with `test.use({ deviceScaleFactor: 2 })`,
+  as `high-dpi-canvas.spec.ts` does, the real mouse at CSS positions from
+  `worldToViewport` hovers and clicks a box in a perspective view and a
+  button on a screen-space canvas; the hovered box's tint is measured on
+  the rendered canvas around the point the pointer is at (a relative,
+  same-run measurement), so a ray built against drawing-buffer pixels,
+  which would land at twice the distance from the corner, fails.
 - `ui-world-space-3d.spec.ts`: a world-space canvas on a rotated panel
   takes a click on its button; with a box moved between it and the
   camera, it doesn't; a parented canvas on a moving entity takes clicks
@@ -1985,14 +2118,17 @@ computed from the scene handle's `worldToViewport`:
   mover with the keyboard into a clickable box, clicks the box,
   checks the click's impulse moved it, the box's sound pans as it moves,
   and the emitter's bounds follow it.
-- The existing UI e2e specs pass unchanged after Phase 4.
+- The existing UI e2e specs (`ui-scroll-view`, `ui-text-input`,
+  `translucent-ui-compositing`) pass after Phase 4 with only their scenes'
+  registration (`registerPicking`) and target components updated.
 
 #### 6.9.3 Goldens
 
 Seeded, fixed-step scenes (design 01 §6.4): each billboard alignment;
-velocity stretching; a flipbook; mesh particles with a PBR material and
-shadows; blended particles sorted against a translucent mesh; soft and hard
-particles against a plane; the migrated 2D particles demo. A soft-particle
+velocity stretching; a flipbook; mesh particles with a PBR material (with
+shadows in Phase 7); blended particles sorted against a translucent mesh;
+soft and hard particles against a plane; the migrated 2D particles demo,
+re-captured in Phase 2 as §6.3.13 describes. A soft-particle
 analytic test samples a large additive billboard crossing a plane: pixels
 near the intersection are darker than pixels far from it, within one run.
 
@@ -2000,12 +2136,14 @@ near the intersection are darker than pixels far from it, within one run.
 
 - Allocation specs (design 01 §6.3): `particles-churn` (10,000 spawns a
   second), `spatial-audio` (64 moving sounds), `picking` (pointer moving,
-  hover changes, clicks, drags), `ui-world-space`, and `gameplay-3d`.
+  hover changes, clicks, drags and hand-offs, UI and 3D targets),
+  `ui-world-space`, and `gameplay-3d`.
 - Microbenchmarks: `particle-simulation.bench.ts` (1,000, 10,000, 100,000
-  particles), `particle-sort.bench.ts`, `triangle-tree.bench.ts` (build and
-  query at 1,000, 100,000 and 1,000,000 triangles), `mesh-hit-test.bench.ts`,
+  particles), `particle-sort.bench.ts`, `mesh-hit-test.bench.ts` (design
+  14's `triangle-tree.bench.ts` covers the tree's build and query),
   `spatial-audio.bench.ts` (listener-relative math for 1,000 sounds).
-- Scene benchmarks: `particles`, `spatial-audio`, `picking-b1`,
+- Scene benchmarks: `particles`, `spatial-audio`, `spatial-audio-render`
+  (the audio thread, §6.8.1), `picking-b1`,
   `picking-b2`, `picking-b4` and `courtyard-gameplay` (Forge only, the
   integration content at the sample game's scale), with their Three.js
   counterparts as in §6.7.
@@ -2017,34 +2155,150 @@ Written with the `document-feature` skill:
 - `audio/spatial-audio.md` (new): listeners, spatial sounds, 3D and stereo
   panning, distance models and rolloff, cones, doppler, `playSoundAt`,
   footsteps from animation events, debug drawing, mono assets, the
-  precision note.
+  precision note, and what moving sounds cost the audio thread.
 - `audio/playing-sounds.md`: `whenFinished`, `positionSeconds`, the stage,
   `registerAudio`.
 - `particles/index.md` (rewritten): effects and emitters, storage, the
   systems, emitting, visibility, detaching.
 - `particles/effects.md` (replaces `emitters.md`): shapes, directions,
-  emission, curves and gradients, simulation space, prewarming.
-- `particles/rendering-particles.md` (new): billboards and alignments,
-  flipbooks, materials and blend modes, sorting, soft particles, mesh
-  particles, particles in 2D.
+  emission (and which emission spreads over the frame), curves and
+  gradients, simulation space; distance emission and prewarming in
+  Phase 7.
+- `particles/rendering-particles.md` (new): billboards, alignments and
+  `aspectRatio`, flipbooks, materials and blend modes, sorting, soft
+  particles, mesh particles (shadows in Phase 7), particles in 2D.
 - `picking/index.md` (new): rays, hit testers, resolution, the singleton,
-  what blocks; `picking/pointer-targets.md`: targets, events, dragging,
-  models; `picking/ray-queries.md`: `raycastMeshes`, `preparePicking`,
-  writing a hit tester.
+  what blocks; `picking/pointer-targets.md`: targets, events, dragging and
+  drag receivers, models, UI elements and world objects sharing one
+  target component; `picking/ray-queries.md`: `raycastMeshes`,
+  `preparePicking`, writing a hit tester and naming it.
 - `input/mouse.md`: pointer lock, raw movement, `MouseMotionBinding`, the
-  "click to play" pattern.
-- `ui/creating-a-canvas.md` and `ui/buttons-and-interaction.md`: pointer
-  input through `registerPicking`; world-space canvases in 3D, back faces,
-  occlusion.
+  "click to play" pattern; `delta` removed.
+- `ui/creating-a-canvas.md`: pointer input through `registerPicking`;
+  world-space canvases in 3D, back faces, occlusion.
+- `ui/buttons-and-interaction.md`: rewritten around the split: the
+  interactable for focus and invocation, the pointer target for pointer
+  events, state and dragging; the drag threshold in CSS pixels;
+  `pointerTransparentTag` in place of `blocksRaycasts`; the one hover
+  across canvases.
+- `ui/controls.md` and `ui/scroll-views.md`: `registerPicking` in their
+  setup code; `receivesDrag` and `dragThreshold` on the target;
+  `ui/canvas-groups-and-tooltips.md`: canvas groups disable invocation,
+  focus and controls, not pointer state; tooltips read the source's
+  target.
+- `rendering/visibility.md`: the hidden-element rules (exit, press
+  cancelled) on pointer targets.
 - `common/index.md`: the age-scale component removed.
 - `3d/making-a-3d-game.md` (new): the sample game walkthrough.
 - `CHANGELOG.md` per phase: `#### Added` (spatial audio, 3D particles,
-  picking, pointer lock, motion binding), `#### Changed` (the sound system
-  factory and stage; the particle API, with the §6.3.13 table condensed
-  into what consumers change; `registerUiSystems` without `pointerSource`;
-  `UiPointerSource` renamed `PointerSource`), `#### Removed` (age scale,
-  `ParticleEcsComponent`, the three particle systems,
-  `createUiRaycastEcsSystem`), `#### Fixed` (world-space canvases parented
+  picking, `PointerTargetEcsComponent` for UI and world objects, pointer
+  lock, motion binding), `#### Changed` (the sound system factory and
+  stage; the particle API, with the §6.3.13 table condensed into what
+  consumers change; `registerUiSystems` without `pointerSource`, replaced by
+  `registerPicking`; the interactable's pointer fields moved to the target;
+  the drag threshold in CSS pixels; `UiPointerSource` renamed
+  `PointerSource`), `#### Removed` (age scale, `ParticleEcsComponent`, the
+  three particle systems, `createUiRaycastEcsSystem`,
+  `createUiInteractionEcsSystem`, `blocksRaycasts` on interactables,
+  `MouseInputSource.delta`), `#### Fixed` (world-space canvases parented
   to moving entities are hit where they're drawn).
 - `AGENTS.md`: `/picking` in the repository structure; particles live in
-  their emitter's storage, not as entities.
+  their emitter's storage, not as entities; UI elements and world objects
+  take pointer input through `PointerTargetEcsComponent`, and UI keeps
+  focus and invocation.
+- `.claude/skills/create-component/SKILL.md`: the naming example uses
+  `particleEmitterId`/`'particleEmitter'` instead of the removed
+  `ageScaleId`.
+
+---
+
+## 7. Review
+
+`solution-reviewer` verdict on the first draft: **REVISE**. Its claims
+about current code held (`sound-system.ts`'s closure state, particles as
+entities, the parented world-space canvas defect, no pointer lock), and
+spatial audio, emitter-owned particle arrays and ray-based picking were
+judged to match Unity, Godot, Bevy and Hanabi. The problem was a second
+pointer state machine beside UI's, plus several technical errors. Changes
+made:
+
+- **One pointer state machine** (GP30, §6.4.8, §6.4.10). The first draft's
+  `PointerTargetEcsComponent` copied `UiInteractableEcsComponent`'s
+  events, threshold, states and press capture, and a second system ran
+  the same rules. Now the pointer interaction system is the only writer of
+  pointer state for UI elements and world objects, carrying over UI's
+  rules, including the drag hand-off to an ancestor with `receivesDrag`.
+  UI keeps focus, navigation and invocation, and navigation becomes their
+  one writer (today the interaction and navigation systems both write
+  `wasInvokedThisFrame`). `createUiInteractionEcsSystem` is deleted. The
+  target has no `interactable` flag (GP31), so a disabled button is one
+  flag, as with Unity's `Selectable`. The drag threshold is in CSS pixels
+  (GP32), and `blocksRaycasts` becomes `pointerTransparentTag`.
+- **Hits are a message stream** (GP33, §6.4.6), named as a pattern in
+  design 03 and `AGENTS.md` rather than called an exception. The closed
+  `kind` union became an open `tester` name, so game hit testers have a
+  value.
+- **Stereo attenuation has its own `GainNode`** (GP4, §6.2.6). The first
+  draft wrote attenuation to the instance's gain, which `setVolume` and
+  `stop` also ramp.
+- **Audio-thread cost is designed and budgeted** (GP34, §6.2.8, §6.8.1).
+  Position, orientation and pan parameters are `k-rate`, and they move by
+  linear ramps that end instead of `setTargetAtTime`, which never finishes
+  and would keep every panner on the browser's per-sample path. An
+  `OfflineAudioContext` benchmark measures render time per second of
+  audio, with budgets. Moving a sound now costs 3 calls, not 6.
+- **Particle sorting** (GP14, §6.3.10) uses depth as design 07's sortable
+  `float32`, then spawn order from a per-particle sequence number. Spawn
+  order is absolute-age order and orders a burst; the first draft's
+  normalized age broke "later spawns on top" for mixed lifetimes, and its
+  quantized depth divided by zero in a 2D view.
+- **Bursts don't spread over the frame** (GP35, §6.3.5); only rate,
+  distance and `overSeconds` emission do.
+- **The 2D golden claim is replaced** (GP38, §6.3.13). Random draws keep
+  `0.26`'s order and a new draw happens only when an effect uses it; a
+  spawn-equivalence test checks start values exactly against the old
+  code; the golden is re-captured with the reasons for each pixel
+  difference, as design 01 §6.4.3 requires.
+- **Billboards have an explicit `aspectRatio`** (GP36). A `PbrMaterial` or
+  a hooked material has no single texture to measure.
+- **The hemisphere row** of the shapes table no longer breaks the table.
+- **`MouseInputSource.delta` is removed** (GP25). It reported motion Y-down
+  beside the Y-up binding, and only its own test read it.
+- **The migration lists everything it touches** (§0, Phase 4): the eleven
+  UI demos that pass `pointerSource` plus `visibility`, the `ui-text-input`
+  and `ui-scroll-view` e2e scenes, the `ui/controls.md`,
+  `ui/scroll-views.md`, `ui/buttons-and-interaction.md`,
+  `ui/canvas-groups-and-tooltips.md` and `rendering/visibility.md` guides,
+  the UI `create*` factories, and the `create-component` skill's
+  `ageScaleId` example.
+- **New tests:** `picking-high-dpi.spec.ts` at a device pixel ratio of 2,
+  and rays tested against a mocked render context whose CSS and
+  drawing-buffer sizes differ; the UI state-machine tests ported to
+  pointer targets; the audio render benchmark.
+- **Scope** (GP37): distance emission, prewarming and mesh-particle
+  shadows move to a Phase 7 after the sample game, so they don't gate the
+  M6 proof. They remain part of this design.
+- **Consistency with the revised designs:** per-frame instance data goes
+  into design 05's staging (the first draft named the ring allocator D9
+  removed); the soft-particle depth shares the AO and scene-color unit
+  only because unlit transparent variants sample neither, keeping a
+  material's nine fragment units; design 14 builds `TriangleTree` in
+  `src/math/geometry` from M5, so nothing moves in M6; design 03's
+  `preUpdate` loses "audio unlock", since the mixer unlocks itself from DOM
+  gesture listeners (`sound-mixer.ts`).
+
+Points not taken, with reasons:
+
+- **`spawnParticleBurst`'s `rotation: Quaternion | number`.** Kept, but
+  it's now `addTransformComponent`'s own option type passed through, so
+  "a number is the angle about Z" is design 04's one rule (X7) rather than
+  a second union. A quaternion-only option would make every 2D call
+  convert an angle that every other 2D API accepts directly.
+- **The emitter's pending bursts having two writers** (`emitParticles` and
+  the simulation). The reviewer accepted it on design 04's X8 precedent;
+  nothing changed.
+- **Splitting the document.** The reviewer pointed out its scope but
+  didn't ask for a split. The README's map and milestone M6 name it as one
+  design, and its phases are already independent per subsystem
+  (Phase 3 doesn't need Phase 4), so it stays one document with the
+  extras deferred to Phase 7.
