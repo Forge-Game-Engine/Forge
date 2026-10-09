@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **math:** `Vec3.forward` is now `(0, 0, -1)` and `Vec3.backward` `(0, 0, 1)`: the 3D space is right-handed and Y-up, and cameras, lights and anything that aims look along `-Z`. Code that used `Vec3.forward` for `+Z` uses `Vec3.backward`, or `Vec3.modelFront` for the direction a model faces
 #### Fixed
 
+- **physics:** A prismatic joint no longer counts its bodies' turning twice when it measures how fast they drift off its axis or into a translation limit. Joints between turning bodies now hold their axis and limits without the extra push this caused, so sliders on turning bodies (a car's suspension, for example) may settle slightly differently, and their `hertz` and `dampingRatio` tuning may need adjusting
 - **text:** Rotated and scaled text keeps its layout. A `RotationEcsComponent` or `ScaleEcsComponent` on a text entity now turns and scales the whole text about the entity's position, instead of turning and scaling each glyph about its own center along an unrotated, unscaled line
 
 ## [0.26.1] - 2026-10-07

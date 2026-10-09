@@ -7,9 +7,15 @@ import {
   Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Vec2 } from '../../math/index.js';
-import { addPrismaticJointComponent } from '../components/prismatic-joint-component.js';
-import { addRigidBodyComponent } from '../components/rigidbody-component.js';
+import { Vec2, Vector2 } from '../../math/index.js';
+import {
+  addPrismaticJointComponent,
+  PrismaticJointEcsComponent,
+} from '../components/prismatic-joint-component.js';
+import {
+  addRigidBodyComponent,
+  RigidBodyEcsComponent,
+} from '../components/rigidbody-component.js';
 import { createEulerIntegrationEcsSystem } from './euler-integration-system.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { addColliderComponent } from '../components/collider-component.js';
@@ -153,5 +159,94 @@ describe('createPrismaticJointEcsSystem', () => {
     }
 
     expect(maxTranslation).toBeLessThan(1.2);
+  });
+
+  describe('with a body turning rigidly with a kinematic body', () => {
+    const angularVelocity = 2;
+
+    let jointWorld: EcsWorld;
+
+    beforeEach(() => {
+      jointWorld = new EcsWorld();
+      jointWorld.addSystem(createPrismaticJointEcsSystem(time));
+    });
+
+    /**
+     * Joins a dynamic body centered at `(0, -1)` to a kinematic body at the
+     * origin, both turning at `angularVelocity`, with the slider's anchor on
+     * the kinematic body's center. The slider's center moves at
+     * `angularVelocity × (0, -1)`, so the pair turns as one rigid body: the
+     * anchor neither slides along the axis nor drifts off it, and the joint
+     * has nothing to correct.
+     */
+    function setUpRigidlyTurningPair(
+      axis: Vector2,
+      enableLimit: boolean,
+    ): {
+      slider: RigidBodyEcsComponent;
+      joint: PrismaticJointEcsComponent;
+    } {
+      const anchor = jointWorld.createEntity();
+      addPositionComponent(jointWorld, anchor, { local: Vec2.zero });
+      addRotationComponent(jointWorld, anchor);
+      addRigidBodyComponent(jointWorld, anchor, {
+        type: 'kinematic',
+        angularVelocity,
+      });
+
+      const sliderEntity = jointWorld.createEntity();
+      addPositionComponent(jointWorld, sliderEntity, {
+        local: { x: 0, y: -1 },
+      });
+      addRotationComponent(jointWorld, sliderEntity);
+      addUnitMassCollider(jointWorld, sliderEntity);
+      const slider = addRigidBodyComponent(jointWorld, sliderEntity, {
+        velocity: { x: angularVelocity, y: 0 },
+        angularVelocity,
+      });
+
+      const joint = addPrismaticJointComponent(
+        jointWorld,
+        jointWorld.createEntity(),
+        {
+          entityA: anchor,
+          entityB: sliderEntity,
+          localAnchorB: { x: 0, y: 1 },
+          axis,
+          enableLimit,
+          lowerTranslation: 0,
+          upperTranslation: 1,
+        },
+      );
+
+      return { slider, joint };
+    }
+
+    function step(): void {
+      currentMs += dtMs;
+      time.update(currentMs);
+      jointWorld.update();
+    }
+
+    it('applies no perpendicular impulse', () => {
+      const { slider, joint } = setUpRigidlyTurningPair(Vec2.up, false);
+
+      step();
+
+      expect(joint.accumulatedPerpImpulse).toBeCloseTo(0, 6);
+      expect(slider.velocity.x).toBeCloseTo(angularVelocity, 6);
+      expect(slider.velocity.y).toBeCloseTo(0, 6);
+      expect(slider.angularVelocity).toBeCloseTo(angularVelocity, 6);
+    });
+
+    it('applies no limit impulse while the translation holds at a limit', () => {
+      const { slider } = setUpRigidlyTurningPair(Vec2.right, true);
+
+      step();
+
+      expect(slider.velocity.x).toBeCloseTo(angularVelocity, 6);
+      expect(slider.velocity.y).toBeCloseTo(0, 6);
+      expect(slider.angularVelocity).toBeCloseTo(angularVelocity, 6);
+    });
   });
 });
