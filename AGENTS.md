@@ -120,6 +120,7 @@ this step by step for bug fixes.
   /utilities               # General utilities
   index.ts                 # Main exports
 
+/bench                     # Performance tooling: the microbenchmark comparison script; results in /bench/results (gitignored)
 /demo                      # Demo application
 /documentation-site        # Docusaurus documentation
 /scripts                   # Build and utility scripts
@@ -392,6 +393,9 @@ npm test
 
 # Run tests with UI
 npm run test:ui
+
+# Run the microbenchmarks
+npm run bench:micro
 ```
 
 ### Build Process
@@ -533,6 +537,38 @@ describe('MyClass', () => {
   breakdown in the terminal summary or `coverage/index.html`) are good
   candidates for new tests.
 
+### Microbenchmarks
+
+- Microbenchmarks are `*.bench.ts` files next to the code they measure
+  (`ecs-world.ts` → `ecs-world.bench.ts`), written with Vitest's `bench`
+  and `describe`. `npm run bench:micro` runs every `src/**/*.bench.ts` and
+  writes the results to `bench/results/micro.json`;
+  `npx vitest bench --run <path>` runs one file.
+- They run in a Node environment (`vite.config.js` switches it for Vitest's
+  `benchmark` mode), never under `npm test`. They're type-checked and
+  linted with the rest of `/src`, and excluded from `tsconfig.build.json`
+  and coverage.
+- Build each benchmark's inputs outside the measured function, and measure
+  one operation at three sizes (e.g. 1k, 10k and 100k entities), so the
+  results show how its cost scales. Seed any randomness (`new Random(seed)`).
+  A measured function that only computes a value writes it somewhere
+  observable, so V8 can't optimize the work away.
+- Code that draws runs against `createNoOpRenderContext`
+  (`src/rendering/test-helpers/no-op-render-context.ts`): a real
+  `RenderContext` over a WebGL2 stand-in whose calls do nothing, so a
+  benchmark measures the CPU side of a frame under Node.
+- `npm run bench:compare -- --base <ref>` compares two commits on one
+  machine: it exports the base and head (default `HEAD`) commits with
+  `git archive`, runs each benchmark file for both alternately, five times
+  each, and compares the medians of the per-run medians, matched by file
+  and benchmark name. A benchmark more than 10% slower on head is measured
+  again and fails the comparison only if it's slower again; a benchmark
+  that exists on one side only is reported, not gated. The table goes to
+  `bench/results/compare-micro.md` and the GitHub job summary. `--filter
+<substring>` limits the files, `--runs` and `--threshold` change the
+  defaults. Vitest is pinned to an exact version because its benchmark mode
+  is experimental; bump it deliberately.
+
 ## Integration & E2E Testing
 
 `/e2e` holds real-browser tests (Playwright) for cross-system behavior that
@@ -560,7 +596,12 @@ e2e/
       camera-pan-zoom.ts   # imports straight from '../../../src/index.js'
   specs/
     camera-pan-zoom.spec.ts
+  allocation/
+    measure-allocations.ts # runs a scene under the sampling heap profiler and charges each allocation
+    allow-list.ts          # today's known per-frame allocators
+    sprite-stress.spec.ts  # one allocation spec per stress scene
   playwright.config.ts
+  playwright.allocation.config.ts
   tsconfig.json
 vite.config.e2e.js          # dev server for fixtures/, rooted like vite.config.demo.js is for /demo
 ```
@@ -635,11 +676,52 @@ If you add a pixel-reading assertion:
   See the `write-e2e-test` skill and `measureGreenSquareBounds()` in
   `camera-pan-zoom.ts` for the full pattern and rationale.
 
+### Allocation specs
+
+`e2e/allocation/` checks that frames allocate nothing in steady state.
+Each spec runs a fixture scene (the sprite, UI, particle and text stress
+scenes in `e2e/fixtures/scenes/`) for 4,000 warm-up frames, so V8 has
+optimized every per-frame function, then samples every allocation over
+2,000 more through the DevTools Protocol's sampling heap profiler
+(`measureSteadyStateAllocations`). Chromium runs with
+`--sampling-heap-profiler-suppress-randomness`, so a sample is taken at
+exactly every 512 bytes and a run's result doesn't depend on chance.
+
+- Each sample is charged to the innermost frame of its stack that is
+  Forge's (`src/`) or the scene's (`e2e/fixtures/`) code. A dependency's
+  allocation is charged to the Forge function that called it, and the
+  scene's own systems aren't blamed on the `EcsWorld.update` they run
+  under.
+- A sample charged to `src/` fails the spec unless a function on
+  `allow-list.ts` is anywhere on its stack, so an entry can name the system
+  an allocator runs under. `allocationFreeModules` names folders that must
+  allocate nothing whatever the allow-list says. Scene allocations are
+  reported, not failed.
+- A function charged fewer samples than a quarter of one 16-byte object per
+  frame (16 over 2,000 frames) doesn't fail: that's V8's own occasional
+  allocations, which land on whichever function is running and vary by a
+  sample or two between runs.
+- The allow-list records today's allocators; a change that removes one
+  deletes its entry (an entry that allowed nothing shows as an "unused
+  allow-list entry" annotation). Don't add an entry to make a new system
+  pass: a new per-frame system ships allocating nothing, with an
+  allocation spec.
+- Each run writes its report (samples per charged function) to
+  `e2e/allocation-results/<scene>.json`, and the failure message prints
+  each offending stack. Line numbers are the served (transformed) module's.
+- Stress scenes reach their steady state within the warm-up: they spawn a
+  fixed number of entities on a fixed clock instead of the docs-site demos'
+  "until the frame rate drops".
+
 ### Running
 
 - `npm run test:e2e` / `npm run test:e2e:ui` - runs the suite (the
   `webServer` config starts `npm run dev:e2e` against `vite.config.e2e.js`
   automatically).
+- `npm run test:allocation` - runs the allocation specs
+  (`e2e/playwright.allocation.config.ts`: one worker, no retries, no trace
+  or video, against the same dev server). They take a few minutes each.
+  `npm run test:e2e` doesn't run them.
 - `npm run check-types:e2e` - type-checks `/e2e` on its own
   (`npm run check-types` only covers `/src` and `/demo`).
 - `@playwright/test` is pinned to an exact version (not `^`), matched to
@@ -1122,6 +1204,10 @@ export class Entity {
 npm run dev          # Run demo app
 npm run build        # Build the project
 npm test             # Run tests
+npm run bench:micro  # Run the microbenchmarks
+npm run bench:compare -- --base <ref>  # Compare microbenchmarks of two commits
+npm run test:e2e     # Run the Playwright suite
+npm run test:allocation  # Run the steady-state allocation specs
 npm run lint         # Run ESLint
 npm run lint:fix     # Fix linting issues
 npm run prettier     # Check formatting

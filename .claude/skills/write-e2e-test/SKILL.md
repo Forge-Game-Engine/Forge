@@ -189,7 +189,19 @@ Follow `camera-pan-zoom.spec.ts`'s shape:
   `printSteps` reporter surfaces these live, which matters since most of a
   run's wall time is the dev server/browser starting up.
 
-## 5. Verify
+## 5. Per-frame systems also get an allocation spec
+
+A new system that runs every frame must allocate nothing in steady state.
+Add (or extend) a stress scene in `e2e/fixtures/scenes/` that reaches a
+steady state within 4,000 frames (spawn a fixed number of entities on the
+scene's fixed clock), and a spec in `e2e/allocation/` that calls
+`measureSteadyStateAllocations` and `expectNoUnexpectedAllocations`. Don't
+put the new system on `e2e/allocation/allow-list.ts`; that list only
+records allocators that existed before the specs did. Run it with
+`npm run test:allocation -- <spec name>`; AGENTS.md's "Allocation specs"
+section explains how samples are charged and read.
+
+## 6. Verify
 
 - `npx eslint e2e/fixtures/scenes/<name>.ts e2e/specs/<name>.spec.ts`
 - `npx tsc --noEmit --project e2e/tsconfig.json`
