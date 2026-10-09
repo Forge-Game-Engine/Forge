@@ -110,8 +110,10 @@ const offsetCircle = new CircleCollider(8, 1, { x: 20, y: 0 });
 
 A dynamic body's mass, moment of inertia and center of mass come from its
 collider: the mass is the shape's area times its `density` (the
-constructor's second argument, `1` by default), and the center of mass is
-the shape's centroid. `RigidBodyEcsComponent` has no mass fields. To change
+constructor's second argument, `1` by default), the center of mass is the
+shape's centroid, and the moment of inertia is that of a uniform shape
+turning about its centroid: `m·r²/2` for a circle and `m(w² + h²)/12` for
+a `w` by `h` rectangle. `RigidBodyEcsComponent` has no mass fields. To change
 how heavy a body is, change its collider's density. A dynamic body without
 a `ColliderEcsComponent` throws when it is simulated.
 
