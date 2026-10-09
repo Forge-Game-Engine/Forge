@@ -5,48 +5,24 @@ import createPanelsCode from '!!raw-loader!./_create-panels';
 import panelComponentCode from '!!raw-loader!./_panel.component';
 import panelSystemCode from '!!raw-loader!./_panel.system';
 
-import {
-  DemoLegend,
-  DemoPage,
-  DemoPanel,
-} from '@site/src/components/demo-page';
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function NineSlice(): JSX.Element {
   return (
     <DemoPage
       slug="nine-slice"
       createGame={createNineSliceGame}
-      panels={
-        <DemoPanel title="Legend" icon="fa-list">
-          <DemoLegend
-            items={[
-              {
-                marker: (
-                  <i className="fa-solid fa-arrow-up" aria-hidden="true" />
-                ),
-                label: 'Plain sprite, stretched',
-              },
-              {
-                marker: (
-                  <i className="fa-solid fa-arrow-down" aria-hidden="true" />
-                ),
-                label: 'Nine-sliced sprite',
-              },
-            ]}
-          />
-        </DemoPanel>
-      }
       highlights={[
         {
           text: "Both panels use the same 96x96 frame artwork from Kenney's Fantasy UI Borders pack.",
           file: 'create-panels.ts',
         },
         {
-          text: 'The plain sprite stretches as a single quad, so its corner notches and frame line smear as it grows.',
+          text: 'The top panel is a plain sprite: it stretches as a single quad, so its corner notches and frame line smear as it grows.',
           file: 'create-panels.ts',
         },
         {
-          text: 'The nine-sliced sprite keeps its corners a fixed size and stretches only its edges and center.',
+          text: 'The bottom panel is nine-sliced: its corners keep a fixed size and only its edges and center stretch.',
           file: 'create-panels.ts',
         },
         {

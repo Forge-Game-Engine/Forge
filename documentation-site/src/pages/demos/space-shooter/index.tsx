@@ -39,12 +39,10 @@ import collisionCategoriesCode from '!!raw-loader!./_collision-categories';
 import gameOverComponentCode from '!!raw-loader!./_game-over.component';
 import gameOverSystemCode from '!!raw-loader!./_game-over.system';
 
-import { Demo } from '@site/src/components/Demo';
+import { DemoPage, DemoPanel } from '@site/src/components/demo-page';
 import type { CreateDemoGame } from '@site/src/hooks/useGame';
-import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
-import { KeyboardKey } from '@site/src/components/_KeyboardKey';
 
-export default function Rendering(): JSX.Element {
+export default function SpaceShooter(): JSX.Element {
   const bloomRef = useRef<BloomEcsComponent | null>(null);
   const [threshold, setThreshold] = useState(bloomDefaults.threshold);
   const [passes, setPasses] = useState(bloomDefaults.passes);
@@ -166,171 +164,269 @@ export default function Rendering(): JSX.Element {
   };
 
   return (
-    <Demo
-      metaData={{
-        title: 'Space Shooter Demo',
-        description: 'A demo showcasing a full space shooter game.',
-      }}
-      header="Space Shooter"
-      blurb="This demo showcases a complete space shooter game built using the Forge Game Engine. It features player-controlled movement, shooting mechanics, enemy spawning, and collision detection. The game demonstrates how to leverage the engine's capabilities to create an engaging and interactive experience. Players can navigate their spaceship, avoid obstacles, and shoot down enemies while enjoying smooth rendering and responsive controls."
+    <DemoPage
+      slug="space-shooter"
       createGame={createGame}
-      codeFiles={[
+      controls={[
+        { inputs: ['WASD', '↑↓←→'], action: 'Move' },
         {
-          name: 'game.ts',
-          content: gameCode,
+          inputs: ['Space', { device: 'mouse', label: 'Left button' }],
+          action: 'Shoot',
+          detail: 'Hold to keep firing',
         },
         {
-          name: 'asteroid-spawner.component.ts',
-          content: asteroidSpawnerComponentCode,
-        },
-        {
-          name: 'asteroid-spawner.system.ts',
-          content: asteroidSpawnerSystemCode,
-        },
-        {
-          name: 'asteroid.component.ts',
-          content: asteroidComponentCode,
-        },
-        {
-          name: 'asteroid.system.ts',
-          content: asteroidSystemCode,
-        },
-        {
-          name: 'background.component.ts',
-          content: backgroundComponentCode,
-        },
-        {
-          name: 'background.shader.ts',
-          content: backgroundShaderCode,
-        },
-        {
-          name: 'background.system.ts',
-          content: backgroundSystemCode,
-        },
-        {
-          name: 'bullet.component.ts',
-          content: bulletComponentCode,
-        },
-        {
-          name: 'bullet.system.ts',
-          content: bulletSystemCode,
-        },
-        {
-          name: 'camera-shake.component.ts',
-          content: cameraShakeComponentCode,
-        },
-        {
-          name: 'camera-shake.system.ts',
-          content: cameraShakeSystemCode,
-        },
-        {
-          name: 'collision-categories.ts',
-          content: collisionCategoriesCode,
-        },
-        {
-          name: 'collision.system.ts',
-          content: collisionSystemCode,
-        },
-        {
-          name: 'create-asteroids.ts',
-          content: createAsteroidsCode,
-        },
-        {
-          name: 'create-background.ts',
-          content: createBackgroundMaterialCode,
-        },
-        {
-          name: 'create-explosions.ts',
-          content: createExplosionsCode,
-        },
-        {
-          name: 'create-inputs.ts',
-          content: createInputsCode,
-        },
-        {
-          name: 'create-music.ts',
-          content: createMusicCode,
-        },
-        {
-          name: 'create-player.ts',
-          content: createPlayerCode,
-        },
-        {
-          name: 'game-over.component.ts',
-          content: gameOverComponentCode,
-        },
-        {
-          name: 'game-over.system.ts',
-          content: gameOverSystemCode,
-        },
-        {
-          name: 'gun.component.ts',
-          content: gunComponentCode,
-        },
-        {
-          name: 'gun.system.ts',
-          content: gunSystemCode,
-        },
-        {
-          name: 'movement.system.ts',
-          content: movementSystemCode,
-        },
-        {
-          name: 'player.component.ts',
-          content: playerComponentCode,
+          inputs: ['R'],
+          action: 'Restart',
+          detail: 'After the ship is destroyed',
         },
       ]}
-      interactions={
+      panels={
         <>
-          <InteractionInstruction
-            displayElement={<KeyboardKey keyCode="A" />}
-            text="Left"
-          />
-          <InteractionInstruction
-            displayElement={<KeyboardKey keyCode="D" />}
-            text="Right"
-          />
-
-          <InteractionInstruction
-            displayElement={<KeyboardKey keyCode="␣" />}
-            text="Shoot"
-          />
-
-          <InteractionInstruction
-            displayElement={<KeyboardKey keyCode="R" />}
-            text="Restart (after death)"
-          />
-
-          <BloomControls
-            enabled={bloomEnabled}
-            threshold={threshold}
-            passes={passes}
-            intensity={intensity}
-            onEnabledChange={handleBloomEnabledChange}
-            onThresholdChange={handleThresholdChange}
-            onPassesChange={handlePassesChange}
-            onIntensityChange={handleIntensityChange}
-          />
-
-          <GaussianBlurControls
-            enabled={blurEnabled}
-            passes={blurPasses}
-            intensity={blurIntensity}
-            onEnabledChange={handleBlurEnabledChange}
-            onPassesChange={handleBlurPassesChange}
-            onIntensityChange={handleBlurIntensityChange}
-          />
-
-          <AudioControls
-            musicVolume={musicVolume}
-            sfxVolume={sfxVolume}
-            muted={muted}
-            onMusicVolumeChange={handleMusicVolumeChange}
-            onSfxVolumeChange={handleSfxVolumeChange}
-            onMutedChange={handleMutedChange}
-          />
+          <DemoPanel title="Bloom" icon="fa-sliders">
+            <BloomControls
+              enabled={bloomEnabled}
+              threshold={threshold}
+              passes={passes}
+              intensity={intensity}
+              onEnabledChange={handleBloomEnabledChange}
+              onThresholdChange={handleThresholdChange}
+              onPassesChange={handlePassesChange}
+              onIntensityChange={handleIntensityChange}
+            />
+          </DemoPanel>
+          <DemoPanel title="Background blur" icon="fa-sliders">
+            <GaussianBlurControls
+              enabled={blurEnabled}
+              passes={blurPasses}
+              intensity={blurIntensity}
+              onEnabledChange={handleBlurEnabledChange}
+              onPassesChange={handleBlurPassesChange}
+              onIntensityChange={handleBlurIntensityChange}
+            />
+          </DemoPanel>
+          <DemoPanel title="Audio" icon="fa-volume-high">
+            <AudioControls
+              musicVolume={musicVolume}
+              sfxVolume={sfxVolume}
+              muted={muted}
+              onMusicVolumeChange={handleMusicVolumeChange}
+              onSfxVolumeChange={handleSfxVolumeChange}
+              onMutedChange={handleMutedChange}
+            />
+          </DemoPanel>
         </>
       }
+      highlights={[
+        {
+          text: 'Bullets carry an emissive map and the foreground renders in HDR, so bloom makes only the bullets glow.',
+          file: 'create-player.ts',
+        },
+        {
+          text: 'The background and foreground render to separate targets, so the blur softens the nebula while the ship stays sharp.',
+          file: 'create-game.ts',
+        },
+        {
+          text: 'Collision categories make asteroids test only against bullets and the ship, and their contacts decide what explodes.',
+          file: 'collision.system.ts',
+        },
+        {
+          text: 'Explosions are sprite-sheet animations that remove themselves when their lifetime ends, and they shake the camera.',
+          file: 'create-explosions.ts',
+        },
+        {
+          text: 'Music and sound effects play on separate mixer buses, which is what the audio sliders control.',
+          file: 'create-music.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Bloom', to: '/docs/docs/rendering/bloom' },
+        { label: 'Gaussian blur', to: '/docs/docs/rendering/gaussian-blur' },
+        { label: 'Collisions', to: '/docs/docs/physics/collisions' },
+        { label: 'Mixer and buses', to: '/docs/docs/audio/mixer-and-buses' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Sets up audio, render targets, cameras and post-processing, and registers every system.',
+              content: gameCode,
+            },
+          ],
+        },
+        {
+          title: 'Player',
+          files: [
+            {
+              name: 'create-inputs.ts',
+              summary:
+                'Binds WASD, the arrow keys, Space, the mouse and R to game actions.',
+              content: createInputsCode,
+            },
+            {
+              name: 'create-player.ts',
+              summary:
+                'Loads the ship and glowing bullet sprites and spawns the ship.',
+              content: createPlayerCode,
+            },
+            {
+              name: 'player.component.ts',
+              summary: "The ship's speed and the bounds it can move within.",
+              content: playerComponentCode,
+            },
+            {
+              name: 'movement.system.ts',
+              summary: 'Moves the ship with the input, clamped to the screen.',
+              content: movementSystemCode,
+            },
+          ],
+        },
+        {
+          title: 'Shooting',
+          files: [
+            {
+              name: 'gun.component.ts',
+              summary: 'The fire rate and bullet sprite for a gun.',
+              content: gunComponentCode,
+            },
+            {
+              name: 'gun.system.ts',
+              summary:
+                'Fires a pair of bullets and a laser sound while shoot is held.',
+              content: gunSystemCode,
+            },
+            {
+              name: 'bullet.component.ts',
+              summary: "A bullet's speed.",
+              content: bulletComponentCode,
+            },
+            {
+              name: 'bullet.system.ts',
+              summary: 'Moves bullets up the screen.',
+              content: bulletSystemCode,
+            },
+          ],
+        },
+        {
+          title: 'Asteroids',
+          files: [
+            {
+              name: 'create-asteroids.ts',
+              summary:
+                'Loads the asteroid sprites and creates the spawner above the screen.',
+              content: createAsteroidsCode,
+            },
+            {
+              name: 'asteroid-spawner.component.ts',
+              summary:
+                'Spawn rate, area, speeds and sprites for new asteroids.',
+              content: asteroidSpawnerComponentCode,
+            },
+            {
+              name: 'asteroid-spawner.system.ts',
+              summary:
+                'Spawns asteroids with a random sprite, position and speed.',
+              content: asteroidSpawnerSystemCode,
+            },
+            {
+              name: 'asteroid.component.ts',
+              summary: "An asteroid's fall and spin speed.",
+              content: asteroidComponentCode,
+            },
+            {
+              name: 'asteroid.system.ts',
+              summary:
+                'Moves and spins asteroids, and removes them once off screen.',
+              content: asteroidSystemCode,
+            },
+          ],
+        },
+        {
+          title: 'Collisions and game over',
+          files: [
+            {
+              name: 'collision-categories.ts',
+              summary:
+                'Collision category bits for asteroids, bullets and the ship.',
+              content: collisionCategoriesCode,
+            },
+            {
+              name: 'collision.system.ts',
+              summary:
+                'Explodes asteroids hit by bullets, and destroys the ship on contact.',
+              content: collisionSystemCode,
+            },
+            {
+              name: 'game-over.component.ts',
+              summary: 'Whether the game is over, and the restart message.',
+              content: gameOverComponentCode,
+            },
+            {
+              name: 'game-over.system.ts',
+              summary:
+                'Shows the restart message and resets the round when R is pressed.',
+              content: gameOverSystemCode,
+            },
+          ],
+        },
+        {
+          title: 'Effects and audio',
+          files: [
+            {
+              name: 'create-explosions.ts',
+              summary:
+                'Builds the explosion animation and spawns explosions with sound and shake.',
+              content: createExplosionsCode,
+            },
+            {
+              name: 'camera-shake.component.ts',
+              summary:
+                'The strength, duration and current offset of a camera shake.',
+              content: cameraShakeComponentCode,
+            },
+            {
+              name: 'camera-shake.system.ts',
+              summary: 'Jolts the camera with fading random offsets.',
+              content: cameraShakeSystemCode,
+            },
+            {
+              name: 'create-music.ts',
+              summary: 'Plays the looping background music on the music bus.',
+              content: createMusicCode,
+            },
+          ],
+        },
+        {
+          title: 'Background',
+          files: [
+            {
+              name: 'create-background.ts',
+              summary:
+                'Creates a full-screen sprite drawn with the nebula shader.',
+              content: createBackgroundMaterialCode,
+            },
+            {
+              name: 'background.component.ts',
+              summary: 'A tag that marks the background entity.',
+              content: backgroundComponentCode,
+            },
+            {
+              name: 'background.system.ts',
+              summary:
+                'Updates the shader time and resizes the background with the canvas.',
+              content: backgroundSystemCode,
+            },
+            {
+              name: 'background.shader.ts',
+              summary:
+                'Draws twinkling, scrolling star layers over a scrolling nebula texture.',
+              content: backgroundShaderCode,
+            },
+          ],
+        },
+      ]}
     />
   );
 }
