@@ -165,17 +165,21 @@ factory functions, not classes:
    that attaches it to a caller-supplied entity (see "Component Pattern"
    below). Components carry no logic.
 
-2. **Systems** (`EcsSystem<TQuery>`): Plain objects, produced by
+2. **Systems** (`EcsSystem<TQuery, TQueries>`): Plain objects, produced by
    `create<Name>EcsSystem` factory functions, not classes. A system declares
-   a `query` (the component keys it reads, in order) and an optional set of
-   `tags`, and implements `update(world, queryResult)`. `queryResult` is a
-   batch for the whole tick - `entities: readonly number[]` and a
-   `components` array (one array per queried component type, in query
-   order) - so `update` runs exactly once per tick regardless of how many
-   entities matched (including zero), and the system iterates the batch
-   itself. An optional `cleanup(world)` hook runs once when the system is
-   removed from an `EcsWorld` or the world is stopped. See "System Pattern"
-   below and `/documentation-site/docs/docs/ecs/system.md`.
+   every query it reads: a primary `query` (the component keys it reads, in
+   order) with optional `tags` and `without` (keys an entity must not
+   have), and optional named secondary `queries`. It implements
+   `update(world, queryResult, queries)`. `queryResult` is a batch for the
+   whole tick - `entities: readonly number[]`, a `components` array (one
+   array per queried component type, in query order), the `added`/`removed`
+   journals since the system last ran, and `lastRunTick` - so `update` runs
+   exactly once per tick regardless of how many entities matched (including
+   zero), and the system iterates the batch itself. `queries` holds one
+   such result per secondary declaration. An optional `cleanup(world)` hook
+   runs once when the system is removed from an `EcsWorld` or the world is
+   stopped. See "System Pattern" below and
+   `/documentation-site/docs/docs/ecs/system.md`.
 
 3. **Entities**: Just numeric ids (`number`), created with
    `EcsWorld.createEntity()`. Components are attached/detached by id via the
@@ -188,10 +192,15 @@ factory functions, not classes:
    too, so loops that remove entities check `isAlive` first.
 
 4. **World** (`EcsWorld`): Container for component data and registered
-   systems. Stores component data grouped by component key, runs each
-   registered system's `update` once per `EcsWorld.update()` tick (in
-   registration-order), and exposes `query(componentKeys, tags?)` for
-   ad-hoc lookups outside of a system's own `query`.
+   systems. Stores component data grouped by component key, keeps one
+   membership (the matching entities) per distinct declared query up to
+   date through a single internal add/remove path, patches each system's
+   reused result arrays from its journal just before its `update`, and runs
+   each registered system's `update` once per `EcsWorld.update()` tick (in
+   registration order, from a cached schedule). It exposes
+   `query(componentKeys, tags?)` for ad-hoc lookups outside a system's
+   `update` (setup, `cleanup`, DOM handlers, tests); no system calls it
+   inside `update`.
 
 ### Key Patterns
 
@@ -355,14 +364,53 @@ export const createMyEcsSystem = (): EcsSystem<[MyComponent]> => ({
 ```
 
 See `/documentation-site/docs/docs/ecs/system.md` for the full contract,
-including the optional `tags` and `cleanup` fields.
+including the optional `tags`, `without`, `queries` and `cleanup` fields.
 
-A system's `query` and `tags` are fixed: a `create<Name>EcsSystem` factory
-never takes options that change which components or tags it matches. A
+A system that reads a second set of entities declares it as a named
+secondary query and reads it from `update`'s third argument:
+
+```typescript
+export const createMyEcsSystem = (): EcsSystem<
+  [MyComponent],
+  { targets: [TargetComponent, PositionEcsComponent] }
+> => ({
+  query: [myComponentId],
+  queries: { targets: { query: [targetId, positionId] } },
+  update: (world, { components: [myComponents] }, { targets }) => {
+    // ...
+  },
+});
+```
+
+Never call `world.query` inside `update`: it scans the world and allocates
+on every call. The result arrays belong to the world, are reused every
+tick, don't change during the `update` that received them, and must not be
+kept after it returns.
+
+A system's `query`, `tags`, `without` and `queries` are fixed: a
+`create<Name>EcsSystem` factory never takes options that change which
+components or tags it matches. A
 system processes every entity that has its components, which is what makes
 a component mean the same thing everywhere. If a system matches entities it
 shouldn't touch, the entities' components are wrong, or another system is
 writing a value this one owns. Fix that instead.
+
+### Journals and Change Ticks
+
+A query result's `added` and `removed` list the entities that started or
+stopped matching since the system last ran (every match is in `added` on
+its first run). A system that keeps derived data per entity (a GPU slot, a
+physics proxy) creates it from `added` and frees it from `removed`,
+processing `removed` first, instead of diffing the whole set every tick.
+
+To detect a changed _value_, its owner stamps it: when the owning system
+actually changes an output, it writes `changedTick = world.changeTick` on
+it (e.g. `transform.world.changedTick`). `world.changeTick` advances before
+every system run, and each run gets its previous run's tick as
+`queryResult.lastRunTick`, so a reader tests
+`value.changedTick > lastRunTick` and keeps nothing itself. Only the
+owner writes the stamp (it's part of the value it owns), and only when the
+value changed. Don't add proxies, setters or hand-set dirty flags for this.
 
 ### Index Files
 
