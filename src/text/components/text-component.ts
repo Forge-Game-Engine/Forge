@@ -184,8 +184,7 @@ export interface TextDefaultedOptions {
  * and the render system draws that mesh.
  *
  * A `ScaleEcsComponent` or `RotationEcsComponent` on the entity scales or
- * turns each glyph about its own center, not the glyphs' positions
- * relative to the entity, so change `size` to resize text.
+ * turns the whole text about the entity's position, keeping its layout.
  */
 export interface TextEcsComponent
   extends TextRequiredOptions, TextDefaultedOptions {
