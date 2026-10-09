@@ -147,6 +147,7 @@ Infima
 inigo
 inout
 inputmode
+interactability
 interactable
 interactables
 internalformat
@@ -221,6 +222,7 @@ Oboro
 occluder
 Okonjo
 perlin
+pickable
 pillarbox
 pillarboxing
 pingpong
@@ -247,6 +249,7 @@ ramamoorthi
 rasterizer
 raycastable
 raycaster
+raycasters
 readback
 rebuildable
 rects
