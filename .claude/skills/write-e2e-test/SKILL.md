@@ -140,6 +140,13 @@ Why _relative_ and _same-run_, specifically:
 
 ### What to avoid
 
+Everything below applies to the normal suite (`e2e/specs`, `test:e2e`),
+which runs on whatever browser build the host has. The one exception is
+the pinned golden environment (step 5): golden diffing and absolute pixel
+values are allowed for specs in `e2e/golden/` and specs tagged
+`@analytic`, which run only inside the pinned Playwright container, behind
+the canary. Nowhere else.
+
 - **Hardcoded/absolute pixel-color assertions.** Don't assert
   `getPixel(400, 300) === '#3388cc'` or similar exact-coordinate,
   exact-color checks. They're brittle to anything that shifts layout by a
@@ -147,9 +154,11 @@ Why _relative_ and _same-run_, specifically:
   feature_ - see the SwiftShader note below - in which case they fail
   the whole suite for the wrong reason instead of degrading gracefully.
 - **Cross-environment golden-image screenshot diffing**
-  (`expect(page).toHaveScreenshot()` / `toMatchSnapshot()`). This repo does
-  not use it for `/e2e`. A golden image baked from one machine's GPU
-  driver/rasterizer will not byte-match another's - see the SwiftShader
+  (`expect(page).toHaveScreenshot()` / `toMatchSnapshot()`) in the normal
+  suite. Golden images belong in `e2e/golden/` only (step 5), where the
+  pinned container makes them reproducible. Anywhere else, a golden image
+  baked from one machine's GPU driver/rasterizer will not byte-match
+  another's - see the SwiftShader
   discrepancy documented in `AGENTS.md`'s "Be wary of pixel-level rendering
   assertions": two independent local readback methods (`gl.readPixels` and
   a canvas 2D `drawImage`/`getImageData` readback) agreed with each other
@@ -189,7 +198,57 @@ Follow `camera-pan-zoom.spec.ts`'s shape:
   `printSteps` reporter surfaces these live, which matters since most of a
   run's wall time is the dev server/browser starting up.
 
-## 5. Verify
+## 5. Goldens and analytic specs (pinned environment only)
+
+Read `AGENTS.md`'s "Golden images and analytic specs" first. In short:
+`npm run test:golden` runs `e2e/playwright.golden.config.ts` inside the
+Playwright Docker image matching the pinned `@playwright/test`, as
+`linux/amd64`; the canary runs first, and the goldens and `@analytic`
+specs are skipped if it fails.
+
+- **A golden** is for "this must keep looking exactly like this": every
+  visible rendering feature gets one, so a renderer change that alters
+  output shows up as a changed image. Add a scene under
+  `e2e/golden/scenes/` built with `golden-scene.ts`
+  (`createGoldenSceneContext`, `createGoldenCamera`,
+  `createGoldenSceneHandle`, `createComputedTexture`), and a row in
+  `e2e/golden/specs/2d.spec.ts` (or a new spec file there that calls
+  `expectGolden`). Keep the default tolerance unless the scene is thin,
+  antialiased detail (text), and say why when you loosen it. Don't load
+  images with `gAMA`, `cHRM` or `iCCP` chunks.
+- **An `@analytic` spec** is for "this value is correct": the expected
+  output can be computed (a tone curve, a blend, a known illuminance). Put
+  it in `e2e/specs/` with `{ tag: '@analytic' }`, sample the middle of
+  regions with `sampleCanvas` (never an edge), and compare with
+  `expectColorClose` against the computed value, with a tolerance that
+  covers 8-bit rounding. `test:e2e` skips it.
+- **A fallback path** for a missing WebGL extension is tested by calling
+  `maskWebGlExtensions(page, [...])` before `page.goto`, never with an
+  engine option.
+- **Goldens are generated in CI only**: `test:golden:update` refuses to run
+  without `CI`; the `golden-update` workflow regenerates them on the pull
+  request's branch. A new golden's first `test:golden` run fails with the
+  actual image in `e2e/golden-results/`, which is how you look at it before
+  the workflow commits it.
+
+### Golden review rules
+
+A pull request that changes goldens shows the old and new images in its
+diff. When reviewing or writing one:
+
+- A golden changes only when the pull request explains why the old output
+  was wrong, or which new feature changes it. "The image changed" with no
+  reason is a regression until shown otherwise.
+- A new golden for a 3D feature is checked once against a reference
+  renderer (the Khronos glTF Sample Viewer for materials and models) before
+  it's committed, and the pull request says so.
+- A canary failure is an environment problem: fix the environment (the
+  image, the platform, the launch flags), never the canary's golden, unless
+  the pull request changes how a clear or a plain sprite renders.
+- Never loosen a tolerance to make a failing golden pass. Loosen it only
+  for detail that's genuinely noisy at the edges (text), and say why.
+
+## 6. Verify
 
 - `npx eslint e2e/fixtures/scenes/<name>.ts e2e/specs/<name>.spec.ts`
 - `npx tsc --noEmit --project e2e/tsconfig.json`
@@ -197,6 +256,8 @@ Follow `camera-pan-zoom.spec.ts`'s shape:
   alphabetically)
 - `npx playwright test --config e2e/playwright.config.ts -g "<test name>"`,
   run at least twice to catch flakiness before considering it done.
+- For a golden or `@analytic` spec, `npm run test:golden -- -g "<test name>"`
+  instead, also at least twice.
 - Then the full root-level CLAUDE.md verification suite, since `/e2e`
   changes alone don't require it but a feature change elsewhere typically
   does.

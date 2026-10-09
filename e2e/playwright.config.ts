@@ -20,6 +20,10 @@ export default defineConfig({
   outputDir: './test-results',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
+  // Specs tagged `@analytic` compare pixels with computed values, which is
+  // only reliable in the pinned rendering environment, so they run in
+  // `test:golden` (`playwright.golden.config.ts`) instead.
+  grepInvert: /@analytic/,
   retries: process.env.CI ? 2 : 0,
   reporter: [
     // printSteps surfaces each test.step() as it starts/finishes, instead

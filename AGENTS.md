@@ -560,8 +560,22 @@ e2e/
       camera-pan-zoom.ts   # imports straight from '../../../src/index.js'
   specs/
     camera-pan-zoom.spec.ts
+    tone-curve.spec.ts     # an `@analytic` spec: runs in test:golden, skipped by test:e2e
+  helpers/
+    open-scene.ts          # openScene/stepScene, shared by every config
+    canvas-samples.ts      # region sampling and color comparison for analytic specs
+    mask-webgl-extensions.ts # init script hiding named WebGL extensions
+  golden/
+    golden-scene.ts        # 320 x 240 canvas with preserveDrawingBuffer, fixed-step handle, computed textures
+    scenes/                # golden scenes, loaded as `?scene=golden/<name>`
+    specs/
+      canary.spec.ts       # runs first; a failure means the environment is wrong
+      2d.spec.ts           # one golden per scene, with per-case tolerances
+    images/                # the reviewed reference images
   playwright.config.ts
+  playwright.golden.config.ts # goldens and @analytic specs, only inside the pinned container
   tsconfig.json
+scripts/golden/run-golden.mjs # starts the pinned Playwright container for test:golden
 vite.config.e2e.js          # dev server for fixtures/, rooted like vite.config.demo.js is for /demo
 ```
 
@@ -635,6 +649,74 @@ If you add a pixel-reading assertion:
   See the `write-e2e-test` skill and `measureGreenSquareBounds()` in
   `camera-pan-zoom.ts` for the full pattern and rationale.
 
+These rules are for the normal suite, which runs on whatever browser build
+the host has. The one exception is the **pinned golden environment** below:
+golden-image diffing and absolute pixel values are allowed there, and only
+there.
+
+### Golden images and analytic specs
+
+`npm run test:golden` runs `e2e/playwright.golden.config.ts` inside the
+Playwright Docker image that matches the pinned `@playwright/test` version
+(`mcr.microsoft.com/playwright:v<version>-noble`), always as `linux/amd64`
+(emulated on Apple silicon), locally and in CI. Pinning the image pins the
+SwiftShader build, so its output only changes in a reviewed update of the
+image, not between runs - the problem the SwiftShader incident above came
+from. `scripts/golden/run-golden.mjs` starts the container with the repo
+mounted and a named volume (`forge-golden-node-modules`) over
+`node_modules`, which it fills with `npm ci` inside the container whenever
+`package-lock.json` changes, so the host's own (possibly macOS) binaries are
+never used. It needs only Docker and Node on the host.
+
+- **Canary first.** `e2e/golden/specs/canary.spec.ts` clears to a known
+  color and draws one opaque quad, then checks the renderer is SwiftShader,
+  the two colors exactly, and its golden with zero tolerance. The golden and
+  analytic projects depend on it, so if it fails Playwright skips them, and
+  the one failure says `GOLDEN ENVIRONMENT FAILURE`: the environment is
+  wrong, not the change.
+- **Golden scenes** live in `e2e/golden/scenes/` and are loaded as
+  `?scene=golden/<name>`. Build them with `e2e/golden/golden-scene.ts`:
+  `createGoldenSceneContext` makes the 320 × 240 canvas at device pixel
+  ratio `1` with `preserveDrawingBuffer` (so the canvas element can be
+  captured after the frame), and `createGoldenSceneHandle` steps a fixed
+  1/60 s whatever delta it's given. No randomness without a fixed seed.
+  Register the rendering systems after every system that writes `local`
+  and after the transform system.
+- **No image files with color-space chunks.** Make textures in code with
+  `createComputedTexture`, or use an image without `gAMA`, `cHRM` or `iCCP`
+  chunks (`assets/fonts/default/default.png` has none). The browser applies
+  those chunks on upload, so a golden would record how an image is decoded,
+  not how it's drawn.
+- **Capture** with `expectGolden(page, name, tolerance?)`
+  (`e2e/golden/expect-golden.ts`), which compares the canvas element with
+  `e2e/golden/images/<name>.png`. The default tolerance is a `0.02` color
+  threshold (pixelmatch's, whose allowed distance grows with its square:
+  about 5 of 255 grey levels) and `0.2%` of pixels; a case that loosens it (text, other thin
+  antialiased detail) says why next to the value. `2d.spec.ts` is a table
+  of cases; add a row for a new 2D scene.
+- **`@analytic` specs** compare canvas samples with computed values (a tone
+  curve, a known blend). They live in `e2e/specs/` with
+  `{ tag: '@analytic' }`; `test:e2e` skips them (`grepInvert`) and
+  `test:golden` runs them behind the canary. Sample the middle of regions
+  with `sampleCanvas`, and compare with `expectColorClose` (which also
+  fails a sample that straddles an edge) or `expectSamplesClose`. Put the
+  numbers the spec computes from in a module with no `/src` import (see
+  `tone-curve-cells.ts`). A spec that only compares regions of one frame
+  with each other is relative, so it isn't tagged and runs in both suites.
+- **Fallback paths** for a missing WebGL extension are tested by hiding it:
+  `maskWebGlExtensions(page, ['EXT_clip_control'])` before `page.goto`
+  makes `getExtension` return `null` and `getSupportedExtensions` leave it
+  out. The engine needs no test-only option for this.
+- `retries: 0`: a golden that passes only on a retry is a failure.
+- **Updating goldens** happens only in CI: `npm run test:golden:update`
+  refuses to run unless `CI` is set, and the `golden-update` workflow runs
+  it on a pull request's branch and commits the images, so every golden
+  comes from the same kind of runner that checks it. A missing golden
+  fails `test:golden` and writes the actual image to
+  `e2e/golden-results/`, which is how you preview a new one. The review
+  rules for a pull request that changes goldens are in the `write-e2e-test`
+  skill.
+
 ### Running
 
 - `npm run test:e2e` / `npm run test:e2e:ui` - runs the suite (the
@@ -642,6 +724,13 @@ If you add a pixel-reading assertion:
   automatically).
 - `npm run check-types:e2e` - type-checks `/e2e` on its own
   (`npm run check-types` only covers `/src` and `/demo`).
+- `npm run test:golden` - runs the canary, the goldens and the `@analytic`
+  specs inside the pinned Playwright container (needs Docker). Extra
+  arguments go to Playwright, e.g. `npm run test:golden -- -g masks`. The
+  report is written to `e2e/golden-report/` and failures' expected, actual
+  and diff images to `e2e/golden-results/`.
+- `npm run test:golden:update` - regenerates the reference images; CI only
+  (see "Golden images and analytic specs").
 - `@playwright/test` is pinned to an exact version (not `^`), matched to
   whatever Chromium revision is available in this repo's dev/CI
   environments, since the browser binary and the library version are
