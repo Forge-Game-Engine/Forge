@@ -1,15 +1,14 @@
-import React, { FC, ReactNode, useEffect, useRef, useState } from 'react';
+import React, { FC, ReactNode, useRef, useState } from 'react';
 import Layout from '@theme/Layout';
-import Link from '@docusaurus/Link';
-import clsx from 'clsx';
-import { CreateDemoGame, useGame } from '@site/src/hooks/useGame';
-import { useFullscreen } from '@site/src/hooks/useFullscreen';
-import { useDemoBackLink } from '@site/src/hooks/useDemoBackLink';
-import { usePreventPageScrollKeys } from '@site/src/hooks/usePreventPageScrollKeys';
-import { FullscreenButton } from '@site/src/components/_FullscreenButton';
+import { CreateDemoGame } from '@site/src/hooks/useGame';
+import { demos } from '@site/src/data/demos';
 import styles from './DemoPage.module.css';
-import { CodeExplorer } from './_CodeExplorer';
-import { DemoControls } from './_DemoControls';
+import { CodeExplorer } from './CodeExplorer';
+import { DemoControls } from './DemoControls';
+import { DemoGame } from './DemoGame';
+import { DemoHeader } from './DemoHeader';
+import { DemoHighlights } from './DemoHighlights';
+import { DemoPanel } from './DemoPanel';
 import {
   DemoControl,
   DemoDocLink,
@@ -18,20 +17,17 @@ import {
   DemoHighlight,
 } from './types';
 
-export type {
-  DemoControl,
-  DemoDocLink,
-  DemoFile,
-  DemoFileGroup,
-  DemoHighlight,
-};
-
 interface DemoPageProps {
-  title: string;
-  /** One or two sentences: what the demo shows. Also the page's meta description. */
-  summary: string;
+  /** The demo's entry in `src/data/demos.ts`, which holds its title and summary. */
+  slug: string;
   createGame: CreateDemoGame;
-  controls: DemoControl[];
+  /** Leave out for a demo you only watch. */
+  controls?: DemoControl[];
+  /**
+   * Extra sidebar content shown after the controls, such as live settings
+   * or a legend. Wrap each in a `DemoPanel`.
+   */
+  panels?: ReactNode;
   /** The few ideas a reader should take away, each linked to its code. */
   highlights: DemoHighlight[];
   docLinks?: DemoDocLink[];
@@ -52,35 +48,27 @@ const findFile = (fileGroups: DemoFileGroup[], name: string): DemoFile => {
 };
 
 /**
- * A demo page: the running game with its controls and a short explanation,
- * and a code explorer for the demo's source below.
+ * A demo page: the running game with its controls and a short explanation
+ * beside it, and a code explorer for the demo's source below.
  */
 export const DemoPage: FC<DemoPageProps> = ({
-  title,
-  summary,
+  slug,
   createGame,
-  controls,
+  controls = [],
+  panels,
   highlights,
   docLinks = [],
   fileGroups,
 }) => {
-  const gameRef = useRef<HTMLDivElement>(null);
   const explorerRef = useRef<HTMLElement>(null);
-  const backLink = useDemoBackLink();
-  const { isFullscreen, toggleFullscreen } = useFullscreen(gameRef);
-  const [hasFocus, setHasFocus] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState(
     fileGroups[0].files[0].name,
   );
+  const demo = demos.find((candidate) => candidate.slug === slug);
 
-  useGame(createGame);
-  usePreventPageScrollKeys(gameRef);
-
-  // Focus the game straight away, so the controls work without a click and
-  // the arrow keys drive the game instead of scrolling the page.
-  useEffect(() => {
-    gameRef.current?.focus({ preventScroll: true });
-  }, []);
+  if (!demo) {
+    throw new Error(`No demo with slug "${slug}" in src/data/demos.ts.`);
+  }
 
   for (const highlight of highlights) {
     if (highlight.file) {
@@ -94,82 +82,27 @@ export const DemoPage: FC<DemoPageProps> = ({
   };
 
   return (
-    <Layout title={title} description={summary}>
+    <Layout title={`${demo.title} Demo`} description={demo.description}>
       <main className={styles.page}>
-        <Link to={backLink.to} className={styles.back}>
-          {backLink.label}
-        </Link>
-        <header className={styles.header}>
-          <h1 className={styles.title}>{title}</h1>
-          <p className={styles.summary}>{summary}</p>
-          {docLinks.length > 0 && (
-            <nav className={styles.docLinks} aria-label="Related docs">
-              <span>
-                <i className="fa-solid fa-book"></i> Docs:
-              </span>
-              {docLinks.map((docLink) => (
-                <Link key={docLink.to} to={docLink.to}>
-                  {docLink.label}
-                </Link>
-              ))}
-            </nav>
-          )}
-        </header>
+        <DemoHeader
+          title={demo.title}
+          summary={demo.description}
+          docLinks={docLinks}
+        />
 
         <div className={styles.stage}>
-          <div
-            id="demo-game"
-            ref={gameRef}
-            className={styles.game}
-            tabIndex={0}
-            aria-label={`${title} game`}
-            onFocus={() => setHasFocus(true)}
-            onBlur={() => setHasFocus(false)}
-          >
-            <FullscreenButton
-              isFullscreen={isFullscreen}
-              onToggle={toggleFullscreen}
-            />
-            <div
-              className={clsx(
-                styles.focusHint,
-                hasFocus && styles.focusHintHidden,
-              )}
-              aria-hidden="true"
-            >
-              <i className="fa-solid fa-hand-pointer"></i> Click to play
-            </div>
-          </div>
+          <DemoGame title={demo.title} createGame={createGame} />
 
           <aside className={styles.sidebar}>
-            <section className={styles.card}>
-              <h2 className={styles.cardTitle}>
-                <i className="fa-solid fa-keyboard"></i> Controls
-              </h2>
-              <DemoControls controls={controls} />
-            </section>
-
-            <section className={styles.card}>
-              <h2 className={styles.cardTitle}>
-                <i className="fa-solid fa-lightbulb"></i> How it works
-              </h2>
-              <ul className={styles.highlights}>
-                {highlights.map(({ text, file }, index) => (
-                  <li key={index}>
-                    {text}
-                    {file && (
-                      <button
-                        type="button"
-                        className={styles.fileLink}
-                        onClick={() => openFile(file)}
-                      >
-                        <i className="fa-solid fa-code"></i> {file}
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </section>
+            {controls.length > 0 && (
+              <DemoPanel title="Controls" icon="fa-keyboard">
+                <DemoControls controls={controls} />
+              </DemoPanel>
+            )}
+            {panels}
+            <DemoPanel title="How it works" icon="fa-lightbulb">
+              <DemoHighlights highlights={highlights} onOpenFile={openFile} />
+            </DemoPanel>
           </aside>
         </div>
 

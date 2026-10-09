@@ -1,11 +1,18 @@
 import { ReactNode } from 'react';
 
 /**
- * One action the player can take, and the keys (or other inputs) that
- * trigger it. Alternatives in `keys` are shown joined by "or".
+ * One input that triggers a control: a key's label (`'→'`, `'D'`,
+ * `'Space'`), or a mouse or gamepad input described in a few words.
+ */
+export type DemoInput =
+  string | { device: 'mouse' | 'gamepad' | 'touch'; label: string };
+
+/**
+ * One action the player can take, and the inputs that trigger it.
+ * Alternatives in `inputs` are shown joined by "or".
  */
 export interface DemoControl {
-  keys: string[];
+  inputs: DemoInput[];
   action: string;
   /** A short note on what the action does in special situations. */
   detail?: string;
@@ -44,4 +51,13 @@ export interface DemoHighlight {
 export interface DemoDocLink {
   label: string;
   to: string;
+}
+
+/**
+ * One entry in a {@link DemoLegend}: a marker (a color swatch, a number)
+ * and what it stands for.
+ */
+export interface DemoLegendItem {
+  marker: ReactNode;
+  label: string;
 }

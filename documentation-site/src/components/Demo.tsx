@@ -6,7 +6,7 @@ import { useFullscreen } from '@site/src/hooks/useFullscreen';
 import { useDemoBackLink } from '@site/src/hooks/useDemoBackLink';
 import styles from './_Demo.module.css';
 import { CodeSelector } from './_CodeSelector';
-import { FullscreenButton } from './_FullscreenButton';
+import { FullscreenButton } from './demo-page/FullscreenButton';
 
 interface CodeFile {
   name: string;

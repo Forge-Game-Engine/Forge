@@ -673,7 +673,11 @@ e2e/playwright-report` opens the HTML report, which links each test's
 
 `documentation-site/src/pages/demos/<name>/` holds interactive, in-browser
 demos of engine features (`physics`, `ecs`, `particles`, `rendering`, ...),
-each rendered through `documentation-site/src/components/Demo.tsx`.
+each rendered through `DemoPage` (`documentation-site/src/components/demo-page/`):
+the running game with its controls and a short "How it works" list beside
+it, and a code explorer for the demo's source below. Its title and summary
+come from the demo's entry in `documentation-site/src/data/demos.ts`. The
+`add-feature-demo` skill shows how to write a page.
 
 **Critical gotcha**: these demos import the engine as a published package
 (e.g. `import { addRigidBodyComponent } from '@forge-game-engine/forge/physics'`),

@@ -2,7 +2,7 @@ import React, { FC, useState } from 'react';
 import CodeBlock from '@theme/CodeBlock';
 import clsx from 'clsx';
 import { cleanCodeSnippet } from '@site/src/utils/clean-code-snippet';
-import styles from './DemoPage.module.css';
+import styles from './CodeExplorer.module.css';
 import {
   DemoFileType,
   demoFileTypeOrder,
@@ -10,6 +10,10 @@ import {
   getDemoFileType,
 } from './file-types';
 import { DemoFile, DemoFileGroup } from './types';
+
+// Below this many files the whole list fits on screen, so search and
+// filters would only add clutter.
+const minFilesForFilters = 6;
 
 interface CodeExplorerProps {
   fileGroups: DemoFileGroup[];
@@ -24,6 +28,10 @@ const FileTypeIcon: FC<{ type: DemoFileType }> = ({ type }) => (
   ></i>
 );
 
+/**
+ * Browses a demo's source files: a grouped file list with search and a
+ * type filter, and the selected file's code.
+ */
 export const CodeExplorer: FC<CodeExplorerProps> = ({
   fileGroups,
   selectedFile,
@@ -47,6 +55,7 @@ export const CodeExplorer: FC<CodeExplorerProps> = ({
     .filter((group) => group.files.length > 0);
 
   const selectedType = getDemoFileType(selectedFile.name);
+  const showFilters = allFiles.length >= minFilesForFilters;
 
   const filterOptions: { value: DemoFileType | 'all'; label: string }[] = [
     { value: 'all', label: 'All' },
@@ -59,49 +68,54 @@ export const CodeExplorer: FC<CodeExplorerProps> = ({
   return (
     <div className={styles.explorer}>
       <div className={styles.fileBrowser}>
-        <div className={styles.fileFilters}>
-          <div className={styles.fileSearch}>
-            <i className="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-            <input
-              type="search"
-              placeholder="Search files"
-              aria-label="Search files by name"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </div>
-          <div
-            className={styles.typeFilter}
-            role="group"
-            aria-label="Filter files by type"
-          >
-            {filterOptions.map(({ value, label }) => {
-              const count =
-                value === 'all'
-                  ? allFiles.length
-                  : allFiles.filter(
-                      (file) => getDemoFileType(file.name) === value,
-                    ).length;
+        {showFilters && (
+          <div className={styles.fileFilters}>
+            <div className={styles.fileSearch}>
+              <i
+                className="fa-solid fa-magnifying-glass"
+                aria-hidden="true"
+              ></i>
+              <input
+                type="search"
+                placeholder="Search files"
+                aria-label="Search files by name"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </div>
+            <div
+              className={styles.typeFilter}
+              role="group"
+              aria-label="Filter files by type"
+            >
+              {filterOptions.map(({ value, label }) => {
+                const count =
+                  value === 'all'
+                    ? allFiles.length
+                    : allFiles.filter(
+                        (file) => getDemoFileType(file.name) === value,
+                      ).length;
 
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  className={clsx(
-                    styles.typeFilterButton,
-                    typeFilter === value && styles.typeFilterButtonSelected,
-                  )}
-                  aria-pressed={typeFilter === value}
-                  onClick={() => setTypeFilter(value)}
-                >
-                  {value !== 'all' && <FileTypeIcon type={value} />}
-                  {label}
-                  <span className={styles.typeFilterCount}>{count}</span>
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    className={clsx(
+                      styles.typeFilterButton,
+                      typeFilter === value && styles.typeFilterButtonSelected,
+                    )}
+                    aria-pressed={typeFilter === value}
+                    onClick={() => setTypeFilter(value)}
+                  >
+                    {value !== 'all' && <FileTypeIcon type={value} />}
+                    {label}
+                    <span className={styles.typeFilterCount}>{count}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         <nav className={styles.fileTree} aria-label="Source files">
           {visibleGroups.length === 0 && (

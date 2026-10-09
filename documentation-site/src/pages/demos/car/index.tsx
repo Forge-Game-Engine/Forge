@@ -17,26 +17,25 @@ import airControlSystemCode from '!!raw-loader!./_air-control.system';
 import groundContactComponentCode from '!!raw-loader!./_ground-contact.component';
 import groundContactSystemCode from '!!raw-loader!./_ground-contact.system';
 
-import { DemoPage } from '@site/src/components/demo-page/DemoPage';
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function Car(): JSX.Element {
   return (
     <DemoPage
-      title="Car"
-      summary="Drive a car with working suspension over procedurally generated hills. It's built from the physics engine's rigid bodies, joints, springs and motors."
+      slug="car"
       createGame={createCarGame}
       controls={[
         {
-          keys: ['→', 'D'],
+          inputs: ['→', 'D'],
           action: 'Accelerate',
           detail: 'In the air: tilt back',
         },
         {
-          keys: ['←', 'A'],
+          inputs: ['←', 'A'],
           action: 'Brake / reverse',
           detail: 'In the air: tilt forward',
         },
-        { keys: ['R'], action: 'Restart' },
+        { inputs: ['R'], action: 'Restart' },
       ]}
       highlights={[
         {

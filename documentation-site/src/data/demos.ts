@@ -30,7 +30,7 @@ export const demos: Demo[] = [
     slug: 'car',
     title: 'Car',
     description:
-      'A drivable car built from rigid bodies, joints, springs and motors.',
+      'Drive a car with working suspension over procedurally generated hills, built from rigid bodies, joints, springs and motors.',
     categories: ['physics', 'games'],
   },
   {
