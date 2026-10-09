@@ -18,7 +18,7 @@ export default function UiScrollView(): JSX.Element {
           ],
           action: 'Scroll the list',
         },
-        { inputs: ['↑', '↓'], action: 'Move focus' },
+        { inputs: ['↑↓'], action: 'Move focus' },
         {
           inputs: [{ device: 'mouse', label: 'Click' }, 'Enter', 'Space'],
           action: 'Pick a level',

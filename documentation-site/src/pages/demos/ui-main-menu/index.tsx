@@ -18,7 +18,7 @@ export default function UiMainMenu(): JSX.Element {
           inputs: [{ device: 'mouse', label: 'Click' }],
           action: 'Choose a menu row or Deploy',
         },
-        { inputs: ['↑', '↓'], action: 'Move focus' },
+        { inputs: ['↑↓'], action: 'Move focus' },
         { inputs: ['Enter', 'Space'], action: 'Choose the focused item' },
       ]}
       highlights={[

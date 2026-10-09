@@ -1,19 +1,19 @@
 .controls {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  display: grid;
+  /* The keys column fits its widest row, up to about half the panel. */
+  grid-template-columns: fit-content(55%) minmax(0, 1fr);
+  gap: 0.6rem 1rem;
+  align-items: center;
   margin: 0;
 }
 
 .control {
-  display: grid;
-  grid-template-columns: 8rem 1fr;
-  align-items: center;
-  gap: 0.75rem;
+  display: contents;
 }
 
 .controlKeys {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
   margin: 0;
@@ -38,6 +38,7 @@
   font-weight: bold;
   line-height: 1.4;
   text-align: center;
+  white-space: nowrap;
   box-shadow: none;
 }
 

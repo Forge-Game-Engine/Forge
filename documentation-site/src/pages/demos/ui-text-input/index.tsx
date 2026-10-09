@@ -14,7 +14,7 @@ export default function UiTextInput(): JSX.Element {
           inputs: [{ device: 'mouse', label: 'Click a field' }],
           action: 'Start typing',
         },
-        { inputs: ['↑', '↓', '←', '→'], action: 'Move focus' },
+        { inputs: ['↑↓←→'], action: 'Move focus' },
         {
           inputs: ['Enter'],
           action: 'Submit',

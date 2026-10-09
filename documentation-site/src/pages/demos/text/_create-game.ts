@@ -2,10 +2,8 @@ import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.png';
 import {
   createCamera,
-  createCameraEcsSystem,
   createImageSprite,
   createRenderEcsSystem,
-  getCameraView,
 } from '@forge-game-engine/forge/rendering';
 import {
   createTextShapingEcsSystem,
@@ -13,61 +11,28 @@ import {
 } from '@forge-game-engine/forge/text';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
-import { createEffectsExamples } from './_create-effects-examples';
-import { createEffectsHeroExample } from './_create-effects-hero-example';
-import { createHorizontalAlignmentExamples } from './_create-horizontal-alignment-examples';
-import { createLineHeightExamples } from './_create-line-height-examples';
-import { createLiveMaxWidthExample } from './_create-live-max-width-example';
-import { createRichTextExample } from './_create-rich-text-example';
-import { createVerticalAlignmentExamples } from './_create-vertical-alignment-examples';
-import { createLiveMaxWidthEcsSystem } from './_live-max-width.system';
 import { createPlayground, Playground } from './_create-playground';
 
-const renderLayers = {
-  foreground: 1 << 0,
-};
-
-// Draw-order (not culling) layers: guide boxes/lines are drawn first so the
-// text painted at `content` always ends up on top of them, regardless of
-// how their world positions happen to compare.
-const drawOrder = {
-  guide: 0,
-  content: 1,
-};
-
-const margin = 24;
-const sectionGap = 16;
-
 /**
- * Builds the text rendering demo: a showcase of every `horizontalAlign` and
- * `verticalAlign` value, a comparison of a few `lineHeight` multipliers, a
- * paragraph whose `maxWidth` oscillates every frame to show
- * `createTextShapingEcsSystem` reflowing text live, rich text tags, an
- * interactive
- * playground, and an outline/soft-shadow showcase, all drawn from one
- * shared `FontAtlas`: the engine's default font, imported through the
- * package's `fonts/default` exports so webpack serves both files.
- * @param onPlaygroundReady - Called once the playground's live
- * `TextEcsComponent` exists, so `index.tsx`'s controls can mutate it
- * directly (mirroring how other demos hand a live component back to React,
- * e.g. the space-shooter demo's `onBloomReady`).
+ * Builds the text demo: one block of text drawn with the engine's default
+ * font, which the page's controls change while the game runs.
+ * @param onPlaygroundReady - Called with the playground once it exists, so
+ * the page's controls can update it.
  * @returns The created game.
  */
 export const createTextGame = async (
   onPlaygroundReady: (playground: Playground) => void,
 ): Promise<Game> => {
-  const { game, world, renderContext, time } = createGame('demo-game');
+  const { game, world, renderContext } = createGame('demo-game');
 
-  const camera = createCamera(world, {
+  createCamera(world, {
     isStatic: true,
-    cullingMask: renderLayers.foreground,
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  const fontAtlasCache = new FontAtlasCache(renderContext);
-  const fontAtlas = await fontAtlasCache.getOrLoad({
-    // Importing the JSON would give its parsed contents, so `new URL` asks
-    // webpack for its URL instead.
+  // The engine ships a default font. Importing its JSON would give the
+  // parsed contents, so `new URL` asks webpack for the file's URL instead.
+  const fontAtlas = await new FontAtlasCache(renderContext).getOrLoad({
     metricsUrl: new URL(
       '@forge-game-engine/forge/fonts/default/default.json',
       import.meta.url,
@@ -75,114 +40,14 @@ export const createTextGame = async (
     imageUrl: defaultFontImageUrl,
   });
 
-  const whiteSprite = {
-    ...createImageSprite(renderContext.whiteTexture, { pixelsPerUnit: 1 }),
-    category: renderLayers.foreground,
-  };
+  const whiteSprite = createImageSprite(renderContext.whiteTexture, {
+    pixelsPerUnit: 1,
+  });
 
-  const { x: width, y: height } = getCameraView(
-    world,
-    camera,
-    renderContext,
-  ).size;
-  const usableWidth = width - margin * 2;
-  const left = -usableWidth / 2;
-  let y = height / 2 - margin;
+  const playground = createPlayground(world, fontAtlas, whiteSprite);
 
-  y = createHorizontalAlignmentExamples(
-    world,
-    fontAtlas,
-    whiteSprite,
-    drawOrder.guide,
-    drawOrder.content,
-    { x: left, y },
-    usableWidth,
-  );
-  y -= sectionGap;
-
-  y = createVerticalAlignmentExamples(
-    world,
-    fontAtlas,
-    whiteSprite,
-    drawOrder.guide,
-    drawOrder.content,
-    { x: left, y },
-    usableWidth,
-  );
-  y -= sectionGap;
-
-  y = createLineHeightExamples(
-    world,
-    fontAtlas,
-    whiteSprite,
-    drawOrder.guide,
-    drawOrder.content,
-    { x: left, y },
-    usableWidth,
-  );
-  y -= sectionGap;
-
-  y = createLiveMaxWidthExample(
-    world,
-    fontAtlas,
-    whiteSprite,
-    drawOrder.guide,
-    drawOrder.content,
-    { x: left, y },
-    usableWidth,
-  );
-  y -= sectionGap;
-
-  y = createRichTextExample(
-    world,
-    fontAtlas,
-    whiteSprite,
-    drawOrder.guide,
-    drawOrder.content,
-    { x: left, y },
-    usableWidth,
-  );
-  y -= sectionGap;
-
-  const playground = createPlayground(
-    world,
-    fontAtlas,
-    whiteSprite,
-    drawOrder.guide,
-    drawOrder.content,
-    { x: left, y },
-    usableWidth,
-  );
   onPlaygroundReady(playground);
-  y = playground.bottom;
-  y -= sectionGap;
 
-  y = createEffectsExamples(
-    world,
-    fontAtlas,
-    whiteSprite,
-    drawOrder.guide,
-    drawOrder.content,
-    { x: left, y },
-    usableWidth,
-  );
-  y -= sectionGap;
-
-  createEffectsHeroExample(
-    world,
-    fontAtlas,
-    whiteSprite,
-    drawOrder.guide,
-    drawOrder.content,
-    { x: left, y },
-    usableWidth,
-  );
-
-  world.addSystem(createCameraEcsSystem(time));
-  world.addSystem(createLiveMaxWidthEcsSystem(time));
-  // After every system that writes `position.local` (the live max-width
-  // example moves its guide box each frame), so rendering sees this
-  // frame's world positions.
   world.addSystem(createTransformEcsSystem());
   world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));

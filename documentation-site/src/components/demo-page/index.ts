@@ -6,6 +6,7 @@ export * from './DemoHighlights';
 export * from './DemoLegend';
 export * from './DemoPage';
 export * from './DemoPanel';
-export * from './file-types';
+export * from './DemoSettings';
 export * from './FullscreenButton';
+export * from './file-types';
 export * from './types';

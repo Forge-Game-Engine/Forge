@@ -14,14 +14,11 @@ export default function Visibility(): JSX.Element {
       controls={[
         {
           inputs: [{ device: 'mouse', label: 'Click' }],
-          action: 'Flip a toggle',
+          action: 'Show, hide or fade',
+          detail: 'Click a checkbox in the top-left corner',
         },
-        {
-          inputs: ['↑', '↓', '←', '→'],
-          action: 'Move focus',
-          detail: 'Hiding the focused button clears focus',
-        },
-        { inputs: ['Enter', 'Space'], action: 'Press the focused element' },
+        { inputs: ['↑↓←→'], action: 'Move focus' },
+        { inputs: ['Enter', 'Space'], action: 'Tick the focused checkbox' },
       ]}
       highlights={[
         {
@@ -29,7 +26,7 @@ export default function Visibility(): JSX.Element {
           file: 'create-menu.ts',
         },
         {
-          text: 'Hiding the menu hides the panel and everything under it, and its buttons can no longer be hovered, clicked or focused.',
+          text: 'Hiding the menu hides the panel and everything under it. Its buttons can no longer be hovered, clicked or focused, and a hidden button loses focus.',
           file: 'create-menu.ts',
         },
         {

@@ -14,7 +14,7 @@ export default function UiButton(): JSX.Element {
           inputs: [{ device: 'mouse', label: 'Click' }],
           action: 'Press a button',
         },
-        { inputs: ['↑', '↓'], action: 'Move focus' },
+        { inputs: ['↑↓'], action: 'Move focus' },
         { inputs: ['Enter', 'Space'], action: 'Press the focused button' },
       ]}
       highlights={[

@@ -12,8 +12,25 @@ const deviceIcons = {
 const inputKey = (input: DemoInput): string =>
   typeof input === 'string' ? input : `${input.device}:${input.label}`;
 
+// Keys shown as their symbol rather than their name, so every key cap stays
+// one short character wide. The name is still read out by screen readers.
+const keySymbols: Record<string, string> = {
+  Enter: '⏎',
+  Space: '␣',
+};
+
 const InputCap: FC<{ input: DemoInput }> = ({ input }) => {
   if (typeof input === 'string') {
+    const symbol = keySymbols[input];
+
+    if (symbol) {
+      return (
+        <kbd className={styles.key} title={input} aria-label={input}>
+          {symbol}
+        </kbd>
+      );
+    }
+
     return <kbd className={styles.key}>{input}</kbd>;
   }
 

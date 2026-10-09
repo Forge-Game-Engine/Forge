@@ -1,8 +1,8 @@
 .game {
   position: relative;
   align-self: stretch;
-  /* At least 16:9, and taller when the sidebar beside it is, so the two
-   * columns end level. */
+  /* At least 16:9, and taller when the sidebar beside it is (up to 3:2,
+   * see DemoPage.module.css), so the two columns end level. */
   aspect-ratio: 16 / 9;
   width: 100%;
   overflow: hidden;

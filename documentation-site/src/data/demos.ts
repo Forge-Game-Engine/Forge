@@ -183,7 +183,7 @@ export const demos: Demo[] = [
     slug: 'text',
     title: 'Text Rendering',
     description:
-      'MSDF text with every alignment, line height, live reflow, rich text tags, outline and glow, plus a playground to type into.',
+      'Type your own text and change its size, wrapping, alignment, line height, outline and glow while it redraws live.',
     categories: ['rendering'],
   },
   {

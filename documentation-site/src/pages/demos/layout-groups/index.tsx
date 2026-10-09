@@ -18,7 +18,7 @@ export default function LayoutGroups(): JSX.Element {
           inputs: [{ device: 'mouse', label: 'Click' }],
           action: 'Use a button, slider or toggle',
         },
-        { inputs: ['↑', '↓', '←', '→'], action: 'Move focus' },
+        { inputs: ['↑↓←→'], action: 'Move focus' },
         { inputs: ['Enter', 'Space'], action: 'Press the focused element' },
       ]}
       highlights={[
