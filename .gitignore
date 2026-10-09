@@ -136,3 +136,4 @@ dist
 
 # Benchmark results
 /bench/results/
+/e2e/allocation-results/
