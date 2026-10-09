@@ -1,13 +1,13 @@
 # Design 15: Audio, Particles and Picking in 3D
 
-|                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review (revised after solution review, §7)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| **Kind**                              | Feature and breaking refactor                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **Program**                           | [Forge 3D](./README.md), milestone M6                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| **Depends on**                        | [04 Transforms](./04-transforms.md), [06 Render pipeline](./06-render-pipeline.md), [14 Physics 3D](./14-physics-3d.md) (collider queries and the shared `TriangleTree`); [12 Skeletal and morph animation](./12-skeletal-and-morph-animation.md) for the sample game                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| **Related**                           | [03 ECS foundations](./03-ecs-foundations.md) (journals, change ticks, singletons, stages, message streams), [05 GPU device layer](./05-gpu-device.md) (instance attribute locations, texture units), [07 2D on the render pipeline](./07-2d-on-the-render-pipeline.md) (transparent sort keys, billboards, world-space canvases), [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md) (kept CPU mesh data, materials, variants), [11 glTF and asset lifetime](./11-gltf-and-asset-lifetime.md) (sound and model assets), [13 Post-processing](./13-post-processing-and-anti-aliasing.md) (resolved scene depth), [01 Testing and benchmarks](./01-testing-and-benchmarks.md) (benchmarks, goldens, allocation specs, the comparison report) |
+|                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review (revised after solution review, §7)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Kind**                              | Feature and breaking refactor                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **Program**                           | [Forge 3D](./README.md), milestone M6 (Phases 1 to 6; Phase 7 may follow)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **Depends on**                        | [04 Transforms](./04-transforms.md), [06 Renderer and frame graph](./06-render-pipeline.md), [14 Physics 3D](./14-physics-3d.md) (collider queries and the shared `TriangleTree`); [12 Skeletal and morph animation](./12-skeletal-and-morph-animation.md) for the sample game                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Related**                           | [03 ECS foundations](./03-ecs-foundations.md) (journals, change ticks, singletons, stages, message streams), [05 GPU device layer](./05-gpu-device.md) (instance attribute locations, texture units), [07 2D on the renderer](./07-2d-on-the-render-pipeline.md) (transparent sort keys, billboards, world-space canvases), [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md) (kept CPU mesh data, materials, variants), [11 glTF and asset lifetime](./11-gltf-and-asset-lifetime.md) (sound and model assets), [13 Post-processing](./13-post-processing-and-anti-aliasing.md) (resolved scene depth), [01 Testing and benchmarks](./01-testing-and-benchmarks.md) (benchmarks, goldens, allocation specs, the comparison report) |
 
 ## 0. Targeted modules
 
@@ -33,7 +33,7 @@
 | `src/rendering/meshes/mesh.ts`                                                                                                                                                                                                                                                       | Modified | A `TriangleTree` (design 14, `src/math/geometry/triangle-tree.ts`) built on first use and released with the mesh                                                                                                                                                                        |
 | `src/rendering/gpu-scene/`                                                                                                                                                                                                                                                           | Modified | `raycastBounds`: a ray query over the static tree and dynamic spheres                                                                                                                                                                                                                   |
 | `src/rendering/shaders/forge/`, `src/rendering/materials/unlit-material.ts`                                                                                                                                                                                                          | Modified | Particle instance variants of `forge/vertex` and `forge/object`; `softDistance` reading the view's scene depth                                                                                                                                                                          |
-| `src/rendering/pipeline/`                                                                                                                                                                                                                                                            | Modified | `sceneDepth` view resource, shared with ambient occlusion (design 13)                                                                                                                                                                                                                   |
+| `src/rendering/renderer/`                                                                                                                                                                                                                                                            | Modified | `sceneDepth` view resource, shared with ambient occlusion (design 13)                                                                                                                                                                                                                   |
 | `src/input/pointer-source.ts`                                                                                                                                                                                                                                                        | New      | `PointerSource`, moved from `src/ui/types/ui-pointer-source.ts`, with `buttonsHeld` (which `MouseInputSource` already has) and `isLocked`                                                                                                                                               |
 | `src/input/mouse/input-sources/mouse-input-source.ts`                                                                                                                                                                                                                                | Modified | Pointer lock (`pointerLock`, `isLocked`), raw movement where the browser offers it (§6.4.3); design 06 Phase 1 already removed the Y-down `delta` getter                                                                                                                                |
 | `src/input/mouse/bindings/mouse-motion-binding.ts`                                                                                                                                                                                                                                   | Modified | `MouseMotionBinding`, built in design 06 Phase 1 for the camera controllers, reports raw movement under pointer lock                                                                                                                                                                    |
@@ -235,30 +235,30 @@ simulation on them.
 | 2.4 | Emission                   | §6.3.5: rate, `emitParticles` with `overSeconds`; sub-frame spreading for streams only                                                                                                                     | M    |
 | 2.5 | Simulation                 | §6.3.6, §6.3.7: world and local space, bounds, `whenEmpty`, visibility                                                                                                                                     | M    |
 | 2.6 | View-facing billboards     | §6.3.9: extraction into the transparent phase with `view` and `emitter` alignment, through `createParticleMaterial`                                                                                        | M    |
-| 2.7 | Migration                  | §6.3.13: the particles and visibility demos, guides, e2e and allocation scenes; age scale removed, and the `create-component` skill's example that names it; `spawnParticleBurst`, `detachParticleEmitter` | M    |
-| 2.8 | Benchmarks and changelog   | The 2D particle stress scene measured by design 01's runner on `0.26.1` (its own version of the scene) and on the head; `#### Changed` and `#### Removed` with the migration                               | S    |
+| 2.7 | Sorting                    | §6.3.10: one key per particle, depth then spawn sequence, for blended materials; none for additive and multiply. In a 2D view depths tie, so particles draw oldest first, as particle entities did         | S    |
+| 2.8 | Migration                  | §6.3.13: the particles and visibility demos, guides, e2e and allocation scenes; age scale removed, and the `create-component` skill's example that names it; `spawnParticleBurst`, `detachParticleEmitter` | M    |
+| 2.9 | Benchmarks and changelog   | The 2D particle stress scene measured by design 01's runner on `0.26.1` (its own version of the scene) and on the head; `#### Changed` and `#### Removed` with the migration                               | S    |
 
 **Definition of done:** the spawn-equivalence test (§6.3.13) shows a
 seeded burst producing the same start values as the entity-per-particle
 code; the migrated 2D particle golden is re-captured with the old and new
 images and the reason for each difference in the pull request (design 01
-§6.4.3); spawning and expiring 10,000 particles a second allocates nothing;
+§6.4.3); a blended emitter's particles draw oldest first after swap removal, for lifetimes from 1 to 3 s and within a burst (the sort-key unit tests, §6.9.1); spawning and expiring 10,000 particles a second allocates nothing;
 the 2D particle stress scene is at least five times faster in CPU time
 than on `0.26.1`.
 
 ### Phase 3: Particles in 3D
 
-Adds 3D particle rendering: alignments, sorting, flipbooks, soft
-particles and mesh particles.
+Adds 3D particle rendering: alignments, flipbooks, soft particles and mesh
+particles.
 
 | #   | Task                 | Description                                                                                                     | Size |
 | --- | -------------------- | --------------------------------------------------------------------------------------------------------------- | ---- |
 | 3.1 | Alignments           | §6.3.9: `velocity` (stretched) and `upright` billboards                                                         | S    |
-| 3.2 | Sorting              | §6.3.10: back to front by depth, then oldest first, for blended materials; none for additive and multiply       | S    |
-| 3.3 | Flipbooks            | Frames over lifetime or at a frame rate                                                                         | S    |
-| 3.4 | Soft particles       | §6.3.11: `UnlitMaterial.softDistance`, the shared `sceneDepth` view resource                                    | M    |
-| 3.5 | Mesh particles       | §6.3.12: instanced meshes with any material and orientation, in the opaque, alpha-tested and transparent phases | M    |
-| 3.6 | Goldens, guide, demo | §6.9; `rendering-particles.md`; a 3D effects demo (fire, smoke, sparks, debris, rain)                           | M    |
+| 3.2 | Flipbooks            | Frames over lifetime or at a frame rate                                                                         | S    |
+| 3.3 | Soft particles       | §6.3.11: `UnlitMaterial.softDistance`, the shared `sceneDepth` view resource                                    | M    |
+| 3.4 | Mesh particles       | §6.3.12: instanced meshes with any material and orientation, in the opaque, alpha-tested and transparent phases | M    |
+| 3.5 | Goldens, guide, demo | §6.9; `rendering-particles.md`; a 3D effects demo (fire, smoke, sparks, debris, rain)                           | M    |
 
 **Definition of done:** the particle goldens pass; the soft-particle
 analytic test shows a fade along the intersection; the particle benchmark
@@ -484,7 +484,7 @@ flowchart TB
   end
   subgraph render
     PX[Particle extraction per view]
-    PL[Render pipeline, design 06]
+    PL[Renderer, design 06]
   end
   IN --> PR --> HM & HC & HU --> RES --> UH --> UN --> UC --> GF --> GL --> AN --> TP --> AU --> PG --> PX --> PL
 ```
@@ -813,9 +813,15 @@ for (const record of playback.events) {
 }
 ```
 
-Impact sounds read design 14's `Contacts3dEcsComponent` the same way:
-a contact that `began` plays at its first point, with volume from its
-`approachSpeed`.
+Impact sounds read design 14's `Contacts3dEcsComponent` in a game system
+in `fixedUpdate`, not in a frame stage. The component is rewritten every
+step, so a frame system would miss a step's contacts when a frame runs two
+steps and see them again when it runs none (design 14 §6.15). Each of the
+first `startedCount` records in `started` that isn't a sensor overlap
+(sensor records have no points) calls `playSoundAt` at its first point,
+`points[0].position`, with volume from its `approachSpeed`. The sound
+still starts this frame, because the sound system runs later, in
+`postUpdate` (GP7).
 
 #### 6.2.11 Debug drawing
 
@@ -931,8 +937,9 @@ does (design 08 MS6). Any other material works too: a `PbrMaterial`
 for lit smoke, or a material with design 08 hooks (a dissolve, a
 heat-haze tint). The billboard's shape comes from `aspectRatio`, never
 from a texture, since a material may have several textures or none.
-Lit materials draw only in HDR views, which need float color buffers
-(README P4); unlit particles draw in any view, 2D included.
+Lit materials draw only in HDR views, which need `EXT_color_buffer_float`
+or `EXT_color_buffer_half_float` (README P4); unlit particles draw in any
+view, 2D included.
 
 #### 6.3.3 Shapes and directions
 
@@ -1082,8 +1089,9 @@ export function detachParticleEmitter(world: EcsWorld, entity: number): number;
   `(1 − (k + ½) / n) × dt` it would already have, then is advanced by that
   age. A fast emitter leaves a continuous stream instead of a clump per
   frame. An instant burst isn't spread: an explosion's particles all start
-  together, where the emitter is. Spawning in `k` order keeps spawn
-  sequence numbers in order of age.
+  together, where the emitter is. Spawning in `k` order, and spawning a
+  run's instant bursts (age 0, the youngest) after the spread particles,
+  keeps spawn sequence numbers in order of age.
 - Storage that's full drops further spawns and counts them in
   `droppedCount` and the stats overlay.
 
@@ -1837,7 +1845,10 @@ own). Scroll views keep using `hoveredEntity` to route the wheel.
 and scroll views work on world-space canvases in 3D. `raycastUiCanvas`
 stays a plain function for code that must answer inside a DOM handler (the
 text input focusing on a tap), with the plane hit of steps 1 and 2 and the
-tests of step 3. It doesn't see 3D geometry in front of the canvas, which
+tests of step 3. Since design 03 (§6.1.4) it takes its candidates as a
+query result rather than calling `world.query`; here that becomes the
+pointer targets with a `RectTransformEcsComponent`, which the text input's
+pointer handlers get from `world.query`. It doesn't see 3D geometry in front of the canvas, which
 only the resolution knows; the guide says so. The module-scope resolver in
 `sort-by-draw-order.ts` moves to the caller's scratch.
 
@@ -1956,19 +1967,19 @@ on it.
 `games` category of `demos.ts`) is a walled courtyard at dusk. The player
 collects five gems and opens the gate with a lever on a signpost.
 
-| Program feature                 | How the sample uses it                                                                                                                                                                                    |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Transforms, stages, fixed step  | Everything on `TransformEcsComponent`; gameplay forces in `fixedUpdate`; no system order set by hand                                                                                                      |
-| Meshes, materials, shader hooks | The level from design 08 primitives and a few CC0 props; a wind vertex hook on banners                                                                                                                    |
-| Lighting, PBR, environment      | A sun with cascades, flickering point lights in braziers, an `.hdr` environment, exposure                                                                                                                 |
-| Post-processing                 | Bloom on the fire and gems, tone mapping, MSAA (FXAA in the mobile preset)                                                                                                                                |
-| glTF and animation              | A CC0 animated character (idle, walk, run, jump): playback states with a walk-run blend driven by speed, footstep clip events, root motion off                                                            |
-| Physics 3D                      | Design 14's `CharacterMoverEcsComponent` driven from `fixedUpdate`; crates and a ball to push; a hinged gate; gem triggers                                                                                |
-| Spatial audio                   | Footsteps at the foot joints from clip events; looping brazier fire with a cone-less inverse rolloff; crate impacts from `Contacts3dEcsComponent` at the contact point; music and UI on non-spatial buses |
-| Particles                       | Brazier fire (additive, upright, flipbook) and smoke (blended, soft, local wind), footstep dust (bursts), gem sparkles, impact debris (mesh particles)                                                    |
-| Picking                         | Hovering a crate tints it (`MeshEcsComponent.tint`, design 08 MS6) and a click pushes it from the hit point; a click on the ground places a marker                                                        |
-| UI                              | A screen-space HUD (gem count, pause menu with volume sliders per bus); a world-space canvas on the signpost whose button opens the gate                                                                  |
-| Input                           | Keyboard and gamepad movement; an orbit camera following the player (design 06); after a click on the scene, pointer-locked mouse look through `MouseMotionBinding`, released with Escape                 |
+| Program feature                 | How the sample uses it                                                                                                                                                                                                                                          |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Transforms, stages, fixed step  | Everything on `TransformEcsComponent`; gameplay forces in `fixedUpdate`; no system order set by hand                                                                                                                                                            |
+| Meshes, materials, shader hooks | The level from design 08 primitives and a few CC0 props; a wind vertex hook on banners                                                                                                                                                                          |
+| Lighting, PBR, environment      | A sun with cascades, flickering point lights in braziers, an `.hdr` environment, exposure                                                                                                                                                                       |
+| Post-processing                 | Bloom on the fire and gems, tone mapping, MSAA (FXAA in the mobile preset)                                                                                                                                                                                      |
+| glTF and animation              | A CC0 animated character (idle, walk, run, jump): playback states with a walk-run blend driven by speed, footstep clip events, root motion off                                                                                                                  |
+| Physics 3D                      | Design 14's `CharacterMoverEcsComponent` driven from `fixedUpdate`; crates and a ball to push; a hinged gate; gem triggers                                                                                                                                      |
+| Spatial audio                   | Footsteps at the foot joints from clip events; looping brazier fire with a cone-less inverse rolloff; crate impacts from `Contacts3dEcsComponent`'s `started` records, read in `fixedUpdate` and played at the contact point; music and UI on non-spatial buses |
+| Particles                       | Brazier fire (additive, upright, flipbook) and smoke (blended, soft, local wind), footstep dust (bursts), gem sparkles, impact debris (mesh particles)                                                                                                          |
+| Picking                         | Hovering a crate tints it (`MeshEcsComponent.tint`, design 08 MS6) and a click pushes it from the hit point; a click on the ground places a marker                                                                                                              |
+| UI                              | A screen-space HUD (gem count, pause menu with volume sliders per bus); a world-space canvas on the signpost whose button opens the gate                                                                                                                        |
+| Input                           | Keyboard and gamepad movement; an orbit camera following the player (design 06); after a click on the scene, pointer-locked mouse look through `MouseMotionBinding`, released with Escape                                                                       |
 
 Asset budget: under 15 MB, KTX2 textures, credited in the demo. A
 walkthrough guide, `documentation-site/docs/docs/3d/making-a-3d-game.md`,

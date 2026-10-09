@@ -1,4 +1,4 @@
-# Design 07: 2D on the Render Pipeline
+# Design 07: 2D on the Renderer
 
 |                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -6,7 +6,7 @@
 | **Kind**                              | Refactor, defect fixes and feature                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **Program**                           | [Forge 3D](./README.md), milestone M2. Phase 0 is a bug fix that lands before M1's golden images; Phase 4 lands in M3, after design 08 Phase 1                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| **Depends on**                        | [06 Render pipeline](./06-render-pipeline.md): Phase 1 here ships with its Phase 2, and needs the draw items and sorted transparent phase, which design 06 builds in its task 2.6 (§7)                                                                                                                                                                                                                                                                                                                                                                               |
+| **Depends on**                        | [06 Renderer and frame graph](./06-render-pipeline.md): Phase 1 here ships with its Phase 2, and needs the draw items and sorted transparent phase, which design 06 builds in its task 2.6 (§7)                                                                                                                                                                                                                                                                                                                                                                      |
 | **Related**                           | [05 GPU device layer](./05-gpu-device.md) (fixed attribute locations, texture-unit budgets, staging uploads), [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md) (Phase 4 here needs its meshes; its material blocks, built in design 05 Phase 3, carry `SpriteMaterial`), [13 Post-processing](./13-post-processing-and-anti-aliasing.md) (its Phases 1 and 2 ship with Phases 1 and 2 here), [15 Audio, particles and picking](./15-audio-particles-and-picking-in-3d.md) (particles and picking use the sort keys and billboard alignments) |
 
 ## 0. Targeted modules
@@ -45,7 +45,7 @@ that runs first and takes over clearing. The render system's order
 (layer, world order, optional y-sort, hierarchy order) is exact and well
 defined.
 
-Design 06 replaces both systems with a pipeline of passes. This design
+Design 06 replaces both systems with a renderer built from passes. This design
 moves every 2D feature onto it, as extraction systems that put draw items
 into each view's sorted transparent phase, then makes three deliberate
 changes:
@@ -81,7 +81,7 @@ separately, before M1 (Phase 0).
 ### In scope
 
 - Sprites, nine-slice sprites, text and terrain as extraction systems and
-  draw items in the pipeline's transparent phase, one system per kind.
+  draw items in the renderer's transparent phase, one system per kind.
 - The hierarchy walk (visibility, draw order, masks, depth groups) once
   per frame, with its state off module scope.
 - The transparent sort keys, extended with depth and computed per view.
@@ -116,9 +116,9 @@ separately, before M1 (Phase 0).
 
 ### Phase 0: Text transform fix (before design 01 Phase 3)
 
-A `fix(text)` change on today's renderer, independent of the pipeline.
-It lands before M1's golden suite captures text, so no golden ever
-records the defect.
+A `fix(text)` change on today's render system, independent of design
+06's renderer. It lands before M1's golden suite captures text, so no
+golden ever records the defect.
 
 | #   | Task            | Description                                                                                                                                                                                 | Size |
 | --- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
@@ -126,12 +126,12 @@ records the defect.
 | 0.2 | Tests           | Unit: glyph centers of rotated and scaled text lie on the rotated, scaled baseline. e2e: a rotated label's ink bounds match the unrotated label's, rotated (a relative measurement)         | S    |
 | 0.3 | Changelog       | `#### Fixed`: rotated and scaled text keeps its layout, instead of each glyph rotating about its own center along an unrotated line                                                         | S    |
 
-**Definition of done:** the unit and e2e tests pass on `0.26`'s renderer;
+**Definition of done:** the unit and e2e tests pass on `0.26`'s render system;
 the fix is released before design 01 task 3.4 captures the text goldens.
 
-### Phase 1: 2D on the pipeline (ships with design 06 Phase 2 and design 13 Phase 1)
+### Phase 1: 2D on the renderer (ships with design 06 Phase 2 and design 13 Phase 1)
 
-Today's instance layouts, shaders and order, on the pipeline. Colors are
+Today's instance layouts, shaders and order, on the renderer. Colors are
 unchanged: views are `rgba8unorm` and the output pass copies without
 encoding until Phase 2, which changes both outright, with no option to
 keep the copy.
@@ -161,7 +161,7 @@ draw-order system and the three extraction systems pass.
 ### Phase 2: Linear blending (ships with design 13 Phase 2)
 
 Moves 2D textures, colors and blending to linear space, so 2D and 3D
-share one color pipeline.
+share one color space.
 
 | #   | Task                     | Description                                                                                                                                                       | Size |
 | --- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
@@ -225,7 +225,7 @@ the docs site.
 | S3  | Per-instance geometry                       | (a) A camera-relative corner and two edge vectors, with size, pivot and flip folded in; (b) a camera-relative 3x4 matrix (first draft); (c) position, angle, scale, size and pivot, as today                            | (a)                              | A quad is planar, so a matrix's third column is never used: 9 floats describe it, the same as today's position, scale, angle, size and pivot (`sprite-instance-data-segment.ts:11-19`), and a 3x4 matrix needs 12. Like today's, it takes 3 attributes, so it frees no slots; the savings come from the mask index (S7) and from deriving UVs from the corner. A 2D angle can't express a 3D orientation. The vertex shader does two multiply-adds instead of pivot, scale, `sin`, `cos` and translate. 64-bit camera-relative math on the CPU keeps 2D precise far from the origin. |
 | S4  | Where sprite data lives                     | (a) A per-view instance stream on the device's per-frame staging; (b) GPU scene slots like meshes (design 06)                                                                                                           | (a)                              | Sprites change often (animation frames, tints, fills), their data is mostly not transform, and sprite fields carry no change stamps (game code writes them, design 03 E3), so nothing could tell which slots to skip. Streaming what's visible is cheaper than keeping a copy in sync. Meshes, whose data is mostly static, use the GPU scene.                                                                                                                                                                                                                                       |
 | S5  | Linear blending in 2D                       | (a) Yes (README G3); (b) keep gamma-space blending for 2D                                                                                                                                                               | (a)                              | Mixed 2D and 3D needs one color space. The output pass exists from Phase 1 regardless (design 06 R8); Phase 2 only adds encoding to it, so linear blending adds no pass. Godot keeps 2D in sRGB unless `hdr_2d` is on; Forge decided otherwise in G3.                                                                                                                                                                                                                                                                                                                                |
-| S6  | Text transform                              | (a) Glyphs through the entity's rotation and scale; (b) keep per-glyph rotation about each glyph's center                                                                                                               | (a), as a separate fix (Phase 0) | (b) is a defect: rotated text comes apart into individually rotated letters along a horizontal line (`glyph-quad.ts:42-50`), while nine-slice regions rotate their offsets (`render-system.ts:243-247`). It's independent of the pipeline, so it's fixed first, before goldens record it.                                                                                                                                                                                                                                                                                            |
+| S6  | Text transform                              | (a) Glyphs through the entity's rotation and scale; (b) keep per-glyph rotation about each glyph's center                                                                                                               | (a), as a separate fix (Phase 0) | (b) is a defect: rotated text comes apart into individually rotated letters along a horizontal line (`glyph-quad.ts:42-50`), while nine-slice regions rotate their offsets (`render-system.ts:243-247`). It's independent of the renderer, so it's fixed first, before goldens record it.                                                                                                                                                                                                                                                                                            |
 | S7  | Masks                                       | (a) A per-frame table, one row per mask entity in its own plane, and one row index per instance; (b) per-instance mask data in the mask's plane, with a masked and an unmasked variant (first draft); (c) stencil masks | (a)                              | (b) needs a 3D origin, two 3D axes and a clip frame per instance (more than 37 floats), pushes masked text past 16 attributes (`msdf.vert.glsl:28-31`), splits batches wherever masked and unmasked UI interleave (today they share one, `mask-instance-data-segment.ts:170-173`) and doubles every custom sprite material's programs. (a) costs one float per instance and handles nesting across planes. (c) handles any shape but breaks batching at every mask and needs a stencil buffer. Clipping in the mask's plane is what Unity's `RectMask2D` does in canvas space.       |
 | S8  | Billboards                                  | (a) A `BillboardEcsComponent` the sprite and text extraction read; (b) a field on `SpriteEcsComponent` (first draft)                                                                                                    | (a)                              | Name tags are text, and Godot has `billboard` on both `Sprite3D` and `Label3D`; one component means one definition. The quad's geometry is per-view scratch, not a component field, so either choice has one writer (game code); the first draft's reason for (b) was wrong. Mode names match design 15's particle alignments.                                                                                                                                                                                                                                                       |
 | S9  | Terrain's place in the order                | (a) A 2D renderable with `layer` and its entity's transform, sorted with sprites; (b) a design 08 mesh in the opaque phase; (c) always first, as today                                                                  | (a)                              | (c) comes from registration order and a `clearStrategy` write (`create-terrain-render-ecs-system.ts:68-70, 103`), which stages (design 03) and design 06's removal of `clearStrategy` both end. Terrain is 2D level art that games layer between backgrounds and foregrounds: Unity's `SpriteShapeRenderer` and Godot's `Polygon2D` sort with sprites. (b) needs design 08, which lands after this, and would make terrain opaque and depth-writing. Trade-off: terrain breaks sprite batches where it falls between sprites, and games that relied on it drawing first set a layer. |
@@ -235,7 +235,7 @@ the docs site.
 | S13 | Extraction systems                          | (a) One per kind (sprites, text, terrain), merged by the phase's sort, with a kind sub-key; (b) one system for sprites and text (first draft)                                                                           | (a)                              | Design 06 (§1, R2): one extraction system per kind of renderable, with a fixed query. The sub-key keeps "an entity's sprite draws before its text". The hierarchy walk, which all three need, runs once in its own system.                                                                                                                                                                                                                                                                                                                                                           |
 | S14 | Where an item's depth is measured           | (a) At its own position, unless an ancestor (or itself) is a depth group, whose position the whole subtree uses; (b) always at the root, like root Y; (c) always at its own position                                    | (a)                              | Per-object depth is what Unity, Godot and Bevy sort transparent objects by, and (b) would make every transparent item under one level root draw in hierarchy order. But coplanar hierarchies (a world-space canvas, a name tag with its background) must keep hierarchy order from every angle, which only a shared depth gives: Unity sorts a canvas as one unit and has sorting groups for sprites. `createUiCanvas` marks world-space canvases, so UI needs nothing from the game.                                                                                                |
 | S15 | Depth buffer for views without opaque items | (a) Only when an earlier pass wrote depth (the prepass's condition, design 06 R13); (b) always                                                                                                                          | (a)                              | A 4× multisampled `depth24plus` at 1080p is about 33 MB, which a 2D game on a phone would pay for nothing. Sprite pipelines are keyed by the target, so a game that mixes 2D and 3D compiles both variants.                                                                                                                                                                                                                                                                                                                                                                          |
-| S16 | Output before linear blending (Phase 1)     | (a) `rgba8unorm` views and a copying output pass until Phase 2, then encoding outright; (b) linear blending in Phase 1                                                                                                  | (a)                              | Phase 1 proves the pipeline against unchanged goldens (except MSAA edges); Phase 2 then changes colors in one reviewed step. No option keeps the copy after Phase 2. Design 06's per-camera MSAA default applies from Phase 1, so UI and bloomed cameras, which rendered into targets without MSAA, gain it like every other camera.                                                                                                                                                                                                                                                 |
+| S16 | Output before linear blending (Phase 1)     | (a) `rgba8unorm` views and a copying output pass until Phase 2, then encoding outright; (b) linear blending in Phase 1                                                                                                  | (a)                              | Phase 1 proves the renderer against unchanged goldens (except MSAA edges); Phase 2 then changes colors in one reviewed step. No option keeps the copy after Phase 2. Design 06's per-camera MSAA default applies from Phase 1, so UI and bloomed cameras, which rendered into targets without MSAA, gain it like every other camera.                                                                                                                                                                                                                                                 |
 
 ---
 
@@ -332,7 +332,7 @@ For each view, each extraction system:
 3. pushes a draw item into the view's transparent phase: its sort keys
    (§6.3), its kind, and the entity.
 
-After every extraction system has run, the pipeline sorts each view's
+After every extraction system has run, the renderer system sorts each view's
 transparent phase. Each kind's **instance writer** then writes its items'
 instances in sorted order into the device's per-frame staging, dropping
 nine-slice regions and glyphs whose own spheres fail the same tests (as
@@ -606,8 +606,11 @@ directly, so linear values round-trip exactly.
 #### 6.6.3 Views and output
 
 - A 2D view renders into `rgba8unorm-srgb`, or `rgba16float` when the
-  camera has an effect that needs HDR (bloom, tone mapping: design 13
-  §6.2.3, which then needs a float color buffer, README P4). Blending into
+  camera has an effect that needs HDR (bloom, tone mapping or auto
+  exposure: design 13 §6.2.3, which then needs a float color buffer and
+  throws without one, README P4). An orthographic camera with no lighting
+  component isn't a lit camera, even in a renderer with `lighting()`
+  (design 09 §6.2.2), so it stays 8-bit. Blending into
   an sRGB target happens in linear space in hardware. Multisampled
   `SRGB8_ALPHA8` renderbuffers exist in WebGL2, so MSAA keeps the format.
 - The output pass encodes to sRGB in its shader for the canvas, which
@@ -644,7 +647,9 @@ The guide covers three patterns:
   hides them and they sort with 3D transparent objects by depth. Give a
   multi-part item (a name tag) `depthGroup` so its parts stay in order.
 - **3D models in a 2D game:** an orthographic camera draws meshes like
-  anything else. Meshes write depth, so place sprites in front of or
+  anything else. Lit models need a lit camera: give the camera that draws
+  them an `ExposureEcsComponent` (design 09 §6.2.2), or a lit item in its
+  view throws. Meshes write depth, so place sprites in front of or
   behind a model with `z`, or draw the 3D content with its own camera and
   composite it by `order` when it should simply sit on a layer.
 - **UI over 3D, and UI on 3D surfaces:** screen-space canvases are cameras

@@ -6,7 +6,7 @@
 | **Kind**                              | Feature and refactor                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | **Program**                           | [Forge 3D](./README.md), milestone M3. Material blocks (§6.3) are built in M2, in [05 GPU device layer](./05-gpu-device.md) Phase 3 (decision MS1)                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| **Depends on**                        | [05 GPU device layer](./05-gpu-device.md), [06 Render pipeline](./06-render-pipeline.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Depends on**                        | [05 GPU device layer](./05-gpu-device.md), [06 Renderer and frame graph](./06-render-pipeline.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **Related**                           | [07 2D](./07-2d-on-the-render-pipeline.md) (sprite materials, per-draw textures), [09 Lighting](./09-lighting-and-shadows.md) and [10 PBR](./10-pbr-and-environment-lighting.md) (shading models, shadow bias, fog), [11 glTF](./11-gltf-and-asset-lifetime.md) (mesh and material data), [12 Animation](./12-skeletal-and-morph-animation.md) (skinning and morph variants), [13 Post-processing](./13-post-processing-and-anti-aliasing.md) (prepass normals, alpha-to-coverage), [15 Particles and picking](./15-audio-particles-and-picking-in-3d.md) (instance variants, kept mesh data) |
 
 ## 0. Targeted modules
@@ -39,7 +39,7 @@ for culling. It needs materials that carry their render state (opaque,
 alpha-tested, blended, double-sided), that compile only the shader
 variants actually used, and that work in every pass a mesh is drawn in
 (depth prepass, shadow maps, color). And the product owner asked for a
-render pipeline a game can hook into with custom shaders.
+renderer a game can hook into with custom shaders.
 
 This design adds:
 
@@ -165,7 +165,7 @@ small meshes into shared buffers for multi-draw.
 | #   | Task                     | Description                                                                                                                | Size |
 | --- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 2.1 | Render state             | §6.4: blend modes, alpha cutoff, double-sided, depth settings, material depth bias; phase selection                        | M    |
-| 2.2 | Variants                 | §6.5.1: variant keys from material, mesh, instance source, pass, pipeline features and target; program and pipeline caches | M    |
+| 2.2 | Variants                 | §6.5.1: variant keys from material, mesh, instance source, pass, renderer features and target; program and pipeline caches | M    |
 | 2.3 | Pass variants            | §6.5.2: `depth`, `depthNormals` and `shadow` variants from the same sources; shadow-pass culling and transparent casters   | M    |
 | 2.4 | Mesh pool and multi-draw | §6.1.3: small static meshes packed per layout, indices rebased; design 06 merges their bins in one multi-draw              | M    |
 | 2.5 | Changelog                | `#### Added`: render state, pass variants, the mesh pool                                                                   | S    |
@@ -410,7 +410,7 @@ interface MeshEcsComponent {
   readonly levelsOfDetail: readonly MeshLevelOfDetail[]; // default none
   /** The change tick of the last updateMeshComponent call; 0 if none. */
   readonly changedTick: number;
-  /** Output: the last frame culling found it in a camera view, a shadow view, or among a kept cached shadow tile's casters (designs 06, 09, 12). Written only by the render pipeline. */
+  /** Output: the last frame culling found it in a camera view, a shadow view, or among a kept cached shadow tile's casters (designs 06, 09, 12). Written only by the renderer system. */
   readonly lastVisibleFrame: number;
 }
 
@@ -803,10 +803,12 @@ A pipeline is looked up by a key interned from:
 - **instance source**: GPU scene slots for meshes; design 15 adds particle
   instance streams;
 - **pass**: `color`, `depth`, `depthNormals`, `shadow`;
-- **pipeline features**: what the view's pipeline includes that shaders
+- **renderer features**: what the view's renderer includes that shaders
   must know about (lighting, fog, ambient occlusion, the material debug
   view of design 10);
-- **target**: color format and sample count (design 13 uses it for
+- **target**: color format, depth attachment format (or none: a pure 2D
+  view has no depth attachment, and design 06 §6.4.2 latches it once a
+  view has had one) and sample count (design 13 uses it for
   alpha-to-coverage), including a prepass's location-0 color target and
   its write mask (§6.5.2).
 
@@ -851,9 +853,9 @@ flowchart TB
   H --> T[The pass template's main]
 ```
 
-- Feature includes are spliced only into variants whose pipeline-feature
-  bits ask for them, so a 2D pipeline never needs the lighting module's
-  includes registered.
+- Feature includes are spliced only into variants whose renderer-feature
+  bits ask for them, so a renderer without `lighting()` never needs the
+  lighting module's includes registered.
 - Each piece starts with a `#line 1 <n>` directive, where `<n>` indexes a
   table of the piece's file name (an include, a hook, the game's shader).
   Compile and link logs report `<n>:<line>`, which the error message maps
@@ -1057,8 +1059,9 @@ const hologram = createCustomMaterial(renderContext, {
   `depth` and `depthNormals`.
 - Without `shadow` sources, it casts no shadow (decision MS5).
 - A custom material whose color sources include `forge/lights` is lit,
-  detected when it's created: a view that draws it is a lit view, with
-  lights, clusters and an HDR color target (design 09 §6.2.2).
+  detected when it's created. A lit camera's view that draws it does
+  light work that frame (design 09 §6.2.2). In the view of any other
+  camera it throws (design 06 §6.8.1).
 - Blocks, textures, budgets and variants work as for any material.
 - `SpriteMaterial` stays a material kind of its own (design 07):
   `sprite.vert` with the game's fragment shader, positioned from sprite
@@ -1109,15 +1112,14 @@ await renderContext.prepare(world, {
 });
 ```
 
-- `registerRendering` (design 06) records the world's pipeline on the
-  render context, so `prepare` knows the passes and pipeline features.
+- `registerRendering` (design 06) records the world's renderer on the
+  render context, so `prepare` knows the passes and renderer features.
 - It collects every variant key the world needs: for each camera, its
-  target format (both formats for a camera of a pipeline with
-  `lighting()` whose view hasn't latched HDR yet, design 06 §6.4.2),
-  sample count, prepass type (`depthNormals` with ambient occlusion) and
-  fog; for each mesh component, every level of detail's
-  mesh features with its materials, in every pass it would be drawn in;
-  for each shadow-casting light, the `shadow` variants of the casters.
+  target format (decided from the camera, design 06 §6.4.2), sample
+  count, prepass type (`depthNormals` with ambient occlusion) and fog; for
+  each mesh component, every level of detail's mesh features with its
+  materials, in every pass it would be drawn in; for each shadow-casting
+  light, the `shadow` variants of the casters.
 - **Content not yet spawned** adds the same for each item, against every
   camera (as Three.js's `compileAsync(object)` and Unity's shader variant
   collections do). `skinned` defaults to whether the mesh has `joints0`.
@@ -1158,7 +1160,9 @@ GPU, a mobile limit, a hook that only fails in the shadow variant.
   whole; draw-texture bind groups refill lazily.
 - Programs and pipelines are rebuilt by the device. Items skip until their
   variants are linked again, as in §6.10.1.
-- `webgl-context-loss` gains a scene with a pooled mesh, a material with a
+- `webgl-context-loss` gains a scene with a pooled mesh on an entity with
+  `staticTransformTag` (its GPU scene row is written once and comes back
+  from the object data mirror, design 06 §6.12), a material with a
   struct uniform, a hooked material and an unlit textured quad, compared
   before the loss and after the restore.
 
@@ -1307,7 +1311,7 @@ block generation, ownership of several values and the fit with designs
   custom varyings, `invariant gl_Position`, and the shadow-pass rules for
   culling and transparent casters.
 - Skipping is coherent across passes (MS10); `prepare()` knows the
-  pipeline, accepts content not yet spawned and issues every compile
+  renderer, accepts content not yet spawned and issues every compile
   before waiting.
 - §6.9 corrected: a custom vertex shader must include `forge/object`.
   Open question 1 replaced by the budget rule (§6.3.5, MS20).

@@ -1,34 +1,34 @@
 # Forge 3D: Design Program
 
-|                                       |                                                                                                                                                                                |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Status**                            | Draft, for review                                                                                                                                                              |
-| **Kind**                              | Program index: the ordered set of designs that take Forge from 2D to 2D _and_ 3D                                                                                               |
-| **Engine version at time of writing** | `0.26.1`                                                                                                                                                                       |
-| **Documents**                         | 15 designs in this folder, numbered in implementation order (see §6 and §7)                                                                                                    |
-| **Decided with the product owner**    | WebGL2 backend built WebGPU-ready; one 3D transform; native TypeScript 3D physics; float color buffers required for lit 3D; one photometric scale per imported glTF model (§3) |
+|                                       |                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review                                                                                                                                                                                                                                                                                                                       |
+| **Kind**                              | Program index: the ordered set of designs that take Forge from 2D to 2D _and_ 3D                                                                                                                                                                                                                                                        |
+| **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                |
+| **Documents**                         | 15 designs in this folder, numbered in implementation order (see §6 and §7)                                                                                                                                                                                                                                                             |
+| **Decided with the product owner**    | WebGL2 backend built WebGPU-ready; one 3D transform; native TypeScript 3D physics; float color buffers required for lit 3D and HDR effects; one photometric scale per imported glTF model; the pose pipeline as the one exception to one writer per value; one friction and restitution rule per world; 2D collider shapes renamed (§3) |
 
 ## 0. Targeted modules
 
-| Module (export path)                  | Change   | Notes                                                                                                                                                                                                                                                   | Designs                            |
-| ------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `math`                                | Modified | Quaternions, 4x4 and 3x3 matrices, 3D geometry primitives; `TriangleTree`, shared by mesh colliders and mesh picking                                                                                                                                    | 02, 14                             |
-| `ecs`                                 | Modified | Cached queries, change journals, ticks, singletons, frame stages, fixed step, message streams                                                                                                                                                           | 03                                 |
-| `common`                              | Modified | One `TransformEcsComponent` replaces position, rotation and scale, with world-space helpers (`getCurrentWorldMatrix`) and `transformPropagationGroup`; fixed-step `Time` (`fixedStepIndex`); `allCollisionCategories` and `physicsOwnedTransformTag`    | 03, 04, 14                         |
-| `rendering`                           | Modified | Rebuilt internally: GPU device layer, render pipeline, cameras, meshes, materials and material blocks, shader hooks, 2D phases and the mask table, skins and morph targets (`src/rendering/deformation/`), post-processing, render scale, debug drawing | 04, 05, 06, 07, 08, 11, 12, 13, 15 |
-| `lighting`                            | New      | Lights, shadows, PBR materials, environment lighting, sky and fog, exposure; ambient occlusion and auto exposure                                                                                                                                        | 09, 10, 13                         |
-| `asset-loading`                       | Modified | One asset store with kinds, binary and JSON loading, asset handles that entities hold, asynchronous context-loss restore                                                                                                                                | 11                                 |
-| `gltf`                                | New      | glTF 2.0 loading, model instantiation, the per-model photometric scale                                                                                                                                                                                  | 11, 12                             |
-| `animations`                          | Modified | Keyframe clips, playback layers and blends, root motion, playback states on shared machines, pose adjustments; sprite and property animations renamed                                                                                                   | 12                                 |
-| `finite-state-machine`                | Modified | A machine becomes a shared, immutable definition; each user keeps its current state                                                                                                                                                                     | 12                                 |
-| `physics` → `physics-2d`              | Modified | Renamed from `physics`; suffixed names, fixed step, interpolation, read-only velocities changed through functions, a sensor pass                                                                                                                        | 14                                 |
-| `physics-3d`                          | New      | Native 3D rigid-body physics                                                                                                                                                                                                                            | 14                                 |
-| `picking`                             | New      | Pointer rays, hit testers, `PointerTargetEcsComponent` for UI elements and world objects, one pointer state machine                                                                                                                                     | 15                                 |
-| `ui`                                  | Modified | Pointer handling moves onto `picking`; UI keeps focus, navigation and invocation                                                                                                                                                                        | 03, 04, 06, 07, 15                 |
-| `audio`, `particles`, `input`, `text` | Modified | Spatial audio, 3D particle emitters, pointer lock, Y-up mouse motion and a touch pointer source, migrated to 3D transforms                                                                                                                              | 03, 04, 06, 07, 15                 |
-| `states`, `utilities`                 | Modified | Game-state store in a component, groups in `first`; the world takes its clock; `createGame` registers the transform system                                                                                                                              | 03, 04                             |
-| `bench`                               | New      | Performance suite                                                                                                                                                                                                                                       | 01                                 |
-| `e2e`, `.github/workflows`            | Modified | Visual and golden-image suites, CI jobs, audio render time                                                                                                                                                                                              | 01                                 |
+| Module (export path)                  | Change   | Notes                                                                                                                                                                                                                                                | Designs                            |
+| ------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `math`                                | Modified | Quaternions, 4x4 and 3x3 matrices, 3D geometry primitives; `TriangleTree`, shared by mesh colliders and mesh picking                                                                                                                                 | 02, 14                             |
+| `ecs`                                 | Modified | Cached queries, change journals, ticks, singletons, frame stages, fixed step, message streams                                                                                                                                                        | 03                                 |
+| `common`                              | Modified | One `TransformEcsComponent` replaces position, rotation and scale, with world-space helpers (`getCurrentWorldMatrix`) and `transformPropagationGroup`; fixed-step `Time` (`fixedStepIndex`); `allCollisionCategories` and `physicsOwnedTransformTag` | 03, 04, 14                         |
+| `rendering`                           | Modified | Rebuilt internally: GPU device layer, renderer, cameras, meshes, materials and material blocks, shader hooks, 2D phases and the mask table, skins and morph targets (`src/rendering/deformation/`), post-processing, render scale, debug drawing     | 04, 05, 06, 07, 08, 11, 12, 13, 15 |
+| `lighting`                            | New      | Lights, shadows, PBR materials, environment lighting, sky and fog, exposure; ambient occlusion and auto exposure                                                                                                                                     | 09, 10, 13                         |
+| `asset-loading`                       | Modified | One asset store with kinds, binary and JSON loading, asset handles that entities hold, asynchronous context-loss restore                                                                                                                             | 11                                 |
+| `gltf`                                | New      | glTF 2.0 loading, model instantiation, the per-model photometric scale                                                                                                                                                                               | 11, 12                             |
+| `animations`                          | Modified | Keyframe clips, playback layers and blends, root motion, playback states on shared machines, pose adjustments; sprite and property animations renamed                                                                                                | 12                                 |
+| `finite-state-machine`                | Modified | A machine becomes a shared, immutable definition; each user keeps its current state                                                                                                                                                                  | 12                                 |
+| `physics` → `physics-2d`              | Modified | Renamed from `physics`; suffixed names, fixed step, interpolation, read-only velocities changed through functions, a sensor pass                                                                                                                     | 14                                 |
+| `physics-3d`                          | New      | Native 3D rigid-body physics                                                                                                                                                                                                                         | 14                                 |
+| `picking`                             | New      | Pointer rays, hit testers, `PointerTargetEcsComponent` for UI elements and world objects, one pointer state machine                                                                                                                                  | 15                                 |
+| `ui`                                  | Modified | Pointer handling moves onto `picking`; UI keeps focus, navigation and invocation                                                                                                                                                                     | 03, 04, 06, 07, 15                 |
+| `audio`, `particles`, `input`, `text` | Modified | Spatial audio, 3D particle emitters, pointer lock, Y-up mouse motion and a touch pointer source, migrated to 3D transforms                                                                                                                           | 03, 04, 06, 07, 15                 |
+| `states`, `utilities`                 | Modified | Game-state store in a component, groups in `first`; the world takes its clock; `createGame` registers the transform system                                                                                                                           | 03, 04                             |
+| `bench`                               | New      | Performance suite                                                                                                                                                                                                                                    | 01                                 |
+| `e2e`, `.github/workflows`            | Modified | Visual and golden-image suites, CI jobs, audio render time                                                                                                                                                                                           | 01                                 |
 
 ---
 
@@ -45,7 +45,7 @@ The result is:
 - one transform for every entity (a position, a quaternion rotation and a
   scale, all 3D), so 2D sprites, UI, 3D models, lights and physics bodies
   share one hierarchy and one set of conventions;
-- a render pipeline built from passes that games can extend, reorder or
+- a renderer built from passes that games can extend, reorder or
   replace, over a GPU device layer shaped so a WebGPU backend can be added
   later without changing the public API;
 - clustered forward lighting with shadows, physically based materials
@@ -61,8 +61,9 @@ The result is:
 - spatial audio, 3D particle emitters, and pointer picking against meshes,
   colliders and UI through one pointer state machine;
 - unit, golden-image visual and performance suites, with the performance
-  suite comparing Forge against Three.js on the same scenes in the same
-  browser on every pull request.
+  suite gating every pull request against its base branch and comparing
+  Forge against Three.js and Unity web builds on the same scenes on the
+  reference hardware at each milestone.
 
 ---
 
@@ -98,13 +99,16 @@ The result is:
 
 ## 3. Decisions made with the product owner
 
-| #   | Question                                         | Decision                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| --- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P1  | Graphics backend                                 | WebGL2 now. The device layer, render pipeline and resource model are shaped after WebGPU (pipelines, bind groups, passes, uniform buffers) so a WebGPU backend can follow without public API changes. Custom shaders are GLSL ES 3.00.                                                                                                                                                                                                     |
-| P2  | How 2D and 3D transforms relate                  | One 3D transform for every entity. 2D games use `x`/`y`, `z` for depth, and rotate about Z through 2D helpers.                                                                                                                                                                                                                                                                                                                             |
-| P3  | How the 3D physics engine is built               | Native TypeScript, data-oriented, in the ECS. No WASM engine, no second copy of the world.                                                                                                                                                                                                                                                                                                                                                 |
-| P4  | Devices without float color buffers              | Lit 3D and HDR effects require `EXT_color_buffer_float` or `EXT_color_buffer_half_float`; without one, creating an HDR view throws a clear error; `lighting()` itself throws when created on such a device, since it renders the BRDF lookup table into `rgba16float` (design 10 §6.8.5). No LDR shading path. 2D is unaffected. (Design 13 asks to extend this to 2D cameras with bloom, tone mapping or auto exposure; open question 1.) |
-| P5  | Emissive and light values in imported glTF files | One photometric scale per loaded model, applied to its emissive values and its lights together. Its default makes files look under Forge's default exposure (EV100 12) as they do in the Khronos glTF Sample Viewer (`1.2 · 2^12 ≈ 4,915`, the reciprocal of that exposure's multiplier); `1` takes glTF's physical units literally (design 10 PB39, design 11 GA29).                                                                      |
+| #   | Question                                                     | Decision                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1  | Graphics backend                                             | WebGL2 now. The device layer, renderer and resource model are shaped after WebGPU (pipelines, bind groups, passes, uniform buffers) so a WebGPU backend can follow without public API changes. Custom shaders are GLSL ES 3.00.                                                                                                                                                                                                                                                                                                                                              |
+| P2  | How 2D and 3D transforms relate                              | One 3D transform for every entity. 2D games use `x`/`y`, `z` for depth, and rotate about Z through 2D helpers.                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| P3  | How the 3D physics engine is built                           | Native TypeScript, data-oriented, in the ECS. No WASM engine, no second copy of the world.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| P4  | Devices without float color buffers                          | Lit 3D and HDR effects require `EXT_color_buffer_float` or `EXT_color_buffer_half_float`. Without one, a camera whose view must be HDR (lit by the `lighting()` feature, or with bloom, tone mapping or auto exposure) throws a clear error naming the extensions and the camera, and `lighting()` itself throws when created, since it renders the BRDF lookup table into `rgba16float` (design 10 §6.8.5). There is no LDR shading path and no 8-bit effects path. 2D cameras without bloom, tone mapping or auto exposure are unaffected (design 05 D11, design 13 PP29). |
+| P5  | Emissive and light values in imported glTF files             | One photometric scale per loaded model, applied to its emissive values and its lights together. Its default makes files look under Forge's default exposure (EV100 12) as they do in the Khronos glTF Sample Viewer (`1.2 · 2^12 ≈ 4,915`, the reciprocal of that exposure's multiplier); `1` takes glTF's physical units literally (design 10 PB39, design 11 GA29).                                                                                                                                                                                                        |
+| P6  | Writers of an animated node's local transform                | The pose pipeline is the one sanctioned exception to one writer per value. The pose sampling system writes every pose target's `local` on each sampled frame. The systems in `poseAdjustmentGroup` (a game's own adjustments, rag doll pose, look-at, two-bone IK) then write the same fields after it, in a fixed order, on frames with a fresh pose. All of this runs before transform propagation, and nothing else writes a pose target. `AGENTS.md` and `CLAUDE.md` both record it (design 12 AN11, §6.13.1).                                                           |
+| P7  | Combining friction and restitution of two touching colliders | One rule for the world, in 2D and 3D: the geometric mean for friction and the maximum for restitution, as Box2D v3 and Jolt do. There are no per-collider combine rules; a replaceable world-level mixing function may be added later if a game needs one (design 14 PH16).                                                                                                                                                                                                                                                                                                  |
+| P8  | Names of 2D collider shapes                                  | `CircleCollider`, `PolygonCollider` and `TerrainCollider` are renamed `CircleShape`, `PolygonShape` and `TerrainShape` in design 14 Phase 1, while every 2D caller changes anyway, so 2D and 3D both call them shapes.                                                                                                                                                                                                                                                                                                                                                       |
 
 ---
 
@@ -143,14 +147,21 @@ yet when design 02 lands.
 - **The working space is linear.** Textures holding color (base
   color, emissive, sprite images) are sRGB-encoded and decoded by the GPU
   when sampled; data textures (normals, roughness, masks) are linear.
-  Lit views and views whose camera has bloom, tone mapping or auto
-  exposure render into linear `rgba16float`. Every other view (2D, UI)
+  Views of lit cameras and of cameras with bloom, tone mapping or auto
+  exposure render into linear `rgba16float`. A lit camera is a perspective
+  camera, or one with a lighting component such as exposure, in a renderer
+  with `lighting()` (design 09 §6.2.2). The format comes from the camera,
+  never from what's visible in a frame. Every other view (2D, UI)
   renders into `rgba8unorm-srgb`, which stores sRGB but blends in linear
   space (designs 06 §6.4.2, 07 §6.6.3, 13 §6.2.3). The output pass tone
   maps only cameras with a `ToneMappingEcsComponent` (design 13 PP4) and
   encodes to sRGB once, at the end.
 - **`Color` holds straight alpha; destinations hold premultiplied alpha.**
-  This is the existing contract in `AGENTS.md` and is unchanged.
+  This is the existing contract in `AGENTS.md` and is unchanged. Views
+  and float and `rgba8unorm-srgb` render targets hold it in linear light,
+  which is what sampling them returns; the canvas and `rgba8unorm` render
+  targets hold sRGB-encoded values premultiplied in encoded space, as a
+  browser composites a canvas (design 13 §6.5.2, §6.5.3).
 - **Physical light units.** Directional lights in lux, point and spot lights
   in lumens, exposure in EV100 (design 09, design 10). glTF's lights
   (`KHR_lights_punctual`, in candela and lux) convert exactly, and values
@@ -177,7 +188,7 @@ The ECS rule this program applies everywhere:
 | ----------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | Anything a game can read or that changes behavior     | Components, including singleton components (design 03)                | Transforms, velocities, contact caches, sleep state, animation time |
 | Derived, rebuildable caches of GPU or audio resources | The service that owns the resource (`RenderContext`, the audio mixer) | Programs, GPU buffers, the GPU-side copy of object transforms       |
-| Configuration a game builds once                      | Plain objects passed to a factory                                     | A render pipeline's passes, physics step settings                   |
+| Configuration a game builds once                      | Plain objects passed to a factory                                     | A renderer's passes, physics step settings                          |
 | Nothing                                               | A system's closure                                                    | Systems hold injected services and nothing else between ticks       |
 
 A system may keep scratch arrays that it fully overwrites before reading
@@ -196,9 +207,12 @@ run after the writers (debug-draw shapes, design 06; pointer hits, design
 function appends to and the one consumer reads and empties each run
 (design 08's mesh change list, design 11's pending handle lists, design
 12's requests and triggers). Design 12's pose pipeline is the one sanctioned
-exception to one writer: pose sampling writes a pose target's `local`,
-then pose adjustments change it in a fixed group order on frames with a
-fresh pose (design 12 §6.13.1).
+exception to one writer, decided with the product owner (P6). Pose
+sampling writes a pose target's `local` on each sampled frame. The systems
+in `poseAdjustmentGroup` then change it in a fixed order on frames with a
+fresh pose, all before transform propagation, and nothing else writes a
+pose target (design 12 AN11, §6.13.1). `AGENTS.md` and `CLAUDE.md` both
+state the exception next to the rule.
 
 ### 4.5 Naming
 
@@ -213,7 +227,10 @@ fresh pose (design 12 §6.13.1).
 - Forge names things after what they do, not after another engine's
   classes. A glTF scene loaded into Forge is a **model**, a renderable mesh
   on an entity is a **mesh component**, a pass that draws is a **render
-  pass** in a **render pipeline**.
+  pass** in the **renderer** (design 06's `createRenderer`). In rendering,
+  **pipeline** means GPU pipeline state only: design 05's
+  `device.createRenderPipeline` and `GpuRenderPipeline`, and design 08's
+  pipeline variants and keys. It never names the renderer.
 
 ### 4.6 Diagnostics
 
@@ -266,9 +283,13 @@ Every frame of every scene also has to:
 - keep draw calls proportional to unique mesh and material pairs that are
   visible, not to visible objects.
 
-The Unity comparison uses Unity web builds of B1 to B5 and B9 made
-outside this repository (G10) and run on the reference devices at each
-milestone, because a Unity build can't run in CI. Design 01 covers it.
+Main-thread CPU time excludes time the main thread is blocked on the GPU
+process (design 01 §6.2.2). The Three.js and Unity ratios are measured on
+the reference devices at each milestone. CI gates every pull request
+against its base branch instead, since SwiftShader rasterizes on the
+runner's CPU by an amount that differs per engine (design 01 §6.2.2). The
+Unity web builds of B1 to B5 and B9 are made outside this repository
+(G10), because a Unity build can't run in CI.
 
 **Mobile reference.** The phones of G9 run reduced variants of the
 scenes. These are starting budgets, replaced with M3's measurements as
@@ -301,14 +322,14 @@ defaults are chosen to fit, before M3 (their open questions).
 | 03  | [ECS foundations](./03-ecs-foundations.md)                                      | Allocation-free cached queries, change journals, world ticks, singleton components, message streams, frame stages, fixed step                                                                                              | –                                                                                          | L    |
 | 04  | [Transforms](./04-transforms.md)                                                | `TransformEcsComponent`; propagation with change detection; every module migrated; 2D and world-space helpers (`getCurrentWorldMatrix`)                                                                                    | 02, 03                                                                                     | L    |
 | 05  | [GPU device layer](./05-gpu-device.md)                                          | WebGPU-shaped resources over WebGL2: buffers, textures, samplers, pipelines, bind groups, passes, state cache; material uniform blocks (design 08 §6.3, built in its Phase 3); asynchronous context-loss restore; readback | –                                                                                          | XL   |
-| 06  | [Render pipeline](./06-render-pipeline.md)                                      | Passes and the frame graph, cameras and projections, visibility, sorting, instancing, GPU scene and its change list, debug drawing                                                                                         | 04, 05                                                                                     | XL   |
-| 07  | [2D on the render pipeline](./07-2d-on-the-render-pipeline.md)                  | Sprites, text, UI, the mask table and terrain as transparent-phase items; linear blending; billboards and depth groups; 2D in 3D and 3D in 2D; the rotated-text fix (Phase 0)                                              | 06 (08 Phase 1 for Phase 4)                                                                | L    |
+| 06  | [Renderer and frame graph](./06-render-pipeline.md)                             | Passes and the frame graph, cameras and projections, visibility, sorting, instancing, GPU scene and its change list, debug drawing                                                                                         | 04, 05                                                                                     | XL   |
+| 07  | [2D on the renderer](./07-2d-on-the-render-pipeline.md)                         | Sprites, text, UI, the mask table and terrain as transparent-phase items; linear blending; billboards and depth groups; 2D in 3D and 3D in 2D; the rotated-text fix (Phase 0)                                              | 06 (08 Phase 1 for Phase 4)                                                                | L    |
 | 08  | [Meshes, materials and shaders](./08-meshes-materials-and-shaders.md)           | Mesh assets and primitives, the material system on uniform blocks (specified here, built with design 05), shader variants and pass variants, shader hooks, custom and unlit materials, `prepare()`                         | 05, 06                                                                                     | XL   |
 | 09  | [Lighting and shadows](./09-lighting-and-shadows.md)                            | Directional, point and spot lights in physical units; clustered light lists for lit views; cascades per lit view and local light tiles in one shadow map array, with caching; soft shadows                                 | 08 (03, 05, 06)                                                                            | XL   |
-| 10  | [PBR and environment lighting](./10-pbr-and-environment-lighting.md)            | Metallic-roughness BRDF, glTF material extensions, image-based lighting, sky, fog, exposure, transmission                                                                                                                  | 08, 09                                                                                     | XL   |
-| 11  | [glTF and asset lifetime](./11-gltf-and-asset-lifetime.md)                      | One asset store with handles entities hold, binary loading, glTF 2.0 with extensions and compression, model instancing, the photometric scale (P5)                                                                         | 03, 05, 08 (10 for materials, 12 for skins and clips)                                      | XL   |
-| 12  | [Skeletal and morph animation](./12-skeletal-and-morph-animation.md)            | Keyframe clips, skins, GPU skinning, morph targets, blending, layers, events, root motion, shared state machines, pose adjustments                                                                                         | 04, 08, 11                                                                                 | XL   |
-| 13  | [Post-processing and anti-aliasing](./13-post-processing-and-anti-aliasing.md)  | MSAA, alpha-to-coverage, FXAA, render scale, ambient occlusion, bloom, blur, tone mapping, color grading, auto exposure on the pipeline                                                                                    | 06 and 07 (Phases 1 and 2); 08 and 10 from Phase 3                                         | XL   |
+| 10  | [PBR and environment lighting](./10-pbr-and-environment-lighting.md)            | Metallic-roughness BRDF, glTF material extensions, image-based lighting, sky, fog, exposure, transmission                                                                                                                  | 08, 09 (11 for Phase 6)                                                                    | XL   |
+| 11  | [glTF and asset lifetime](./11-gltf-and-asset-lifetime.md)                      | One asset store with handles entities hold, binary loading, glTF 2.0 with extensions and compression, model instancing, the photometric scale (P5)                                                                         | 03, 05, 08 (10 for materials)                                                              | XL   |
+| 12  | [Skeletal and morph animation](./12-skeletal-and-morph-animation.md)            | Keyframe clips, skins, GPU skinning, morph targets, blending, layers, events, root motion, shared state machines, pose adjustments; the glTF import of skins, morph targets and clips that design 11 specifies             | 04, 08, 11 (Phases 1 to 3)                                                                 | XL   |
+| 13  | [Post-processing and anti-aliasing](./13-post-processing-and-anti-aliasing.md)  | MSAA, alpha-to-coverage, FXAA, render scale, ambient occlusion, bloom, blur, tone mapping, color grading, auto exposure on the renderer                                                                                    | 06 and 07 (Phases 1 and 2); 08 and 10 from Phase 3                                         | XL   |
 | 14  | [Physics 3D](./14-physics-3d.md)                                                | Native 3D rigid bodies, shapes, BVH broad phase, GJK/EPA and SAT, soft-step solver, joints, sleeping, sensors, gyroscopic torque, CCD, queries, character mover, rag dolls; 2D physics on the same stepping model          | 02, 03, 04; 06 Phase 5 (debug drawing) for Phases 2 to 9; 12 for root motion and rag dolls | XL+  |
 | 15  | [Audio, particles and picking in 3D](./15-audio-particles-and-picking-in-3d.md) | Spatial audio, 3D particle emitters, pointer picking against meshes, physics and UI with one pointer state machine                                                                                                         | 04, 06, 14 (12 for the sample game)                                                        | XL   |
 
@@ -325,8 +346,8 @@ flowchart LR
   D03[03 ECS foundations]
   D04[04 Transforms]
   D05[05 GPU device layer]
-  D06[06 Render pipeline]
-  D07[07 2D on the pipeline]
+  D06[06 Renderer and frame graph]
+  D07[07 2D on the renderer]
   D08[08 Meshes, materials, shaders]
   D09[09 Lighting and shadows]
   D10[10 PBR and environment]
@@ -342,6 +363,7 @@ flowchart LR
   D04 --> D06
   D05 --> D06
   D06 --> D07
+  D08 -. Phase 4 .-> D07
   D05 --> D08
   D06 --> D08
   D08 --> D09
@@ -353,10 +375,11 @@ flowchart LR
   D10 -. materials .-> D11
   D04 --> D12
   D08 --> D12
-  D11 -. ship together .- D12
+  D11 --> D12
   D06 --> D13
-  D08 --> D13
-  D10 --> D13
+  D07 --> D13
+  D08 -. from Phase 3 .-> D13
+  D10 -. from Phase 3 .-> D13
   D02 --> D14
   D03 --> D14
   D04 --> D14
@@ -372,8 +395,14 @@ Physics Phase 1 needs only the foundations (02 to 04); Phases 2 to 9 also
 need design 06's debug drawing (its Phase 5, in M2), so they run in
 parallel with M3 and M4. Its root motion task and rag dolls wait for
 design 12's Phases 3 and 5. Design 11's asset store (its Phase 1)
-needs only designs 03 and 05 and can ship in M2; the rest of design 11
-ships in M4 with design 12, each needing the other's types.
+needs only designs 03 and 05 and can ship in M2. Design 12 builds on
+design 11 Phases 1 to 3, and its Phase 1 also builds the glTF import of
+its own clip, skin and morph types, which design 11 specifies, so design
+11 doesn't depend on design 12. Design 10 Phase 6 uses design 11's KTX2
+reader and importer; the graph leaves out that edge because design 10's
+other phases come first. Design 07 Phase 0 is a fix to today's renderer
+that lands before design 01 Phase 3 (§7 M1), so the graph leaves it out
+too.
 
 ---
 
@@ -394,24 +423,29 @@ it ran on.
 
 ### M1: Foundations
 
-Design 01 Phase 3 (the golden-image suite) first, then designs 02, 03
-and 04. Design 07 Phase 0, a `fix(text)` change to today's renderer that
-keeps rotated and scaled text in its layout, lands before design 01 Phase
-3 captures goldens, so no golden records the defect. The goldens exist
-before design 03 Phase 4 reorders systems into stages and design 04
-Phase 1 migrates every renderer read path, so both are checked against
-today's images. The three 2D physics defects of design 14 §6.1.3 are
+Design 07 Phase 0, a `fix(text)` change to today's renderer that keeps
+rotated and scaled text in its layout, comes first, so no golden records
+the defect. Then come design 01 Phase 3 (the golden-image suite) and
+designs 02, 03 and 04. The goldens exist before design 03 Phase 4
+reorders systems into stages and design 04 Phase 1 migrates every
+renderer read path, so both are checked against today's images. The three 2D physics defects of design 14 §6.1.3 are
 fixed in M1, before design 14 Phase 1. Every 2D game runs on
 `TransformEcsComponent`, cached queries and the fixed step. Nothing draws
 in 3D yet.
 
 **Definition of done:** every demo and e2e scene is migrated; B7 and B8 are
 no slower than the baseline; the ECS (design 03) and the transform system
-(design 04) allocate nothing per frame in the 2D demos, and every other
+(design 04) allocate nothing per frame in design 01's 2D allocation
+specs (the sprite, text, UI and particle stress scenes), and every other
 per-frame allocator is on the allow-list, tagged with the design and phase
 that removes it (design 01 §6.3); the golden job is required and has been
-stable for 20 runs; the design 14 §6.1.3 fixes are released, each with
-its test and a `#### Fixed` bullet.
+stable for 20 runs; no golden changes in M1; the one intended output
+change, rendering drawing the transforms of the frame it runs in rather
+than the previous frame's (design 03 Phase 4, design 04 §6.7), shows only
+in demos and e2e scenes that registered rendering before the systems that
+move entities, and design 03's `#### Changed` bullet names it; the
+design 14 §6.1.3 fixes are released, each with its test and a
+`#### Fixed` bullet.
 
 ### M2: The new renderer
 
@@ -421,8 +455,8 @@ design 01 Phase 6 (the backend and browser matrix, before design 05
 Phase 4). Design
 05 Phase 3 also builds design 08's material blocks (§6.3 there), since
 sprites and post-processing draw materials through the device from M2 on.
-All drawing goes through the device layer and the render pipeline.
-Sprites, text, UI and post-processing are pipeline passes. Perspective
+All drawing goes through the device layer and the renderer.
+Sprites, text, UI and post-processing are renderer passes. Perspective
 cameras, depth buffers, camera controllers and debug drawing exist.
 Design 11 Phase 1 (the asset store) may ship in M2 or later, once design
 05 Phase 3 has.
@@ -446,9 +480,11 @@ scene are checked with a test renderable.)
 
 ### M3: Lit 3D
 
-Designs 08, 09, design 10 Phases 1 to 5, design 13 Phases 3 to 8, and
-design 07 Phase 4 (2D and 3D together). Meshes, materials, shader hooks,
-lights, shadows, PBR, environment lighting, sky and fog, and
+Designs 08, 09, design 10 Phases 1 to 5, design 13 Phases 3 to 8,
+design 07 Phase 4 (2D and 3D together), and design 01 Phases 4 and 5 (3D
+scene harness, reference hardware and Unity runs, which M3's report
+needs). Meshes, materials, shader hooks, lights, shadows, PBR,
+environment lighting, sky and fog, and
 post-processing: anti-aliasing, render scale, ambient occlusion, the new
 tone mapping operators, color grading and auto exposure. Design 13 Phase
 9 (authored lookup tables) may follow M3.
@@ -462,9 +498,11 @@ both depth conventions.
 
 ### M4: Content
 
-Design 11 Phases 2 to 6, design 12 Phases 1 to 5, and design 10 Phase 6
-(KTX2 environments and the sample-model goldens). glTF models with skins,
-morph targets and animation, scaled by README P5's photometric scale.
+Design 11 Phases 2 to 5, design 12 Phases 1 to 5 (Phase 1 after design
+11 Phase 3; it also builds the glTF import of skins, morph targets and
+clips), and design 10 Phase 6 (KTX2 environments and the sample-model
+goldens). glTF models with skins, morph targets and animation, scaled by
+README P5's photometric scale.
 Design 12 Phase 6 (look-at and two-bone IK) follows M4, when the M6 sample
 game or a game needs it.
 
@@ -480,8 +518,10 @@ systems (design 12).
 
 Design 14 (in parallel with M2 to M4). 3D rigid bodies, joints, sensors,
 queries and a character mover; 2D physics on the fixed step;
-`TriangleTree` in `math`. Root motion for movers (task 9.4) waits for
-design 12 Phase 3, and rag dolls (Phase 10) for design 12 Phases 1 and 5.
+`TriangleTree` in `math`. Design 01's scene generators and physics
+scenarios (its tasks 4.1 and 4.3) land before design 14 Phase 2 uses
+them. Root motion for movers (task 9.4) waits for design 12 Phase 3, and
+rag dolls (Phase 10) for design 12 Phases 1 and 5.
 
 **Definition of done:** B6 meets its budget; the stacking, joint, CCD and
 sensor scenarios in design 14 pass; every 2D physics demo still runs.
@@ -500,7 +540,7 @@ budget on the reference hardware, desktop and mobile; the M6 benchmark
 report is committed and every budget in §5, including the Three.js and
 Unity ratios and the mobile budgets, is met on the reference hardware;
 the 2D allocation allow-list is empty except the 2D solver's entry
-(design 14 open question 3). Linked issues for missed budgets are allowed
+(design 14 open question 2). Linked issues for missed budgets are allowed
 only at M3 to M5, and only with a planned fix phase named in the issue.
 
 ---
@@ -518,10 +558,10 @@ phases and tasks; this table is the order to take them in.
 | 4   | M1: ECS foundations                                                                             | Design 03, all phases                                                                                                                                                                                                                               | L    |
 | 5   | M1: transforms and migration                                                                    | Design 04, all phases                                                                                                                                                                                                                               | L    |
 | 6   | M1: 2D physics fixes                                                                            | `fix(physics)` ×3: the design 14 §6.1.3 defects, each with a failing test and a `#### Fixed` changelog bullet, before design 14 Phase 1                                                                                                             | S    |
-| 7   | M2: device layer, pipeline, 2D phases                                                           | Designs 05 (with design 08's material blocks in its Phase 3) and 06; design 07 Phases 1 to 3; design 13 Phases 1 and 2; design 01 Phase 6 (the backend and browser matrix) before design 05 Phase 4. Design 11 Phase 1 may follow design 05 Phase 3 | XL   |
-| 8   | M3: meshes, materials, lights, PBR, post-processing                                             | Designs 08 and 09; design 10 Phases 1 to 5; design 13 Phases 3 to 8 (Phase 9 may follow); design 07 Phase 4                                                                                                                                         | XL   |
-| 9   | M4: glTF and animation                                                                          | Design 11 Phases 2 to 6; design 12 Phases 1 to 5 (Phase 6 after M4); design 10 Phase 6                                                                                                                                                              | XL   |
-| 10  | M5: physics 3D (Phase 1 after M1; Phases 2 to 9 after design 06 Phase 5, parallel with 8 and 9) | Design 14; task 9.4 after design 12 Phase 3, Phase 10 after design 12 Phases 1 and 5                                                                                                                                                                | XL   |
+| 7   | M2: device layer, renderer, 2D phases                                                           | Designs 05 (with design 08's material blocks in its Phase 3) and 06; design 07 Phases 1 to 3; design 13 Phases 1 and 2; design 01 Phase 6 (the backend and browser matrix) before design 05 Phase 4. Design 11 Phase 1 may follow design 05 Phase 3 | XL   |
+| 8   | M3: meshes, materials, lights, PBR, post-processing                                             | Designs 08 and 09; design 10 Phases 1 to 5; design 13 Phases 3 to 8 (Phase 9 may follow); design 07 Phase 4; design 01 Phases 4 and 5                                                                                                               | XL   |
+| 9   | M4: glTF and animation                                                                          | Design 11 Phases 2 to 5; design 12 Phases 1 to 5, Phase 1 after design 11 Phase 3 (Phase 6 after M4); design 10 Phase 6                                                                                                                             | XL   |
+| 10  | M5: physics 3D (Phase 1 after M1; Phases 2 to 9 after design 06 Phase 5, parallel with 8 and 9) | Design 14, Phases 2 and 3 after design 01 tasks 4.1 and 4.3; task 9.4 after design 12 Phase 3, Phase 10 after design 12 Phases 1 and 5                                                                                                              | XL   |
 | 11  | M6: spatial modules and the sample game                                                         | Design 15 Phases 1 to 6 (Phase 7 may follow); Three.js and Unity comparison report                                                                                                                                                                  | XL   |
 
 **Definition of done for the program:** every budget in §5, including the
@@ -535,9 +575,9 @@ site has a 3D section with guides, demos and the sample game.
 
 | #   | Decision                                    | Options                                                                                                                                                                                        | Chosen                                       | Rationale, trade-offs, assumptions                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | --- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| G1  | One engine or a separate 3D product         | (a) 3D added to the same engine and pipeline; (b) a separate 3D package with its own renderer                                                                                                  | (a)                                          | Mixing 2D and 3D (UI over 3D, sprites in 3D, models in 2D games) is the common case, and two renderers double every fix. Every established engine renders 2D and 3D with one pipeline. Trade-off: 2D's renderer is rewritten (design 07), with a golden-image suite (design 01) guarding its output.                                                                                                                                                                   |
+| G1  | One engine or a separate 3D product         | (a) 3D added to the same engine and renderer; (b) a separate 3D package with its own renderer                                                                                                  | (a)                                          | Mixing 2D and 3D (UI over 3D, sprites in 3D, models in 2D games) is the common case, and two renderers double every fix. Every established engine renders 2D and 3D with one renderer. Trade-off: 2D's renderer is rewritten (design 07), with a golden-image suite (design 01) guarding its output.                                                                                                                                                                   |
 | G2  | Shading model                               | (a) Clustered forward; (b) deferred; (c) plain forward with a per-object light limit                                                                                                           | (a)                                          | WebGL2 deferred shading needs several float render targets per pixel, has no MSAA and handles transparency and varied materials poorly; mobile GPUs pay for the bandwidth. Plain forward caps lights per object. Clustered forward handles hundreds of lights, keeps MSAA and transparency, and is what Godot (Forward+), Bevy and PlayCanvas use. Light lists are built on the CPU, since WebGL2 has no compute (design 09).                                          |
-| G3  | Color pipeline                              | (a) Linear for everything, 2D included (HDR where lit or with an HDR effect); (b) linear for 3D, gamma-space blending for 2D                                                                   | (a)                                          | Lighting is only correct in linear space, and a pipeline with two color spaces needs conversions wherever 2D and 3D meet. Bevy renders everything linear; Unity defaults new projects to linear. Trade-off: translucent 2D blends and gradients look slightly different after M2. Design 07 lists the e2e and golden changes and the changelog says so.                                                                                                                |
+| G3  | Working color space                         | (a) Linear for everything, 2D included (HDR where lit or with an HDR effect); (b) linear for 3D, gamma-space blending for 2D                                                                   | (a)                                          | Lighting is only correct in linear space, and a renderer with two color spaces needs conversions wherever 2D and 3D meet. Bevy renders everything linear; Unity defaults new projects to linear. Trade-off: translucent 2D blends and gradients look slightly different after M2. Design 07 lists the e2e and golden changes and the changelog says so.                                                                                                                |
 | G4  | CPU number type and large worlds            | (a) `Float32Array` math everywhere; (b) 64-bit on the CPU, camera-relative `float32` on the GPU                                                                                                | (b)                                          | JavaScript numbers are already 64-bit, so 64-bit CPU math costs nothing and avoids `float32` rounding on every write. The high/low split (§4.3) keeps GPU object data valid while the camera moves. Trade-off: 12 more bytes per object on the GPU and two subtractions per vertex.                                                                                                                                                                                    |
 | G5  | Shader language for hooks and materials     | (a) GLSL ES 3.00 with Forge's preprocessor; (b) WGSL with translation to GLSL; (c) a node or TypeScript shader DSL                                                                             | (a)                                          | Follows P1. Forge's shaders and the include preprocessor are GLSL today. A DSL is a large project of its own and an extra language to learn. Hooks are small functions with fixed signatures (design 08), so porting them to WGSL for a later backend is mechanical. Trade-off: a WebGPU backend will need a translation step or WGSL versions of engine shaders.                                                                                                      |
 | G6  | Order of the designs                        | (a) Benchmarks and foundations first; (b) renderer first                                                                                                                                       | (a)                                          | A baseline can only be measured before the code changes, and every renderer design depends on transforms and cached queries. Physics only needs the foundations, so it proceeds in parallel.                                                                                                                                                                                                                                                                           |
@@ -552,28 +592,13 @@ site has a 3D section with guides, demos and the sample game.
 
 In priority order.
 
-1. **Decisions waiting for the product owner.**
-   - **HDR effects on 2D cameras without float color buffers** (design 13
-     PP29, its open question 1). Bloom, tone mapping and auto exposure
-     need an HDR view, so a 2D camera with one of them throws on a device
-     with neither `EXT_color_buffer_float` nor
-     `EXT_color_buffer_half_float`, where today a bloomed 8-bit target
-     works. Options: (a) amend P4 and design 05 D11 to "2D cameras without
-     bloom, tone mapping or auto exposure are unaffected"; (b) keep an
-     8-bit bloom and tone-mapping path for those devices, the LDR path P4
-     rules out for lit 3D. Proposal: (a); nearly every WebGL2 device has
-     one of the extensions. Needed before M2, where design 13 Phase 1
-     ships.
-   - **Friction and restitution combine rules** (design 14 PH16, its open
-     question 2). Options: (a) one rule for the world, the geometric mean
-     for friction and the maximum for restitution, as Box2D v3 and Jolt
-     do; (b) a combine rule per collider with a priority, as PhysX, Unity
-     and Rapier have; (c) a world-level mixing function a game can
-     replace. Proposal: (a), with (c) when a game needs it.
-   - **Renaming 2D collider shapes** (design 14 open question 4). Options:
-     (a) `CircleShape`, `PolygonShape`, `TerrainShape` in design 14 Phase
-     1; (b) keep the names. Proposal: (a). Needed before M5's Phase 1
-     (design 14 Phase 1).
+1. **Design 01's two questions for the product owner.** Which browsers
+   run on the Apple reference devices (design 01 §5 question 1, needed
+   before M0's baseline; any answer but Safari only changes G9), and
+   whether CI gets self-hosted runners with real GPUs (question 2).
+   Proposals there: Safari and Chrome on the MacBook Air, with Safari's
+   numbers gating the budgets; hosted runners until design 01 Phase 6's
+   Metal canary runs.
 2. **Minimum browsers.** WebGL2 is everywhere Forge already runs. The
    designs assume the current Forge baseline (evergreen Chrome, Edge,
    Firefox, Safari 15+). Safari 15's WebGL2 lacks some extensions the
@@ -597,51 +622,56 @@ In priority order.
 Every design was reviewed with the `solution-reviewer` agent
 (`.claude/agents/solution-reviewer.md`) for root cause, ownership of every
 value, comparison with established engines, Forge's ECS rules and cost,
-and revised. The verdicts and what changed are recorded at the end of
-each design. Verdicts on the first drafts:
+and revised. Every design ends with a review section (§7) that records its
+verdict and what changed. Verdicts on the first drafts:
 
-| Design                                     | Verdict on the first draft |
-| ------------------------------------------ | -------------------------- |
-| 01 Testing and benchmarks                  | Not reviewed on its own    |
-| 02 3D math and 04 Transforms               | REVISE (reviewed together) |
-| 03 ECS foundations                         | REVISE                     |
-| 05 GPU device layer and 06 Render pipeline | REVISE (reviewed together) |
-| 07 2D on the render pipeline               | REVISE                     |
-| 08 Meshes, materials and shaders           | REVISE                     |
-| 09 Lighting and shadows                    | REVISE                     |
-| 10 PBR and environment lighting            | REVISE                     |
-| 11 glTF and asset lifetime                 | REVISE                     |
-| 12 Skeletal and morph animation            | REVISE                     |
-| 13 Post-processing and anti-aliasing       | REVISE                     |
-| 14 Physics 3D                              | REVISE                     |
-| 15 Audio, particles and picking in 3D      | REVISE                     |
+| Design                                              | Verdict on the first draft |
+| --------------------------------------------------- | -------------------------- |
+| 01 Testing and benchmarks                           | REVISE                     |
+| 02 3D math and 04 Transforms                        | REVISE (reviewed together) |
+| 03 ECS foundations                                  | REVISE                     |
+| 05 GPU device layer and 06 Renderer and frame graph | REVISE (reviewed together) |
+| 07 2D on the renderer                               | REVISE                     |
+| 08 Meshes, materials and shaders                    | REVISE                     |
+| 09 Lighting and shadows                             | REVISE                     |
+| 10 PBR and environment lighting                     | REVISE                     |
+| 11 glTF and asset lifetime                          | REVISE                     |
+| 12 Skeletal and morph animation                     | REVISE                     |
+| 13 Post-processing and anti-aliasing                | REVISE                     |
+| 14 Physics 3D                                       | REVISE                     |
+| 15 Audio, particles and picking in 3D               | REVISE                     |
 
 Each revision listed the changes it needed in other designs. Those were
 then applied to the designs that own them, each checked against the
 current text of both, and every design's review section notes what it
-received. The three changes that need the product owner are open question 1;
-README P5 was decided with the product owner after the drafts.
+received. The product owner decided the remaining questions after the
+drafts: P4's extension to 2D cameras with bloom, tone mapping or auto
+exposure (design 13 PP29), P5 (design 10 PB39), P6 (design 12 AN11), P7
+(design 14 PH16) and P8 (design 14's 2D shape names).
 
 ---
 
 ## 12. Glossary
 
-| Term                | Meaning in these designs                                                                                                                                                                                                                                                                                             |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Pass                | One step of the render pipeline that reads and writes GPU resources: a shadow pass, the opaque pass, a bloom pass.                                                                                                                                                                                                   |
-| Phase               | The set of draw items a pass draws, and how they're organized: binned (`opaque`, `alphaTested`, `shadowCaster`: retained bins keyed by pipeline, material and mesh part), sorted (`transmissive`, `transparent`, which holds 2D sprites, text, UI and particles), or `overlay` (submission order). Design 06 §6.6.1. |
-| Frame graph         | The per-frame plan of passes and the resources they read and write, from which the pipeline orders passes and allocates targets.                                                                                                                                                                                     |
-| GPU scene           | The GPU-side copy of every renderable's transform and bounds, updated only for what changed.                                                                                                                                                                                                                         |
-| Model               | A loaded glTF scene: meshes, materials, skins, animations and a node tree that can be instantiated into entities any number of times.                                                                                                                                                                                |
-| Shader hook         | A GLSL function a material supplies, which the engine calls at a fixed point of its own shaders.                                                                                                                                                                                                                     |
-| Singleton component | A component exactly one entity has, read with `world.getSingleton`, holding a subsystem's state.                                                                                                                                                                                                                     |
-| Fixed step          | Systems that run zero or more times per frame at a constant timestep (physics), with the remainder used to interpolate.                                                                                                                                                                                              |
-| Stage               | One of the world's built-in, ordered system groups that make up a frame (design 03).                                                                                                                                                                                                                                 |
-| Message stream      | A per-frame, append-only list on a singleton that several systems write and one owner clears; readers run after the writers (design 03 §6.5).                                                                                                                                                                        |
-| Change list         | The GPU scene's per-frame record of slots that changed, with their previous and new bounding spheres, which shadow caching reads (design 06 §6.7.2).                                                                                                                                                                 |
-| Lit view            | A view whose culled content uses a lit material; only lit views get lights, clusters and cascades (design 09). Lit views, and views whose camera has bloom, tone mapping or auto exposure, get an HDR color target (design 13 §6.2.3).                                                                               |
-| Material block      | A material's parameters as a std140 uniform block, generated from the loose uniforms its shaders declare (design 08 §6.3).                                                                                                                                                                                           |
-| Asset handle        | A counted reference to a loaded asset; game code and `AssetHandlesEcsComponent` hold them, and an asset is freed when none does (design 11).                                                                                                                                                                         |
-| Photometric scale   | The factor a loaded glTF model's emissive values and lights are multiplied by (README P5).                                                                                                                                                                                                                           |
-| Pose target         | A node a playback component animates; its `local` is written by pose sampling, then by pose adjustments in group order (design 12).                                                                                                                                                                                  |
-| Pointer target      | `PointerTargetEcsComponent`: what makes a UI element or world object take pointer input, through picking's one state machine (design 15).                                                                                                                                                                            |
+| Term                | Meaning in these designs                                                                                                                                                                                                                                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Pass                | One step of the renderer that reads and writes GPU resources: a shadow pass, the opaque pass, a bloom pass.                                                                                                                                                                                                                                |
+| Renderer            | What `createRenderer` returns: the passes the engine and its features (`lighting()`, `bloom()`, ...) register at insertion points, which the renderer system builds into a frame graph each frame for every camera of its world (design 06 §6.4).                                                                                          |
+| Pipeline            | GPU pipeline state: a linked program plus fixed-function state (design 05's `GpuRenderPipeline`), chosen per item, pass and target by a variant key (design 08 §6.5.1). Never the renderer.                                                                                                                                                |
+| Phase               | The set of draw items a pass draws, and how they're organized: binned (`opaque`, `alphaTested`, `shadowCaster`: retained bins keyed by pipeline, material and mesh part), sorted (`transmissive`, `transparent`, which holds 2D sprites, text, UI and particles), or `overlay` (submission order). Design 06 §6.6.1.                       |
+| Frame graph         | The per-frame plan of passes and the resources they read and write, from which the renderer orders passes and allocates targets.                                                                                                                                                                                                           |
+| GPU scene           | The GPU-side copy of every renderable's transform and bounds, updated only for what changed.                                                                                                                                                                                                                                               |
+| Model               | A loaded glTF scene: meshes, materials, skins, animations and a node tree that can be instantiated into entities any number of times.                                                                                                                                                                                                      |
+| Shader hook         | A GLSL function a material supplies, which the engine calls at a fixed point of its own shaders.                                                                                                                                                                                                                                           |
+| Singleton component | A component exactly one entity has, read with `world.getSingleton`, holding a subsystem's state.                                                                                                                                                                                                                                           |
+| Fixed step          | Systems that run zero or more times per frame at a constant timestep (physics), with the remainder used to interpolate.                                                                                                                                                                                                                    |
+| Stage               | One of the world's built-in, ordered system groups that make up a frame (design 03).                                                                                                                                                                                                                                                       |
+| Message stream      | A per-frame, append-only list on a singleton that several systems write and one owner clears; readers run after the writers (design 03 §6.5).                                                                                                                                                                                              |
+| Change list         | The GPU scene's per-frame record of slots that changed, with their previous and new bounding spheres, which shadow caching reads (design 06 §6.7.2).                                                                                                                                                                                       |
+| Lit camera          | A camera of a renderer with `lighting()` that has a perspective projection or a camera component that needs `lighting()` (exposure, environment, sky, fog, ambient occlusion, auto exposure, the debug views). Its view is HDR and it reserves cascade layers. Both are decided from the camera, not from what it sees (design 09 §6.2.2). |
+| Lit view            | A lit camera's view in a frame in which its culled content uses a lit material. Only lit views get lights and clusters and render their cascades (design 09).                                                                                                                                                                              |
+| Material block      | A material's parameters as a std140 uniform block, generated from the loose uniforms its shaders declare (design 08 §6.3).                                                                                                                                                                                                                 |
+| Asset handle        | A counted reference to a loaded asset; game code and `AssetHandlesEcsComponent` hold them, and an asset is freed when none does (design 11).                                                                                                                                                                                               |
+| Photometric scale   | The factor a loaded glTF model's emissive values and lights are multiplied by (README P5).                                                                                                                                                                                                                                                 |
+| Pose target         | A node a playback component animates; its `local` is written by pose sampling, then by pose adjustments in group order (design 12).                                                                                                                                                                                                        |
+| Pointer target      | `PointerTargetEcsComponent`: what makes a UI element or world object take pointer input, through picking's one state machine (design 15).                                                                                                                                                                                                  |

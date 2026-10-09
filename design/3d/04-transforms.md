@@ -1,13 +1,13 @@
 # Design 04: Transforms
 
-|                                       |                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review (revised after solution review, §7)                                                                                                                                                                                                                                                                                                                                               |
-| **Kind**                              | Feature and breaking refactor                                                                                                                                                                                                                                                                                                                                                                       |
-| **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                            |
-| **Program**                           | [Forge 3D](./README.md), milestone M1                                                                                                                                                                                                                                                                                                                                                               |
-| **Depends on**                        | [02 Math](./02-math.md), [03 ECS foundations](./03-ecs-foundations.md)                                                                                                                                                                                                                                                                                                                              |
-| **Related**                           | [06 Render pipeline](./06-render-pipeline.md) (GPU scene uploads on `changedTick`), [07 2D on the render pipeline](./07-2d-on-the-render-pipeline.md), [12 Skeletal and morph animation](./12-skeletal-and-morph-animation.md) and [14 Physics 3D](./14-physics-3d.md) (`getCurrentWorldMatrix`), [15 Audio, particles and picking](./15-audio-particles-and-picking-in-3d.md) (`TransformOptions`) |
+|                                       |                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review (revised after solution review, §7)                                                                                                                                                                                                                                                                                                                                                 |
+| **Kind**                              | Feature and breaking refactor                                                                                                                                                                                                                                                                                                                                                                         |
+| **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                              |
+| **Program**                           | [Forge 3D](./README.md), milestone M1                                                                                                                                                                                                                                                                                                                                                                 |
+| **Depends on**                        | [02 Math](./02-math.md), [03 ECS foundations](./03-ecs-foundations.md)                                                                                                                                                                                                                                                                                                                                |
+| **Related**                           | [06 Renderer and frame graph](./06-render-pipeline.md) (GPU scene uploads on `changedTick`), [07 2D on the renderer](./07-2d-on-the-render-pipeline.md), [12 Skeletal and morph animation](./12-skeletal-and-morph-animation.md) and [14 Physics 3D](./14-physics-3d.md) (`getCurrentWorldMatrix`), [15 Audio, particles and picking](./15-audio-particles-and-picking-in-3d.md) (`TransformOptions`) |
 
 ## 0. Targeted modules
 
@@ -54,7 +54,7 @@ draws with, and a `changedTick` (design 03) recording when it last changed,
 so the renderer uploads and physics refits only what moved.
 
 The transform system visits only non-static transforms (and static ones
-below a moving parent), skips those whose local values and parent didn't
+below a dynamic ancestor), skips those whose local values and parent didn't
 change, and keeps no state of its own. Static subtrees (a
 `staticTransformTag`) cost nothing per frame.
 
@@ -98,15 +98,15 @@ today.
 One release: the old components can't coexist with the new one without a
 compatibility layer, which the change philosophy rules out.
 
-| #   | Task                         | Description                                                                                                                                                                                                                                                                                                     | Size |
-| --- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 1.1 | Component, tag and factory   | §6.1, §6.2                                                                                                                                                                                                                                                                                                      | S    |
-| 1.2 | Transform system             | §6.3, without change detection: composes every visited transform; `transformPropagationGroup`; `createGame` and `createTestWorld()` register the system                                                                                                                                                         | M    |
-| 1.3 | 2D and world-space helpers   | §6.4, §6.5                                                                                                                                                                                                                                                                                                      | M    |
-| 1.4 | Engine migration             | Every `/src` caller (§6.7), including the revolute joint's relative angle                                                                                                                                                                                                                                       | L    |
-| 1.5 | Demo, e2e and docs migration | `/demo`, about 35 files in demos and e2e scenes, every guide that shows the old components; the physics guide's ordering section; the `create-component` skill's naming example                                                                                                                                 | L    |
-| 1.6 | Deletions                    | The three old components, the old system's helpers, `Space`                                                                                                                                                                                                                                                     | S    |
-| 1.7 | Changelog                    | `#### Changed`: one bullet with the migration (`addPositionComponent(w, e, { local: p })` → `addTransformComponent(w, e, { position: p })`, `position.world` → `transform.world.position`, angles through the helpers, angles now wrap to `(-π, π]`, revolute limits within `(-π, π)`); `#### Removed`: `Space` | S    |
+| #   | Task                         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Size |
+| --- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 1.1 | Component, tag and factory   | §6.1, §6.2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | S    |
+| 1.2 | Transform system             | §6.3, without change detection or the static exclusion (task 2.3): composes every transform each run; `transformPropagationGroup`; `createGame` and `createTestWorld()` register the system                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | M    |
+| 1.3 | 2D and world-space helpers   | §6.4, §6.5                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | M    |
+| 1.4 | Engine migration             | Every `/src` caller (§6.7), including the revolute joint's relative angle                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | L    |
+| 1.5 | Demo, e2e and docs migration | `/demo`, about 35 files in demos and e2e scenes, every guide that shows the old components; the physics guide's ordering section; the `create-component` skill's naming example                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | L    |
+| 1.6 | Deletions                    | The three old components, the old system's helpers, `Space`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | S    |
+| 1.7 | Changelog                    | `#### Changed`: one bullet with the migration (`addPositionComponent(w, e, { local: p })` → `addTransformComponent(w, e, { position: p })`, `position.world` → `transform.world.position`, angles through the helpers, angles now wrap to `(-π, π]`, revolute limits within `(-π, π)`); `#### Added`: the world-space helpers (§6.5: direction getters, point conversion, `setWorldPosition`, `setWorldRotation`, `setParentKeepingWorldTransform`, `propagateTransform`, `getCurrentWorldMatrix`); `#### Removed`: `Space`; `#### Fixed`: static descendants of a static entity that is reparented or loses its parent now move with it (0.26 left them at their old world transform) | S    |
 
 **Definition of done:** every unit test, e2e spec and golden passes; every
 demo runs; nothing imports the old components.
@@ -120,13 +120,13 @@ a still scene costs almost nothing.
 | --- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 2.1 | Prototype and targets     | Measure the §6.8 scenarios on a prototype; replace the starting estimates with measured targets                             | S    |
 | 2.2 | Change detection          | §6.3.3: compare with what was last composed; stamp `changedTick` only on change                                             | M    |
-| 2.3 | Static subtrees           | §6.3.2: static transforms excluded from the walk; computed from journals                                                    | M    |
+| 2.3 | Static subtrees           | §6.3.2: static transforms excluded from the walk; a reported static entity's whole subtree recomposed from the journals     | M    |
 | 2.4 | Allocation and benchmarks | Allocation spec; `transform-system.bench.ts`                                                                                | S    |
 | 2.5 | Changelog                 | `#### Changed` (perf): the transform system skips unchanged transforms and static subtrees; `staticTransformTag` documented | S    |
 
 **Definition of done:** the §6.8 targets are met; a still scene stamps
-nothing; static subtrees under static roots are never visited; the
-system's closure holds nothing.
+nothing; static subtrees under static roots are visited only on runs where
+the journals report them; the system's closure holds nothing.
 
 ---
 
@@ -151,8 +151,8 @@ system's closure holds nothing.
 
 None outstanding. The first draft's question about warning when a static
 entity moves is answered by X5: changing a static entity's `local` has no
-effect until the tag is removed or the entity is reparented, which the
-guide states.
+effect until the tag is removed or it or a static ancestor is reparented,
+which the guide states.
 
 ---
 
@@ -186,7 +186,7 @@ export interface TransformEcsComponent {
 
 export const transformId =
   createComponentId<TransformEcsComponent>('transform');
-/** The entity doesn't move relative to its parent. Under a static parent or at the root, changes to its `local` have no effect until the tag is removed or the entity is reparented. */
+/** The entity doesn't move relative to its parent. With no dynamic ancestor, changes to its `local` have no effect until the tag is removed or it or a static ancestor is reparented. */
 export const staticTransformTag = createTagId('static-transform');
 ```
 
@@ -236,8 +236,10 @@ other modules can order their own groups against it, as Bevy's plugins
 order against its transform propagation set. Groups whose systems write
 `local` are ordered `before: transformPropagationGroup`: design 14's
 `physicsWriteBackGroup`, design 12's `animationGroup` and
-`poseAdjustmentGroup`, and the UI layout group. Camera controllers are the
-exception: they follow targets, so they're ordered `after` it and call
+`poseAdjustmentGroup` (pose sampling and then the adjustments write a pose
+target's `local` in that fixed order, the one sanctioned exception to one
+writer per value, README P6), and the UI layout group. Camera controllers
+are the exception: they follow targets, so they're ordered `after` it and call
 `propagateTransform` for their camera (§6.6, design 06 §6.2). Design 15's
 `audioGroup` and `particleGroup` are ordered `after` it too, since they
 read `world`. `createGame` and `createTestWorld()` register
@@ -251,8 +253,8 @@ The system declares `query: [transformId]` with `without: [staticTransformTag]`
 
 ```text
 for each dynamic entity e:
+  if e has a dynamic ancestor: continue           // reached from that ancestor's walk
   p = e's parent
-  if p has a dynamic transform: continue          // reached from p's walk
   walk(e, base = p's world if p has a transform, else identity)
 
 walk(e, base):
@@ -261,31 +263,53 @@ walk(e, base):
     if c has a transform: walk(c, e.world)         // static children too: they follow a moving parent
 ```
 
-Only a dynamic entity whose parent is static, transformless or absent
-starts a walk. Children are reached through the world's children index, so
-an entity without children costs no walk. Transformless entities cut the
-chain (decision X6): their children start walks of their own with an
-identity base.
+Only a dynamic entity with no dynamic ancestor starts a walk. The check
+follows parents up to the root or the first transformless ancestor (X6)
+and stops at the first dynamic transform. It costs one lookup for the
+child of a dynamic parent and one per static ancestor otherwise. A dynamic
+entity whose parent is static and whose grandparent is dynamic is therefore
+composed once per run, by the grandparent's walk, after its parent.
+Children are reached through the world's children index, so an entity
+without children costs no walk. Transformless entities cut the chain
+(decision X6): their children start walks of their own with an identity
+base.
 
 #### 6.3.2 Static subtrees
 
 A static transform (one with `staticTransformTag`) doesn't move relative to
-its parent. Two secondary declarations find the moments it has to be
+its parent. Three secondary declarations find the moments it has to be
 computed:
 
 - `statics`: `[transformId]` with `tags: [staticTransformTag]`. Its `added`
-  journal holds entities that became static or were created static; they
-  are composed once (parents first).
+  journal holds entities that became static or were created static.
 - `staticParents`: `[transformId, parentId]` with the tag. Its `added`
   journal holds static entities given a new parent (`setParent` replaces
   the parent component); `removed` holds those whose parent was removed.
-  They're recomposed.
+- `transforms`: `[transformId]`, no tag. Its `removed` journal holds
+  entities that lost their transform. An entity in it that is still alive
+  now cuts the chain (X6), so its static children must compose from
+  identity: the system reports them with the other journals. Its dynamic
+  children start walks of their own in §6.3.1.
 
-A static entity under a dynamic parent is still reached by its parent's
-walk and follows it, as `isStatic` behaves today. A static entity under a
-static parent or at the root is never visited again: changing its `local`
-has no effect until the tag is removed (which makes it dynamic, through the
-membership) or it's reparented. The guide says so.
+Each run, before the walks of §6.3.1, the system starts a `walk` at each
+entity these journals report, with its parent's `world` (or identity) as
+the base. It skips an entity that is no longer alive or no longer static,
+one that has a dynamic ancestor (a §6.3.1 walk reaches it), and one with an
+ancestor that is also reported (that ancestor's walk reaches it). Both
+ancestor checks follow parents as §6.3.1's does, up to the root or the
+first transformless ancestor. The walk covers the entity's whole subtree,
+so the static and dynamic descendants of a static entity that was
+reparented, lost its parent, or was created or became static follow it:
+their parent's `changedTick` changed, so change detection recomposes them.
+
+A static entity with a dynamic ancestor (up to the root or the first
+transformless ancestor) is reached by that ancestor's walk and follows it,
+as `isStatic` behaves today. A static entity with no dynamic ancestor is
+visited only on a run where it or a static ancestor is reported: changing
+its `local` has no effect until the tag is removed (which makes it dynamic,
+through the membership), it or a static ancestor is reparented, or its
+parent loses its transform. The guide
+says so.
 
 #### 6.3.3 Change detection
 
@@ -329,7 +353,7 @@ position.local.x += velocity.x * dt;
 rotation.local += spin * dt;
 
 // after this design
-Vec2.scaleAndAdd(transform.local.position, velocity, dt);
+transform.local.position.x += velocity.x * dt;
 addLocalAngle(transform, spin * dt);
 ```
 
@@ -389,9 +413,12 @@ moved. The guide shows both.
 | Age scale                                               | Writes `scale.local`                                                                                                                       | Writes `transform.local.scale`                                                                                                                                                                                                  |
 | Masks                                                   | World rects from position and rotation                                                                                                     | Same values through the transform                                                                                                                                                                                               |
 
-A side effect of stages (design 03): rendering now always reads this
-frame's world transforms. Today's demos register rendering before physics
-integration, so they draw last frame's positions.
+Design 03 Phase 4, which lands before this design, already makes rendering
+read the world transforms of the frame it runs in. Today's demos register
+rendering before physics integration, so until then they draw last frame's
+positions. Design 03 lists that as M1's one intended output change. This
+design changes no rendered output: goldens and e2e assertions are
+unchanged (Phase 1's definition of done, §6.9).
 
 ### 6.8 Performance
 
@@ -416,10 +443,18 @@ costs a full composition per object. No allocation per tick.
 - Change detection: a moved entity and its descendants are stamped; others
   aren't; reparenting and removing a parent stamp the subtree; running
   propagation twice in one tick is harmless.
-- Static: computed once on becoming static; recomputed on reparenting and on
-  parent removal; never visited under a static root; follows a dynamic
-  parent; becomes dynamic when the tag is removed.
+- Static: computed once on becoming static; recomputed on reparenting, on
+  parent removal and when its static parent loses its transform (it then
+  composes from identity); reparenting a static entity under another static entity,
+  removing its parent, and creating or tagging it static move its static
+  and dynamic descendants with it; a static grandchild of a dynamic entity
+  follows it; not visited under a static root on a run where nothing in
+  its chain is reported; follows a dynamic parent; becomes dynamic when the
+  tag is removed.
 - Transformless entities cut the chain.
+- Walk starts: a dynamic entity whose parent is static and whose
+  grandparent is dynamic is composed once per run, against its parent's
+  current `world`, whatever the storage order.
 - 2D helpers: round-trips; wrapping; the revolute limit across a half turn.
 - World-space helpers against the matrix math.
 - `getCurrentWorldMatrix`: equals `world.matrix` after propagation; sees

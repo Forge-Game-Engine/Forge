@@ -1,14 +1,13 @@
 # Design 11: glTF and Asset Lifetime
 
-|                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review (revised after solution review, §7)                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| **Kind**                              | Feature and breaking refactor                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| **Program**                           | [Forge 3D](./README.md), milestone M4. Phase 1 ships earlier, after [05 GPU device layer](./05-gpu-device.md) Phase 3: it builds on the device's textures and context-loss restore, and doesn't need 3D                                                                                                                                                                                                                                                                   |
-| **Depends on**                        | [03 ECS foundations](./03-ecs-foundations.md) (declared queries, journals, singletons, stages); [05 GPU device layer](./05-gpu-device.md) (textures, samplers, vertex formats, context loss); [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md); [10 PBR and environment lighting](./10-pbr-and-environment-lighting.md) for materials; [12 Skeletal and morph animation](./12-skeletal-and-morph-animation.md) for the skin, morph and clip types |
-| **Lands with**                        | [12 Skeletal and morph animation](./12-skeletal-and-morph-animation.md) (Phase 4 here and Phase 1 there ship together)                                                                                                                                                                                                                                                                                                                                                    |
-| **Related**                           | [04 Transforms](./04-transforms.md) (`addTransformComponent`, static subtrees), [06 Render pipeline](./06-render-pipeline.md) (bins, GPU scene, levels of detail, cameras), [09 Lighting](./09-lighting-and-shadows.md) (`KHR_lights_punctual`), [01 Testing and benchmarks](./01-testing-and-benchmarks.md) (B9, goldens)                                                                                                                                                |
+|                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review (revised after solution review, §7)                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **Kind**                              | Feature and breaking refactor                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Program**                           | [Forge 3D](./README.md), milestone M4. Phase 1 ships earlier, after [05 GPU device layer](./05-gpu-device.md) Phase 3: it builds on the device's textures and context-loss restore, and doesn't need 3D. The import of skins, morph targets and animations specified here (§6.8.5, §6.13, §6.14.2 and the skin, morph and clip rows of §6.18.2) is built by [12 Skeletal and morph animation](./12-skeletal-and-morph-animation.md) Phase 1, which owns those types. |
+| **Depends on**                        | [03 ECS foundations](./03-ecs-foundations.md) (declared queries, journals, singletons, stages); [05 GPU device layer](./05-gpu-device.md) (textures, samplers, vertex formats, context loss); [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md); [10 PBR and environment lighting](./10-pbr-and-environment-lighting.md) for materials                                                                                                        |
+| **Related**                           | [04 Transforms](./04-transforms.md) (`addTransformComponent`, static subtrees), [06 Renderer and frame graph](./06-render-pipeline.md) (bins, GPU scene, levels of detail, cameras), [09 Lighting](./09-lighting-and-shadows.md) (`KHR_lights_punctual`), [01 Testing and benchmarks](./01-testing-and-benchmarks.md) (B9, goldens)                                                                                                                                  |
 
 ## 0. Targeted modules
 
@@ -83,7 +82,7 @@ This design adds:
 - A **model**: the parsed, GPU-ready resources plus a precomputed node
   template. `instantiateModel(world, modelHandle)` turns it into entities in
   one pass and returns the root; the instance's entities keep the model
-  loaded. Instances share meshes and materials, so the render pipeline's
+  loaded. Instances share meshes and materials, so the renderer's
   bins (design 06) draw every copy of a part in one instanced draw.
 - **Compressed content**: KTX2 textures transcoded to the best compressed
   format the GPU has, meshopt and Draco meshes, quantized vertices, WebP.
@@ -117,9 +116,10 @@ This design adds:
 
 ### Out of scope
 
-- **Skinning, morphing and clip playback.** Design 12. This design parses
-  skins, morph targets and animations into design 12's types and adds design
-  12's components when it instantiates a model.
+- **Skinning, morphing and clip playback.** Design 12. This design
+  specifies how skins, morph targets and animations are parsed into design
+  12's types and which of design 12's components instantiation adds; design
+  12 Phase 1 builds both.
 - **The PBR shading model and the `KHR_materials_*` parameters' meaning.**
   Design 10. This design maps glTF material JSON onto design 10's material.
 - **Exporting glTF**, and a Forge scene format. README non-goal.
@@ -132,7 +132,7 @@ This design adds:
   to files that use them.
 - **Physics colliders from glTF.** No physics extension is ratified; a game
   can read its own with a custom extension handler (§6.16), and design 14
-  open question 7 tracks the Khronos drafts.
+  open question 5 tracks the Khronos drafts.
 - **Texture streaming by mip level** (loading low resolutions first). Open
   question 5.
 - **Hot reloading** of assets during development. The store's design allows
@@ -162,8 +162,8 @@ context-loss registry, and needs no 3D.
 
 **Definition of done:** nothing imports the removed caches; every e2e spec
 and golden passes unchanged (design 05 Phase 3 already uploads images
-without their color chunks, §6.3.2); releasing the last handle to a texture
-frees it at the next collection (the device's texture count drops);
+without their color chunks; §6.3.2 here); releasing the last handle to a
+texture frees it at the next collection (the device's texture count drops);
 removing an entity whose handles component holds the last handle frees the
 asset at that frame's collection, including an entity created and removed
 between two collections; two concurrent loads of one URL make one request;
@@ -187,10 +187,10 @@ textures, and instantiates them as entities.
 | 2.8 | Golden and unit tests  | The core rows of §6.18.2; malformed files (§6.18.1)                                                                                                                               | M    |
 
 Geometry processing runs on the main thread in this phase, through the same
-functions Phase 5 moves into workers. Until Phase 4, a file's skins, morph
-targets and animations are left out with a warning; until Phase 5, files
-that require a compression extension fail with the unsupported-extension
-error.
+functions Phase 4 moves into workers. Until design 12 Phase 1, a file's
+skins, morph targets and animations are left out with a warning; until
+Phase 4, files that require a compression extension fail with the
+unsupported-extension error.
 
 **Definition of done:** the core models in §6.18.2 load and match their
 goldens; every malformed fixture fails with its expected error code;
@@ -216,35 +216,20 @@ variant; `SimpleInstancing`'s instances draw instanced; the
 `glTF-Quantized` variants of `Duck`, `Avocado` and `Lantern` match the
 uncompressed goldens within their tolerance.
 
-### Phase 4: Skins, morph targets and animations (ships with design 12 Phase 1)
-
-Loads skins, morph targets and animations for design 12 to play.
-
-| #   | Task          | Description                                                                                                                                      | Size |
-| --- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
-| 4.1 | Skins         | Joints, inverse bind matrices and skeleton roots into design 12's skin type; up to eight influences (§6.8.5); joint bounds per (mesh, skin) pair | M    |
-| 4.2 | Morph targets | Target deltas into the mesh's morph data (design 12), default weights from the mesh and node, each target's longest position delta               | M    |
-| 4.3 | Animations    | Samplers and channels (translation, rotation, scale, weights; step, linear, cubic spline) into design 12's clips                                 | M    |
-| 4.4 | Instantiation | Design 12 §6.4.4's components; animated nodes, joints, and skinned and morphed nodes stay dynamic under `isStatic`                               | S    |
-| 4.5 | Golden tests  | The animation rows of §6.18.2 at fixed sample times                                                                                              | M    |
-
-**Definition of done:** the skinned, morphed and animated models in
-§6.18.2 match their goldens at every sampled time.
-
-### Phase 5: Workers, compression and paced uploads
+### Phase 4: Workers, compression and paced uploads
 
 Moves parsing and decoding into workers, adds compressed meshes and KTX2
 textures, and paces GPU uploads, so loading doesn't block frames.
 
 | #   | Task                 | Description                                                                                                                                                                                           | Size |
 | --- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 5.1 | Worker pool          | §6.3.3: Blob-URL workers, shared compiled WASM modules, idle shutdown, cancellation                                                                                                                   | M    |
-| 5.2 | Geometry in workers  | §6.8 per mesh, MikkTSpace tangents (design 08 §6.1.4) and joint bounds, off the main thread                                                                                                           | M    |
-| 5.3 | Mesh decompression   | §6.11: `EXT_meshopt_compression`, `KHR_meshopt_compression`, `KHR_draco_mesh_compression`; fallback buffers never fetched                                                                             | M    |
-| 5.4 | KTX2                 | §6.10: KTX2 parsing, Basis Universal transcoding, format selection, mip handling; `KHR_texture_basisu`; `.ktx2` for `textureAsset`; uncompressed, BC6H and cube KTX2 for design 10's environment maps | L    |
-| 5.5 | Decoder delivery     | §6.12: vendored builds, `scripts/build-decoders.js`, lazy chunks, licenses                                                                                                                            | M    |
-| 5.6 | Upload pacing        | §6.3.4: the upload queue and its time slices; compiling pipelines at parse time against registered views (§6.9.1)                                                                                     | M    |
-| 5.7 | Golden and e2e tests | Compressed variants of §6.18.2; long-task and cancellation specs (§6.18.4)                                                                                                                            | M    |
+| 4.1 | Worker pool          | §6.3.3: Blob-URL workers, shared compiled WASM modules, idle shutdown, cancellation                                                                                                                   | M    |
+| 4.2 | Geometry in workers  | §6.8 per mesh, MikkTSpace tangents (design 08 §6.1.4) and, once design 12 Phase 1 has added them, joint bounds and morph deltas, off the main thread                                                  | M    |
+| 4.3 | Mesh decompression   | §6.11: `EXT_meshopt_compression`, `KHR_meshopt_compression`, `KHR_draco_mesh_compression`; fallback buffers never fetched                                                                             | M    |
+| 4.4 | KTX2                 | §6.10: KTX2 parsing, Basis Universal transcoding, format selection, mip handling; `KHR_texture_basisu`; `.ktx2` for `textureAsset`; uncompressed, BC6H and cube KTX2 for design 10's environment maps | L    |
+| 4.5 | Decoder delivery     | §6.12: vendored builds, `scripts/build-decoders.js`, lazy chunks, licenses                                                                                                                            | M    |
+| 4.6 | Upload pacing        | §6.3.4: the upload queue and its time slices; compiling pipelines at parse time against registered views (§6.9.1)                                                                                     | M    |
+| 4.7 | Golden and e2e tests | Compressed variants of §6.18.2; long-task and cancellation specs (§6.18.4)                                                                                                                            | M    |
 
 **Definition of done:** every compressed variant in §6.18.2 matches the
 uncompressed golden within its tolerance; loading `FlightHelmet`
@@ -252,19 +237,19 @@ uncompressed golden within its tolerance; loading `FlightHelmet`
 longer than 50 ms; aborting a load mid-transcode frees everything it
 created.
 
-### Phase 6: Performance, conformance and documentation
+### Phase 5: Performance, conformance and documentation
 
 Measures B9, compares the results against the Sample Viewer, and adds
 the guides and demo.
 
 | #   | Task                     | Description                                                                                                                                                                                                       | Size |
 | --- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 6.1 | B9                       | §6.17: the Sponza KTX2 asset, the measurement, the budget breakdown                                                                                                                                               | M    |
-| 6.2 | Sample Viewer comparison | The sample models added to design 10's reference renders (§6.16.3 there): the pinned Khronos Sample Renderer draws each with the golden's camera and environment, and the difference is reported (§6.18.3)        | M    |
-| 6.3 | Benchmarks               | Accessor reading, interleaving, transcoding throughput per format, instantiation per node (§6.18.5)                                                                                                               | S    |
-| 6.4 | Guides and demo          | The models section (§6.19); a model viewer demo in a new `models` demo category, with `static/img/demos/categories/models.svg` and `documentation-site/src/pages/demos/category/models/index.tsx`                 | M    |
-| 6.5 | Quick-start scene        | `e2e/fixtures/scenes/quick-start-gltf.ts`, whose body is the `models/index.md` snippet verbatim; its spec asserts the snippet is at most 20 statements and renders a lit, shadowed model (a relative measurement) | S    |
-| 6.6 | Changelog                | `#### Added` for the `gltf` module                                                                                                                                                                                | S    |
+| 5.1 | B9                       | §6.17: the Sponza KTX2 asset, the measurement, the budget breakdown                                                                                                                                               | M    |
+| 5.2 | Sample Viewer comparison | The sample models added to design 10's reference renders (§6.16.3 there): the pinned Khronos Sample Renderer draws each with the golden's camera and environment, and the difference is reported (§6.18.3)        | M    |
+| 5.3 | Benchmarks               | Accessor reading, interleaving, transcoding throughput per format, instantiation per node (§6.18.5)                                                                                                               | S    |
+| 5.4 | Guides and demo          | The models section (§6.19); a model viewer demo in a new `models` demo category, with `static/img/demos/categories/models.svg` and `documentation-site/src/pages/demos/category/models/index.tsx`                 | M    |
+| 5.5 | Quick-start scene        | `e2e/fixtures/scenes/quick-start-gltf.ts`, whose body is the `models/index.md` snippet verbatim; its spec asserts the snippet is at most 20 statements and renders a lit, shadowed model (a relative measurement) | S    |
+| 5.6 | Changelog                | `#### Added` for the `gltf` module                                                                                                                                                                                | S    |
 
 **Definition of done:** B9 meets its budget on the desktop reference and
 is no slower than Three.js on the same asset; every golden in §6.18.2 was
@@ -303,7 +288,7 @@ checked against the Sample Viewer; the guides and demo are on the docs site.
 | GA25 | Unnormalized integer positions and UVs (`KHR_mesh_quantization`) | (a) Kept in WebGPU's integer formats (`uint16x4`, `sint8x4`, ...) on both backends, read as `uvec`/`ivec` shader inputs and converted in `forge/vertex`, selected by mesh features (design 08 §6.1.1); (b) a format that reads integers as floats (`vertexAttribPointer` with `normalized` false, first draft); (c) expanded to `float32` at load                                                                                             | (a)    | WebGPU's vertex formats have no type that reads integers as floats. (b) would put a WebGL-only format into a device interface that uses WebGPU's formats (design 05 D5) and leave the WebGPU backend a shader path nothing had tested. (c) gives up the memory quantization saves: positions grow from 8 to 12 bytes and UVs from 4 to 8. The conversion is one instruction, and joints are integer inputs already (design 12). The quantized sample models store positions, and most of them UVs, this way (§6.8.1). Trade-off: up to three more mesh-feature bits in the variant key; a file usually uses one scheme throughout.                                                                                                                                                                                                                                                        |
 | GA26 | Which entities of an instance hold the model                     | (a) The root and every entity given a mesh component from the model; (b) the root only; (c) every entity the instance creates                                                                                                                                                                                                                                                                                                                 | (a)    | A node the game moves out of an instance (a sword taken from a character) keeps drawing the model's mesh after the instance is removed; with (b), removing the root would free that mesh under it. Bevy's spawned mesh entities hold their own mesh and material handles for the same reason. Joints, lights and cameras use none of the model's GPU resources, so (c) adds a component per joint (6,000 in B4) for nothing. Trade-off: a handle and a component per mesh entity.                                                                                                                                                                                                                                                                                                                                                                                                         |
 | GA27 | Load progress                                                    | (a) A fraction over the files discovered so far, weighted by size, held at its highest value within a batch of loads; counts and bytes reported beside it; (b) bytes over total bytes, null until every size is known (first draft); (c) files done over files discovered                                                                                                                                                                     | (a)    | (b) can't be monotonic: totals grow as a glTF's buffers and images are discovered and as loads join, and `Content-Length` counts encoded bytes when a response has `Content-Encoding`, so some sizes are never known. (c), what Three.js's loading manager reports, treats a 50 MB buffer like a 1 KB image. Holding the highest value keeps a loading bar from moving backwards; it pauses while newly discovered work catches up.                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| GA28 | When a model's pipelines start compiling                         | (a) At parse time, for the views of every world rendered with the store's render context, without waiting; `prepare()` waits; (b) only in `prepare()`                                                                                                                                                                                                                                                                                         | (a)    | A variant key combines the file's material and mesh features, known once the JSON is parsed, with the pass, pipeline features, target format, sample count, prepass and fog of a view (design 08 §6.5.1), known only from cameras. With cameras in place, compiling during fetching and transcoding hides up to 500 ms of B9 (§6.17.1). Without them there is nothing to compile against, and (b) is what happens. Three.js's `compileAsync` takes the camera for the same reason.                                                                                                                                                                                                                                                                                                                                                                                                        |
+| GA28 | When a model's pipelines start compiling                         | (a) At parse time, for the views of every world rendered with the store's render context, without waiting; `prepare()` waits; (b) only in `prepare()`                                                                                                                                                                                                                                                                                         | (a)    | A variant key combines the file's material and mesh features, known once the JSON is parsed, with the pass, renderer features, target format, sample count, prepass and fog of a view (design 08 §6.5.1), known only from cameras. With cameras in place, compiling during fetching and transcoding hides up to 500 ms of B9 (§6.17.1). Without them there is nothing to compile against, and (b) is what happens. Three.js's `compileAsync` takes the camera for the same reason.                                                                                                                                                                                                                                                                                                                                                                                                        |
 | GA29 | Applying README P5's photometric scale                           | (a) A `modelAsset` load option, in the key, applied to the model's materials and lights when it's built; (b) an `instantiateModel` option applied per instance                                                                                                                                                                                                                                                                                | (a)    | A model's materials are shared by every instance (§6.14.2), and emissive strength is a material value, so a per-instance scale would need a material per instance or a per-object emissive input, which breaks instancing. One scale per loaded model is also what P5 decided. Lights are instantiated from the model's converted values, so they take the same scale with no per-instance work. Trade-off: one file loaded with two scales is two store entries, with two copies of its materials.                                                                                                                                                                                                                                                                                                                                                                                       |
 
 ---
@@ -338,8 +323,8 @@ In priority order.
    revisited with mobile measurements in M4.
 5. **Loading textures low resolution first.** Large scenes could show
    small mips while full ones load. Options: (a) a later design, once
-   KTX2 level ranges and residency tracking exist; (b) in Phase 5,
-   uploading the smallest KTX2 levels first. (a) keeps Phase 5's scope;
+   KTX2 level ranges and residency tracking exist; (b) in Phase 4,
+   uploading the smallest KTX2 levels first. (a) keeps Phase 4's scope;
    (b) shows textures sooner in large scenes. Proposal: (a).
 
 ---
@@ -727,7 +712,7 @@ changes images with color chunks: 1,500 of the demo and docs-site PNGs (the
 Kenney packs) carry `gAMA` 1/2.2 and 14 carry `cHRM`. The e2e fixtures
 load only `assets/fonts/default/default.png`, which has none. Phase 1 ships
 after design 05 Phase 3, so the change in decoded values lands there, not
-here (design 05's Phase 3 definition of done says so).
+here (design 05 Phase 3 says so, and its task 3.6 changelog records it).
 
 #### 6.3.3 Workers
 
@@ -920,10 +905,10 @@ SHORT with KHR_mesh_quantization, which this file doesn't use).
   parents); scene roots are roots; a node with `matrix` isn't the target of
   translation, rotation or scale channels.
 - **Sparse**: indices strictly increase and stay below the count.
-- **Animation**: sampler inputs are scalar floats that strictly increase,
-  as the glTF 2.0 specification requires;
-  output counts match the interpolation (three values per key for cubic
-  spline).
+- **Animation**: sampler inputs are scalar floats whose first value is at
+  least 0 and that strictly increase (no two keys share a time), as the
+  glTF 2.0 specification requires; output counts match the interpolation
+  (three values per key for cubic spline).
 - Problems the specification allows a viewer to tolerate (a missing
   sampler, an unknown used extension, a texture coordinate set Forge
   doesn't have, extra joint influences) become warnings, collected in
@@ -1014,8 +999,17 @@ their union and each missing attribute is filled with glTF's meaning of
 
 Primitives with and without `NORMAL` can't share a layout (GA10), so a glTF
 mesh mixing them becomes one `Mesh` per group; the extra groups go on child
-entities of the node's entity with an identity transform. This is rare and
-tested with a hand-made fixture.
+entities of the node's entity with an identity transform. Each child gets
+what the node's entity gets for its mesh, so every group deforms together.
+When the node has a skin, the child gets its own `SkinEcsComponent` with the
+node's `Skin` and joint entities, and joint bounds for its (mesh, skin) pair
+(§6.8.4). When the mesh has morph targets, the child gets a
+`MorphWeightsEcsComponent` that holds the node's `weights` array itself, not
+a copy. Whatever writes the node's weights (design 12's pose sampling when a
+clip animates them, or game code) therefore moves every group (design 12
+§6.11.2). The child gets `staticTransformTag` exactly when the node does.
+This is rare, and it's tested with a hand-made fixture that is skinned and
+morphed and plays a clip, checking that every group deforms.
 
 #### 6.8.3 Modes and indices
 
@@ -1128,17 +1122,18 @@ applies it:
 - A material gets at least 9 fragment texture units on a 16-unit device
   (design 05 §6.6). When its textures don't fit, design 10 §6.4 leaves out
   extensions by priority and warns once per material, naming its label.
-- Lit materials draw only in HDR views, which need float color buffers
-  (README P4); on a device without them, `lighting()` throws when it's
-  created (design 10 §6.8.5) and HDR views throw when set up (design 05
-  D11), naming the extension. Unlit-only models draw in any view.
+- Lit materials draw only in HDR views, which need
+  `EXT_color_buffer_float` or `EXT_color_buffer_half_float` (README P4); on
+  a device without either, `lighting()` throws when it's created (design 10
+  §6.8.5) and a camera whose view must be HDR throws (design 05 D11),
+  naming the extensions and the camera. Unlit-only models draw in any view.
 - **Pipelines start compiling at parse time** (GA28). Everything a variant
   key takes from the file is known once the JSON is parsed: material
   features (bound slots with their UV sets and transforms, alpha mode,
   double-sided, unlit) and mesh features from the accessors (normals or
   flat normals, tangents present or to be generated, `color0`, `uv1`,
   integer positions and UVs, four or eight influences, morph targets). The
-  rest comes from views: pass, pipeline features, target format and sample
+  rest comes from views: pass, renderer features, target format and sample
   count, prepass type and fog (design 08 §6.5.1). The loader takes those
   from every world rendered with the store's render context, which
   `registerRendering` records (design 08 §6.10.2): each camera's view, and
@@ -1293,7 +1288,7 @@ format descriptor), and the texture's color space:
   file needs it. Bundlers emit these as separate chunks; a game that never
   loads a Draco file never downloads the Draco chunk, and a 2D game that
   doesn't import `gltf` doesn't emit the glTF chunks at all.
-- Estimated chunk sizes before HTTP compression, to be measured in Phase 5:
+- Estimated chunk sizes before HTTP compression, to be measured in Phase 4:
   meshopt about 30 KB, Draco about 400 KB, Basis Universal about 800 KB
   (base64 adds a third; gzip removes most of it).
 - The models guide states the Content Security Policy needed
@@ -1492,7 +1487,7 @@ export interface ModelNodeEcsComponent {
 | Custom handler                                            | Whatever its node callback adds (§6.16)                                                                                                                                                       |
 | `camera`                                                  | Nothing extra; `addModelCameraComponent` adds the camera (GA13)                                                                                                                               |
 
-With design 12 Phase 1 (which ships with Phase 4 here), the root also gets
+With design 12 Phase 1, the root also gets
 the clip playback component and the bound nodes their pose-target
 components (design 12 §6.4.4).
 
@@ -1570,7 +1565,7 @@ own targets and its output pass writes the canvas, unless the game sets a
 | `MSFT_lod`                                                                                                                                                                                | Supported when each LOD node holds a mesh and no children, mapped onto design 06's levels of detail. `MSFT_screencoverage` values become design 06's screen-height thresholds (the extension doesn't define the measure), and below the last one the mesh isn't drawn. Other forms use the highest level of detail, with a warning. A vendor extension, but widely exported |
 | `KHR_animation_pointer`                                                                                                                                                                   | Not supported (GA21): pointer channels skipped with a warning; a file requiring it fails                                                                                                                                                                                                                                                                                    |
 | `KHR_materials_pbrSpecularGlossiness`                                                                                                                                                     | Not supported: archived by Khronos. Files that only use it load with their metallic-roughness fallback and a warning; files requiring it fail (`SpecGlossVsMetalRough`, which requires it, is the test)                                                                                                                                                                     |
-| `KHR_audio_emitter`, `KHR_physics_rigid_bodies`, `KHR_implicit_shapes`                                                                                                                    | Not supported: not ratified at the time of writing. Ignored when only used, listed in the error when required. Design 15 (open question 7) maps audio emitters and design 14 (open question 7) physics once ratified; a game can read them earlier with a custom handler (§6.16)                                                                                            |
+| `KHR_audio_emitter`, `KHR_physics_rigid_bodies`, `KHR_implicit_shapes`                                                                                                                    | Not supported: not ratified at the time of writing. Ignored when only used, listed in the error when required. Design 15 (open question 7) maps audio emitters and design 14 (open question 5) physics once ratified; a game can read them earlier with a custom handler (§6.16)                                                                                            |
 | `KHR_interactivity`, `KHR_gaussian_splatting`, `KHR_node_selectability`, `KHR_node_hoverability`, `EXT_lights_ies`, `EXT_lights_image_based`, `EXT_mesh_manifold`, `KHR_techniques_webgl` | Not supported; ignored when only used, listed in the error when required                                                                                                                                                                                                                                                                                                    |
 
 ### 6.16 Custom extension handlers
@@ -1604,18 +1599,18 @@ B9 measures, on the desktop reference with a warm HTTP cache, the time from
 calling `assets.load(modelAsset, sponzaUrl)` (store created, no decoder
 loaded yet) to the end of the first frame in which every part of Sponza
 draws (no skipped draws, every texture resident). The scene's world,
-`registerRendering` with the lighting feature, the camera and the shadowed
-sun exist before the call, so pipelines compile against their views while
-textures transcode (GA28). The asset is the Khronos Sponza (one mesh of
-103 primitives, 25 materials, 69 textures, about 262,000 triangles)
-converted with glTF-Transform and KTX-Software at pinned versions: ETC1S
-for color textures, UASTC for normal and data textures, meshopt for
-geometry. Because KTX-Software is a native tool, the converted file is
+`registerRendering` with a renderer that has the lighting feature, the
+camera and the shadowed sun exist before the call, so pipelines compile
+against their views while textures transcode (GA28). The asset is the
+Khronos Sponza (one mesh of 103 primitives, 25 materials, 69 textures,
+about 262,000 triangles) converted with glTF-Transform and KTX-Software at
+pinned versions: ETC1S for color textures, UASTC for normal and data
+textures, meshopt for geometry. Because KTX-Software is a native tool, the converted file is
 published as a release asset that the bench script downloads, as design 01
 does for other assets.
 
 Estimated breakdown, steps overlapping as §6.1's diagram shows; replaced by
-measurements in Phase 6:
+measurements in Phase 5:
 
 | Step                                                                             | Estimate                     |
 | -------------------------------------------------------------------------------- | ---------------------------- |
@@ -1714,7 +1709,8 @@ per-frame work beyond what their components cost in their own systems.
   counts that differ; missing `POSITION`; wrong type for a semantic;
   unsigned-int normalized; index beyond the vertex count; sparse indices not
   increasing; a node cycle; a node with two parents; a scene root that has a
-  parent; TRS channel on a `matrix` node; decreasing animation input; a
+  parent; TRS channel on a `matrix` node; an animation input that repeats a
+  time, one that decreases, and one whose first time is negative; a
   cubic-spline sampler with the wrong output count; out-of-range indices of
   every kind; a bad data URI; a missing external file (the error names the
   URI and the JSON path that referenced it); an image with an unsupported
@@ -1769,9 +1765,9 @@ golden scene, and where it says so, also the variants named:
 | `EmissiveStrengthTest`                                                                 | `glTF`                                                                                     | Emissive strength                                                      |
 | `LightsPunctualLamp`, `PointLightIntensityTest`, `DirectionalLight`                    | `glTF`                                                                                     | Light types and unit conversion                                        |
 | `NodeVisibilityTest`, `LightVisibility`                                                | `glTF`                                                                                     | `KHR_node_visibility`                                                  |
-| `SimpleMorph`, `AnimatedMorphCube`, `MorphPrimitivesTest`, `MorphStressTest`           | `glTF`; `AnimatedMorphCube` also `glTF-Quantized`; `MorphPrimitivesTest` also `glTF-Draco` | Morph targets (Phase 4)                                                |
-| `SimpleSkin`, `RiggedSimple`, `RiggedFigure`, `CesiumMan`, `Fox`, `RecursiveSkeletons` | `glTF`                                                                                     | Skins (Phase 4)                                                        |
-| `AnimatedTriangle`, `BoxAnimated`, `InterpolationTest`                                 | `glTF`                                                                                     | Clips; step, linear and cubic-spline interpolation (Phase 4)           |
+| `SimpleMorph`, `AnimatedMorphCube`, `MorphPrimitivesTest`, `MorphStressTest`           | `glTF`; `AnimatedMorphCube` also `glTF-Quantized`; `MorphPrimitivesTest` also `glTF-Draco` | Morph targets (design 12 Phase 1)                                      |
+| `SimpleSkin`, `RiggedSimple`, `RiggedFigure`, `CesiumMan`, `Fox`, `RecursiveSkeletons` | `glTF`                                                                                     | Skins (design 12 Phase 1)                                              |
+| `AnimatedTriangle`, `BoxAnimated`, `InterpolationTest`                                 | `glTF`                                                                                     | Clips; step, linear and cubic-spline interpolation (design 12 Phase 1) |
 | `AnimationPointerUVs`                                                                  | `glTF`                                                                                     | Loads with pointer channels skipped and a warning                      |
 | `SpecGlossVsMetalRough`                                                                | `glTF`                                                                                     | Fails listing the archived required extension                          |
 | `XmpMetadataRoundedCube`                                                               | `glTF`                                                                                     | Metadata kept                                                          |

@@ -1,12 +1,12 @@
 # Design 02: 3D Math
 
-|                                       |                                                                                                                         |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review (revised after solution review, §7)                                                                   |
-| **Kind**                              | Feature                                                                                                                 |
-| **Engine version at time of writing** | `0.26.1`                                                                                                                |
-| **Program**                           | [Forge 3D](./README.md), milestone M1                                                                                   |
-| **Related**                           | [04 Transforms](./04-transforms.md), [06 Render pipeline](./06-render-pipeline.md), [14 Physics 3D](./14-physics-3d.md) |
+|                                       |                                                                                                                                  |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review (revised after solution review, §7)                                                                            |
+| **Kind**                              | Feature                                                                                                                          |
+| **Engine version at time of writing** | `0.26.1`                                                                                                                         |
+| **Program**                           | [Forge 3D](./README.md), milestone M1                                                                                            |
+| **Related**                           | [04 Transforms](./04-transforms.md), [06 Renderer and frame graph](./06-render-pipeline.md), [14 Physics 3D](./14-physics-3d.md) |
 
 ## 0. Targeted modules
 
