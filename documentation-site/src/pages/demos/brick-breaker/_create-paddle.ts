@@ -92,7 +92,6 @@ export async function createPaddle(
 
   addColliderComponent(world, entity, {
     collider: new PolygonCollider(rectangleVertices(paddleWidth, paddleHeight)),
-    restitution: 1,
     friction: 0,
   });
 

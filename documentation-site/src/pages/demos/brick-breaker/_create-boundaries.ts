@@ -103,7 +103,6 @@ export async function createBoundaries(
 
     addColliderComponent(world, entity, {
       collider: new PolygonCollider(rectangleVertices(wallWidth, wallHeight)),
-      restitution: 1,
       friction: 0,
     });
   };

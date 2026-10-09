@@ -26,8 +26,9 @@ export interface ColliderDefaultedOptions {
   /**
    * The restitution (bounciness) coefficient used when this entity is in
    * contact with another. `createCollisionResolutionEcsSystem` combines two
-   * contacting colliders' restitution via their geometric mean. `0` doesn't
-   * bounce. Defaults to `0.05`.
+   * contacting colliders' restitution by taking the larger of the two, so a
+   * bouncy collider bounces off anything. `0` doesn't bounce unless the
+   * other collider does. Defaults to `0.05`.
    */
   restitution: number;
 

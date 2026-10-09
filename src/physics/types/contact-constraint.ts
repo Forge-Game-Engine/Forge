@@ -45,8 +45,8 @@ export interface ContactConstraint {
   friction: number;
 
   /**
-   * The combined (geometric mean) restitution coefficient of the two
-   * contacting colliders.
+   * The combined restitution coefficient of the two contacting colliders:
+   * the larger of the two, so a bouncy collider bounces off anything.
    */
   restitution: number;
 

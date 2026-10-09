@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **math:** `Vec3.forward` is now `(0, 0, -1)` and `Vec3.backward` `(0, 0, 1)`: the 3D space is right-handed and Y-up, and cameras, lights and anything that aims look along `-Z`. Code that used `Vec3.forward` for `+Z` uses `Vec3.backward`, or `Vec3.modelFront` for the direction a model faces
 #### Fixed
 
+- **physics:** Two colliders in contact now bounce with the larger of their `restitution` values instead of the geometric mean, so a bouncy body bounces off anything: a ball with `restitution: 0.9` on ground with the default `0.05` used to bounce with `0.21`, and now bounces with `0.9`. Friction still combines with the geometric mean. Remove any `restitution` you gave walls, floors or paddles only to make a bouncy body bounce off them, and lower `restitution` on bodies that now bounce more than you want against less bouncy surfaces
 - **text:** Rotated and scaled text keeps its layout. A `RotationEcsComponent` or `ScaleEcsComponent` on a text entity now turns and scales the whole text about the entity's position, instead of turning and scaling each glyph about its own center along an unrotated, unscaled line
 
 ## [0.26.1] - 2026-10-07
