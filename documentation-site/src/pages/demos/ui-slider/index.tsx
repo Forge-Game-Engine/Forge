@@ -2,42 +2,57 @@ import React, { JSX } from 'react';
 import { createSliderGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 
-import { Demo } from '@site/src/components/Demo';
-import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
-
-const badgeStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 20,
-  height: 20,
-  borderRadius: '50%',
-  backgroundColor: 'var(--ifm-color-emphasis-300)',
-  fontSize: 12,
-};
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function UiSlider(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'UI Slider',
-        description:
-          'A demo showcasing createSlider from the ui module: a click-and-drag track with a handle and fill, driving a live value label.',
-      }}
-      header="UI Slider"
-      blurb="createSlider builds a track with a draggable handle and a fill sprite that tracks the current value. The whole track is the drag surface - clicking anywhere on it, not just the handle, jumps the handle there - and dragging keeps tracking even if the pointer strays outside the track's vertical bounds. The value label updates live via onValueChanged."
+    <DemoPage
+      slug="ui-slider"
       createGame={createSliderGame}
-      interactions={
-        <InteractionInstruction
-          displayElement={
-            <div style={badgeStyle}>
-              <i className="fa-solid fa-computer-mouse" />
-            </div>
-          }
-          text="Drag the handle, or click anywhere on the track."
-        />
-      }
-      codeFiles={[{ name: 'game.ts', content: gameCode }]}
+      controls={[
+        {
+          inputs: [{ device: 'mouse', label: 'Drag the handle' }],
+          action: 'Change the value',
+        },
+        {
+          inputs: [{ device: 'mouse', label: 'Click the track' }],
+          action: 'Jump to a value',
+        },
+      ]}
+      highlights={[
+        {
+          text: 'createSlider builds a track, a draggable handle and a fill sprite that grows with the value.',
+          file: 'create-game.ts',
+        },
+        {
+          text: 'The whole track is the drag surface, so clicking anywhere on it moves the handle there.',
+          file: 'create-game.ts',
+        },
+        {
+          text: 'A drag keeps tracking even when the pointer strays above or below the track.',
+          file: 'create-game.ts',
+        },
+        {
+          text: 'The value label updates live from the onValueChanged event, and wholeNumbers rounds the value to integers.',
+          file: 'create-game.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Sliders', to: '/docs/docs/ui/controls#sliders' },
+        { label: 'Creating a canvas', to: '/docs/docs/ui/creating-a-canvas' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary: 'Builds the slider and a value label that follows it.',
+              content: gameCode,
+            },
+          ],
+        },
+      ]}
     />
   );
 }

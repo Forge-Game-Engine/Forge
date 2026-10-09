@@ -5,35 +5,74 @@ import createHingesCode from '!!raw-loader!./_create-hinges';
 import pushComponentCode from '!!raw-loader!./_push.component';
 import pushSystemCode from '!!raw-loader!./_push.system';
 
-import { Demo } from '@site/src/components/Demo';
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function RevoluteJoint(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'Revolute Joint (Hinge) Demo',
-        description:
-          "A demo showcasing the physics engine's RevoluteJoint: a constraint that pins two bodies together at a point, locking translation but leaving rotation free.",
-      }}
-      header="Revolute Joint (Hinge)"
-      blurb="This demo showcases RevoluteJoint in three different setups. On the left, a door is hinged to a wall mount, its swing limited to 90 degrees between closed and open; gravity swings it shut and a periodic push swings it back open. In the middle, a pendulum is hinged by an arm to a fixed pivot and, with no limit and no push at all, simply swings back and forth under gravity, rotation is completely free. On the right, a wheel is hinged directly to its hub and, having been given a single initial spin, keeps rotating indefinitely: unlike RevoluteJoint's translation lock, nothing resists rotation unless a limit is enabled. RevoluteJoint has no built-in motor, so the door's swing is driven by a small demo-only system that periodically applies an off-center impulse (see push.component.ts and push.system.ts)."
+    <DemoPage
+      slug="revolute-joint"
       createGame={createRevoluteJointGame}
-      codeFiles={[
+      highlights={[
         {
-          name: 'game.ts',
-          content: gameCode,
+          text: 'A revolute joint pins two bodies together at a point: translation is locked, but rotation stays free.',
+          file: 'create-hinges.ts',
         },
         {
-          name: 'create-hinges.ts',
-          content: createHingesCode,
+          text: "The door's joint is limited to a 90 degree swing; gravity closes it and a periodic push opens it again.",
+          file: 'create-hinges.ts',
         },
         {
-          name: 'push.component.ts',
-          content: pushComponentCode,
+          text: 'The pendulum has no limit and no push, and the wheel was spun once, so it keeps turning with nothing to resist it.',
+          file: 'create-hinges.ts',
         },
         {
-          name: 'push.system.ts',
-          content: pushSystemCode,
+          text: 'Revolute joints have no motor, so the door is pushed by an impulse applied near its far edge.',
+          file: 'push.system.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Joints', to: '/docs/docs/physics/joints' },
+        { label: 'Forces', to: '/docs/docs/physics/forces' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Sets up the camera and hinges, and registers every system in the order they run.',
+              content: gameCode,
+            },
+          ],
+        },
+        {
+          title: 'Building the scene',
+          files: [
+            {
+              name: 'create-hinges.ts',
+              summary:
+                'Builds the door, pendulum and wheel, each hinged to a fixed pivot.',
+              content: createHingesCode,
+            },
+          ],
+        },
+        {
+          title: 'Pushing the door',
+          files: [
+            {
+              name: 'push.component.ts',
+              summary:
+                'Settings for an impulse applied at a point on a body every so often.',
+              content: pushComponentCode,
+            },
+            {
+              name: 'push.system.ts',
+              summary:
+                'Applies each push at its contact point, rotated to follow the body.',
+              content: pushSystemCode,
+            },
+          ],
         },
       ]}
     />

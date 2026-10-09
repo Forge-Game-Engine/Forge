@@ -4,55 +4,79 @@ import gameCode from '!!raw-loader!./_create-game';
 import menuCode from '!!raw-loader!./_create-menu';
 import beaconCode from '!!raw-loader!./_create-beacon';
 
-import { Demo } from '@site/src/components/Demo';
-import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
-
-const badgeStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 20,
-  height: 20,
-  borderRadius: '50%',
-  backgroundColor: 'var(--ifm-color-emphasis-300)',
-  fontSize: 12,
-};
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function Visibility(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'Visibility',
-        description:
-          'A demo showcasing VisibilityEcsComponent hiding an entity and everything parented under it, in the world and in UI.',
-      }}
-      header="Visibility"
-      blurb="Each toggle sets one VisibilityEcsComponent. Hiding 'Load game' takes it out of the menu's vertical layout group, so the buttons below move up and the panel shrinks. Hiding the menu hides the panel, its title and every button, which can no longer be hovered, clicked or focused. Fading the menu sets a canvas group's alpha instead: the menu stays laid out, drawn and clickable. Hiding the beacon hides its lamp and stops its spark emitter, while sparks already in the air fade out."
+    <DemoPage
+      slug="visibility"
       createGame={createVisibilityGame}
-      interactions={
-        <>
-          <InteractionInstruction
-            displayElement={
-              <div style={badgeStyle}>
-                <i className="fa-solid fa-computer-mouse" />
-              </div>
-            }
-            text="Click the toggles to hide and show parts of the scene."
-          />
-          <InteractionInstruction
-            displayElement={
-              <div style={badgeStyle}>
-                <i className="fa-solid fa-keyboard" />
-              </div>
-            }
-            text="Arrow keys move focus; hiding the focused button clears focus."
-          />
-        </>
-      }
-      codeFiles={[
-        { name: 'game.ts', content: gameCode },
-        { name: 'menu.ts', content: menuCode },
-        { name: 'beacon.ts', content: beaconCode },
+      controls={[
+        {
+          inputs: [{ device: 'mouse', label: 'Click' }],
+          action: 'Flip a toggle',
+        },
+        {
+          inputs: ['↑', '↓', '←', '→'],
+          action: 'Move focus',
+          detail: 'Hiding the focused button clears focus',
+        },
+        { inputs: ['Enter', 'Space'], action: 'Press the focused element' },
+      ]}
+      highlights={[
+        {
+          text: "Hiding 'Load game' takes it out of the menu's layout group, so the buttons below move up and the panel shrinks.",
+          file: 'create-menu.ts',
+        },
+        {
+          text: 'Hiding the menu hides the panel and everything under it, and its buttons can no longer be hovered, clicked or focused.',
+          file: 'create-menu.ts',
+        },
+        {
+          text: "Fading the menu sets a canvas group's alpha instead, so it stays laid out, drawn and clickable.",
+          file: 'create-menu.ts',
+        },
+        {
+          text: 'Hiding the beacon hides its lamp and stops its spark emitter, while sparks already in the air fade out.',
+          file: 'create-beacon.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Visibility', to: '/docs/docs/rendering/visibility' },
+        {
+          label: 'Hiding, fading and tooltips',
+          to: '/docs/docs/ui/canvas-groups-and-tooltips',
+        },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Builds the menu, the beacon and the toggles that hide and fade them.',
+              content: gameCode,
+            },
+          ],
+        },
+        {
+          title: 'Building the scene',
+          files: [
+            {
+              name: 'create-menu.ts',
+              summary:
+                'A fitted button menu with a visibility component and a canvas group.',
+              content: menuCode,
+            },
+            {
+              name: 'create-beacon.ts',
+              summary:
+                'A beacon with a child lamp and a spark emitter, hidden as one.',
+              content: beaconCode,
+            },
+          ],
+        },
       ]}
     />
   );

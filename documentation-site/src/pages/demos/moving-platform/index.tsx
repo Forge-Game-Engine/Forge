@@ -7,32 +7,91 @@ import platformMoverComponentCode from '!!raw-loader!./_platform-mover.component
 import platformMoverSystemCode from '!!raw-loader!./_platform-mover.system';
 import spawnCratesCode from '!!raw-loader!./_spawn-crates';
 
-import { Demo } from '@site/src/components/Demo';
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function MovingPlatform(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'Moving Platform Demo',
-        description:
-          "A demo showcasing RigidBodyEcsComponent's kinematic body type: a platform driven directly by game code that carries and pushes dynamic crates without being affected by gravity or collisions itself.",
-      }}
-      header="Moving Platform"
-      blurb="The platform is a kinematic body (type: 'kinematic'): a small demo-only system (see platform-mover.component.ts and platform-mover.system.ts) sets its velocity directly and reverses it at either end, and createEulerIntegrationEcsSystem moves it every tick from that velocity, exactly like a dynamic body. But unlike a dynamic body, gravity and collisions never change the platform's own velocity - only the crates react, getting carried along and pushed as the platform sweeps under them. Click anywhere to drop another crate."
+    <DemoPage
+      slug="moving-platform"
       createGame={createMovingPlatformGame}
-      codeFiles={[
-        { name: 'game.ts', content: gameCode },
-        { name: 'create-platform.ts', content: createPlatformCode },
+      controls={[
         {
-          name: 'platform-mover.component.ts',
-          content: platformMoverComponentCode,
+          inputs: [{ device: 'mouse', label: 'Click' }],
+          action: 'Drop a crate',
+        },
+      ]}
+      highlights={[
+        {
+          text: 'The platform is a kinematic body: game code sets its velocity, and gravity and collisions never change it.',
+          file: 'create-platform.ts',
         },
         {
-          name: 'platform-mover.system.ts',
-          content: platformMoverSystemCode,
+          text: 'A small demo system reverses the velocity at each end; euler integration moves it like any other body.',
+          file: 'platform-mover.system.ts',
         },
-        { name: 'spawn-crates.ts', content: spawnCratesCode },
-        { name: 'create-boundaries.ts', content: createBoundariesCode },
+        {
+          text: 'The crates are dynamic bodies, so they ride along on the platform and get pushed as it sweeps under them.',
+          file: 'spawn-crates.ts',
+        },
+        {
+          text: 'A click converts the cursor to world space and drops a new crate there.',
+          file: 'create-game.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Bodies and shapes', to: '/docs/docs/physics/rigid-bodies' },
+        { label: 'Collisions', to: '/docs/docs/physics/collisions' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Sets up the scene and starting crates, registers the systems and handles clicks.',
+              content: gameCode,
+            },
+          ],
+        },
+        {
+          title: 'The platform',
+          files: [
+            {
+              name: 'create-platform.ts',
+              summary:
+                'Creates the kinematic platform with its collider and starting velocity.',
+              content: createPlatformCode,
+            },
+            {
+              name: 'platform-mover.component.ts',
+              summary: 'The bounds and speed of a back-and-forth platform.',
+              content: platformMoverComponentCode,
+            },
+            {
+              name: 'platform-mover.system.ts',
+              summary:
+                "Reverses the platform's velocity when it reaches either bound.",
+              content: platformMoverSystemCode,
+            },
+          ],
+        },
+        {
+          title: 'Building the scene',
+          files: [
+            {
+              name: 'spawn-crates.ts',
+              summary: 'Loads the crate sprite and spawns dynamic crates.',
+              content: spawnCratesCode,
+            },
+            {
+              name: 'create-boundaries.ts',
+              summary:
+                'Adds a static floor and walls that catch crates falling off the platform.',
+              content: createBoundariesCode,
+            },
+          ],
+        },
       ]}
     />
   );

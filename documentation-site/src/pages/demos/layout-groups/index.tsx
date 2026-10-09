@@ -6,25 +6,86 @@ import toolbarCode from '!!raw-loader!./_create-toolbar';
 import inventoryGridCode from '!!raw-loader!./_create-inventory-grid';
 import optionsFormCode from '!!raw-loader!./_create-options-form';
 
-import { Demo } from '@site/src/components/Demo';
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function LayoutGroups(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'Layout Groups',
-        description:
-          'A demo showcasing horizontal, vertical, and grid layout groups (including content-sized grid columns) plus content size fitting, from the ui module.',
-      }}
-      header="Layout Groups"
-      blurb="Four panels, each arranged automatically instead of by hand. 'Menu' stacks three buttons with a VerticalLayoutGroupEcsComponent, and shrink-wraps its own size to fit them via a ContentSizeFitterEcsComponent - resize a button and the panel follows. 'Toolbar' spaces a row of icons evenly with a HorizontalLayoutGroupEcsComponent. 'Inventory' places eight cells into a fixed 4-column grid with a GridLayoutGroupEcsComponent. 'Options' uses that same component with columnWidthMode: 'content' instead - the label column sizes itself to whichever of 'Music'/'Fullscreen' is widest, so both rows' controls line up on the same left edge. None of the arranged children set their own anchoredPosition or size - createUiLayoutGroupEcsSystem computes all of it, every frame."
+    <DemoPage
+      slug="layout-groups"
       createGame={createLayoutGroupsGame}
-      codeFiles={[
-        { name: 'game.ts', content: gameCode },
-        { name: 'create-menu.ts', content: menuCode },
-        { name: 'create-toolbar.ts', content: toolbarCode },
-        { name: 'create-inventory-grid.ts', content: inventoryGridCode },
-        { name: 'create-options-form.ts', content: optionsFormCode },
+      controls={[
+        {
+          inputs: [{ device: 'mouse', label: 'Click' }],
+          action: 'Use a button, slider or toggle',
+        },
+        { inputs: ['↑', '↓', '←', '→'], action: 'Move focus' },
+        { inputs: ['Enter', 'Space'], action: 'Press the focused element' },
+      ]}
+      highlights={[
+        {
+          text: "'Menu' stacks its buttons with a vertical layout group, and a content size fitter shrink-wraps the panel around them.",
+          file: 'create-menu.ts',
+        },
+        {
+          text: "'Toolbar' spaces and sizes a row of icons evenly with a horizontal layout group.",
+          file: 'create-toolbar.ts',
+        },
+        {
+          text: "'Inventory' places eight cells in a fixed four-column grid, where cellSize alone decides each cell's size.",
+          file: 'create-inventory-grid.ts',
+        },
+        {
+          text: "'Options' sizes its label column to the widest label with columnWidthMode 'content', so the controls line up.",
+          file: 'create-options-form.ts',
+        },
+        {
+          text: 'No arranged child sets its own position or size; the layout group system computes them every frame.',
+          file: 'create-game.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Layout groups', to: '/docs/docs/ui/layout-groups' },
+        { label: 'Anchors and layout', to: '/docs/docs/ui/anchors-and-layout' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Sets up the canvas and input, and builds the four panels.',
+              content: gameCode,
+            },
+          ],
+        },
+        {
+          title: 'Panels',
+          files: [
+            {
+              name: 'create-menu.ts',
+              summary:
+                'A vertical stack of buttons in a panel that fits its content.',
+              content: menuCode,
+            },
+            {
+              name: 'create-toolbar.ts',
+              summary: 'A horizontal row of evenly spaced icons.',
+              content: toolbarCode,
+            },
+            {
+              name: 'create-inventory-grid.ts',
+              summary: 'Eight fixed-size cells in a four-column grid.',
+              content: inventoryGridCode,
+            },
+            {
+              name: 'create-options-form.ts',
+              summary:
+                'A label and control form whose label column sizes to its content.',
+              content: optionsFormCode,
+            },
+          ],
+        },
       ]}
     />
   );

@@ -5,35 +5,74 @@ import createSlidersCode from '!!raw-loader!./_create-sliders';
 import pumpComponentCode from '!!raw-loader!./_pump.component';
 import pumpSystemCode from '!!raw-loader!./_pump.system';
 
-import { Demo } from '@site/src/components/Demo';
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function PrismaticJoint(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'Prismatic Joint (Slider) Demo',
-        description:
-          "A demo showcasing the physics engine's PrismaticJoint: a constraint that locks two bodies to a single sliding axis.",
-      }}
-      header="Prismatic Joint (Slider)"
-      blurb="This demo showcases PrismaticJoint in three different setups. On the left, a piston pumps back and forth along a level rail between two limits. In the middle, an elevator platform is pumped upward and falls back down under gravity to its lower limit. On the right, a ball is pumped back up a diagonal incline and rolls back down it under gravity. In every case the joint keeps the slider locked to its rail: no rotation, no drifting sideways off the line, only limited to translate along the axis. PrismaticJoint has no built-in motor, so each slider is driven by a small demo-only system that periodically applies an impulse (see pump.component.ts and pump.system.ts)."
+    <DemoPage
+      slug="prismatic-joint"
       createGame={createPrismaticJointGame}
-      codeFiles={[
+      highlights={[
         {
-          name: 'game.ts',
-          content: gameCode,
+          text: 'Each slider is joined to a static anchor by a prismatic joint, so it can only move along one axis, never rotate or drift sideways.',
+          file: 'create-sliders.ts',
         },
         {
-          name: 'create-sliders.ts',
-          content: createSlidersCode,
+          text: 'Joint limits stop each slider at the ends of its dotted rail: a level piston, a vertical elevator and a diagonal incline.',
+          file: 'create-sliders.ts',
         },
         {
-          name: 'pump.component.ts',
-          content: pumpComponentCode,
+          text: 'Prismatic joints have no motor, so a small demo system applies an impulse every few seconds; gravity brings the elevator and ball back.',
+          file: 'pump.system.ts',
         },
         {
-          name: 'pump.system.ts',
-          content: pumpSystemCode,
+          text: 'The joint solver runs after collision resolution, so the rail constraint has the last word on velocity each tick.',
+          file: 'create-game.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Joints', to: '/docs/docs/physics/joints' },
+        { label: 'Forces', to: '/docs/docs/physics/forces' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Sets up the camera and sliders, and registers every system in the order they run.',
+              content: gameCode,
+            },
+          ],
+        },
+        {
+          title: 'Building the scene',
+          files: [
+            {
+              name: 'create-sliders.ts',
+              summary:
+                'Builds the piston, elevator and incline: anchors, rails, sliders and their joints.',
+              content: createSlidersCode,
+            },
+          ],
+        },
+        {
+          title: 'Pumping',
+          files: [
+            {
+              name: 'pump.component.ts',
+              summary:
+                'Settings for periodically nudging a slider along its rail.',
+              content: pumpComponentCode,
+            },
+            {
+              name: 'pump.system.ts',
+              summary:
+                'Applies each pump impulse on its interval, flipping direction for the piston.',
+              content: pumpSystemCode,
+            },
+          ],
         },
       ]}
     />
