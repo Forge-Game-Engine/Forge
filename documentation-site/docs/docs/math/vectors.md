@@ -30,15 +30,26 @@ The static getters [`Vec2.zero`](/Forge/docs/api/classes/Vec2#zero),
 every access, so the result can be changed without affecting other code.
 The world is Y-up: `Vec2.up` is `(0, 1)` and `Vec2.down` is `(0, -1)`.
 [`Vec3`](/Forge/docs/api/classes/Vec3) has the same getters, plus
-`forward` `(0, 0, 1)` and `backward` `(0, 0, -1)`.
+[`forward`](/Forge/docs/api/classes/Vec3#forward) `(0, 0, -1)`,
+[`backward`](/Forge/docs/api/classes/Vec3#backward) `(0, 0, 1)` and
+[`modelFront`](/Forge/docs/api/classes/Vec3#modelfront) `(0, 0, 1)`.
+
+## Directions in 3D
+
+The 3D space is right-handed and Y-up: `+X` is right, `+Y` is up and `+Z`
+points towards the viewer. Cameras, lights and anything that aims look
+along `Vec3.forward`, `-Z`. A model's front faces `Vec3.modelFront`, `+Z`,
+as glTF specifies, so a model faces a camera that looks at it along `-Z`.
 
 ## Changing a vector
 
 The static methods of [`Vec2`](/Forge/docs/api/classes/Vec2) and
 [`Vec3`](/Forge/docs/api/classes/Vec3) that change a vector (`add`,
 `subtract`, `multiply`, `multiplyComponents`, `divide`, `normalize`,
-`floorComponents`, and for `Vec2` also `rotate`, `perpendicular` and
-`negate`) write the result into their first argument and return it. No new
+`floorComponents`, `negate`, `rotate`, for `Vec2` also `perpendicular`, and
+for `Vec3` also `set`, `setComponents`, `cross`, `min`, `max`, `abs`,
+`scaleAndAdd`, `lerp`, `projectOnPlane`, `reflect` and the `transform`
+methods) write the result into their first argument and return it. No new
 vector is created:
 
 ```ts
@@ -92,7 +103,12 @@ if (Vec2.magnitudeSquared(offset) < radius * radius) {
 }
 ```
 
-`Vec3` has the same methods except `distanceTo`, `dot` and `cross`.
+`Vec3` has the same methods, except that its distance methods are
+[`distance`](/Forge/docs/api/classes/Vec3#distance) and
+[`distanceSquared`](/Forge/docs/api/classes/Vec3#distancesquared) and its
+[`cross`](/Forge/docs/api/classes/Vec3#cross) writes `target × value` into
+`target`. [`Vec3.angleBetween`](/Forge/docs/api/classes/Vec3#anglebetween)
+returns the angle between two vectors, from `0` to `π`.
 
 ## Normalizing a vector
 
@@ -122,6 +138,18 @@ it a quarter turn clockwise, to `(y, -x)`, and
 Vec2.rotate(offset, Math.PI / 2); // (1, 0) becomes (0, 1)
 Vec2.perpendicular(normal); // (0, 1) becomes (1, 0)
 ```
+
+[`Vec3.rotate(vector, rotation)`](/Forge/docs/api/classes/Vec3#rotate)
+rotates a 3D vector by a [quaternion](./quaternions.md), and
+[`Vec3.transformPoint`](/Forge/docs/api/classes/Vec3#transformpoint) and
+[`Vec3.transformDirection`](/Forge/docs/api/classes/Vec3#transformdirection)
+transform it by a [matrix](./matrices.md).
+
+## Building a 3D vector from a 2D one
+
+[`Vec3.fromVector2(out, vector, z)`](/Forge/docs/api/classes/Vec3#fromvector2)
+sets `out` to a `Vector2`'s `x` and `y` with the given `z`. `Vec2`'s methods
+read and write only `x` and `y`, so they also work on a `Vector3`.
 
 ## Scaling around a pivot
 

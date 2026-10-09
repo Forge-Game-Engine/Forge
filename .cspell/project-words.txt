@@ -288,6 +288,8 @@ screencoverage
 scroller
 selectability
 shaderstore
+shepperd
+shoemake
 sint
 skidmark
 slerp
@@ -309,6 +311,7 @@ ssao
 stoppables
 stoppie
 stormmuller
+strided
 Substep
 substep
 Substepping
@@ -351,6 +354,7 @@ unparented
 unpremultiplies
 unpremultiply
 unpremultiplying
+unproject
 unprojected
 unprojects
 unrepresentable

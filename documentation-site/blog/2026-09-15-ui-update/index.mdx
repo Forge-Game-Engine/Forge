@@ -9,17 +9,17 @@ image: ./banner.png
 ![Feature Image](./banner.png)
 
 As part of the `0.24.X` release we included support for 9-slice sprites. 9-slice sprites are useful on their own,
-but they become crucial when building a UI system. 
+but they become crucial when building a UI system.
 
 A custom UI system for Forge was not on the roadmap for 2026, but we decided to bring the feature forward.
 We are changing the long term strategy for Forge. Forge has many strong competitors in the market.
 The most notable being Phaser and Excalibur.js, building a "good web-based game engine" is not enough when competing
-with battle-tested products. 
+with battle-tested products.
 
 {/* truncate */}
 
-While we want to build a good engine, we also want to build an accessible engine. We've been keeping an eye on recent gaming trends, 
-and potential target audiences. There is still a large barrier to entry when it comes to building even the simplest of games. 
+While we want to build a good engine, we also want to build an accessible engine. We've been keeping an eye on recent gaming trends,
+and potential target audiences. There is still a large barrier to entry when it comes to building even the simplest of games.
 
 Forge's original design philosophy of "code-only" does not help break that barrier. We have decided that Forge needs an Editor.
 
@@ -30,7 +30,7 @@ A prerequisite to building an editor is to have a robust UI system.
 ![UI Main Menu](./ui-main-menu.png)
 
 The UI module is a full retained-mode layout and interaction system.
-It starts with a layout primitive - `RectTransformEcsComponent`, 
+It starts with a layout primitive - `RectTransformEcsComponent`,
 anchors, pivots and stretch - resolved every frame by
 `createUiLayoutEcsSystem` into concrete positions and sizes, so a
 panel's children always end up exactly where their anchors say they should,
@@ -121,12 +121,12 @@ as `{ x, y }` literals and operate on them via `Vec2`/`Vec3` static methods
 (`Vec2.add`, `Vec2.rotate`, `Vec2.normalize`, ...) that mutate their first
 argument in place instead of allocating a new vector - a meaningful win in
 hot loops like physics integration. `Rect` made the same move, to a plain
-`{ min, max }` object operated on via `Rects`. 
+`{ min, max }` object operated on via `Rects`.
 
-While we originally built Vector2/Vector3 classes along with their immutable functions 
+While we originally built Vector2/Vector3 classes along with their immutable functions
 to provide a good developer experience, this introduced a tradeoff involving heavy memory allocations and frequent GC hits.
 We decided that it makes sense to keep the engine as performant as possible, building a wrapper class would be easy
-for teams that want to prioritize DX and immutability. 
+for teams that want to prioritize DX and immutability.
 
 ## ECS world registration
 

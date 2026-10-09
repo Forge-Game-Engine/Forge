@@ -12,6 +12,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **math:** `Vec3` has the operations 3D code needs: `setComponents`, `fromVector2`, `dot`, `cross`, `negate`, `min`, `max`, `abs`, `scaleAndAdd`, `lerp`, `distance`, `distanceSquared`, `transformPoint`, `transformPointProjective`, `transformDirection`, `transformByMatrix3`, `rotate` (by a quaternion), `projectOnPlane`, `reflect` and `angleBetween`, and `Vec3.modelFront` `(0, 0, 1)`, the direction a model's front faces
+- **math:** `Quaternion` and `Quat` for 3D rotations: building from an axis and angle, yaw-pitch-roll, a look direction (`lookRotation` aims `-Z`, `modelLookRotation` aims `+Z`), two directions, a 2D angle (`fromAngleZ`/`angleZ`) or a matrix; combining (`multiply`, `premultiply`, `invert`); interpolating (`slerp`, `nlerp`, `rotateTowards`); and comparing (`angleBetween`, `equals`, which treats `q` and `-q` as the same rotation)
+- **math:** `Matrix4`/`Mat4` and `Matrix3`/`Mat3`, 64-bit column-major matrices stored as plain `number[]`s: composition (with affine fast paths), inversion (`null` for a singular matrix), building from and decomposing into position, rotation and scale, view matrices (`lookAt`, `targetTo`), perspective, infinite perspective and orthographic projections for either clip-space depth range (`DepthRange`), normal matrices and `toFloat32` for GPU buffers
+- **math:** `Ray`, `Plane`, `BoundingBox`, `BoundingSphere` and `Frustum`, with `Rays` (plane, sphere, box and triangle intersection), `Planes`, `BoundingBoxes`, `BoundingSpheres` and `Frustums` (extraction from a view-projection matrix, sphere, box and point tests, corners)
+- **rendering:** `Material.setUniform` accepts a `Matrix4` for a `mat4` uniform and a `Matrix3` for a `mat3` uniform, converted to 32-bit floats each time the material is bound
+
+#### Changed
+
+- **math:** `Vec3.forward` is now `(0, 0, -1)` and `Vec3.backward` `(0, 0, 1)`: the 3D space is right-handed and Y-up, and cameras, lights and anything that aims look along `-Z`. Code that used `Vec3.forward` for `+Z` uses `Vec3.backward`, or `Vec3.modelFront` for the direction a model faces
 #### Fixed
 
 - **text:** Rotated and scaled text keeps its layout. A `RotationEcsComponent` or `ScaleEcsComponent` on a text entity now turns and scales the whole text about the entity's position, instead of turning and scaling each glyph about its own center along an unrotated, unscaled line

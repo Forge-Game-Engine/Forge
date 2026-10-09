@@ -119,7 +119,9 @@ export class Material {
    * The GL upload is chosen from the uniform's declared GLSL type, and the
    * value must fit that type:
    * - `float`, `vecN`, `matN`, `matNxM`: a `Float32Array` (a `number` for
-   *   `float`, a `Vector2` for `vec2`, a `Matrix3x3` for `mat3`).
+   *   `float`, a `Vector2` for `vec2`, a `Matrix3` or `Matrix3x3` for
+   *   `mat3`, a `Matrix4` for `mat4`). A `Matrix3` or `Matrix4` is
+   *   converted to 32-bit floats each time the material is bound.
    * - `int`, `ivecN`: an `Int32Array` (a `number` or `boolean` for `int`).
    * - `uint`, `uvecN`: a `Uint32Array` (a `number` for `uint`).
    * - `bool`, `bvecN`: an `Int32Array` (a `boolean` for `bool`).
