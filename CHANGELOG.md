@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **math:** `Vec3` has the operations 3D code needs: `setComponents`, `fromVector2`, `dot`, `cross`, `negate`, `min`, `max`, `abs`, `scaleAndAdd`, `lerp`, `distance`, `distanceSquared`, `transformPoint`, `transformPointProjective`, `transformDirection`, `transformByMatrix3`, `rotate` (by a quaternion), `projectOnPlane`, `reflect` and `angleBetween`, and `Vec3.modelFront` `(0, 0, 1)`, the direction a model's front faces
+- **math:** `Quaternion` and `Quat` for 3D rotations: building from an axis and angle, yaw-pitch-roll, a look direction (`lookRotation` aims `-Z`, `modelLookRotation` aims `+Z`), two directions, a 2D angle (`fromAngleZ`/`angleZ`) or a matrix; combining (`multiply`, `premultiply`, `invert`); interpolating (`slerp`, `nlerp`, `rotateTowards`); and comparing (`angleBetween`, `equals`, which treats `q` and `-q` as the same rotation)
+- **math:** `Matrix4`/`Mat4` and `Matrix3`/`Mat3`, 64-bit column-major matrices stored as plain `number[]`s: composition (with affine fast paths), inversion (`null` for a singular matrix), building from and decomposing into position, rotation and scale, view matrices (`lookAt`, `targetTo`), perspective, infinite perspective and orthographic projections for either clip-space depth range (`DepthRange`), normal matrices and `toFloat32` for GPU buffers
+
+#### Changed
+
+- **math:** `Vec3.forward` is now `(0, 0, -1)` and `Vec3.backward` `(0, 0, 1)`: the 3D space is right-handed and Y-up, and cameras, lights and anything that aims look along `-Z`. Code that used `Vec3.forward` for `+Z` uses `Vec3.backward`, or `Vec3.modelFront` for the direction a model faces
+
 ## [0.26.1] - 2026-10-07
 
 #### Added
@@ -152,7 +162,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Added
 
 - **rendering:** `RenderContext` gains `pixelRatio`, `cssWidth`/`cssHeight` (the canvas's on-page size in CSS pixels) and a `maxPixelRatio` option (also on `createRenderContext`) to cap the pixel ratio for fill-rate-heavy games. `getDevicePixelRatio()` reads the browser's current `window.devicePixelRatio`
-- **rendering:** `Material.setUniform` accepts a `Uint32Array` for `uint`/`uvecN` uniforms, and a uniform array can now be set by its declared name (`u_waves`) as well as the `u_waves[0]` name WebGL reports for it
 - **input:** `GamepadInputSource` now supports every action type, not just `Axis1dAction`. New `GamepadTriggerBinding` (fires once on a button's press or release, picked with `buttonMoments`), `GamepadHoldBinding` (held while a button is pressed) and `GamepadAxis2dBinding` (from a stick's X and Y axes, or four buttons such as the D-pad) go in the source's new `triggerBindings`, `holdBindings` and `axis2dBindings` sets. Like its axis-1d bindings, hold and axis-2d bindings that target the same action are combined, and only dispatch when the gamepad's own value changes, so they don't override the keyboard or mouse on a shared action
 - **input:** `GamepadAxis1dBinding`'s stick form takes a new `inverted` option, and `GamepadAxis2dBinding`'s stick form takes `invertX`/`invertY`. The W3C Standard Gamepad reports a stick pushed up as `-1`, so invert a stick's Y axis to drive an up-is-positive action shared with `KeyboardAxis1dBinding(action, keyCodes.w, keyCodes.s)` or a D-pad binding
 

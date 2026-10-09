@@ -3,6 +3,7 @@ export * from './degrees-to-radians.js';
 export * from './radians-to-degrees.js';
 export * from './lerp.js';
 export * from './matrices/index.js';
+export * from './quaternion.js';
 export * from './random.js';
 export * from './scale-relative-to-point.js';
 export * from './vector2.js';

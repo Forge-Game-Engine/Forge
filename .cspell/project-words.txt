@@ -288,6 +288,8 @@ screencoverage
 scroller
 selectability
 shaderstore
+shepperd
+shoemake
 sint
 skidmark
 slerp
