@@ -2,6 +2,8 @@ import { ImageCache } from '../asset-loading/index.js';
 import { Resizable } from '../common/index.js';
 import { ForgeEvent } from '../events/index.js';
 import { Color } from './color.js';
+import type { GpuDevice } from './device/gpu-device.js';
+import { WebGl2Device } from './device/webgl2/webgl2-device.js';
 import { CLEAR_STRATEGY, CLEAR_STRATEGY_KEYS } from './enums/index.js';
 import { createQuadGeometry } from './geometry/create-quad-geometry.js';
 import type { Geometry } from './geometry/geometry.js';
@@ -103,6 +105,7 @@ export class RenderContext implements Resizable {
     Map<ForgeShaderSource, ShaderProgram>
   >();
   private _instanceBuffer: WebGLBuffer;
+  private _device: WebGl2Device | null = null;
   private _supportsHdrRenderTargets: boolean;
   private _isContextLost: boolean;
   private _whiteTexture: OwnedTexture | null = null;
@@ -199,6 +202,19 @@ export class RenderContext implements Resizable {
    */
   get isContextLost(): boolean {
     return this._isContextLost || this.gl.isContextLost();
+  }
+
+  /**
+   * The GPU device: buffers, textures, samplers, render pipelines, bind
+   * groups and render passes over this render context's WebGL2 context.
+   * Created the first time it's read. It owns every GPU object it creates
+   * and recreates them when a lost context is restored, before
+   * `onContextRestored` is raised.
+   */
+  get device(): GpuDevice {
+    this._device ??= new WebGl2Device(this.gl, () => this.isContextLost);
+
+    return this._device;
   }
 
   /**
@@ -501,8 +517,9 @@ export class RenderContext implements Resizable {
   }
 
   /**
-   * Re-requests the extensions the context lost with it, links every
-   * program, rebuilds every other GPU resource, then raises
+   * Re-requests the extensions the context lost with it, restores the GPU
+   * device's resources, links every program, rebuilds every other GPU
+   * resource, then raises
    * `onContextRestored`. A resource that fails to rebuild doesn't stop the
    * rest: the event is still raised, and the failures are thrown together
    * afterwards.
@@ -515,7 +532,7 @@ export class RenderContext implements Resizable {
     this._supportsHdrRenderTargets = this._requestExtensions();
     this._instanceBuffer = this.gl.createBuffer();
 
-    const errors: unknown[] = [];
+    const errors: unknown[] = [...(this._device?.restore() ?? [])];
 
     for (const programsByFragment of this._shaderPrograms.values()) {
       for (const shaderProgram of programsByFragment.values()) {
