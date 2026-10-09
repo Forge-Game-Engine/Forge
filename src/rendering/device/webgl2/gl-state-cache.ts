@@ -86,7 +86,7 @@ const sameRect = (
  */
 export class GlStateCache {
   private readonly _gl: WebGL2RenderingContext;
-  private readonly _maxDrawBuffers: number;
+  private _maxDrawBuffers: number;
   private _drawBuffersIndexed: DrawBuffersIndexedExtension | null;
   private _program: WebGLProgram | null | undefined;
   private _vertexArray: WebGLVertexArrayObject | null | undefined;
@@ -183,14 +183,18 @@ export class GlStateCache {
   }
 
   /**
-   * Replaces the `OES_draw_buffers_indexed` extension object, after a
-   * restore requested it again.
+   * Takes a restored context's draw buffer count and
+   * `OES_draw_buffers_indexed` extension object, and forgets everything.
+   * @param maxDrawBuffers - The number of draw buffers tracked.
    * @param drawBuffersIndexed - The extension, if the device has it.
    */
-  public setDrawBuffersIndexed(
+  public configure(
+    maxDrawBuffers: number,
     drawBuffersIndexed: DrawBuffersIndexedExtension | null,
   ): void {
+    this._maxDrawBuffers = maxDrawBuffers;
     this._drawBuffersIndexed = drawBuffersIndexed;
+    this.reset();
   }
 
   /**

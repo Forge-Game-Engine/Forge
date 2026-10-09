@@ -167,13 +167,6 @@ export class WebGl2StagingBuffer
       return;
     }
 
-    if (this.buffer.size < this._data.byteLength) {
-      // New storage starts empty, so everything allocated goes up again.
-      this.buffer.resize(this._data.byteLength);
-      this._dirtyStart = 0;
-      this._dirtyEnd = Math.max(this._dirtyEnd, this._allocatedSize);
-    }
-
     this.buffer.upload(
       this._dirtyStart,
       new Uint8Array(
@@ -214,6 +207,14 @@ export class WebGl2StagingBuffer
     this._uint32 = new Uint32Array(data);
     this._int32 = new Int32Array(data);
     this._uint8 = uint8;
+    // The GPU buffer grows with the array, so bind groups can bind any
+    // allocation at once. Its new storage starts empty, so everything
+    // allocated goes up again.
+    this.buffer.resize(capacity);
+
+    if (this._allocatedSize > 0) {
+      this.markDirty(0, this._allocatedSize);
+    }
   }
 
   private _assertAlive(): void {

@@ -19,9 +19,10 @@ export interface DeviceContext {
   readonly isContextLost: boolean;
 
   /**
-   * Called before an operation touches GL: outside a render pass, other
+   * Called before an operation touches GL. Outside a render pass, other
    * code may have changed GL state since the device last did, so the cache
-   * is forgotten.
+   * is forgotten; inside one, the pass applies its state again before its
+   * next draw.
    */
   beginOperation(): void;
 

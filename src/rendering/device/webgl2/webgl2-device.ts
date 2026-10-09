@@ -405,7 +405,12 @@ export class WebGl2Device implements GpuDevice, RenderPassHost {
   }
 
   public beginOperation(): void {
+    // Inside a pass the cache stays valid, but an upload or a link may
+    // rebind what the pass's next draw uses, so the pass applies its state
+    // again (only what changed reaches WebGL).
     if (this._openPass) {
+      this._openPass.invalidate();
+
       return;
     }
 
@@ -566,8 +571,10 @@ export class WebGl2Device implements GpuDevice, RenderPassHost {
     const { capabilities, extensions } = readCapabilities(this.gl);
 
     this._capabilities = capabilities;
-    this.state.setDrawBuffersIndexed(extensions.drawBuffersIndexed);
-    this.state.reset();
+    this.state.configure(
+      capabilities.limits.maxColorAttachments,
+      extensions.drawBuffersIndexed,
+    );
     this._framebuffers.clear();
     this._vertexArrays.clear();
 

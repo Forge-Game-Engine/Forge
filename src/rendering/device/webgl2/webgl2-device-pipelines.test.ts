@@ -685,6 +685,28 @@ describe('WebGL2 pipelines, bind groups and passes', () => {
       ]);
     });
 
+    it('binds its textures again after a texture is written during the pass', () => {
+      const { pass } = setUpDraw();
+      const unit0 = `0:${glc.GL_TEXTURE_2D}`;
+
+      pass.drawIndexed(3);
+
+      const bound = recording.state.textures.get(unit0);
+      const written = device.createTexture({
+        format: 'rgba8unorm',
+        size: { width: 1, height: 1 },
+        usage: ['sampled', 'copy-destination'],
+      });
+
+      written.write(new Uint8Array(4));
+
+      expect(recording.state.textures.get(unit0)).not.toBe(bound);
+
+      pass.drawIndexed(3);
+
+      expect(recording.state.textures.get(unit0)).toBe(bound);
+    });
+
     it('rebinds only the range of a bind group whose dynamic offset changed', () => {
       const { pass, drawGroup } = setUpDraw();
 
