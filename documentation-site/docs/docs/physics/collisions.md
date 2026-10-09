@@ -61,8 +61,11 @@ is never resolved and never appears in either entity's contacts.
 
 A collider's `friction` sets how much it resists sliding along another
 collider, and its `restitution` sets how much it bounces off one (`0` for no
-bounce). Collision resolution combines the two colliders' values with their
-geometric mean.
+bounce). Collision resolution combines the two colliders' friction with
+their geometric mean, so a slippery collider (friction near `0`) slides
+on anything. It combines their restitution by taking the larger value, so a
+bouncy collider bounces off anything: a ball with `restitution: 0.8`
+bounces off ground with the default `0.05` as if both were `0.8`.
 
 ```ts
 import {

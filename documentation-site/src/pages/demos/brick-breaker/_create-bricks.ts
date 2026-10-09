@@ -169,7 +169,6 @@ export async function createBrickField(
 
     addColliderComponent(world, entity, {
       collider: new PolygonCollider(rectangleVertices(width, height)),
-      restitution: 1,
       friction: 0,
     });
 

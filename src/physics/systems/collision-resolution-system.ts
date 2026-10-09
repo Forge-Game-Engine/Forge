@@ -241,7 +241,7 @@ function buildContactConstraints(
         point,
         penetration: manifold.depth,
         friction: Math.sqrt(colliderA.friction * colliderB.friction),
-        restitution: Math.sqrt(colliderA.restitution * colliderB.restitution),
+        restitution: Math.max(colliderA.restitution, colliderB.restitution),
         relativeVelocity: 0,
         accumulatedNormalImpulse: 0,
         accumulatedTangentImpulse: 0,

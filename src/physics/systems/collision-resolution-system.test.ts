@@ -170,6 +170,49 @@ describe('createCollisionResolutionEcsSystem', () => {
     expect(rigidBody!.velocity.y).toBeGreaterThan(4);
   });
 
+  it('should bounce a bouncy ball off ground that is not bouncy', () => {
+    addSystem();
+
+    const { entity: ball, rigidBody } = addCircleEntity(
+      { x: 0, y: 1 },
+      1,
+      true,
+      { restitution: 1, friction: 0 },
+    );
+    const { entity: ground } = addCircleEntity({ x: 0, y: -100 }, 100, false, {
+      restitution: 0,
+      friction: 0,
+    });
+
+    rigidBody!.velocity = { x: 0, y: -5 };
+
+    pushManifold(ground, ball, { x: 0, y: 1 }, 0.01, { x: 0, y: 0.99 });
+
+    world.update();
+
+    expect(rigidBody!.velocity.y).toBeGreaterThan(4);
+  });
+
+  it('should combine restitution with the maximum and friction with the geometric mean', () => {
+    addSystem();
+
+    const { entity: ball } = addCircleEntity({ x: 0, y: 1 }, 1, true, {
+      restitution: 0.9,
+      friction: 0.9,
+    });
+    const { entity: ground } = addCircleEntity({ x: 0, y: -100 }, 100, false, {
+      restitution: 0.1,
+      friction: 0.1,
+    });
+
+    pushManifold(ground, ball, { x: 0, y: 1 }, 0.01, { x: 0, y: 0.99 });
+
+    world.update();
+
+    expect(contactConstraints[0].restitution).toBeCloseTo(0.9);
+    expect(contactConstraints[0].friction).toBeCloseTo(0.3);
+  });
+
   it("should take lever arms from the body's center of mass, not its origin", () => {
     addSystem({ restitutionThreshold: 100 });
 
