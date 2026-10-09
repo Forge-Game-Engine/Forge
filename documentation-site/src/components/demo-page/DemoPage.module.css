@@ -381,40 +381,8 @@
   text-align: center;
 }
 
-.fileType_setup {
-  --file-type-color: #5d6789;
-}
-
-.fileType_component {
-  --file-type-color: #2a6fa8;
-}
-
-.fileType_system {
-  --file-type-color: #9a6400;
-}
-
-.fileType_shader {
-  --file-type-color: #8d3fa0;
-}
-
-:global([data-theme='dark']) .fileType_setup {
-  --file-type-color: #a3acc9;
-}
-
-:global([data-theme='dark']) .fileType_component {
-  --file-type-color: #6db3e8;
-}
-
-:global([data-theme='dark']) .fileType_system {
-  --file-type-color: #ffbc42;
-}
-
-:global([data-theme='dark']) .fileType_shader {
-  --file-type-color: #d38ae3;
-}
-
 i.fileIcon {
-  color: var(--file-type-color);
+  color: var(--ifm-color-emphasis-700);
 }
 
 .typeBadge {
@@ -422,7 +390,7 @@ i.fileIcon {
   align-items: center;
   gap: 0.3rem;
   padding: 0 0.5rem;
-  border: 1px solid var(--file-type-color);
+  border: 1px solid var(--ifm-color-emphasis-400);
   border-radius: 999px;
   color: var(--ifm-font-color-base);
   font-size: 0.75rem;

@@ -19,12 +19,7 @@ interface CodeExplorerProps {
 
 const FileTypeIcon: FC<{ type: DemoFileType }> = ({ type }) => (
   <i
-    className={clsx(
-      'fa-solid',
-      demoFileTypes[type].icon,
-      styles.fileIcon,
-      styles[`fileType_${type}`],
-    )}
+    className={clsx('fa-solid', demoFileTypes[type].icon, styles.fileIcon)}
     aria-hidden="true"
   ></i>
 );
@@ -148,12 +143,7 @@ export const CodeExplorer: FC<CodeExplorerProps> = ({
         <div className={styles.filePaneHeader}>
           <div className={styles.filePaneTitle}>
             <span className={styles.filePaneName}>{selectedFile.name}</span>
-            <span
-              className={clsx(
-                styles.typeBadge,
-                styles[`fileType_${selectedType}`],
-              )}
-            >
+            <span className={styles.typeBadge}>
               <FileTypeIcon type={selectedType} />
               {demoFileTypes[selectedType].label}
             </span>
