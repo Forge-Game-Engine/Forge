@@ -860,6 +860,57 @@ spawn shape and direction) works in that entity's frame, turned by its
 `documentation-site/docs/docs/math/angles-and-rotation.md` covers the
 convention and which way a sprite faces.
 
+In 3D the same rule is the right-hand rule: a positive angle about an axis
+turns counter-clockwise when looking down the axis towards the origin. The
+space is right-handed with `+Z` towards the viewer, so a rotation about `Z`
+agrees with the 2D convention (`Quat.fromAngleZ(q, θ)` turns `+X` towards
+`+Y`, like `Vec2.rotate`). **Forward is `-Z`**: `Vec3.forward` is
+`(0, 0, -1)`, and cameras, lights and anything that aims look along it
+(`Quat.lookRotation`, `Mat4.lookAt`). A model's front faces `+Z`, as glTF
+specifies (`Vec3.modelFront`, `Quat.modelLookRotation`); never rotate an
+imported model to change that.
+
+### Math
+
+The 3D math types follow the 2D module's style and these conventions:
+
+- **Plain data, static operations.** `Vector3` and `Quaternion` are plain
+  objects created with their properties in one order (`x, y, z, w`), and
+  `Matrix4`/`Matrix3` are plain, branded `number[]`s (64-bit, column-major,
+  acting on column vectors: element `m[c * 4 + r]` is row `r`, column `c`,
+  translation is `m[12..14]`). Operations are static methods on `Vec3`,
+  `Quat`, `Mat4`, `Mat3`, `Rays`, `Planes`, `BoundingBoxes`,
+  `BoundingSpheres` and `Frustums`.
+- **Whatever a function writes is its first parameter** (`target` when it's
+  also an input, `out` when it's only written), and the function returns it.
+  Nothing allocates except `create`, `clone`, `empty` and the getters
+  documented as returning a fresh value, so hot loops reuse scratch values.
+- **Multiplication order is the mathematical one.** `Mat4.multiply(a, b)`
+  and `Quat.multiply(a, b)` set `a` to `a * b`, which applies `b` first; a
+  world transform is the parent's world times the local transform. `premultiply(a, b)`
+  sets `a` to `b * a`.
+- **Rotations are unit quaternions (Hamilton convention, `w` scalar), never
+  Euler angles, in engine code.** `Quat.fromYawPitchRoll` and
+  `Quat.toYawPitchRoll` (yaw about `Y`, then pitch about `X`, then roll about
+  `Z`) exist only for input and display. `q` and `-q` are the same rotation:
+  `Quat.equals` treats them as equal and `Quat.exactlyEquals` doesn't.
+- **Degenerate input is defined, not silently wrong.** Normalizing a zero
+  vector or quaternion throws; `invert` returns `null` for a singular
+  matrix; ray tests return `null` for a parallel ray or a shape behind the
+  origin. Engine code that can meet a zero length checks first and takes a
+  documented fallback.
+- **Projections take the backend's clip-space depth range**
+  (`DepthRange`: `'negativeOneToOne'` for WebGL, `'zeroToOne'` for
+  WebGPU), and so does everything that reads one
+  (`Frustums.fromViewProjection`, `Frustums.corners`).
+
+Test math with the helpers in `src/math/test-helpers/`: `expectVec3Close`,
+`expectQuatClose` (which treats `q` and `-q` as equal), `expectMat4Close`
+and `expectMat3Close`, and the seeded generators run through
+`forEachSeededCase`, which names the failing seed. Microbenchmarks are
+`*.bench.ts` files next to the code (Vitest's `bench`); `npm test` doesn't
+run them and the build leaves them out.
+
 ### GPU Resources and Context Loss
 
 The browser can take the WebGL context away at any time, and every GL
