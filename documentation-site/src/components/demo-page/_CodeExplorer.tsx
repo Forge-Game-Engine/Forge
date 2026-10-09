@@ -143,7 +143,7 @@ export const CodeExplorer: FC<CodeExplorerProps> = ({
         <div className={styles.filePaneHeader}>
           <div className={styles.filePaneTitle}>
             <span className={styles.filePaneName}>{selectedFile.name}</span>
-            <span className={styles.typeBadge}>
+            <span className={styles.fileTypeLabel}>
               <FileTypeIcon type={selectedType} />
               {demoFileTypes[selectedType].label}
             </span>

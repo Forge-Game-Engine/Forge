@@ -385,18 +385,15 @@ i.fileIcon {
   color: var(--ifm-color-emphasis-700);
 }
 
-.typeBadge {
+.fileTypeLabel {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0 0.5rem;
-  border: 1px solid var(--ifm-color-emphasis-400);
-  border-radius: 999px;
-  color: var(--ifm-font-color-base);
-  font-size: 0.75rem;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.8rem;
 }
 
-.typeBadge .fileIcon {
+.fileTypeLabel .fileIcon {
   width: auto;
 }
 
