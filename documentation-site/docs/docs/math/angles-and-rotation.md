@@ -6,15 +6,34 @@ sidebar_position: 2
 
 Every angle in Forge is in radians: `RotationEcsComponent`'s `local` and
 `world`, [`Vec2.rotate`](/Forge/docs/api/classes/Vec2#rotate),
-[`Matrix3x3.rotate`](/Forge/docs/api/classes/Matrix3x3#rotate) and the
-particle emitter's direction and rotation ranges. The math module converts
-angles to and from degrees and direction vectors.
+[`Matrix3x3.rotate`](/Forge/docs/api/classes/Matrix3x3#rotate), the
+[quaternion](./quaternions.md) builders and the particle emitter's
+direction and rotation ranges. The math module converts angles to and from
+degrees and direction vectors.
 
 ## The angle convention
 
 Angle `0` points along `+X`, and a positive angle turns `+X` towards `+Y`.
 The world is Y-up, so a positive angle turns counter-clockwise on screen,
 and `Math.PI / 2` points up.
+
+## The angle convention in 3D
+
+In 3D, a positive angle about an axis turns counter-clockwise when looking
+down the axis towards the origin: the right-hand rule. The space is
+right-handed with `+Z` towards the viewer, so a positive angle about `Z`
+turns `+X` towards `+Y`, the same as the 2D convention. A 2D angle and a 3D
+rotation about `Z` by the same angle turn a vector the same way:
+
+```ts
+import { Quat, Vec2, Vec3 } from '@forge-game-engine/forge/math';
+
+Vec2.rotate({ x: 1, y: 0 }, Math.PI / 2); // (0, 1)
+Vec3.rotate(Vec3.right, Quat.fromAngleZ(Quat.identity, Math.PI / 2)); // (0, 1, 0)
+```
+
+3D rotations are stored as quaternions, not angles. See
+[Quaternions](./quaternions.md).
 
 ## Converting between degrees and radians
 

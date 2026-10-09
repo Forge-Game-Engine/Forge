@@ -85,8 +85,9 @@ The value has to fit the type the uniform is declared with in GLSL:
 | `float`                            | `number` or `Float32Array` of length 1                          |
 | `vec2`                             | `Vector2` or `Float32Array` of length 2                         |
 | `vec3`, `vec4`                     | `Float32Array` of length 3 or 4                                 |
-| `mat3`                             | `Matrix3x3` or `Float32Array` of length 9                       |
-| `mat2`, `mat4`, `matNxM`           | `Float32Array` of length 4, 16, or N × M                        |
+| `mat3`                             | `Matrix3`, `Matrix3x3` or `Float32Array` of length 9            |
+| `mat4`                             | `Matrix4` or `Float32Array` of length 16                        |
+| `mat2`, `matNxM`                   | `Float32Array` of length 4 or N × M                             |
 | `int`                              | `number`, `boolean`, or `Int32Array` of length 1                |
 | `ivec2`, `ivec3`, `ivec4`          | `Int32Array` of length 2, 3, or 4                               |
 | `uint` / `uvec2`, `uvec3`, `uvec4` | `number` (`uint` only) or `Uint32Array` of length 1, 2, 3, or 4 |
@@ -140,9 +141,10 @@ control every element.
 ## When values are uploaded
 
 A material uploads its uniform values each time it's bound for drawing, not
-when they're set. A `Float32Array`, `Matrix3x3` or `Vector2` passed to
-`setUniform` and changed afterwards is uploaded with its contents at the
-next draw. A value that changes every frame, such as a time uniform, can be
+when they're set. A `Float32Array`, `Matrix3`, `Matrix4`, `Matrix3x3` or
+`Vector2` passed to `setUniform` and changed afterwards is uploaded with its
+contents at the next draw. A [`Matrix3` or `Matrix4`](../math/matrices.md)
+is converted to 32-bit floats when it's uploaded. A value that changes every frame, such as a time uniform, can be
 one array updated in place:
 
 ```ts

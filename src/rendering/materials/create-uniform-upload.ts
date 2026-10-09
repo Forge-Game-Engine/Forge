@@ -1,11 +1,12 @@
-import { Matrix3x3, Vec2 } from '../../math/index.js';
+import { Matrix3, Matrix3x3, Matrix4, Vec2 } from '../../math/index.js';
 import { Texture } from '../texture.js';
 import type {
+  FloatUniformType,
   SamplerUniformType,
   UniformArrayUpload,
   UniformType,
 } from './uniform-types.js';
-import { isVector2, UniformValue } from './uniform-value.js';
+import { isMatrixArray, isVector2, UniformValue } from './uniform-value.js';
 
 /**
  * A uniform's type and size: from its declaration in the shader source, or,
@@ -60,6 +61,12 @@ const typedArrayNames: Record<
 };
 
 const booleanKinds: ReadonlySet<UniformType['kind']> = new Set(['bool', 'int']);
+
+/** The math type each matrix uniform type accepts, by GLSL type name. */
+const matrixTypeNames: ReadonlyMap<string, string> = new Map([
+  ['mat3', 'Matrix3'],
+  ['mat4', 'Matrix4'],
+]);
 
 /**
  * Validates a value against a uniform's declaration and builds the upload
@@ -215,6 +222,10 @@ const createArrayUpload = (
       return createTypedArrayUpload(uniformType.upload, () => value.matrix);
     }
 
+    if (isMatrixArray(value)) {
+      return createMatrixUpload(declaration, uniformType, value);
+    }
+
     if (isVector2(value)) {
       assertArrayLength(declaration, uniformType, value, 2);
 
@@ -240,6 +251,34 @@ const createArrayUpload = (
   }
 
   throw createMismatchError(declaration, uniformType, value);
+};
+
+/**
+ * Builds the upload of a `Matrix3` or `Matrix4` to a `mat3` or `mat4`
+ * uniform. The matrix is converted to `float32` at bind time, so changes
+ * made to it after `setUniform` are uploaded.
+ */
+const createMatrixUpload = (
+  declaration: UniformDeclaration,
+  uniformType: FloatUniformType,
+  value: Matrix3 | Matrix4,
+): UniformUpload => {
+  if (
+    !matrixTypeNames.has(uniformType.glslName) ||
+    value.length !== uniformType.componentCount
+  ) {
+    throw createMismatchError(declaration, uniformType, value);
+  }
+
+  const staging = new Float32Array(value.length);
+
+  return createTypedArrayUpload(uniformType.upload, () => {
+    for (let i = 0; i < value.length; i++) {
+      staging[i] = value[i];
+    }
+
+    return staging;
+  });
 };
 
 /**
@@ -324,6 +363,12 @@ const describeExpectedValue = (
     alternatives.push('a Matrix3x3');
   }
 
+  const matrixTypeName = matrixTypeNames.get(uniformType.glslName);
+
+  if (matrixTypeName !== undefined) {
+    alternatives.push(`a ${matrixTypeName}`);
+  }
+
   alternatives.push(
     `${typedArrayNames[kind]} ${describeExpectedLength(componentCount, size)}`,
   );
@@ -371,9 +416,25 @@ const describeValue = (value: UniformValue): string => {
     return 'a Matrix3x3';
   }
 
+  if (isMatrixArray(value)) {
+    return describeMatrixArray(value);
+  }
+
   if (isVector2(value)) {
     return 'a Vector2';
   }
 
   return value instanceof Texture ? 'a Texture' : 'an unsupported value';
+};
+
+const describeMatrixArray = (value: readonly number[]): string => {
+  if (value.length === 9) {
+    return 'a Matrix3';
+  }
+
+  if (value.length === 16) {
+    return 'a Matrix4';
+  }
+
+  return `an array of length ${value.length}`;
 };
