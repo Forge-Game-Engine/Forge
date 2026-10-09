@@ -1,28 +1,28 @@
 # Design 01: Testing and Benchmarks
 
-|                                       |                                                                       |
-| ------------------------------------- | --------------------------------------------------------------------- |
-| **Status**                            | Draft, for review                                                     |
-| **Kind**                              | Infrastructure                                                        |
-| **Engine version at time of writing** | `0.26.1`                                                              |
+|                                       |                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------ |
+| **Status**                            | Draft, for review                                                        |
+| **Kind**                              | Infrastructure                                                           |
+| **Engine version at time of writing** | `0.26.1`                                                                 |
 | **Program**                           | [Forge 3D](./README.md), milestones M0 (Phases 1 and 2) and M1 (Phase 3) |
-| **Related**                           | Every other design in this folder lists the tests it adds here         |
+| **Related**                           | Every other design in this folder lists the tests it adds here           |
 
 ## 0. Targeted modules
 
-| Path                                         | Change   | Notes                                                                                     |
-| -------------------------------------------- | -------- | ----------------------------------------------------------------------------------------- |
-| `bench/` (new top-level folder)              | New      | Scene benchmark app (Forge and Three.js scenes), runner, scene generators, reports        |
-| `src/**/*.bench.ts`                          | New      | Microbenchmarks next to the code they measure                                             |
-| `e2e/golden/` (new)                          | New      | Golden-image specs, scenes and reference images                                           |
-| `e2e/allocation/` (new)                      | New      | Steady-state allocation specs driven through the Chrome DevTools Protocol                 |
-| `e2e/fixtures/harness.ts`                    | Modified | Golden and allocation scenes share the existing scene contract                            |
-| `src/rendering/test-helpers/recording-gl.ts` | New      | A recording WebGL2 fake shared by device-layer and pipeline unit tests                    |
-| `src/math/test-helpers/`                     | New      | Tolerance matchers and seeded generators for vectors, quaternions and matrices            |
-| `vite.config.base.js`                        | Modified | `benchmark` configuration for Vitest                                                      |
-| `package.json`                               | Modified | `bench`, `bench:micro`, `bench:compare`, `test:golden`, `test:golden:update`, `test:allocation` scripts; `three` as a pinned dev dependency |
-| `.github/workflows/ci.yml`                   | Modified | `bench-micro`, `bench-scenes`, `test-golden`, `test-allocation`, `bundle-size` jobs      |
-| `tsconfig.build.json`, `package.json` `files` | Modified | `bench/` never ships                                                                      |
+| Path                                          | Change   | Notes                                                                                                                                       |
+| --------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bench/` (new top-level folder)               | New      | Scene benchmark app (Forge and Three.js scenes), runner, scene generators, reports                                                          |
+| `src/**/*.bench.ts`                           | New      | Microbenchmarks next to the code they measure                                                                                               |
+| `e2e/golden/` (new)                           | New      | Golden-image specs, scenes and reference images                                                                                             |
+| `e2e/allocation/` (new)                       | New      | Steady-state allocation specs driven through the Chrome DevTools Protocol                                                                   |
+| `e2e/fixtures/harness.ts`                     | Modified | Golden and allocation scenes share the existing scene contract                                                                              |
+| `src/rendering/test-helpers/recording-gl.ts`  | New      | A recording WebGL2 fake shared by device-layer and pipeline unit tests                                                                      |
+| `src/math/test-helpers/`                      | New      | Tolerance matchers and seeded generators for vectors, quaternions and matrices                                                              |
+| `vite.config.base.js`                         | Modified | `benchmark` configuration for Vitest                                                                                                        |
+| `package.json`                                | Modified | `bench`, `bench:micro`, `bench:compare`, `test:golden`, `test:golden:update`, `test:allocation` scripts; `three` as a pinned dev dependency |
+| `.github/workflows/ci.yml`                    | Modified | `bench-micro`, `bench-scenes`, `test-golden`, `test-allocation`, `bundle-size` jobs                                                         |
+| `tsconfig.build.json`, `package.json` `files` | Modified | `bench/` never ships                                                                                                                        |
 
 ---
 
@@ -96,13 +96,13 @@ noise of shared runners.
 Benchmarks and allocation tests for today's code, so the M1 changes have a
 baseline.
 
-| #   | Task                           | Description                                                                                                                                                      | Size |
-| --- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 1.1 | Vitest benchmark setup         | `bench:micro` runs `src/**/*.bench.ts`; results written as JSON                                                                                                  | S    |
-| 1.2 | First microbenchmarks          | ECS `query` and iteration at 1k, 10k and 100k entities; transform system with flat and deep hierarchies; sprite command building and radix sort; 2D broad phase | M    |
-| 1.3 | Base-versus-head comparison    | A script that builds the base and head commits in one job, runs both, compares medians and fails on a regression past the threshold (§6.2)                    | M    |
-| 1.4 | Allocation test harness        | `e2e/allocation/`: runs a scene for 2,000 warm-up frames, then samples allocations for 2,000 frames through the DevTools Protocol (§6.3)                       | M    |
-| 1.5 | Allocation specs for 2D        | The sprite, text, UI and particle stress scenes; known allocators today recorded as an allow-list that later designs must empty                                 | S    |
+| #   | Task                        | Description                                                                                                                                                     | Size |
+| --- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 1.1 | Vitest benchmark setup      | `bench:micro` runs `src/**/*.bench.ts`; results written as JSON                                                                                                 | S    |
+| 1.2 | First microbenchmarks       | ECS `query` and iteration at 1k, 10k and 100k entities; transform system with flat and deep hierarchies; sprite command building and radix sort; 2D broad phase | M    |
+| 1.3 | Base-versus-head comparison | A script that builds the base and head commits in one job, runs both, compares medians and fails on a regression past the threshold (§6.2)                      | M    |
+| 1.4 | Allocation test harness     | `e2e/allocation/`: runs a scene for 2,000 warm-up frames, then samples allocations for 2,000 frames through the DevTools Protocol (§6.3)                        | M    |
+| 1.5 | Allocation specs for 2D     | The sprite, text, UI and particle stress scenes; known allocators today recorded as an allow-list that later designs must empty                                 | S    |
 
 **Definition of done:** `npm run bench:micro` and `npm run test:allocation`
 run locally and in CI; the comparison job fails on a deliberate 20%
@@ -110,13 +110,13 @@ slowdown in a test branch and passes on an unchanged one.
 
 ### Phase 2: Scene benchmarks and the 2D baseline (M0)
 
-| #   | Task                       | Description                                                                                                                         | Size |
-| --- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 2.1 | `bench/` app and runner    | Vite app, scene registry, scripted camera paths, Playwright runner with uncapped frame rate, JSON and Markdown reports (§6.2)        | M    |
-| 2.2 | Device counters            | Draw calls, triangles, program and texture binds counted in Forge (a counter object on the render context, zero cost when not read) | S    |
-| 2.3 | B7 sprites, B8 UI          | Forge versions, and a Three.js version of B7                                                                                        | M    |
-| 2.4 | Baseline report            | Run on the reference hardware and in CI; commit `bench/reports/0.26.1.md`                                                           | S    |
-| 2.5 | Bundle-size check          | Build the 2D demos' bundles on base and head; fail when gzip size grows past 5%                                                     | S    |
+| #   | Task                    | Description                                                                                                                         | Size |
+| --- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 2.1 | `bench/` app and runner | Vite app, scene registry, scripted camera paths, Playwright runner with uncapped frame rate, JSON and Markdown reports (§6.2)       | M    |
+| 2.2 | Device counters         | Draw calls, triangles, program and texture binds counted in Forge (a counter object on the render context, zero cost when not read) | S    |
+| 2.3 | B7 sprites, B8 UI       | Forge versions, and a Three.js version of B7                                                                                        | M    |
+| 2.4 | Baseline report         | Run on the reference hardware and in CI; commit `bench/reports/0.26.1.md`                                                           | S    |
+| 2.5 | Bundle-size check       | Build the 2D demos' bundles on base and head; fail when gzip size grows past 5%                                                     | S    |
 
 **Definition of done:** M0 as in the README: the B7 and B8 baselines are
 committed and CI fails a pull request that makes either more than 10%
@@ -127,13 +127,13 @@ slower.
 Lands during M1, so the renderer rewrite (designs 05 to 07) is checked
 against today's output.
 
-| #   | Task                               | Description                                                                                                                                  | Size |
-| --- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 3.1 | Pinned golden environment          | The Playwright Docker image matching the pinned `@playwright/test` version; `test:golden` and `test:golden:update` run inside it locally and in CI | M    |
-| 3.2 | Capture and compare                | Golden scenes render with `preserveDrawingBuffer`; the canvas element is captured and compared with per-spec tolerances (§6.4)               | S    |
-| 3.3 | Canary scene                       | A trivial scene whose failure means the environment is wrong, reported as such before other goldens run                                     | S    |
-| 3.4 | 2D goldens                         | Sprites (tint, emissive, nine-slice, flip), text and effects, masks, draw order, UI controls, terrain, bloom, blur, tone mapping. Text goldens are captured after design 07 Phase 0 (the rotated-text fix), so no golden records the defect | M    |
-| 3.5 | Stability check                    | 20 consecutive CI runs with no golden failures before the job becomes required                                                               | S    |
+| #   | Task                      | Description                                                                                                                                                                                                                                 | Size |
+| --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 3.1 | Pinned golden environment | The Playwright Docker image matching the pinned `@playwright/test` version; `test:golden` and `test:golden:update` run inside it locally and in CI                                                                                          | M    |
+| 3.2 | Capture and compare       | Golden scenes render with `preserveDrawingBuffer`; the canvas element is captured and compared with per-spec tolerances (§6.4)                                                                                                              | S    |
+| 3.3 | Canary scene              | A trivial scene whose failure means the environment is wrong, reported as such before other goldens run                                                                                                                                     | S    |
+| 3.4 | 2D goldens                | Sprites (tint, emissive, nine-slice, flip), text and effects, masks, draw order, UI controls, terrain, bloom, blur, tone mapping. Text goldens are captured after design 07 Phase 0 (the rotated-text fix), so no golden records the defect | M    |
+| 3.5 | Stability check           | 20 consecutive CI runs with no golden failures before the job becomes required                                                                                                                                                              | S    |
 
 **Definition of done:** the job is a required check and has been stable for
 20 runs.
@@ -143,25 +143,25 @@ against today's output.
 The harness and content generators for every 3D scene, so each design can
 turn its scene on as its features land.
 
-| #   | Task                              | Description                                                                                                         | Size |
-| --- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---- |
-| 4.1 | Scene generators                  | Seeded generators for B1 to B6 that write a scene description both engines build from (§6.2.2)                     | M    |
-| 4.2 | Three.js versions of B1 to B5, B9 | A plain version and an optimized version of each (§6.2.3)                                                           | L    |
-| 4.3 | Forge versions                    | Added by the designs that make each scene possible; until then the runner reports them as pending                   | –    |
-| 4.4 | Physics scenarios                 | Node-run scenario tests and benchmarks for design 14 (§6.5)                                                         | M    |
+| #   | Task                              | Description                                                                                                                         | Size |
+| --- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 4.1 | Scene generators                  | Seeded generators for B1 to B6 that write a scene description both engines build from (§6.2.2)                                      | M    |
+| 4.2 | Three.js versions of B1 to B5, B9 | A plain version and an optimized version of each (§6.2.3)                                                                           | L    |
+| 4.3 | Forge versions                    | Added by the designs that make each scene possible; until then the runner reports them as pending                                   | –    |
+| 4.4 | Physics scenarios                 | Node-run scenario tests and benchmarks for design 14 (§6.5)                                                                         | M    |
 | 4.5 | Analytic rendering test harness   | Helpers to sample regions of the canvas and compare against computed values; the init script that masks `EXT_clip_control` (§6.4.4) | S    |
-| 4.6 | Audio render time                 | The runner's second measurement kind, an `OfflineAudioContext` driven frame by frame (§6.2.2), for design 15     | S    |
+| 4.6 | Audio render time                 | The runner's second measurement kind, an `OfflineAudioContext` driven frame by frame (§6.2.2), for design 15                        | S    |
 
 **Definition of done:** the runner runs every scene for Three.js and reports
 Forge's as pending or measured.
 
 ### Phase 5: Reference hardware and Unity
 
-| #   | Task                    | Description                                                                                                  | Size |
-| --- | ----------------------- | ------------------------------------------------------------------------------------------------------------ | ---- |
+| #   | Task                    | Description                                                                                                 | Size |
+| --- | ----------------------- | ----------------------------------------------------------------------------------------------------------- | ---- |
 | 5.1 | Reference run procedure | A documented `npm run bench -- --report` procedure on the reference devices, with GPU timing when available | S    |
-| 5.2 | Unity comparison        | Unity web builds of B1 to B5 (outside this repository) measured by the same runner from a URL                | L    |
-| 5.3 | Milestone reports       | `bench/reports/<milestone>.md` at M3, M4, M5 and M6                                                          | S    |
+| 5.2 | Unity comparison        | Unity web builds of B1 to B5 (outside this repository) measured by the same runner from a URL               | L    |
+| 5.3 | Milestone reports       | `bench/reports/<milestone>.md` at M3, M4, M5 and M6                                                         | S    |
 
 **Definition of done:** the M3 report covers Forge, Three.js and Unity for
 B1 to B5 on the reference hardware.
@@ -170,15 +170,15 @@ B1 to B5 on the reference hardware.
 
 ## 4. Decision log
 
-| #   | Decision                              | Options                                                                                                                        | Chosen | Rationale, trade-offs, assumptions                                                                                                                                                                                                                                                                                                       |
-| --- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T1  | Microbenchmark tool                   | (a) Vitest's benchmark mode; (b) a custom harness; (c) a separate benchmark library                                            | (a)    | Forge already runs Vitest; benchmark mode reuses its TypeScript and module setup and reports per-task statistics. No new dependency.                                                                                                                                                                                                     |
-| T2  | Performance gate                      | (a) Absolute thresholds; (b) base versus head in the same job                                                                  | (b)    | Shared runners vary by 20% or more between machines. Running both commits on the same machine in the same job, interleaved, compares like with like. Trade-off: the job takes about twice as long. Absolute budgets are checked on reference hardware instead (§6.6).                                                                     |
-| T3  | Golden-image environment              | (a) Pinned Docker image with SwiftShader; (b) a hosted visual-testing service; (c) no goldens, relative assertions only        | (a)    | SwiftShader is a CPU rasterizer, so the same build gives the same pixels on any machine. Pinning the image pins its build, which addresses the CI-only SwiftShader discrepancy `AGENTS.md` records: if a SwiftShader update changes output, it changes in a reviewed update to the image, not between runs. (b) costs money and needs secrets. (c) can't verify shading. |
-| T4  | Fair Three.js comparison              | (a) The Three.js code a typical developer writes; (b) the most optimized Three.js code; (c) both                               | (c)    | Forge instances and batches automatically; Three.js does when the developer uses `InstancedMesh` or `BatchedMesh`. Reporting both shows the default experience and the ceiling. Forge's target is the optimized version.                                                                                                              |
-| T5  | Allocation detection                  | (a) JS heap size before and after; (b) the sampling heap profiler through the DevTools Protocol                                | (b)    | Heap size deltas are hidden by garbage collection and say nothing about where an allocation happened. The sampling profiler attributes allocations to call stacks, so a failure names the function.                                                                                                                                   |
-| T6  | Property tests for math               | (a) A property-testing library; (b) seeded loops with Forge's own `Random`                                                     | (b)    | Math properties (an inverse undoes, a decomposition recomposes) only need many seeded inputs and tolerant comparison. No new dependency, and failures print the seed to reproduce.                                                                                                                                                       |
-| T7  | Frame rate in scene benchmarks        | (a) Measure frames per second at the display's rate; (b) uncap the frame rate and measure CPU time per frame                   | (b)    | At a capped 60 fps, every engine that fits in 16 ms scores the same. Chromium's `--disable-gpu-vsync` and `--disable-frame-rate-limit` uncap the loop, and the runner measures the main thread's time per frame.                                                                                                                       |
+| #   | Decision                       | Options                                                                                                                 | Chosen | Rationale, trade-offs, assumptions                                                                                                                                                                                                                                                                                                                                       |
+| --- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| T1  | Microbenchmark tool            | (a) Vitest's benchmark mode; (b) a custom harness; (c) a separate benchmark library                                     | (a)    | Forge already runs Vitest; benchmark mode reuses its TypeScript and module setup and reports per-task statistics. No new dependency.                                                                                                                                                                                                                                     |
+| T2  | Performance gate               | (a) Absolute thresholds; (b) base versus head in the same job                                                           | (b)    | Shared runners vary by 20% or more between machines. Running both commits on the same machine in the same job, interleaved, compares like with like. Trade-off: the job takes about twice as long. Absolute budgets are checked on reference hardware instead (§6.6).                                                                                                    |
+| T3  | Golden-image environment       | (a) Pinned Docker image with SwiftShader; (b) a hosted visual-testing service; (c) no goldens, relative assertions only | (a)    | SwiftShader is a CPU rasterizer, so the same build gives the same pixels on any machine. Pinning the image pins its build, which addresses the CI-only SwiftShader discrepancy `AGENTS.md` records: if a SwiftShader update changes output, it changes in a reviewed update to the image, not between runs. (b) costs money and needs secrets. (c) can't verify shading. |
+| T4  | Fair Three.js comparison       | (a) The Three.js code a typical developer writes; (b) the most optimized Three.js code; (c) both                        | (c)    | Forge instances and batches automatically; Three.js does when the developer uses `InstancedMesh` or `BatchedMesh`. Reporting both shows the default experience and the ceiling. Forge's target is the optimized version.                                                                                                                                                 |
+| T5  | Allocation detection           | (a) JS heap size before and after; (b) the sampling heap profiler through the DevTools Protocol                         | (b)    | Heap size deltas are hidden by garbage collection and say nothing about where an allocation happened. The sampling profiler attributes allocations to call stacks, so a failure names the function.                                                                                                                                                                      |
+| T6  | Property tests for math        | (a) A property-testing library; (b) seeded loops with Forge's own `Random`                                              | (b)    | Math properties (an inverse undoes, a decomposition recomposes) only need many seeded inputs and tolerant comparison. No new dependency, and failures print the seed to reproduce.                                                                                                                                                                                       |
+| T7  | Frame rate in scene benchmarks | (a) Measure frames per second at the display's rate; (b) uncap the frame rate and measure CPU time per frame            | (b)    | At a capped 60 fps, every engine that fits in 16 ms scores the same. Chromium's `--disable-gpu-vsync` and `--disable-frame-rate-limit` uncap the loop, and the runner measures the main thread's time per frame.                                                                                                                                                         |
 
 ---
 
@@ -193,7 +193,7 @@ B1 to B5 on the reference hardware.
    medians, with one automatic re-run before failing. Tighter thresholds
    flake on shared runners. Revisit once there's a month of data.
 3. **Where Unity builds live.** Options: a separate repository owned by
-   the maintainers, or not at all (README open question 2).
+   the maintainers, or not at all (README open question 3).
 
 ---
 
@@ -457,7 +457,7 @@ design 14's Phase 2.
 ### 6.6 Reference hardware and Unity
 
 Absolute budgets (README §5) apply to reference devices (README open
-question 1). At each milestone a maintainer runs `npm run bench --
+question 2). At each milestone a maintainer runs `npm run bench --
 --report` on each device; the runner enables GPU timing when the browser
 exposes `EXT_disjoint_timer_query_webgl2` and records the browser version,
 GPU and driver. The report goes to `bench/reports/<milestone>.md`.

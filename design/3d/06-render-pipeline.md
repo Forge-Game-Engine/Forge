@@ -1,31 +1,31 @@
 # Design 06: Render Pipeline
 
-|                                       |                                                                                                       |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review (revised after solution review, §7)                                                 |
-| **Kind**                              | Feature and breaking refactor                                                                         |
-| **Engine version at time of writing** | `0.26.1`                                                                                              |
-| **Program**                           | [Forge 3D](./README.md), milestone M2                                                                 |
-| **Depends on**                        | [04 Transforms](./04-transforms.md), [05 GPU device layer](./05-gpu-device.md)                       |
-| **Lands with**                        | [07 2D on the render pipeline](./07-2d-on-the-render-pipeline.md) and [13 Post-processing](./13-post-processing-and-anti-aliasing.md): Phase 2 here (with draw items and the sorted transparent phase, task 2.6) ships with Phase 1 of each |
+|                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review (revised after solution review, §7)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **Kind**                              | Feature and breaking refactor                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **Program**                           | [Forge 3D](./README.md), milestone M2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **Depends on**                        | [04 Transforms](./04-transforms.md), [05 GPU device layer](./05-gpu-device.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **Lands with**                        | [07 2D on the render pipeline](./07-2d-on-the-render-pipeline.md) and [13 Post-processing](./13-post-processing-and-anti-aliasing.md): Phase 2 here (with draw items and the sorted transparent phase, task 2.6) ships with Phase 1 of each                                                                                                                                                                                                                                                                                                                                                                                 |
 | **Related**                           | [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md) (mesh extraction, the change list, pass variants), [09 Lighting](./09-lighting-and-shadows.md) (lit views, shadow views, the change list), [10 PBR](./10-pbr-and-environment-lighting.md) (camera components, the transmissive phase), [12 Animation](./12-skeletal-and-morph-animation.md) (texel 3, deformed bounds, `lastVisibleFrame`), [13 Post-processing](./13-post-processing-and-anti-aliasing.md) (render scale, frame graph support, resolves), [15 Picking](./15-audio-particles-and-picking-in-3d.md) (message streams, `sceneDepth`) |
 
 ## 0. Targeted modules
 
-| Path                                                    | Change   | Notes                                                                                                 |
-| ------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------- |
-| `src/rendering/pipeline/` (new)                         | New      | `RenderPipeline`, features, passes, insertion points, the frame graph (with design 13's `beginPostProcess` and pending layers), the transient texture pool, the missing-feature check |
-| `src/rendering/views/` (new)                            | New      | Per-camera views, phases (binned and sorted), draw items, batching                                    |
-| `src/rendering/gpu-scene/` (new)                        | New      | Object slots per world, the object data texture, change-driven uploads, world culling spheres from local bounds, the per-frame change list, culling arrays |
-| `src/rendering/components/camera-component.ts`          | Modified | Projections with scaling modes, viewport, `order` (was `layer`), `clearColor: Color \| null`, `renderScale` (design 13); input fields move to controllers |
-| `src/rendering/controllers/` (new)                      | New      | Pan-and-zoom (2D), orbit and fly (3D) camera controllers                                              |
-| `src/rendering/camera-view.ts`                          | Modified | 3D views: matrices, frustum, rays, viewport conversions; the 2D fields kept for orthographic cameras |
-| `src/rendering/render-context.ts`                       | Modified | `clearStrategy` removed; canvas context attributes (design 05 §6.11)                                   |
-| `src/rendering/systems/render-system.ts`, `present-system.ts`, `camera-system.ts` | Removed | Replaced by extraction systems, the pipeline system and controllers                  |
-| `src/ui/utilities/create-ui-canvas.ts`, `src/ui/systems/ui-layout-system.ts` | Modified | UI canvas cameras lose their render target; layout stops writing the camera     |
-| `src/rendering/debug/` (new)                            | New      | Debug drawing and the stats overlay                                                                   |
-| `src/rendering/render-target.ts`                        | Modified | Depth and MSAA; imported into the frame graph as camera destinations                                  |
-| `documentation-site/docs/docs/rendering/`               | Modified | `world-units-and-cameras.md`, `multipass-rendering.md` rewritten; new `render-pipeline.md`, `custom-passes.md`, `debug-drawing.md`, `cameras-3d.md` |
+| Path                                                                              | Change   | Notes                                                                                                                                                                                 |
+| --------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/rendering/pipeline/` (new)                                                   | New      | `RenderPipeline`, features, passes, insertion points, the frame graph (with design 13's `beginPostProcess` and pending layers), the transient texture pool, the missing-feature check |
+| `src/rendering/views/` (new)                                                      | New      | Per-camera views, phases (binned and sorted), draw items, batching                                                                                                                    |
+| `src/rendering/gpu-scene/` (new)                                                  | New      | Object slots per world, the object data texture, change-driven uploads, world culling spheres from local bounds, the per-frame change list, culling arrays                            |
+| `src/rendering/components/camera-component.ts`                                    | Modified | Projections with scaling modes, viewport, `order` (was `layer`), `clearColor: Color \| null`, `renderScale` (design 13); input fields move to controllers                             |
+| `src/rendering/controllers/` (new)                                                | New      | Pan-and-zoom (2D), orbit and fly (3D) camera controllers                                                                                                                              |
+| `src/rendering/camera-view.ts`                                                    | Modified | 3D views: matrices, frustum, rays, viewport conversions; the 2D fields kept for orthographic cameras                                                                                  |
+| `src/rendering/render-context.ts`                                                 | Modified | `clearStrategy` removed; canvas context attributes (design 05 §6.11)                                                                                                                  |
+| `src/rendering/systems/render-system.ts`, `present-system.ts`, `camera-system.ts` | Removed  | Replaced by extraction systems, the pipeline system and controllers                                                                                                                   |
+| `src/ui/utilities/create-ui-canvas.ts`, `src/ui/systems/ui-layout-system.ts`      | Modified | UI canvas cameras lose their render target; layout stops writing the camera                                                                                                           |
+| `src/rendering/debug/` (new)                                                      | New      | Debug drawing and the stats overlay                                                                                                                                                   |
+| `src/rendering/render-target.ts`                                                  | Modified | Depth and MSAA; imported into the frame graph as camera destinations                                                                                                                  |
+| `documentation-site/docs/docs/rendering/`                                         | Modified | `world-units-and-cameras.md`, `multipass-rendering.md` rewritten; new `render-pipeline.md`, `custom-passes.md`, `debug-drawing.md`, `cameras-3d.md`                                   |
 
 ---
 
@@ -103,13 +103,13 @@ Above it:
 
 ### Phase 1: Cameras, views and controllers
 
-| #   | Task                    | Description                                                                                                       | Size |
-| --- | ----------------------- | ----------------------------------------------------------------------------------------------------------------- | ---- |
-| 1.1 | Camera component        | §6.2: projections with scaling modes, viewport, `order`, `clearColor`; 2D defaults unchanged                       | M    |
-| 1.2 | Views                   | §6.3: view and projection matrices (reversed depth when available), frustum, rays, conversions                    | M    |
-| 1.3 | Controllers             | Pan-and-zoom (today's camera input, moved), orbit, fly; one per camera, enforced                                  | M    |
-| 1.4 | Ownership               | UI canvases use the reference-resolution scaling mode and layout stops writing `verticalWorldUnits`; `clearStrategy` removed | S |
-| 1.5 | Migration               | Demos, e2e scenes and docs use the new fields and the pan-and-zoom controller                                      | M    |
+| #   | Task             | Description                                                                                                                  | Size |
+| --- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 1.1 | Camera component | §6.2: projections with scaling modes, viewport, `order`, `clearColor`; 2D defaults unchanged                                 | M    |
+| 1.2 | Views            | §6.3: view and projection matrices (reversed depth when available), frustum, rays, conversions                               | M    |
+| 1.3 | Controllers      | Pan-and-zoom (today's camera input, moved), orbit, fly; one per camera, enforced                                             | M    |
+| 1.4 | Ownership        | UI canvases use the reference-resolution scaling mode and layout stops writing `verticalWorldUnits`; `clearStrategy` removed | S    |
+| 1.5 | Migration        | Demos, e2e scenes and docs use the new fields and the pan-and-zoom controller                                                | M    |
 
 **Definition of done:** `camera-pan-zoom` and every UI e2e spec pass; the
 view API's conversions round-trip for both projections; nothing but a
@@ -117,14 +117,14 @@ controller writes a camera's transform.
 
 ### Phase 2: Pipeline, frame graph and output (ships with design 07 Phase 1)
 
-| #   | Task                       | Description                                                                                                                  | Size |
-| --- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 2.1 | Frame graph                | §6.5: resources, pass declarations, compile (order, cull, lifetimes), pooled transient textures, execution                  | L    |
-| 2.2 | Pipeline, features, insertion points | §6.4: per-frame and per-view passes; per-camera activation; adding, replacing and removing passes                  | M    |
-| 2.3 | Output pass                | §6.4.3: every camera renders into its own targets; the output pass writes its destination in `order`, replacing the present system; canvas attributes change (design 05 §6.11). Until design 07 Phase 2, non-HDR views are `rgba8unorm` and the output pass copies without encoding | M |
-| 2.4 | Camera destinations        | A camera's `renderTarget` is now its final destination. UI canvases, the space-shooter demo and the `hdr-tint-bloom`, `bloom-over-background`, `post-process-pixel-ratio` and `webgl-context-loss` e2e scenes drop the targets they used only to reach the present system | M |
-| 2.5 | `registerRendering`        | Registers extraction systems and the pipeline system in the `render` stage; adds `MeshChangeListEcsComponent` (design 08) and records the world's pipeline on the render context | S |
-| 2.6 | Draw items and the transparent phase | §6.6.1: draw items; the sorted transparent phase, sorted per view with design 07 §6.3's keys. Design 07 Phase 1 draws sprites, text and terrain through it | M |
+| #   | Task                                 | Description                                                                                                                                                                                                                                                                         | Size |
+| --- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 2.1 | Frame graph                          | §6.5: resources, pass declarations, compile (order, cull, lifetimes), pooled transient textures, execution                                                                                                                                                                          | L    |
+| 2.2 | Pipeline, features, insertion points | §6.4: per-frame and per-view passes; per-camera activation; adding, replacing and removing passes                                                                                                                                                                                   | M    |
+| 2.3 | Output pass                          | §6.4.3: every camera renders into its own targets; the output pass writes its destination in `order`, replacing the present system; canvas attributes change (design 05 §6.11). Until design 07 Phase 2, non-HDR views are `rgba8unorm` and the output pass copies without encoding | M    |
+| 2.4 | Camera destinations                  | A camera's `renderTarget` is now its final destination. UI canvases, the space-shooter demo and the `hdr-tint-bloom`, `bloom-over-background`, `post-process-pixel-ratio` and `webgl-context-loss` e2e scenes drop the targets they used only to reach the present system           | M    |
+| 2.5 | `registerRendering`                  | Registers extraction systems and the pipeline system in the `render` stage; adds `MeshChangeListEcsComponent` (design 08) and records the world's pipeline on the render context                                                                                                    | S    |
+| 2.6 | Draw items and the transparent phase | §6.6.1: draw items; the sorted transparent phase, sorted per view with design 07 §6.3's keys. Design 07 Phase 1 draws sprites, text and terrain through it                                                                                                                          | M    |
 
 **Definition of done:** with design 07 Phase 1 and design 13 Phase 1,
 every 2D e2e spec passes and every golden is unchanged except their
@@ -133,13 +133,13 @@ design 07 S16); `render-system.ts` and `present-system.ts` are deleted.
 
 ### Phase 3: Phases and batching
 
-| #   | Task                          | Description                                                                                        | Size |
-| --- | ----------------------------- | -------------------------------------------------------------------------------------------------- | ---- |
-| 3.1 | Binned phases                 | §6.6: binned phases for opaque, alpha-tested and shadow casters (the transparent phase is task 2.6) | M    |
-| 3.2 | Bins                          | §6.6.2: retained, updated from extraction journals, design 08's change list and materials' `featureKey` | M    |
-| 3.3 | Object index lists            | §6.6.3: per-view lists read at a per-draw offset, the same with and without multi-draw            | M    |
-| 3.4 | Multi-draw                    | Batches with the same pipeline and material over meshes in a shared buffer merge                   | S    |
-| 3.5 | Custom phases                 | A game defines a phase, an extraction system and a pass (the custom-passes guide)                  | S    |
+| #   | Task               | Description                                                                                             | Size |
+| --- | ------------------ | ------------------------------------------------------------------------------------------------------- | ---- |
+| 3.1 | Binned phases      | §6.6: binned phases for opaque, alpha-tested and shadow casters (the transparent phase is task 2.6)     | M    |
+| 3.2 | Bins               | §6.6.2: retained, updated from extraction journals, design 08's change list and materials' `featureKey` | M    |
+| 3.3 | Object index lists | §6.6.3: per-view lists read at a per-draw offset, the same with and without multi-draw                  | M    |
+| 3.4 | Multi-draw         | Batches with the same pipeline and material over meshes in a shared buffer merge                        | S    |
+| 3.5 | Custom phases      | A game defines a phase, an extraction system and a pass (the custom-passes guide)                       | S    |
 
 **Definition of done:** 10,000 copies of one mesh and material draw in one
 call; a frame in which nothing changed does no bin work; the custom-passes
@@ -147,13 +147,13 @@ guide's example runs as a demo.
 
 ### Phase 4: GPU scene and culling
 
-| #   | Task                          | Description                                                                                          | Size |
-| --- | ----------------------------- | ---------------------------------------------------------------------------------------------------- | ---- |
-| 4.1 | Slots and journals            | §6.7.1: a slot per mesh object, per world, from extraction's journals                                | M    |
-| 4.2 | Object data texture           | §6.7.2: rows written for changed dynamic transforms and for static ones from their journals; texel 3 from its inputs; world culling spheres from local bounds; the per-frame change list | M |
-| 4.3 | Camera-relative positions     | §6.7.3: high and low translation; shader functions every material uses                               | M    |
-| 4.4 | Culling                       | §6.8: every view culled before the frame graph is built; sphere tests over flat arrays; categories; hierarchical visibility for meshes and lights; lit-view flags; `lastVisibleFrame` | M |
-| 4.5 | Static tree and LOD           | §6.8.3, §6.8.4                                                                                        | M    |
+| #   | Task                      | Description                                                                                                                                                                              | Size |
+| --- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 4.1 | Slots and journals        | §6.7.1: a slot per mesh object, per world, from extraction's journals                                                                                                                    | M    |
+| 4.2 | Object data texture       | §6.7.2: rows written for changed dynamic transforms and for static ones from their journals; texel 3 from its inputs; world culling spheres from local bounds; the per-frame change list | M    |
+| 4.3 | Camera-relative positions | §6.7.3: high and low translation; shader functions every material uses                                                                                                                   | M    |
+| 4.4 | Culling                   | §6.8: every view culled before the frame graph is built; sphere tests over flat arrays; categories; hierarchical visibility for meshes and lights; lit-view flags; `lastVisibleFrame`    | M    |
+| 4.5 | Static tree and LOD       | §6.8.3, §6.8.4                                                                                                                                                                           | M    |
 
 **Definition of done:** B1 (with design 08's meshes) uploads nothing and
 scans no static slots after the first frame; the depth-precision analytic
@@ -162,11 +162,11 @@ culling of 50,000 objects costs ≤ 0.5 ms.
 
 ### Phase 5: Debug drawing and stats
 
-| #   | Task                  | Description                                                                                   | Size |
-| --- | --------------------- | --------------------------------------------------------------------------------------------- | ---- |
-| 5.1 | Debug drawing         | §6.9: lines, boxes, spheres, arrows, frustums, grids; depth-tested or on top; fixed-step shapes | M    |
-| 5.2 | Stats overlay         | Frame time, draw calls, triangles, uploads, skipped draws, per-pass GPU time                  | S    |
-| 5.3 | Demo                  | A perspective grid with orbit and fly controllers and debug shapes (the M2 demo)              | S    |
+| #   | Task          | Description                                                                                     | Size |
+| --- | ------------- | ----------------------------------------------------------------------------------------------- | ---- |
+| 5.1 | Debug drawing | §6.9: lines, boxes, spheres, arrows, frustums, grids; depth-tested or on top; fixed-step shapes | M    |
+| 5.2 | Stats overlay | Frame time, draw calls, triangles, uploads, skipped draws, per-pass GPU time                    | S    |
+| 5.3 | Demo          | A perspective grid with orbit and fly controllers and debug shapes (the M2 demo)                | S    |
 
 **Definition of done:** the M2 demo runs on the docs site; debug drawing
 allocates nothing per frame.
@@ -175,23 +175,23 @@ allocates nothing per frame.
 
 ## 4. Decision log
 
-| #   | Decision                                    | Options                                                                                                                                      | Chosen | Rationale, trade-offs, assumptions                                                                                                                                                                                                                                                                                                                   |
-| --- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R1  | Pipeline structure                          | (a) A frame graph built per frame from passes; (b) a fixed list of passes with hand-managed targets                                          | (a)    | The established technique (Frostbite's frame graph, Unity's render graph, Bevy's render graph). A pass declares what it reads and writes; the graph orders it, provides its targets and releases them. Hand-managed targets are how today's bloom and blur systems ended up keeping private scratch targets in `WeakMap`s. On WebGL2 the graph reuses pooled textures of the same descriptor; it can't alias memory between different formats. |
-| R2  | Getting data from the ECS                   | (a) Extraction systems with fixed declared queries writing per-frame draw lists on the render context; (b) a separate render world      | (a)    | Forge runs on one thread, so a second world buys no parallelism and costs a copy. Extraction systems keep the "fixed query" rule and are the extension point for new renderables.                                                                                                                                                                 |
-| R3  | Per-object data on the GPU                  | (a) A persistent GPU scene (object data texture) plus per-view lists of object indices; (b) uploading every visible object's matrix every frame | (a) | (b) uploads 64 bytes per visible object per frame (3 MB for B1). (a) uploads only objects that moved, plus 4 bytes per visible object for the index list. Three.js's `BatchedMesh` reads per-object data from a texture the same way.                                                                                                                    |
-| R4  | Object data storage                         | (a) A float texture read with `texelFetch`; (b) uniform buffer arrays                                                                       | (a)    | Uniform blocks are guaranteed only 16 KB (256 matrices). A texture holds millions of objects and is read with exact integer addressing.                                                                                                                                                                                                             |
-| R5  | Large-world precision                       | (a) Translation as high and low `float32` parts, subtracted from the camera's in the shader; (b) re-uploading camera-relative matrices every frame; (c) moving the world origin | (a) | README G4; the relative-to-eye technique Cesium uses. Keeps the GPU scene valid while the camera moves, unlike (b), and needs no game cooperation, unlike (c). GLSL ES 3.00 has no `precise` qualifier, so Phase 4 tests it on every ANGLE backend.                                                                                         |
-| R6  | Camera input                                | (a) Controller components and systems that write the camera's transform, one per camera; (b) keep input fields on the camera                  | (a)    | A camera describes a view. Today's camera component also holds pan and zoom input, which made it a 2D controller; 3D needs other controllers. Each controller system is the one writer of its camera's `local` transform and zoom, and a second controller on the same camera throws.                                                         |
-| R7  | Orthographic depth range default            | (a) `near: -1000`, `far: 1000` relative to the camera; (b) positive near and far                                                            | (a)    | A 2D camera sits at `z = 0` with its sprites, so the range extends both ways and 2D games never think about depth.                                                                                                                                                                                                                                |
-| R8  | Compositing cameras and the canvas          | (a) Every camera renders into its own targets; an output pass writes the destination, encoding sRGB, in camera `order`; (b) let cameras without effects draw straight into the canvas | (a) | WebGL2's canvas can't be an sRGB target, so drawing into it directly blends in gamma space, against README G3; and an sRGB multisampled target can't be resolved into the canvas, since a resolve needs matching formats. Bevy and Unity's linear web path also always go through an intermediate. Cost: one full-screen pass per camera destination, fused with tone mapping and anti-aliasing whenever those run. |
-| R9  | Culling                                     | (a) Brute-force sphere tests over flat arrays, plus a tree for static objects; (b) a dynamic tree for everything                            | (a)    | A sphere against six planes in a tight loop over typed arrays does 50,000 objects in well under a millisecond; a dynamic tree costs refitting for moving objects. Static objects get a tree built when the static set changes.                                                                                                                     |
-| R10 | Camera `layer`                              | (a) Rename to `order`; (b) keep `layer`                                                                                                     | (a)    | Sprites also have a `layer` (their draw layer). Two meanings of one word in the rendering API is one too many.                                                                                                                                                                                                                                     |
-| R11 | How games extend the pipeline               | (a) Features and passes at named insertion points, plus replacing the whole pipeline; (b) editing an exposed graph                          | (a)    | Insertion points are stable across engine versions; an exposed graph would make every internal change a breaking one.                                                                                                                                                                                                                              |
-| R12 | Which effects apply to which camera         | (a) Features register passes once; each pass decides per view from the camera's components (bloom, tone mapping, blur, ambient occlusion); (b) pipeline-wide effects | (a) | Today the space-shooter demo blurs only its background camera and blooms only its foreground camera; (b) can't express that. Bevy keeps the same model: effects are camera components that per-view passes read.                                                                                                                         |
-| R13 | Depth prepass                               | (a) Runs for a view whenever its opaque or alpha-tested phase has items; (b) off; (c) a camera setting                                      | (a)    | It costs a second vertex pass and saves shading every covered fragment, which with clustered lights is the main GPU cost; ambient occlusion needs its depth and normals. Deciding from the data means 2D views never run it and 3D views always do, with nothing to configure. It draws design 08's `depth` or `depthNormals` pass variants, and an item is skipped in every pass until all of its variants are ready (design 08 §6.10.1), so the prepass and the color pass never disagree. |
-| R14 | Opaque and shadow phases                    | (a) Retained bins keyed by pipeline, material and mesh, updated from journals and versions; (b) sort every visible item every frame        | (a)    | With a depth prepass, front-to-back order buys little, and re-sorting 50,000 items each frame is work proportional to scene size rather than to change. Bevy moved its opaque phases from sorting to bins for this reason. Transparent items still need a sort.                                                                                      |
-| R15 | Perspective far plane default               | (a) 1000 m on every device; (b) infinite where reversed depth is available                                                                 | (a)    | `EXT_clip_control` isn't in every browser, so (b) would make culling and anything reading the view's far distance differ by browser. Reversed depth still improves precision where it's available.                                                                                                                                            |
+| #   | Decision                            | Options                                                                                                                                                                               | Chosen | Rationale, trade-offs, assumptions                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | Pipeline structure                  | (a) A frame graph built per frame from passes; (b) a fixed list of passes with hand-managed targets                                                                                   | (a)    | The established technique (Frostbite's frame graph, Unity's render graph, Bevy's render graph). A pass declares what it reads and writes; the graph orders it, provides its targets and releases them. Hand-managed targets are how today's bloom and blur systems ended up keeping private scratch targets in `WeakMap`s. On WebGL2 the graph reuses pooled textures of the same descriptor; it can't alias memory between different formats.                                               |
+| R2  | Getting data from the ECS           | (a) Extraction systems with fixed declared queries writing per-frame draw lists on the render context; (b) a separate render world                                                    | (a)    | Forge runs on one thread, so a second world buys no parallelism and costs a copy. Extraction systems keep the "fixed query" rule and are the extension point for new renderables.                                                                                                                                                                                                                                                                                                            |
+| R3  | Per-object data on the GPU          | (a) A persistent GPU scene (object data texture) plus per-view lists of object indices; (b) uploading every visible object's matrix every frame                                       | (a)    | (b) uploads 64 bytes per visible object per frame (3 MB for B1). (a) uploads only objects that moved, plus 4 bytes per visible object for the index list. Three.js's `BatchedMesh` reads per-object data from a texture the same way.                                                                                                                                                                                                                                                        |
+| R4  | Object data storage                 | (a) A float texture read with `texelFetch`; (b) uniform buffer arrays                                                                                                                 | (a)    | Uniform blocks are guaranteed only 16 KB (256 matrices). A texture holds millions of objects and is read with exact integer addressing.                                                                                                                                                                                                                                                                                                                                                      |
+| R5  | Large-world precision               | (a) Translation as high and low `float32` parts, subtracted from the camera's in the shader; (b) re-uploading camera-relative matrices every frame; (c) moving the world origin       | (a)    | README G4; the relative-to-eye technique Cesium uses. Keeps the GPU scene valid while the camera moves, unlike (b), and needs no game cooperation, unlike (c). GLSL ES 3.00 has no `precise` qualifier, so Phase 4 tests it on every ANGLE backend.                                                                                                                                                                                                                                          |
+| R6  | Camera input                        | (a) Controller components and systems that write the camera's transform, one per camera; (b) keep input fields on the camera                                                          | (a)    | A camera describes a view. Today's camera component also holds pan and zoom input, which made it a 2D controller; 3D needs other controllers. Each controller system is the one writer of its camera's `local` transform and zoom, and a second controller on the same camera throws.                                                                                                                                                                                                        |
+| R7  | Orthographic depth range default    | (a) `near: -1000`, `far: 1000` relative to the camera; (b) positive near and far                                                                                                      | (a)    | A 2D camera sits at `z = 0` with its sprites, so the range extends both ways and 2D games never think about depth.                                                                                                                                                                                                                                                                                                                                                                           |
+| R8  | Compositing cameras and the canvas  | (a) Every camera renders into its own targets; an output pass writes the destination, encoding sRGB, in camera `order`; (b) let cameras without effects draw straight into the canvas | (a)    | WebGL2's canvas can't be an sRGB target, so drawing into it directly blends in gamma space, against README G3; and an sRGB multisampled target can't be resolved into the canvas, since a resolve needs matching formats. Bevy and Unity's linear web path also always go through an intermediate. Cost: one full-screen pass per camera destination, fused with tone mapping and anti-aliasing whenever those run.                                                                          |
+| R9  | Culling                             | (a) Brute-force sphere tests over flat arrays, plus a tree for static objects; (b) a dynamic tree for everything                                                                      | (a)    | A sphere against six planes in a tight loop over typed arrays does 50,000 objects in well under a millisecond; a dynamic tree costs refitting for moving objects. Static objects get a tree built when the static set changes.                                                                                                                                                                                                                                                               |
+| R10 | Camera `layer`                      | (a) Rename to `order`; (b) keep `layer`                                                                                                                                               | (a)    | Sprites also have a `layer` (their draw layer). Two meanings of one word in the rendering API is one too many.                                                                                                                                                                                                                                                                                                                                                                               |
+| R11 | How games extend the pipeline       | (a) Features and passes at named insertion points, plus replacing the whole pipeline; (b) editing an exposed graph                                                                    | (a)    | Insertion points are stable across engine versions; an exposed graph would make every internal change a breaking one.                                                                                                                                                                                                                                                                                                                                                                        |
+| R12 | Which effects apply to which camera | (a) Features register passes once; each pass decides per view from the camera's components (bloom, tone mapping, blur, ambient occlusion); (b) pipeline-wide effects                  | (a)    | Today the space-shooter demo blurs only its background camera and blooms only its foreground camera; (b) can't express that. Bevy keeps the same model: effects are camera components that per-view passes read.                                                                                                                                                                                                                                                                             |
+| R13 | Depth prepass                       | (a) Runs for a view whenever its opaque or alpha-tested phase has items; (b) off; (c) a camera setting                                                                                | (a)    | It costs a second vertex pass and saves shading every covered fragment, which with clustered lights is the main GPU cost; ambient occlusion needs its depth and normals. Deciding from the data means 2D views never run it and 3D views always do, with nothing to configure. It draws design 08's `depth` or `depthNormals` pass variants, and an item is skipped in every pass until all of its variants are ready (design 08 §6.10.1), so the prepass and the color pass never disagree. |
+| R14 | Opaque and shadow phases            | (a) Retained bins keyed by pipeline, material and mesh, updated from journals and versions; (b) sort every visible item every frame                                                   | (a)    | With a depth prepass, front-to-back order buys little, and re-sorting 50,000 items each frame is work proportional to scene size rather than to change. Bevy moved its opaque phases from sorting to bins for this reason. Transparent items still need a sort.                                                                                                                                                                                                                              |
+| R15 | Perspective far plane default       | (a) 1000 m on every device; (b) infinite where reversed depth is available                                                                                                            | (a)    | `EXT_clip_control` isn't in every browser, so (b) would make culling and anything reading the view's far distance differ by browser. Reversed depth still improves precision where it's available.                                                                                                                                                                                                                                                                                           |
 
 ---
 
@@ -250,29 +250,34 @@ interface CameraEcsComponent {
   projection: PerspectiveProjection | OrthographicProjection;
   viewport: { x: number; y: number; width: number; height: number }; // fractions of the destination, default full
   renderTarget?: RenderTarget; // the destination; default: the canvas
-  order: number;               // composition order into the destination (was `layer`)
-  clearColor: Color | null;    // null: draw over what's already in the destination
-  cullingMask: number;         // matched against renderables' `category`, as today
-  ySort: boolean;              // 2D, unchanged (design 07)
-  msaaSamples: 1 | 4;          // default 4
-  renderScale: number;         // the view's resolution as a fraction of its viewport's, in (0, 2]; default 1 (design 13 §6.4.4)
+  order: number; // composition order into the destination (was `layer`)
+  clearColor: Color | null; // null: draw over what's already in the destination
+  cullingMask: number; // matched against renderables' `category`, as today
+  ySort: boolean; // 2D, unchanged (design 07)
+  msaaSamples: 1 | 4; // default 4
+  renderScale: number; // the view's resolution as a fraction of its viewport's, in (0, 2]; default 1 (design 13 §6.4.4)
 }
 
 interface PerspectiveProjection {
   kind: 'perspective';
   verticalFieldOfView: number; // radians, default π/3
-  near: number;                // default 0.1
-  far: number;                 // default 1000 (decision R15)
+  near: number; // default 0.1
+  far: number; // default 1000 (decision R15)
 }
 
 interface OrthographicProjection {
   kind: 'orthographic';
   scaling:
-    | { kind: 'fixedHeight'; worldUnits: number }                 // today's verticalWorldUnits, default 10
-    | { kind: 'referenceResolution'; width: number; height: number; match: 'width' | 'height' | 'expand' | 'shrink' };
-  zoom: number;                // as today, default 1
-  near: number;                // default -1000
-  far: number;                 // default 1000
+    | { kind: 'fixedHeight'; worldUnits: number } // today's verticalWorldUnits, default 10
+    | {
+        kind: 'referenceResolution';
+        width: number;
+        height: number;
+        match: 'width' | 'height' | 'expand' | 'shrink';
+      };
+  zoom: number; // as today, default 1
+  near: number; // default -1000
+  far: number; // default 1000
 }
 ```
 
@@ -300,26 +305,26 @@ interface OrthographicProjection {
 orthographic camera's `zoom`). A camera has at most one; adding a second
 throws.
 
-| Controller                              | Behavior                                                                                         |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `PanZoomCameraControllerEcsComponent`   | Today's `zoomInput`, `panInput`, sensitivities and zoom limits, moved off the camera, unchanged  |
-| `OrbitCameraControllerEcsComponent`     | Orbits a target point or entity; rotate, pan and dolly inputs; distance and pitch limits; damping |
-| `FlyCameraControllerEcsComponent`       | Free flight: look and move inputs, speed, boost, damping                                         |
+| Controller                            | Behavior                                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `PanZoomCameraControllerEcsComponent` | Today's `zoomInput`, `panInput`, sensitivities and zoom limits, moved off the camera, unchanged   |
+| `OrbitCameraControllerEcsComponent`   | Orbits a target point or entity; rotate, pan and dolly inputs; distance and pitch limits; damping |
+| `FlyCameraControllerEcsComponent`     | Free flight: look and move inputs, speed, boost, damping                                          |
 
 ### 6.3 Views
 
 `computeCameraView(camera, transform, renderContext)` (and
 `getCameraView(world, cameraEntity)`) return:
 
-| Member                                    | Notes                                                                                              |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `viewMatrix`, `projectionMatrix`, `viewProjectionMatrix`, and inverses | 64-bit. The projection uses reversed depth when `EXT_clip_control` is present           |
-| `position`, `forward`                     | World space                                                                                        |
-| `frustum`                                 | Design 02 `Frustum`, built with the device's depth range                                           |
-| `worldToViewport(out, point)`             | CSS pixels from the canvas's top-left, Y-down, plus `depth` in `[0, 1]`                            |
-| `viewportToRay(out, point)`               | A world-space `Ray` for picking (design 15)                                                        |
-| `viewportToWorld(out, point, plane?)`     | Where the ray meets `plane` (default `z = 0`); exact for orthographic, the 2D case                 |
-| `bounds`, `size`, `pixelsPerUnit`         | Orthographic only, as today: the 2D UI and culling code keep using them                            |
+| Member                                                                 | Notes                                                                              |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `viewMatrix`, `projectionMatrix`, `viewProjectionMatrix`, and inverses | 64-bit. The projection uses reversed depth when `EXT_clip_control` is present      |
+| `position`, `forward`                                                  | World space                                                                        |
+| `frustum`                                                              | Design 02 `Frustum`, built with the device's depth range                           |
+| `worldToViewport(out, point)`                                          | CSS pixels from the canvas's top-left, Y-down, plus `depth` in `[0, 1]`            |
+| `viewportToRay(out, point)`                                            | A world-space `Ray` for picking (design 15)                                        |
+| `viewportToWorld(out, point, plane?)`                                  | Where the ray meets `plane` (default `z = 0`); exact for orthographic, the 2D case |
+| `bounds`, `size`, `pixelsPerUnit`                                      | Orthographic only, as today: the 2D UI and culling code keep using them            |
 
 Conversions use the camera's `viewport` rectangle of its destination, so
 split-screen and minimap cameras convert correctly.
@@ -363,17 +368,17 @@ pipeline lacks the feature, setting up the view throws, naming the
 component and the feature (design 13 §6.2.2). The queries import only
 component keys, so the check adds nothing to a 2D bundle.
 
-| Insertion point     | Engine passes there                                                                  |
-| ------------------- | ------------------------------------------------------------------------------------ |
-| `frame`             | Shadow maps: the cascades of every lit view and the shared local light tiles, in one depth array (design 09); environment preparation (design 10); shared by all views |
-| `beforeOpaque`      | Depth prepass (decision R13); per-lit-view light setup: light data and clusters (09); ambient occlusion (13) |
-| `opaque`            | Opaque and alpha-tested phases                                                       |
-| `afterOpaque`       | Sky, the scene-color copy and the transmissive phase (design 10)                     |
-| `transparent`       | The transparent phase, including 2D sprites and text (07)                            |
-| `afterTransparent`  | Debug drawing (depth-tested)                                                         |
-| `postProcessing`    | Bloom, blur and game effects, in design 13's fixed engine order (§6.3.3 there); tone mapping, color grading and anti-aliasing run in the output pass |
-| `output`            | Writing the result to the camera's destination                                       |
-| `overlay`           | Debug drawing on top                                                                 |
+| Insertion point    | Engine passes there                                                                                                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `frame`            | Shadow maps: the cascades of every lit view and the shared local light tiles, in one depth array (design 09); environment preparation (design 10); shared by all views |
+| `beforeOpaque`     | Depth prepass (decision R13); per-lit-view light setup: light data and clusters (09); ambient occlusion (13)                                                           |
+| `opaque`           | Opaque and alpha-tested phases                                                                                                                                         |
+| `afterOpaque`      | Sky, the scene-color copy and the transmissive phase (design 10)                                                                                                       |
+| `transparent`      | The transparent phase, including 2D sprites and text (07)                                                                                                              |
+| `afterTransparent` | Debug drawing (depth-tested)                                                                                                                                           |
+| `postProcessing`   | Bloom, blur and game effects, in design 13's fixed engine order (§6.3.3 there); tone mapping, color grading and anti-aliasing run in the output pass                   |
+| `output`           | Writing the result to the camera's destination                                                                                                                         |
+| `overlay`          | Debug drawing on top                                                                                                                                                   |
 
 A pass is:
 
@@ -498,14 +503,14 @@ frames are released.
 
 #### 6.6.1 Draw items and phases
 
-| Phase           | Organization                                                                            |
-| --------------- | --------------------------------------------------------------------------------------- |
-| `opaque`        | Retained bins by (pipeline variant, material, mesh part)                                |
-| `alphaTested`   | The same                                                                                |
-| `shadowCaster`  | The same bins, one set per world shared by every shadow view; each shadow view has its own culled set and index-list range (design 09) |
-| `transmissive`  | Sorted per view, far to near; registered by `lighting()` (design 10 §6.12)              |
-| `transparent`   | Sorted per view with design 07 §6.3's keys: layer, world order, depth (far first, measured at the item's depth point: the bounds' center, or the nearest ancestor with `DrawOrderEcsComponent.depthGroup`), root Y for `ySort` cameras, root sequence, hierarchy index with a kind sub-key |
-| `overlay`       | Submission order                                                                        |
+| Phase          | Organization                                                                                                                                                                                                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `opaque`       | Retained bins by (pipeline variant, material, mesh part)                                                                                                                                                                                                                                   |
+| `alphaTested`  | The same                                                                                                                                                                                                                                                                                   |
+| `shadowCaster` | The same bins, one set per world shared by every shadow view; each shadow view has its own culled set and index-list range (design 09)                                                                                                                                                     |
+| `transmissive` | Sorted per view, far to near; registered by `lighting()` (design 10 §6.12)                                                                                                                                                                                                                 |
+| `transparent`  | Sorted per view with design 07 §6.3's keys: layer, world order, depth (far first, measured at the item's depth point: the bounds' center, or the nearest ancestor with `DrawOrderEcsComponent.depthGroup`), root Y for `ySort` cameras, root sequence, hierarchy index with a kind sub-key |
+| `overlay`      | Submission order                                                                                                                                                                                                                                                                           |
 
 The pipeline variant in a bin key includes the front-face winding, so a
 mirrored object (negative scale determinant, a GPU scene flag) lands in a
@@ -561,13 +566,13 @@ cache (README §4.4).
 
 An `rgba32float` texture, five texels per object:
 
-| Texel | Contents                                                                           |
-| ----- | ---------------------------------------------------------------------------------- |
-| 0     | Row 0 of the 3x3 rotation-and-scale, and the high part of translation x            |
-| 1     | Row 1, high part of translation y                                                  |
-| 2     | Row 2, high part of translation z                                                  |
+| Texel | Contents                                                                                                                                                                                     |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | Row 0 of the 3x3 rotation-and-scale, and the high part of translation x                                                                                                                      |
+| 1     | Row 1, high part of translation y                                                                                                                                                            |
+| 2     | Row 2, high part of translation z                                                                                                                                                            |
 | 3     | Low parts of translation x, y, z; `receivesShadows + 2 × mirrored + 4 × record`, where `record` is design 12's deformation record index (below 2²², 0 when not deformed), exact in `float32` |
-| 4     | Per-object tint (design 08, decision MS6)                                          |
+| 4     | Per-object tint (design 08, decision MS6)                                                                                                                                                    |
 
 Texel 3's fourth value replaces a skinned flag, which would duplicate the
 variant's own skinning bits (design 12 AN31), so the object data stays at
@@ -604,9 +609,11 @@ record. Everything else is dynamic:
   04's walk whenever the ancestor moves (its §6.3.2), so its row and
   sphere must follow; the dynamic path compares its stamp like any other.
   The GPU scene checks the chain when a slot is added or a static journal
-  reports the entity (reparenting), and, from a declaration of dynamic
-  transforms, re-checks the slots in the subtree of an entity that became
-  dynamic or static.
+  reports the entity (reparenting). The mesh extraction system also
+  declares dynamic transforms (`[transformId]` without
+  `staticTransformTag`) and hands their journals to the GPU scene, which
+  re-checks the slots in the subtree of an entity that became dynamic or
+  static. Both are structural changes, so a still scene does no work.
 - A slot with a deformation record changes its local bound while its
   transform may not move (design 12 §6.10.5), whatever its tags.
 
@@ -727,15 +734,15 @@ is a DOM element updated twice a second from the device counters (design
 Budgets for B1 (50,000 static meshes, 200 unique meshes, 50 materials) on
 the desktop reference, measured per stage by the design 01 runner:
 
-| Work                                   | Budget     |
-| -------------------------------------- | ---------- |
-| Transform propagation (all static)     | ≈ 0 (static subtrees aren't visited, design 04) |
-| GPU scene updates                      | ≈ 0 (no dynamic slots; static slots not scanned) |
-| Culling (static tree)                  | ≤ 0.5 ms   |
-| Bin traversal and index lists          | ≤ 1.0 ms   |
-| Shadow views (design 09)               | ≤ 1.0 ms   |
-| Pass execution, draw submission        | ≤ 1.0 ms   |
-| **Total**                              | **≤ 4 ms** |
+| Work                               | Budget                                           |
+| ---------------------------------- | ------------------------------------------------ |
+| Transform propagation (all static) | ≈ 0 (static subtrees aren't visited, design 04)  |
+| GPU scene updates                  | ≈ 0 (no dynamic slots; static slots not scanned) |
+| Culling (static tree)              | ≤ 0.5 ms                                         |
+| Bin traversal and index lists      | ≤ 1.0 ms                                         |
+| Shadow views (design 09)           | ≤ 1.0 ms                                         |
+| Pass execution, draw submission    | ≤ 1.0 ms                                         |
+| **Total**                          | **≤ 4 ms**                                       |
 
 No per-frame allocation (allocation specs for every extraction system and
 the pipeline system).

@@ -1933,7 +1933,7 @@ walkthrough guide, `documentation-site/docs/docs/3d/making-a-3d-game.md`,
 builds a reduced version step by step and links each step to its module's
 guide.
 
-Budget on the reference hardware (README open question 1): main-thread CPU
+Budget on the reference hardware (README open question 2): main-thread CPU
 ≤ 6 ms per frame on the desktop reference and 60 fps at 1080p on the
 integrated-GPU reference; on the mobile references the mobile preset is
 measured and reported, and a budget set from those numbers. Load to first

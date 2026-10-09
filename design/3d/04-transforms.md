@@ -1,30 +1,30 @@
 # Design 04: Transforms
 
-|                                       |                                                                                                         |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| **Status**                            | Draft, for review (revised after solution review, §7)                                                   |
-| **Kind**                              | Feature and breaking refactor                                                                           |
-| **Engine version at time of writing** | `0.26.1`                                                                                                |
-| **Program**                           | [Forge 3D](./README.md), milestone M1                                                                   |
-| **Depends on**                        | [02 Math](./02-math.md), [03 ECS foundations](./03-ecs-foundations.md)                                 |
+|                                       |                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**                            | Draft, for review (revised after solution review, §7)                                                                                                                                                                                                                                                                                                                                               |
+| **Kind**                              | Feature and breaking refactor                                                                                                                                                                                                                                                                                                                                                                       |
+| **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Program**                           | [Forge 3D](./README.md), milestone M1                                                                                                                                                                                                                                                                                                                                                               |
+| **Depends on**                        | [02 Math](./02-math.md), [03 ECS foundations](./03-ecs-foundations.md)                                                                                                                                                                                                                                                                                                                              |
 | **Related**                           | [06 Render pipeline](./06-render-pipeline.md) (GPU scene uploads on `changedTick`), [07 2D on the render pipeline](./07-2d-on-the-render-pipeline.md), [12 Skeletal and morph animation](./12-skeletal-and-morph-animation.md) and [14 Physics 3D](./14-physics-3d.md) (`getCurrentWorldMatrix`), [15 Audio, particles and picking](./15-audio-particles-and-picking-in-3d.md) (`TransformOptions`) |
 
 ## 0. Targeted modules
 
-| Path                                                                  | Change   | Notes                                                                                                       |
-| --------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
-| `src/common/components/transform-component.ts`                        | New      | `TransformEcsComponent`, `addTransformComponent`, `TransformOptions`, `staticTransformTag`                  |
-| `src/common/components/position-component.ts`, `rotation-component.ts`, `scale-component.ts` | Removed | Replaced by the transform                                                     |
-| `src/common/systems/transform-system.ts`                              | Modified | Rewritten: 3D composition, change detection, static subtrees excluded, no closure state                     |
-| `src/common/transform-2d.ts`                                          | New      | `getLocalAngle`, `setLocalAngle`, `addLocalAngle`, `getWorldAngle`                                           |
-| `src/common/transform-helpers.ts`                                     | New      | World-space getters and setters, point conversion, reparenting that keeps the world transform, `propagateTransform`, `getCurrentWorldMatrix` |
-| `src/common/space/`                                                   | Removed  | `Space` has no callers                                                                                      |
-| `src/physics/**`                                                      | Modified | Reads `transform.world`, writes `transform.local`; revolute joints measure the relative angle from the relative rotation |
-| `src/rendering/**`, `src/ui/**`, `src/particles/**`, `src/text/**`    | Modified | Read `transform.world`, write `transform.local` (§6.7)                                                       |
-| `demo/`, `e2e/`, `documentation-site/src/pages/demos/**`              | Modified | Migrated                                                                                                    |
-| `documentation-site/docs/docs/common/transforms.md`, `physics/index.md`, `math/angles-and-rotation.md` | Modified | Rewritten for the component, stages and wrapped angles                   |
-| `AGENTS.md`                                                           | Modified | "Transforms" and "Angles and Directions"                                                                    |
-| `.claude/skills/create-component/SKILL.md`                            | Modified | Its naming example's `positionId`/`'position'` becomes `transformId`/`'transform'`                          |
+| Path                                                                                                   | Change   | Notes                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/common/components/transform-component.ts`                                                         | New      | `TransformEcsComponent`, `addTransformComponent`, `TransformOptions`, `staticTransformTag`                                                   |
+| `src/common/components/position-component.ts`, `rotation-component.ts`, `scale-component.ts`           | Removed  | Replaced by the transform                                                                                                                    |
+| `src/common/systems/transform-system.ts`                                                               | Modified | Rewritten: 3D composition, change detection, static subtrees excluded, no closure state                                                      |
+| `src/common/transform-2d.ts`                                                                           | New      | `getLocalAngle`, `setLocalAngle`, `addLocalAngle`, `getWorldAngle`                                                                           |
+| `src/common/transform-helpers.ts`                                                                      | New      | World-space getters and setters, point conversion, reparenting that keeps the world transform, `propagateTransform`, `getCurrentWorldMatrix` |
+| `src/common/space/`                                                                                    | Removed  | `Space` has no callers                                                                                                                       |
+| `src/physics/**`                                                                                       | Modified | Reads `transform.world`, writes `transform.local`; revolute joints measure the relative angle from the relative rotation                     |
+| `src/rendering/**`, `src/ui/**`, `src/particles/**`, `src/text/**`                                     | Modified | Read `transform.world`, write `transform.local` (§6.7)                                                                                       |
+| `demo/`, `e2e/`, `documentation-site/src/pages/demos/**`                                               | Modified | Migrated                                                                                                                                     |
+| `documentation-site/docs/docs/common/transforms.md`, `physics/index.md`, `math/angles-and-rotation.md` | Modified | Rewritten for the component, stages and wrapped angles                                                                                       |
+| `AGENTS.md`                                                                                            | Modified | "Transforms" and "Angles and Directions"                                                                                                     |
+| `.claude/skills/create-component/SKILL.md`                                                             | Modified | Its naming example's `positionId`/`'position'` becomes `transformId`/`'transform'`                                                           |
 
 ---
 
@@ -97,27 +97,27 @@ today.
 One release: the old components can't coexist with the new one without a
 compatibility layer, which the change philosophy rules out.
 
-| #   | Task                         | Description                                                                                                                        | Size |
-| --- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 1.1 | Component, tag and factory   | §6.1, §6.2                                                                                                                         | S    |
-| 1.2 | Transform system             | §6.3, without change detection: composes every visited transform                                                                   | M    |
-| 1.3 | 2D and world-space helpers   | §6.4, §6.5                                                                                                                         | M    |
-| 1.4 | Engine migration             | Every `/src` caller (§6.7), including the revolute joint's relative angle                                                          | L    |
-| 1.5 | Demo, e2e and docs migration | `/demo`, about 35 files in demos and e2e scenes, every guide that shows the old components; the physics guide's ordering section; the `create-component` skill's naming example | L    |
-| 1.6 | Deletions                    | The three old components, the old system's helpers, `Space`                                                                       | S    |
-| 1.7 | Changelog                    | `#### Changed`: one bullet with the migration (`addPositionComponent(w, e, { local: p })` → `addTransformComponent(w, e, { position: p })`, `position.world` → `transform.world.position`, angles through the helpers, angles now wrap to `(-π, π]`, revolute limits within `(-π, π)`); `#### Removed`: `Space` | S |
+| #   | Task                         | Description                                                                                                                                                                                                                                                                                                     | Size |
+| --- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 1.1 | Component, tag and factory   | §6.1, §6.2                                                                                                                                                                                                                                                                                                      | S    |
+| 1.2 | Transform system             | §6.3, without change detection: composes every visited transform                                                                                                                                                                                                                                                | M    |
+| 1.3 | 2D and world-space helpers   | §6.4, §6.5                                                                                                                                                                                                                                                                                                      | M    |
+| 1.4 | Engine migration             | Every `/src` caller (§6.7), including the revolute joint's relative angle                                                                                                                                                                                                                                       | L    |
+| 1.5 | Demo, e2e and docs migration | `/demo`, about 35 files in demos and e2e scenes, every guide that shows the old components; the physics guide's ordering section; the `create-component` skill's naming example                                                                                                                                 | L    |
+| 1.6 | Deletions                    | The three old components, the old system's helpers, `Space`                                                                                                                                                                                                                                                     | S    |
+| 1.7 | Changelog                    | `#### Changed`: one bullet with the migration (`addPositionComponent(w, e, { local: p })` → `addTransformComponent(w, e, { position: p })`, `position.world` → `transform.world.position`, angles through the helpers, angles now wrap to `(-π, π]`, revolute limits within `(-π, π)`); `#### Removed`: `Space` | S    |
 
 **Definition of done:** every unit test, e2e spec and golden passes; every
 demo runs; nothing imports the old components.
 
 ### Phase 2: Change detection and static subtrees
 
-| #   | Task                       | Description                                                                                  | Size |
-| --- | -------------------------- | -------------------------------------------------------------------------------------------- | ---- |
-| 2.1 | Prototype and targets      | Measure the §6.8 scenarios on a prototype; replace the starting estimates with measured targets | S |
-| 2.2 | Change detection           | §6.3.3: compare with what was last composed; stamp `changedTick` only on change              | M    |
-| 2.3 | Static subtrees            | §6.3.2: static transforms excluded from the walk; computed from journals                     | M    |
-| 2.4 | Allocation and benchmarks  | Allocation spec; `transform-system.bench.ts`                                                 | S    |
+| #   | Task                      | Description                                                                                     | Size |
+| --- | ------------------------- | ----------------------------------------------------------------------------------------------- | ---- |
+| 2.1 | Prototype and targets     | Measure the §6.8 scenarios on a prototype; replace the starting estimates with measured targets | S    |
+| 2.2 | Change detection          | §6.3.3: compare with what was last composed; stamp `changedTick` only on change                 | M    |
+| 2.3 | Static subtrees           | §6.3.2: static transforms excluded from the walk; computed from journals                        | M    |
+| 2.4 | Allocation and benchmarks | Allocation spec; `transform-system.bench.ts`                                                    | S    |
 
 **Definition of done:** the §6.8 targets are met; a still scene stamps
 nothing; static subtrees under static roots are never visited; the
@@ -127,18 +127,18 @@ system's closure holds nothing.
 
 ## 4. Decision log
 
-| #   | Decision                                   | Options                                                                                                                                         | Chosen | Rationale, trade-offs, assumptions                                                                                                                                                                                                                                                                                                                                     |
-| --- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| X1  | One component or three                     | (a) One `TransformEcsComponent`; (b) keep position, rotation and scale separate, in 3D                                                         | (a)    | A world matrix needs all three, so composition reads all three for the entity and its parent. Unity, Godot and Bevy each have one transform. A rotation or scale without a position has no use. Trade-off: every caller changes, once.                                                                                                                              |
-| X2  | `local` and `world` in one component or two | (a) One component with both, as Forge does today; (b) separate local and world components, as Bevy does                                       | (a)    | Keeps Forge's existing model (`local` in, `world` out, one owner each), with one lookup instead of two in systems that read both.                                                                                                                                                                                                                                   |
-| X3  | What `world` holds                         | (a) The matrix only; (b) decomposed position, rotation and scale plus the matrix                                                               | (b)    | The renderer needs the matrix; physics, audio, cameras and game code need position and rotation, and decomposing a matrix on every read is slow. Composing both costs one quaternion product and a few multiplies.                                                                                                                                                  |
-| X4  | Change detection                           | (a) Compare `local` and the parent's stamp with what was last composed; (b) setters that mark the transform dirty; (c) recompute everything visited every frame | (a) | Design 03 decision E3. Comparing ten numbers is several times cheaper than composing, and can't be forgotten the way marking can. It also handles UI layout, which rewrites the same values every frame. Trade-off: ten numbers of memory per transform.                                                                                                        |
-| X5  | Static transforms                          | (a) A tag that excludes the entity from the walk, computed from journals; (b) an `isStatic` field checked per entity, as today; (c) no static concept | (a)    | (b) still visits every static entity every frame. Excluding them from the membership (design 03's `without`) makes static subtrees free, which is what Bevy's static-scene optimization achieves by marking dirty trees. Becoming static, leaving it and being reparented are structural changes, so journals see them.                                    |
-| X6  | Entities without a transform in a hierarchy | (a) They cut the chain: their children compose from the origin, as today; (b) they pass their parent's transform through                      | (a)    | Today's behavior, Godot's and Bevy's. (b) would force the walk through every entity and make a transformless intermediate's changes invisible to its descendants' change detection.                                                                                                                                                                                 |
-| X7  | 2D rotation                                | (a) Helpers that read and write the angle about Z; (b) a separate 2D angle field kept in sync                                                   | (a)    | One stored rotation means one owner. `addTransformComponent` accepts a number for `rotation` as the angle about Z. Angles read back wrap to `(-π, π]`, since a quaternion doesn't count turns (§6.4).                                                                                                                                                                 |
-| X8  | Systems that move entities after propagation | (a) `propagateTransform(world, entity)` recomputes that entity's subtree immediately; (b) only ordering, accepting a frame of lag              | (a), with ordering as the default | Godot's `force_update_transform` serves the same purpose. A function owned by the transform module keeps the module the only writer of `world`.                                                                                                                                                                                                        |
-| X9  | World rotation and scale under non-uniform parent scale | (a) Products along the chain, as Unity's lossy scale; (b) a polar decomposition of the world matrix                            | (a)    | Exact unless a rotated child sits under a non-uniformly scaled parent. The matrix is always exact, and it's what rendering uses.                                                                                                                                                                                                                                    |
-| X10 | Model front                                | (a) Forward is `-Z` for everything; models keep glTF's `+Z` front; `Vec3.modelFront` and `Quat.modelLookRotation` name it; (b) rotate every imported model 180° so its front is `-Z` | (a) | Rotating on import would put objects from a level exported from a modeling tool at mirrored positions (`x → -x`, `z → -z`), which breaks level workflows. Godot 4 has the same split and names it the same way (`MODEL_FRONT`). Cameras and lights aim `-Z`; a character turns its model front towards where it walks.                                         |
+| #   | Decision                                                | Options                                                                                                                                                                              | Chosen                            | Rationale, trade-offs, assumptions                                                                                                                                                                                                                                                                                      |
+| --- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| X1  | One component or three                                  | (a) One `TransformEcsComponent`; (b) keep position, rotation and scale separate, in 3D                                                                                               | (a)                               | A world matrix needs all three, so composition reads all three for the entity and its parent. Unity, Godot and Bevy each have one transform. A rotation or scale without a position has no use. Trade-off: every caller changes, once.                                                                                  |
+| X2  | `local` and `world` in one component or two             | (a) One component with both, as Forge does today; (b) separate local and world components, as Bevy does                                                                              | (a)                               | Keeps Forge's existing model (`local` in, `world` out, one owner each), with one lookup instead of two in systems that read both.                                                                                                                                                                                       |
+| X3  | What `world` holds                                      | (a) The matrix only; (b) decomposed position, rotation and scale plus the matrix                                                                                                     | (b)                               | The renderer needs the matrix; physics, audio, cameras and game code need position and rotation, and decomposing a matrix on every read is slow. Composing both costs one quaternion product and a few multiplies.                                                                                                      |
+| X4  | Change detection                                        | (a) Compare `local` and the parent's stamp with what was last composed; (b) setters that mark the transform dirty; (c) recompute everything visited every frame                      | (a)                               | Design 03 decision E3. Comparing ten numbers is several times cheaper than composing, and can't be forgotten the way marking can. It also handles UI layout, which rewrites the same values every frame. Trade-off: ten numbers of memory per transform.                                                                |
+| X5  | Static transforms                                       | (a) A tag that excludes the entity from the walk, computed from journals; (b) an `isStatic` field checked per entity, as today; (c) no static concept                                | (a)                               | (b) still visits every static entity every frame. Excluding them from the membership (design 03's `without`) makes static subtrees free, which is what Bevy's static-scene optimization achieves by marking dirty trees. Becoming static, leaving it and being reparented are structural changes, so journals see them. |
+| X6  | Entities without a transform in a hierarchy             | (a) They cut the chain: their children compose from the origin, as today; (b) they pass their parent's transform through                                                             | (a)                               | Today's behavior, Godot's and Bevy's. (b) would force the walk through every entity and make a transformless intermediate's changes invisible to its descendants' change detection.                                                                                                                                     |
+| X7  | 2D rotation                                             | (a) Helpers that read and write the angle about Z; (b) a separate 2D angle field kept in sync                                                                                        | (a)                               | One stored rotation means one owner. `addTransformComponent` accepts a number for `rotation` as the angle about Z. Angles read back wrap to `(-π, π]`, since a quaternion doesn't count turns (§6.4).                                                                                                                   |
+| X8  | Systems that move entities after propagation            | (a) `propagateTransform(world, entity)` recomputes that entity's subtree immediately; (b) only ordering, accepting a frame of lag                                                    | (a), with ordering as the default | Godot's `force_update_transform` serves the same purpose. A function owned by the transform module keeps the module the only writer of `world`.                                                                                                                                                                         |
+| X9  | World rotation and scale under non-uniform parent scale | (a) Products along the chain, as Unity's lossy scale; (b) a polar decomposition of the world matrix                                                                                  | (a)                               | Exact unless a rotated child sits under a non-uniformly scaled parent. The matrix is always exact, and it's what rendering uses.                                                                                                                                                                                        |
+| X10 | Model front                                             | (a) Forward is `-Z` for everything; models keep glTF's `+Z` front; `Vec3.modelFront` and `Quat.modelLookRotation` name it; (b) rotate every imported model 180° so its front is `-Z` | (a)                               | Rotating on import would put objects from a level exported from a modeling tool at mirrored positions (`x → -x`, `z → -z`), which breaks level workflows. Godot 4 has the same split and names it the same way (`MODEL_FRONT`). Cameras and lights aim `-Z`; a character turns its model front towards where it walks.  |
 
 ---
 
@@ -179,7 +179,8 @@ export interface TransformEcsComponent {
   readonly world: WorldTransform;
 }
 
-export const transformId = createComponentId<TransformEcsComponent>('transform');
+export const transformId =
+  createComponentId<TransformEcsComponent>('transform');
 /** The entity doesn't move relative to its parent. See §6.3.2. */
 export const staticTransformTag = createTagId('static-transform');
 ```
@@ -193,27 +194,28 @@ last composed: the ten local numbers, the parent handle and the parent's
 
 ```ts
 addTransformComponent(world, entity, {
-  position: { x: 4, y: 2 },        // z defaults to 0
-  rotation: Math.PI / 4,           // a number is the angle about Z
-  scale: { x: 2, y: 2 },           // z defaults to 1
+  position: { x: 4, y: 2 }, // z defaults to 0
+  rotation: Math.PI / 4, // a number is the angle about Z
+  scale: { x: 2, y: 2 }, // z defaults to 1
 });
 
 addTransformComponent(world, entity, {
   position: { x: 0, y: 1.5, z: -3 },
   rotation: Quat.fromYawPitchRoll(Quat.identity, Math.PI, 0, 0),
-  isStatic: true,                  // adds staticTransformTag
+  isStatic: true, // adds staticTransformTag
 });
 ```
 
-`TransformOptions`, exported with the factory, so other factories can take
-transform options as they are (design 15's `spawnParticleBurst` does):
+The options type is `TransformOptions`, exported with the factory so other
+factories can take transform options as they are (design 15's
+`spawnParticleBurst` does):
 
-| Option     | Type                         | Default     |
-| ---------- | ---------------------------- | ----------- |
-| `position` | `Vector2 & { z?: number }`   | `(0, 0, 0)` |
-| `rotation` | `Quaternion \| number`       | identity    |
-| `scale`    | `Vector2 & { z?: number }`   | `(1, 1, 1)` |
-| `isStatic` | `boolean`                    | `false`     |
+| Option     | Type                       | Default     |
+| ---------- | -------------------------- | ----------- |
+| `position` | `Vector2 & { z?: number }` | `(0, 0, 0)` |
+| `rotation` | `Quaternion \| number`     | identity    |
+| `scale`    | `Vector2 & { z?: number }` | `(1, 1, 1)` |
+| `isStatic` | `boolean`                  | `false`     |
 
 The factory copies values into fresh objects (systems mutate `local` in
 place, so a shared default or a caller's object must never end up in it),
@@ -328,17 +330,17 @@ say this.
 
 `src/common/transform-helpers.ts`:
 
-| Helper                                                      | What it does                                                                                     |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `getWorldForward(out, transform)`, `getWorldRight`, `getWorldUp` | `-Z`, `+X`, `+Y` of `world.rotation`                                                         |
-| `getModelFront(out, transform)`                             | `+Z` of `world.rotation` (decision X10)                                                          |
-| `transformPoint(out, transform, point)`                     | Local point to world, through `world.matrix`                                                     |
-| `inverseTransformPoint(out, transform, point)`              | World point to local                                                                              |
-| `setWorldPosition(world, entity, position)`                 | Writes `local.position` so the entity ends up at `position`, through the parent's world inverse  |
-| `setWorldRotation(world, entity, rotation)`                 | The same for rotation                                                                            |
-| `setParentKeepingWorldTransform(world, child, parent)`      | Reparents and rewrites `local` so the world transform is unchanged (`setParent` keeps `local`)   |
-| `propagateTransform(world, entity)`                         | Recomputes `entity`'s subtree now (decision X8)                                                  |
-| `getCurrentWorldMatrix(out, world, entity)`                 | Composes the entity's current `local` with its ancestors' current `local` values up to the root, stopping with identity at a transformless ancestor (X6). Values written since the last propagation count; nothing is written |
+| Helper                                                           | What it does                                                                                                                                                                                                                  |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getWorldForward(out, transform)`, `getWorldRight`, `getWorldUp` | `-Z`, `+X`, `+Y` of `world.rotation`                                                                                                                                                                                          |
+| `getModelFront(out, transform)`                                  | `+Z` of `world.rotation` (decision X10)                                                                                                                                                                                       |
+| `transformPoint(out, transform, point)`                          | Local point to world, through `world.matrix`                                                                                                                                                                                  |
+| `inverseTransformPoint(out, transform, point)`                   | World point to local                                                                                                                                                                                                          |
+| `setWorldPosition(world, entity, position)`                      | Writes `local.position` so the entity ends up at `position`, through the parent's world inverse                                                                                                                               |
+| `setWorldRotation(world, entity, rotation)`                      | The same for rotation                                                                                                                                                                                                         |
+| `setParentKeepingWorldTransform(world, child, parent)`           | Reparents and rewrites `local` so the world transform is unchanged (`setParent` keeps `local`)                                                                                                                                |
+| `propagateTransform(world, entity)`                              | Recomputes `entity`'s subtree now (decision X8)                                                                                                                                                                               |
+| `getCurrentWorldMatrix(out, world, entity)`                      | Composes the entity's current `local` with its ancestors' current `local` values up to the root, stopping with identity at a transformless ancestor (X6). Values written since the last propagation count; nothing is written |
 
 The setters write `local` (the input); `world` catches up at propagation,
 or immediately with `propagateTransform`.
@@ -361,15 +363,15 @@ moved. The guide shows both.
 
 ### 6.7 Migration
 
-| Module                        | Today                                                       | After                                                                                     |
-| ----------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Rendering (sprites, text, terrain, culling, draw order) | `position.world`, `rotation.world`, `scale.world`; root Y for y-sorting | `world.position.x/y`, `getWorldAngle`, `world.scale.x/y`; the renderer changes in design 07 |
-| Cameras                       | Pans `position.local`; view from `position.world`           | `transform.local.position`, `transform.world.position`                                    |
-| Physics 2D                    | Reads world position and angle; integrates into `local`; CCD sweeps from `world` (start) to `local` (end); revolute limits subtract angles | Same, through the transform. The order still holds: physics runs in `update` until design 14 moves it, before propagation in `postUpdate`, so `world` is still the start pose. Revolute limits use the relative rotation (§6.4) |
-| UI                            | Layout writes `position.local` and sprite sizes             | Writes `transform.local.position`                                                         |
-| Particles                     | Position, rotation and scale per particle                   | One transform per particle; spawn uses the emitter's `getWorldAngle`                     |
-| Age scale                     | Writes `scale.local`                                        | Writes `transform.local.scale`                                                             |
-| Masks                         | World rects from position and rotation                      | Same values through the transform                                                          |
+| Module                                                  | Today                                                                                                                                      | After                                                                                                                                                                                                                           |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rendering (sprites, text, terrain, culling, draw order) | `position.world`, `rotation.world`, `scale.world`; root Y for y-sorting                                                                    | `world.position.x/y`, `getWorldAngle`, `world.scale.x/y`; the renderer changes in design 07                                                                                                                                     |
+| Cameras                                                 | Pans `position.local`; view from `position.world`                                                                                          | `transform.local.position`, `transform.world.position`                                                                                                                                                                          |
+| Physics 2D                                              | Reads world position and angle; integrates into `local`; CCD sweeps from `world` (start) to `local` (end); revolute limits subtract angles | Same, through the transform. The order still holds: physics runs in `update` until design 14 moves it, before propagation in `postUpdate`, so `world` is still the start pose. Revolute limits use the relative rotation (§6.4) |
+| UI                                                      | Layout writes `position.local` and sprite sizes                                                                                            | Writes `transform.local.position`                                                                                                                                                                                               |
+| Particles                                               | Position, rotation and scale per particle                                                                                                  | One transform per particle; spawn uses the emitter's `getWorldAngle`                                                                                                                                                            |
+| Age scale                                               | Writes `scale.local`                                                                                                                       | Writes `transform.local.scale`                                                                                                                                                                                                  |
+| Masks                                                   | World rects from position and rotation                                                                                                     | Same values through the transform                                                                                                                                                                                               |
 
 A side effect of stages (design 03): rendering now always reads this
 frame's world transforms. Today's demos register rendering before physics
@@ -380,12 +382,12 @@ integration, so they draw last frame's positions.
 Starting estimates on the desktop reference, to be replaced by measured
 targets from Phase 2's prototype:
 
-| Scenario                                                   | Estimate      | Reasoning                                                  |
-| ---------------------------------------------------------- | ------------- | ---------------------------------------------------------- |
-| 100,000 static transforms under static roots               | 0             | Never visited                                              |
-| 100,000 dynamic transforms, none moved                     | ≤ 2.0 ms      | About 20 ns each: a parent lookup and a ten-number compare |
-| 100,000 dynamic transforms, 10% moved                      | ≤ 3.0 ms      | Composing costs roughly 100 ns                             |
-| 10,000 dynamic transforms in chains of depth 8, all moved  | ≤ 1.5 ms      |                                                            |
+| Scenario                                                  | Estimate | Reasoning                                                  |
+| --------------------------------------------------------- | -------- | ---------------------------------------------------------- |
+| 100,000 static transforms under static roots              | 0        | Never visited                                              |
+| 100,000 dynamic transforms, none moved                    | ≤ 2.0 ms | About 20 ns each: a parent lookup and a ten-number compare |
+| 100,000 dynamic transforms, 10% moved                     | ≤ 3.0 ms | Composing costs roughly 100 ns                             |
+| 10,000 dynamic transforms in chains of depth 8, all moved | ≤ 1.5 ms |                                                            |
 
 For comparison, recomputing every object every frame (Three.js's default)
 costs a full composition per object. No allocation per tick.

@@ -6,7 +6,7 @@
 | **Kind**                              | Feature and breaking refactor                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Engine version at time of writing** | `0.26.1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | **Program**                           | [Forge 3D](./README.md), milestone M5, built in parallel with M2 to M4. Task 9.4 (root motion) needs design 12's Phase 3; Phase 10 (rag dolls) needs design 12's Phases 1 and 5 (§6.2.2)                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| **Depends on**                        | [02 Math](./02-math.md), [03 ECS foundations](./03-ecs-foundations.md) (with `Time.fixedStepIndex`, §6.7.1 there), [04 Transforms](./04-transforms.md) (with `getCurrentWorldMatrix`, §6.5 there)                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **Depends on**                        | [02 Math](./02-math.md), [03 ECS foundations](./03-ecs-foundations.md) (with `Time.fixedStepIndex`, §6.7.1 there), [04 Transforms](./04-transforms.md) (with `getCurrentWorldMatrix`, §6.5 there)                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | **Related**                           | [01 Testing and benchmarks](./01-testing-and-benchmarks.md) (B6, physics scenarios, allocation specs), [06 Render pipeline](./06-render-pipeline.md) (debug drawing), [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md) (mesh data for colliders, matching primitives), [11 glTF and asset lifetime](./11-gltf-and-asset-lifetime.md) (no physics extension), [12 Skeletal and morph animation](./12-skeletal-and-morph-animation.md) (root motion, pose adjustments, rag dolls), [15 Audio, particles and picking](./15-audio-particles-and-picking-in-3d.md) (picking through physics queries, impact sounds) |
 
 ## 0. Targeted modules
@@ -23,7 +23,7 @@
 | `src/common/collision-categories.ts`                                                                                  | New                  | `allCollisionCategories`, moved from `physics`, shared by both physics modules and picking (design 15)                                                                                                                                                          |
 | `src/common/physics-owned-transform-tag.ts`                                                                           | New                  | `physicsOwnedTransformTag`, on every dynamic and kinematic body of either module, written only by the physics modules (§6.6.4, PH36)                                                                                                                            |
 | `src/physics-3d/` (new)                                                                                               | New                  | The 3D engine: components, shapes, broad phase, narrow phase, solver, joints, islands, continuous collision, sensors, queries, character mover, rag dolls, debug drawing, `registerPhysics3d` (§6.2.2)                                                          |
-| `src/math/geometry/triangle-tree.ts`, `triangle-tree.bench.ts` (new)                                                | New                  | `TriangleTree`, the binned-SAH tree over positions and indices that mesh shapes and design 15's mesh picking share; build and ray-query benchmarks at 1,000, 100,000 and 1,000,000 triangles (§6.7.4) |
+| `src/math/geometry/triangle-tree.ts`, `triangle-tree.bench.ts` (new)                                                  | New                  | `TriangleTree`, the binned-SAH tree over positions and indices that mesh shapes and design 15's mesh picking share; build and ray-query benchmarks at 1,000, 100,000 and 1,000,000 triangles (§6.7.4)                                                           |
 | `src/index.ts`, `package.json` `exports`                                                                              | Modified             | `./physics` becomes `./physics-2d`; `./physics-3d` added                                                                                                                                                                                                        |
 | `documentation-site/docs/docs/physics/` → `physics-2d/`                                                               | Renamed and modified | Fixed step, interpolation, world gravity, `registerPhysics2d`, `teleportBody2d`, body functions, sensors, suffixed names                                                                                                                                        |
 | `documentation-site/docs/docs/physics-3d/` (new)                                                                      | New                  | Guides listed in §6.24                                                                                                                                                                                                                                          |
@@ -255,13 +255,13 @@ against brute-force sampling; the microbenchmarks meet §6.22.
 
 ### Phase 7: Static meshes and height fields
 
-| #   | Task                | Description                                                                                                                                   | Size |
-| --- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| #   | Task                | Description                                                                                                                                                                                      | Size |
+| --- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
 | 7.1 | Triangle mesh shape | `TriangleTree` in `src/math/geometry/` with its benchmark at 1,000, 100,000 and 1,000,000 triangles; one-sided and double-sided triangles, ray casts, `createTriangleMeshShapeFromMesh` (§6.7.4) | M    |
-| 7.2 | Convex against mesh | Per-triangle contacts and manifold merging                                                                                                    | M    |
-| 7.3 | Internal edges      | Active-edge flags and normal correction (§6.9.6)                                                                                              | M    |
-| 7.4 | Height fields       | Grid, holes, upward contacts at any depth, a min-max tree for ray casts and bounds queries (§6.7.5)                                           | M    |
-| 7.5 | Scenarios           | A box sliding across mesh seams with no vertical bump; a sphere rolling on a height field; a box pressed partway into a floor rising back out | S    |
+| 7.2 | Convex against mesh | Per-triangle contacts and manifold merging                                                                                                                                                       | M    |
+| 7.3 | Internal edges      | Active-edge flags and normal correction (§6.9.6)                                                                                                                                                 | M    |
+| 7.4 | Height fields       | Grid, holes, upward contacts at any depth, a min-max tree for ray casts and bounds queries (§6.7.5)                                                                                              | M    |
+| 7.5 | Scenarios           | A box sliding across mesh seams with no vertical bump; a sphere rolling on a height field; a box pressed partway into a floor rising back out                                                    | S    |
 
 **Definition of done:** a box sliding at 5 m/s across a flat 1,000-triangle
 mesh never gains more than 1 cm/s of upward velocity; a 1 m box pushed
@@ -2168,23 +2168,23 @@ reference. They run in V8 under Node in CI, and in Chrome on the reference
 devices through design 01's runner. Each lands with the phase in the last
 column, so the figures B6 depends on are known in Phase 2:
 
-| Benchmark                                                         | Target              | Phase |
-| ----------------------------------------------------------------- | ------------------- | ----- |
-| Solver row solve (a normal row, or a friction pair), B6-like data | ≤ 10 ns per row     | 2     |
-| Box-box face contact (SAT and clipping)                           | ≤ 1.0 µs            | 2     |
-| Box-sphere, sphere-sphere                                         | ≤ 0.25 µs, ≤ 0.1 µs | 2     |
-| Box-box with a recycled manifold                                  | ≤ 0.2 µs            | 2     |
-| One substep of a recorded B6 pile's constraints                   | ≤ 0.4 ms            | 2     |
-| Tree: move 1,000 of 10,000 proxies and find pairs                 | ≤ 0.3 ms            | 2     |
-| Tree: bounds query in 10,000 proxies                              | ≤ 1 µs              | 2     |
-| `castRay` among 10,000 colliders                                  | ≤ 3 µs              | 4     |
-| GJK distance, two 32-vertex hulls                                 | ≤ 1 µs              | 6     |
-| EPA, cylinder into box                                            | ≤ 5 µs              | 6     |
-| Hull-hull, 32 vertices each                                       | ≤ 4 µs              | 6     |
-| `TriangleTree` build, 100,000 triangles (also measured at 1,000 and 1,000,000) | ≤ 100 ms | 7     |
-| `TriangleTree` ray cast, 100,000 triangles (also at 1,000 and 1,000,000) | ≤ 5 µs     | 7     |
-| Box against mesh manifold                                         | ≤ 10 µs             | 7     |
-| Mover step on a mesh level                                        | ≤ 20 µs             | 9     |
+| Benchmark                                                                      | Target              | Phase |
+| ------------------------------------------------------------------------------ | ------------------- | ----- |
+| Solver row solve (a normal row, or a friction pair), B6-like data              | ≤ 10 ns per row     | 2     |
+| Box-box face contact (SAT and clipping)                                        | ≤ 1.0 µs            | 2     |
+| Box-sphere, sphere-sphere                                                      | ≤ 0.25 µs, ≤ 0.1 µs | 2     |
+| Box-box with a recycled manifold                                               | ≤ 0.2 µs            | 2     |
+| One substep of a recorded B6 pile's constraints                                | ≤ 0.4 ms            | 2     |
+| Tree: move 1,000 of 10,000 proxies and find pairs                              | ≤ 0.3 ms            | 2     |
+| Tree: bounds query in 10,000 proxies                                           | ≤ 1 µs              | 2     |
+| `castRay` among 10,000 colliders                                               | ≤ 3 µs              | 4     |
+| GJK distance, two 32-vertex hulls                                              | ≤ 1 µs              | 6     |
+| EPA, cylinder into box                                                         | ≤ 5 µs              | 6     |
+| Hull-hull, 32 vertices each                                                    | ≤ 4 µs              | 6     |
+| `TriangleTree` build, 100,000 triangles (also measured at 1,000 and 1,000,000) | ≤ 100 ms            | 7     |
+| `TriangleTree` ray cast, 100,000 triangles (also at 1,000 and 1,000,000)       | ≤ 5 µs              | 7     |
+| Box against mesh manifold                                                      | ≤ 10 µs             | 7     |
+| Mover step on a mesh level                                                     | ≤ 20 µs             | 9     |
 
 #### 6.22.3 Frames that run several steps
 
