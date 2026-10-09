@@ -42,7 +42,7 @@ export default function EasingFunctions(): JSX.Element {
           file: 'create-easing-rows.ts',
         },
         {
-          text: 'A system turns time into a 0 to 1 ping-pong phase, eases it, and lerps the ball between the lane ends.',
+          text: 'A system turns time into a 0 to 1 ping-pong phase, eases it, and moves the ball between the lane ends by that amount.',
           file: 'easing-row.system.ts',
         },
         {
