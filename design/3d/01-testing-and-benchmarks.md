@@ -132,7 +132,7 @@ against today's output.
 | 3.1 | Pinned golden environment          | The Playwright Docker image matching the pinned `@playwright/test` version; `test:golden` and `test:golden:update` run inside it locally and in CI | M    |
 | 3.2 | Capture and compare                | Golden scenes render with `preserveDrawingBuffer`; the canvas element is captured and compared with per-spec tolerances (§6.4)               | S    |
 | 3.3 | Canary scene                       | A trivial scene whose failure means the environment is wrong, reported as such before other goldens run                                     | S    |
-| 3.4 | 2D goldens                         | Sprites (tint, emissive, nine-slice, flip), text and effects, masks, draw order, UI controls, terrain, bloom, blur, tone mapping            | M    |
+| 3.4 | 2D goldens                         | Sprites (tint, emissive, nine-slice, flip), text and effects, masks, draw order, UI controls, terrain, bloom, blur, tone mapping. Text goldens are captured after design 07 Phase 0 (the rotated-text fix), so no golden records the defect | M    |
 | 3.5 | Stability check                    | 20 consecutive CI runs with no golden failures before the job becomes required                                                               | S    |
 
 **Definition of done:** the job is a required check and has been stable for
@@ -149,7 +149,8 @@ turn its scene on as its features land.
 | 4.2 | Three.js versions of B1 to B5, B9 | A plain version and an optimized version of each (§6.2.3)                                                           | L    |
 | 4.3 | Forge versions                    | Added by the designs that make each scene possible; until then the runner reports them as pending                   | –    |
 | 4.4 | Physics scenarios                 | Node-run scenario tests and benchmarks for design 14 (§6.5)                                                         | M    |
-| 4.5 | Analytic rendering test harness   | Helpers to sample regions of the canvas and compare against computed values (§6.4.4)                                | S    |
+| 4.5 | Analytic rendering test harness   | Helpers to sample regions of the canvas and compare against computed values; the init script that masks `EXT_clip_control` (§6.4.4) | S    |
+| 4.6 | Audio render time                 | The runner's second measurement kind, an `OfflineAudioContext` driven frame by frame (§6.2.2), for design 15     | S    |
 
 **Definition of done:** the runner runs every scene for Three.js and reports
 Forge's as pending or measured.
@@ -223,7 +224,9 @@ three helpers:
 What jsdom can't test (GLSL compilation, real rasterization) is covered by
 the browser suites below. Every shader variant the engine can generate is
 compiled and linked in a browser test (`e2e/specs/shader-variants.spec.ts`)
-so a variant that only some materials reach can't ship broken.
+so a variant that only some materials reach can't ship broken. The same
+spec runs design 07's attribute-budget check: every sprite and text layout
+uses at most 8 per-instance locations and 16 attributes in total.
 
 ### 6.2 Performance
 
@@ -262,9 +265,29 @@ flowchart LR
 A **scene description** is plain data: the meshes (procedural primitives or
 glTF files under `bench/assets`), materials, objects with transforms and
 motion rules, lights and a camera path. A seeded generator writes it, so
-both engines build exactly the same content. Assets are the Khronos sample
-models (Sponza, the character used for B4) fetched by a script and cached,
-not committed.
+both engines build exactly the same content. Sponza (B5, B9) is a Khronos
+sample model fetched by a script and cached, not committed; B9's
+KTX2-compressed copy is a release asset the script downloads (design 11
+§6.17.1). B4's character is generated from a seed by `bench/`: a 60-joint
+humanoid of about 5,000 vertices with four influences, and walk and run
+clips at 30 keys per second with translation, rotation and scale on every
+joint, which is what common exporters write (design 12 §6.17.1). No
+Khronos sample character has 60 joints and two locomotion clips.
+
+Scenes besides B1 to B9, added by the designs that need them:
+
+- **Hidden walkers** (design 12): the 100 B4 characters walking outside
+  every view and shadow view. It reports the animation and deformation
+  systems' time and the palette bytes uploaded, which must be zero.
+- **`spatial-audio-render`** (design 15): spatial sounds measured by audio
+  render time (below).
+
+B9 measures from the `assets.load` call to the first frame with every part
+drawn. The scene creates its world, `registerRendering` with the lighting
+feature, the camera and the shadowed sun before that call, so pipelines
+compile against their views while textures transcode (design 11 GA28).
+The Three.js version calls `compileAsync` with the camera, the same
+preparation.
 
 Each scene module exports `build(canvas, description)` returning a `step()`
 function and a counters reader. The runner (Playwright, Chromium with
@@ -280,6 +303,14 @@ function and a counters reader. The runner (Playwright, Chromium with
    the browser exposes it (reference hardware only);
 6. reports the median, 95th and 99th percentile, frames over 16.7 ms and
    the counters.
+
+**Audio render time** is the runner's second measurement kind. A scene
+exports a function that drives an `OfflineAudioContext`, suspending it at
+every 1/60 s of audio time to run one frame of the world, so the audio
+parameter calls are the ones a live frame makes. The runner reports the
+wall time of `startRendering()` minus the time spent in those frame
+callbacks, per second of audio. It is CPU work, so it's meaningful in CI
+and is gated base versus head like CPU frame times.
 
 In CI, scenes run on SwiftShader, so only CPU numbers are meaningful. The
 gate is the same as for microbenchmarks: base versus head, plus Forge
@@ -385,6 +416,12 @@ math, not against a capture. Examples from designs 09 and 10:
 - **Depth precision:** two planes 1 mm apart, 5 km from the origin, viewed
   from 1 m away, never z-fight (the camera-relative path in design 06).
 
+Analytic lighting and shadow tests run under both depth conventions
+(README G8): reversed depth where the browser has `EXT_clip_control`, and
+standard depth by masking the extension with a Playwright init script
+that wraps `getExtension` to return `null` for it. The engine needs no
+test-only option for this.
+
 ### 6.5 Physics tests
 
 Physics tests run under Node (they don't need a browser) and are of three
@@ -403,8 +440,19 @@ kinds, set out in design 14:
   machines (README non-goals), but repeatability on one machine is what
   makes the other tests stable.
 
+The scenario list in design 14 §6.23.2 also includes sensor pickups (a
+mover walking through static sensors gets one begin and one end per
+pickup) and the box stack and platform 10,000 km from the origin.
+
 B6 measures the step cost in the browser runner, alongside Rapier
-(informational; it's a WASM engine and a different design).
+(informational; it's a WASM engine and a different design). Besides the
+per-step stage times, the B6 report records each frame's fixed-step count
+and physics time, once at the reference display rate and once with the
+frame rate held at 30 fps, so a regression that pushes typical frames to
+two steps shows (design 14 §6.22.3). Physics microbenchmarks run in V8
+under Node in CI and in Chrome on the reference devices through the
+runner; the solver-row and box-box figures B6 depends on are measured in
+design 14's Phase 2.
 
 ### 6.6 Reference hardware and Unity
 

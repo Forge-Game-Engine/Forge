@@ -224,7 +224,7 @@ tangent test model.
 | MS13 | Engine include names                                | (a) Path-like names (`forge/view`), with the include pattern widened to the characters `#pragma forge name` accepts; (b) camelCase names (`forgeView`)                                                                                                                                                                   | (a)                                                       | The include resolver accepts only `\w+` (`resolve-includes-pre-processor.ts:79`), while a shader's name may contain `.`, `-` and `/` (`tone-mapping.frag` can be named but not included), which is a defect of its own. A path prefix namespaces engine includes the way Bevy's `bevy_pbr::` imports do, and designs 09, 10, 12 and 15 already use these names. The `forge/` prefix is reserved.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | MS14 | Struct- and macro-typed uniforms                    | (a) Parse struct definitions and lay them out in the block; resolve a macro type from its one unconditional `#define`; throw otherwise; (b) reject both, with a changelog note                                                                                                                                           | (a)                                                       | `material.ts:28-31` documents both as supported. An array of structs is the natural way to pass several waves or lights to a custom shader, and WGSL supports structs in uniform buffers, so a later backend keeps them. Parsing a struct is the same work as parsing a uniform statement. A macro type defined under `#if` could change per variant and so change the block layout, but a material has one block for all its variants, so only one unconditional definition is accepted. Struct members also become settable before the program links.                                                                                                                                                                                                                                                                                                                                                                                                              |
 | MS15 | Textures that change per draw                       | (a) Draw textures, declared by the material kind and bound in bind group 3 (a sprite batch's texture and emissive map); (b) a material per texture; (c) rebinding group 2 per draw                                                                                                                                       | (a)                                                       | Bind group 2 is per material (design 05 D4). One sprite material serves sprites with different textures today (`sprite-material.ts:101-115`); (b) would break that and multiply blocks. Bevy's sprite pipeline binds each image as its own bind group per batch, the same split.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| MS16 | Vertex streams                                      | (a) Positions in their own buffer, the other attributes interleaved in a second; (b) everything interleaved in one buffer                                                                                                                                                                                                | (a)                                                       | Depth and shadow variants without hooks, skinning or alpha testing read only positions. B5 runs about 13 such passes a frame (the prepass, four cascades, eight spot lights), so they fetch 12 bytes per vertex instead of the full stride (typically 32 to 60 bytes). Color passes bind both streams, which costs one more binding in a cached vertex array. Unreal keeps a position-only stream for depth passes for the same reason.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| MS16 | Vertex streams                                      | (a) Positions in their own buffer, the other attributes interleaved in a second; (b) everything interleaved in one buffer                                                                                                                                                                                                | (a)                                                       | Depth and shadow variants without hooks, skinning or alpha testing read only positions. B5 runs 13 such passes on its first frame (the prepass, four cascades, eight spot lights' tiles) and 5 on later frames (the prepass and four cascades; cached spot tiles render only when invalidated, design 09 §6.5.6), so they fetch 12 bytes per vertex instead of the full stride (typically 32 to 60 bytes). Color passes bind both streams, which costs one more binding in a cached vertex array. Unreal keeps a position-only stream for depth passes for the same reason.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | MS17 | Values from the vertex hook to the surface hook     | (a) Four `vec4` slots, `custom0` to `custom3`, interpolated only when a hook uses them; (b) varyings declared in hook sources; (c) none                                                                                                                                                                                  | (a)                                                       | Filament's `custom0`–`custom3` and Unity's custom interpolators are fixed slots. They keep hook signatures fixed and map directly to WGSL locations. Godot's `varying` (b) needs the preprocessor to match declarations across stages for every variant. Four slots plus the engine's own varyings stay within WebGL2's guaranteed 15 vectors.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | MS18 | Shadows of transparent materials                    | (a) `blend` and `premultiplied` materials cast alpha-tested shadows at `alphaCutoff`; `additive` and `multiply` cast none; (b) all cast as opaque; (c) none cast                                                                                                                                                         | (a)                                                       | A fading object loses its shadow as it fades, a pane of glass at low alpha casts none, and the opaque parts of hair cards cast. Additive and multiplied surfaces add or filter light rather than block it. Trade-off: no colored or partial shadows; a game turns casting off per mesh with `castsShadows`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | MS19 | Primitive orientation                               | (a) The plane faces `+Y`, the quad faces `+Z`, round shapes run along `Y`; (b) everything with a front faces `+Z`                                                                                                                                                                                                        | (a)                                                       | A plane is a floor: Unity's, Godot's and Bevy's planes face `+Y`. A quad is a card that looks at the default camera, like a model's front (design 04 X10). Cylinders, capsules and cones run along `Y` like design 14's colliders, so a physics capsule and a capsule mesh line up.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -267,13 +267,20 @@ const mesh = createMesh(renderContext, {
 
 - **Attributes** (names are the engine's semantics, at design 05's fixed
   locations): `position`, `normal`, `tangent` (`vec4`, w is handedness),
-  `uv0`, `uv1`, `color0`, `joints0`, `weights0`. Any vertex format design
-  05 supports. Normalized and integer formats from glTF's
-  `KHR_mesh_quantization` upload without expanding and need no shader
-  variant: vertex fetch converts them to floats, and the extension puts
-  dequantization in the node's transform (design 11). The vertex layout is
-  part of the pipeline descriptor (design 05 §6.5), which is what a later
-  backend needs to declare its inputs.
+  `uv0`, `uv1`, `color0`, `joints0`, `weights0`, and design 12's `joints1`
+  and `weights1`. Any vertex format design 05 supports. Quantized formats
+  from glTF's `KHR_mesh_quantization` upload without expanding, and the
+  extension puts dequantization in the node's transform (design 11):
+  - **Normalized** formats (`snorm16x4`, `unorm8x2`, ...) need no shader
+    variant: vertex fetch converts them to floats.
+  - **Unnormalized integer** positions, `uv0` and `uv1` (`uint16x4`,
+    `sint8x2`, ...) are read as integers on both backends, since WebGPU
+    has no format that reads integers as floats (design 05 §6.5). Each is
+    a mesh feature (integer, signed or unsigned, per attribute); its
+    variants declare the input as `uvec` or `ivec`, and `forge/vertex`
+    converts it to floats, one instruction (design 11 GA25).
+
+  The vertex layout is part of the pipeline descriptor (design 05 §6.5).
 - **Parts** are index ranges (or vertex ranges for a non-indexed mesh)
   with a topology. Each is drawn with the material in the matching slot of
   the mesh component, and has its own local bounds, so design 06 can cull
@@ -374,7 +381,7 @@ interface MeshEcsComponent {
   readonly levelsOfDetail: readonly MeshLevelOfDetail[]; // §6.2.3, default none
   /** The change tick of the last updateMeshComponent call; 0 if none. */
   readonly changedTick: number;
-  /** Output: the last frame a view drew it, written by the render pipeline (design 12). */
+  /** Output: the last frame culling found it in a camera view, a shadow view, or among a kept cached shadow tile's casters (designs 06, 09, 12). Written only by the render pipeline. */
   readonly lastVisibleFrame: number;
 }
 
@@ -420,21 +427,23 @@ GPU scene's, a derived cache on the render context per world (design 06
 
 ```text
 for entity in removed: free its slot; remove its parts from their bins and the transparent list
-for entity in added:   allocate a slot; write its rows (texels 0 to 4); put each part in the bin of its
-                       phase (opaque, alphaTested, and shadowCaster when it casts) or the transparent list
+for entity in added:   allocate a slot; give the GPU scene its local bound and receivesShadows; write its
+                       tint (texel 4); put each part in the bin of its phase (opaque, alphaTested, and
+                       shadowCaster when it casts) or the transparent list
 for entity in the change list, then empty the list:
   skip it if it isn't alive, has no slot, or its changedTick equals the slot's consumed stamp
   compare with the slot's record and do only what changed:
-    mesh or levelsOfDetail -> re-bin every part, update the culling sphere and LOD table
+    mesh or levelsOfDetail -> re-bin every part; give the GPU scene the new local bound; update the LOD table
     materials              -> re-bin the parts whose material changed
     castsShadows           -> add to or remove from the shadowCaster bins
-    receivesShadows, tint  -> mark texel 3 or texel 4 of the row dirty
+    receivesShadows        -> give the GPU scene the new value (it writes texel 3)
+    tint                   -> mark texel 4 of the row dirty
     category               -> update the slot's culling category
   record the consumed stamp
 for each material whose featureKey changed since its bins resolved it:
   re-resolve those bins' pipeline variants (work per bin, not per slot)
 per view, after culling (design 06 §6.8):
-  push each visible slot's transparent parts into the transparent phase, with design 07's sort keys
+  push each visible slot's transparent parts into the transparent phase, with design 07 §6.3's sort keys
 ```
 
 - Opaque, alpha-tested and shadow-caster items live in design 06's
@@ -443,13 +452,21 @@ per view, after culling (design 06 §6.8):
 - Transparent parts are kept in a list of slots that have one, so the
   per-view push costs time proportional to transparent content, not to
   the scene. `layer` is read there, which is why changing it needs no
-  retained work.
+  retained work. A transparent item's keys are design 07 §6.3's, shared
+  with sprites, text and emitters: layer, world order, then depth measured
+  at the bounds' center, or at the nearest ancestor with
+  `DrawOrderEcsComponent.depthGroup` (design 07 S14), far first.
 - Which phase a part goes to comes from its material (§6.4.1).
 - A slot's mesh features (normals, tangents, `color0`, `uv1`, flat
   normals), plus design 12's skinning and morph bits, select its pipeline
   variants (§6.5.1).
 - Texel 4 of design 06's object data is the tint, converted to linear
   (`Color.linear`, design 07 §6.6.2); the extraction is its only writer.
+- Texel 3 and the world culling sphere are the GPU scene's (design 06
+  §6.7.2): it writes texel 3 from `receivesShadows`, which this extraction
+  supplies, and design 12's deformation record index and mirrored flag,
+  and it builds the sphere from the local bound this extraction (or design
+  12's, for deformed slots) supplies.
 
 #### 6.2.3 Levels of detail
 
@@ -640,7 +657,9 @@ The material lays the block out by std140 from the declarations:
   sample type (float, integer, depth with a comparison sampler) against
   the declaration. An unset sampler gets a default texture of its kind,
   created on first use (black for float kinds, as `blackTexture` is today;
-  zero for integer kinds; depth 1 for shadow kinds). Today only
+  zero for integer kinds; for shadow kinds, the far value of the device's
+  depth convention: 0 with reversed depth, 1 otherwise, so it compares as
+  lit under both, design 09 L13). Today only
   `sampler2D` is accepted (`shader-program.ts:22`, `:345`), because a
   single 2D default can't stand in for the others. Sampler arrays stay
   rejected: GLSL ES 3.00 indexes them only with constant expressions, so
@@ -731,13 +750,17 @@ gl_Position` (§6.7) makes the comparison exact. Alpha-tested color
 
 A pipeline is looked up by a key interned from:
 
-- **material features** (`featureKey`): shading model (unlit, PBR,
-  custom), which texture slots are bound with their UV set and transform
-  bits, alpha mode, double-sided, fog, the hook sources, whether a hook
-  discards and which custom varyings hooks use;
+- **material features** (`featureKey`): the material kind (unlit, PBR,
+  custom material, sprite), which texture slots are bound with their UV
+  set and transform bits, alpha mode, double-sided, fog, the hook sources,
+  whether a hook discards and which custom varyings hooks use. There is no
+  shading-model option: which hooks a material has is already in the key
+  (design 10 PB35);
 - **mesh features**: normals present (otherwise flat normals), tangents
-  present, `color0`, `uv1`; design 12 adds skinned (four or eight
-  influences) and morphed. There is no quantized-positions bit (§6.1.1);
+  present, `color0`, `uv1`, and for each of `position`, `uv0` and `uv1`
+  whether it is an unnormalized integer attribute, signed or unsigned
+  (§6.1.1; normalized formats need no bit); design 12 adds skinned (four
+  or eight influences) and morphed;
 - **instance source**: GPU scene slots for meshes; design 15 adds particle
   instance streams;
 - **pass**: `color`, `depth`, `depthNormals`, `shadow`;
@@ -745,7 +768,8 @@ A pipeline is looked up by a key interned from:
   must know about (lighting, fog, ambient occlusion, the material debug
   view of design 10);
 - **target**: color format and sample count (design 13 uses it for
-  alpha-to-coverage).
+  alpha-to-coverage), including a prepass's location-0 color target and
+  its write mask (§6.5.2).
 
 Fixed-function state that isn't code (blend state, depth state, cull mode,
 front face, depth bias, the vertex layout) is part of the pipeline but not
@@ -758,13 +782,24 @@ between materials with the same key and state.
 | Pass           | Drawn by                                                | Fragment work                                                                                                                                                                                          | Writes                               |
 | -------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
 | `color`        | Opaque, alpha-tested and transparent phases             | The material, hooks, lighting (designs 09 and 10), fog, final color                                                                                                                                    | Color, straight alpha                |
-| `depth`        | The depth prepass (design 06 R13)                       | None, or the surface's alpha for `mask` materials and discarding hooks                                                                                                                                 | Depth                                |
-| `depthNormals` | The prepass of views with ambient occlusion (design 13) | As `depth`, plus the view-space vertex normal after the vertex hook, flipped for back faces of double-sided materials, without normal maps (design 13 PP19); derivative normals for flat-normal meshes | Depth; `n · 0.5 + 0.5` at location 0 |
+| `depth`        | The depth prepass (design 06 R13)                       | None, or the surface's alpha for `mask` materials and discarding hooks                                                                                                                                 | Depth; in a prepass with a location-0 attachment, `mask` items' sharpened alpha there (write mask `alpha`) |
+| `depthNormals` | The prepass of views with ambient occlusion (design 13) | As `depth`, plus the view-space vertex normal after the vertex hook, flipped for back faces of double-sided materials, without normal maps (design 13 PP19); derivative normals for flat-normal meshes | Depth; `n · 0.5 + 0.5` at location 0, with `mask` items' sharpened alpha in its alpha channel and 1 for the rest |
 | `shadow`       | Shadow-caster phases (design 09)                        | As `depth`; transparent casters test alpha at `alphaCutoff` (§6.4.2)                                                                                                                                   | Depth                                |
 
 The vertex path, including the vertex hook, skinning and morphing, is the
 same in every pass. A `depth` or `shadow` variant that reads no attribute
 but position binds only the position stream (§6.1.2).
+
+**The prepass's location-0 target.** Alpha-to-coverage takes coverage from
+the fragment's location-0 output, and WebGPU accepts it only with an
+alpha target there, so a multisampled view whose alpha-tested phase has
+items gives its prepass a color attachment at location 0 (design 13
+PP22): the normals with ambient occlusion, otherwise a transient
+`rgba8unorm` texture. A pipeline's targets must match its pass, so every
+item's `depth` variant in that pass has the same target: `mask` items
+write their sharpened alpha (design 13 §6.4.2) with write mask `alpha`,
+every other item with write mask `none`. Only pipeline state differs; the
+programs are the depth-only ones.
 
 #### 6.5.3 Assembling a program
 
@@ -808,7 +843,8 @@ const material = new UnlitMaterial(renderContext, {
   `vertexColors` option.
 - Lights don't affect it. Its output is display-referred: it isn't
   multiplied by the camera's exposure (design 10 PB10), so `Color.white`
-  on an unlit mesh looks the same at any exposure.
+  on an unlit mesh looks the same at any exposure. It never calls light
+  or ambient hooks, so creating one with them throws.
 - **Fog.** When the view's camera has fog (design 10 §6.11) and the
   material's `fog` is true, the color is fogged in the final-color stage,
   like a lit material at the same distance; additive materials fade to
@@ -829,7 +865,7 @@ Includes every engine and custom shader can use, named with the reserved
 | `forge/frame`   | Time and frame index. Exposure is per view (design 10)                                                                                                                                                                                                                                                        |
 | `forge/view`    | View rotation and projection, camera position (high and low parts), viewport                                                                                                                                                                                                                                  |
 | `forge/object`  | Vertex stage only. Reads the instance's slot from the view's object index list at the draw's offset (design 06 §6.6.3), fetches the object's basis, translation, tint and flags from the GPU scene; `forge_objectToView`, `forge_objectToClip`, `forge_objectNormalToWorld`; declares `invariant gl_Position` |
-| `forge/vertex`  | The standard vertex path: read attributes into `ForgeVertex`, apply morph targets and skinning (design 12), the vertex hook, the object transform; write the varyings, including used custom slots                                                                                                            |
+| `forge/vertex`  | The standard vertex path: read attributes into `ForgeVertex` (converting unnormalized integer inputs to floats, §6.1.1), apply morph targets and skinning (design 12), the vertex hook, the object transform; write the varyings, including used custom slots. For an object with the GPU scene's mirrored flag it multiplies `tangent.w` by −1 before writing the tangent varying, so `forge_surfaceInput`'s bitangent is right under a reflection (design 10 PB38) |
 | `forge/surface` | `ForgeSurface`, `ForgeSurfaceInput`, `forge_surfaceInput()`, `forge_defaultSurface()`, flat normals and derivative tangent frames, `forge_alphaTest`                                                                                                                                                          |
 | `forge/output`  | `forge_writeColor` (straight alpha, as `AGENTS.md` requires); `forge_writeDepthOutput(viewNormal)`, which writes the encoded normal in `depthNormals` variants and nothing in `depth` and `shadow`                                                                                                            |
 
@@ -882,7 +918,7 @@ void forge_vertex(inout ForgeVertex vertex);
 // textures, vertex colors and the object's tint.
 void forge_surface(inout ForgeSurface surface, in ForgeSurfaceInput input);
 
-// Custom shading models only: one light's contribution, and ambient.
+// Lit materials only: replaces the engine's term for one light, or for the environment (§6.8.4).
 vec3 forge_light(in ForgeSurface surface, in ForgeLight light, in ForgeSurfaceInput input);
 vec3 forge_ambient(in ForgeSurface surface, in ForgeSurfaceInput input);
 
@@ -940,13 +976,21 @@ as they bend.
 - Alpha-to-coverage (design 13 §6.4.2) applies to `mask` materials. A
   discarding hook keeps its discard.
 
-#### 6.8.4 Custom shading models
+#### 6.8.4 Light and ambient hooks
 
-`shadingModel: 'custom'` makes the engine call `forge_light` per light
-(design 09 supplies `ForgeLight` with direction, radiance, shadow and
-distance) and `forge_ambient` once, instead of its own BRDF. That's how a
-toon shader keeps clustered lights and shadows. Design 10 §6.5.2 places
-these calls in the lit program.
+A lit material's `light` hook replaces the engine's term for each light,
+and its `ambient` hook the environment term, each on its own (design 10
+PB35). There is no shading-model option: a material's hooks are already in
+its variant key. A toon material can quantize direct light with its own
+`forge_light` and keep the engine's image-based lighting, or replace both,
+and keeps clustered lights and shadows either way. Design 09 supplies
+`ForgeLight`: the direction towards the light, its linear unitless color,
+its illuminance in lux on a surface facing it (falloff, window and cone
+applied), the shadow factor, the distance, the angular radius of a light
+with a size, and the type (design 09 §6.6). Design 10 §6.5.2 places these
+calls in the lit program, and its `forge_pbrLight` and `forge_pbrAmbient`
+have the hooks' signatures, so a hook can call them for some lights.
+`UnlitMaterial` throws for these hooks (§6.6).
 
 ### 6.9 Custom materials
 
@@ -976,8 +1020,11 @@ const hologram = createCustomMaterial(renderContext, {
 - Blocks, textures, budgets and variants work as for any material.
 - `SpriteMaterial` stays a material kind of its own (design 07):
   `sprite.vert` with the game's fragment shader, positioned from sprite
-  instance data rather than the GPU scene, with its two draw textures
-  (§6.3.4) and the existing `spriteMask` requirement.
+  instance data (design 07's camera-relative corner and two edge vectors,
+  §6.2 there) rather than the GPU scene, with its two draw textures
+  (§6.3.4) and the existing `spriteMask` requirement. `spriteMask` reads
+  design 07's per-frame mask table (§6.4 there) through the row index each
+  instance carries.
 
 ### 6.10 Compilation
 
@@ -1022,6 +1069,12 @@ await renderContext.prepare(world, {
   camera (as Three.js's `compileAsync(object)` and Unity's shader variant
   collections do). `skinned` defaults to whether the mesh has `joints0`.
   Design 11 accepts models as content.
+- `renderContext.compileContent(content)` is the same collection for
+  content items, against the views of every world registered with
+  `registerRendering`, without waiting: it issues the compiles and
+  returns. Design 11 calls it when a model's JSON is parsed (its GA28), so
+  pipelines compile while textures transcode; `prepare()` later finds
+  them compiled or compiling and waits.
 - It issues every compile and link first and only then waits. Without
   `KHR_parallel_shader_compile` it compiles every shader, then links every
   program, then reads their statuses, so drivers that compile in the
@@ -1057,7 +1110,9 @@ await renderContext.prepare(world, {
   design 06's GPU scene uploads the moved rows.
 - Depth and shadow variants without hooks, skinning or alpha testing fetch
   12 bytes per vertex (decision MS16), which matters most in B5's
-  thirteen position-only passes.
+  position-only passes: five a frame after the first (the prepass and four
+  cascades), plus a spot tile whenever its cache entry is invalidated
+  (design 09 §6.5.6).
 - With `WEBGL_multi_draw`, pooled meshes sharing a pipeline and material
   draw in one call; without it, one call per mesh part bin, with the same
   shaders (design 05 §6.9).
@@ -1087,7 +1142,8 @@ block uploads and the pipeline cache's readiness checks.
     one slot, a change to an entity removed in the same frame is ignored,
     nothing is scanned when nothing changed;
   - level-of-detail material validation; texture budget errors; discard
-    and custom-slot token detection.
+    and custom-slot token detection; `UnlitMaterial` with a light or
+    ambient hook throws; integer-attribute mesh features in the key.
 - **Browser** (e2e):
   - every variant the engine can produce for `UnlitMaterial` and the hook
     demos compiles and links (design 01's `shader-variants.spec.ts`);
@@ -1106,6 +1162,10 @@ block uploads and the pipeline cache's readiness checks.
     a std140 block active even when no shader reads it;
   - **invariance**: a prepass, then a color pass with an `equal` depth
     test, leaves no holes;
+  - **integer attributes**: a mesh with `uint16x4` positions and `sint16x2`
+    UVs renders as its float copy does;
+  - **mirrored normal maps**: a normal-mapped plane and its mirror image
+    light as mirror images (design 10 PB38);
   - **coherent skipping**: with a variant held as compiling by a test
     hook in the pipeline cache, the item is missing from the color pass,
     the prepass and the shadow map alike, then present in all three;
@@ -1178,8 +1238,24 @@ block generation, ownership of several values and the fit with designs
   wrong (they read values with `getUniform`); they're rewritten. Sampler
   kinds, per-draw sprite textures and include names with `/` are handled.
 - MikkTSpace is a SHOULD and runs before packing; flat normals (a MUST)
-  are added; the quantized-position variant bit and the drop-the-data path
-  are gone; LOD levels can carry materials; positions get their own stream
-  (MS16); planes face `+Y` (MS19); morphed meshes stay out of the pool.
+  are added; the drop-the-data path is gone; LOD levels can carry
+  materials; positions get their own stream (MS16); planes face `+Y`
+  (MS19); morphed meshes stay out of the pool.
+
+Changes from designs 07 to 13, applied when the program was reconciled:
+`shadingModel` is gone, light and ambient hooks replace their terms on
+their own, and the variant key names the material kind (design 10 PB35);
+`forge/vertex` negates `tangent.w` for mirrored objects (PB38);
+unnormalized integer positions and UVs are mesh features read as
+integers, since only normalized formats convert in vertex fetch (design 11
+GA25; the review's "no quantized-position bit" held only for normalized
+formats); `compileContent` issues compiles without waiting (design 11
+GA28); texel 3 and world spheres are the GPU scene's, from inputs this
+design supplies, and `lastVisibleFrame` counts culling results (design 12
+AN26, AN31); the prepass's location-0 target for alpha-to-coverage
+(design 13 PP22); transparent mesh items use design 07's keys and depth
+groups, and `SpriteMaterial` reads design 07's mask table; `ForgeLight`
+and the shadow default texture follow design 09; B5's position-only
+passes count cached spot tiles.
 - `Geometry`'s other users (the terrain mesh and the full-screen pass) are
   listed and moved, and the review's tests are added (§6.13).

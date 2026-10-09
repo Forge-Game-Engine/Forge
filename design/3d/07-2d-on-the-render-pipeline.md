@@ -7,7 +7,7 @@
 | **Engine version at time of writing** | `0.26.1`                                                                                              |
 | **Program**                           | [Forge 3D](./README.md), milestone M2. Phase 0 is a bug fix that lands before M1's golden images; Phase 4 lands in M3, after design 08 Phase 1 |
 | **Depends on**                        | [06 Render pipeline](./06-render-pipeline.md): Phase 1 here ships with its Phase 2, and needs the draw items and sorted transparent phase that 06 lists under task 3.1 (moved into its Phase 2, §7) |
-| **Related**                           | [05 GPU device layer](./05-gpu-device.md) (fixed attribute locations, texture-unit budgets, staging uploads), [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md) (Phase 4 here needs its meshes; it moves `SpriteMaterial` onto material blocks), [13 Post-processing](./13-post-processing-and-anti-aliasing.md) (its Phases 1 and 2 ship with Phases 1 and 2 here), [15 Audio, particles and picking](./15-audio-particles-and-picking-in-3d.md) (particles and picking use the sort keys and billboard alignments) |
+| **Related**                           | [05 GPU device layer](./05-gpu-device.md) (fixed attribute locations, texture-unit budgets, staging uploads), [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md) (Phase 4 here needs its meshes; its material blocks, built in design 05 Phase 3, carry `SpriteMaterial`), [13 Post-processing](./13-post-processing-and-anti-aliasing.md) (its Phases 1 and 2 ship with Phases 1 and 2 here), [15 Audio, particles and picking](./15-audio-particles-and-picking-in-3d.md) (particles and picking use the sort keys and billboard alignments) |
 
 ## 0. Targeted modules
 
@@ -24,7 +24,7 @@
 | `src/rendering/color.ts`                                     | Modified | `linear`: the color in linear space, computed once and kept                                        |
 | `src/rendering/shaders/sprite/*`, `shaders/mask/*`           | Modified | Corner-and-edges instance layout; `spriteMask` reads the mask table                               |
 | `src/rendering/shaders/includes/`                            | Modified | `colorSpace` include (`srgbToLinear`) for shaders that compute colors                             |
-| `src/rendering/materials/sprite-material.ts`                 | Modified | Pairs fragment shaders with the new `sprite.vert` (Phase 3). Moving it onto material blocks is design 08 task 1.6, not this design |
+| `src/rendering/materials/sprite-material.ts`                 | Modified | Pairs fragment shaders with the new `sprite.vert` (Phase 3). Moving it onto material blocks is design 05 Phase 3 (task 3.5, building design 08 §6.3), not this design: `u_texture` and `u_emissiveTexture` become draw textures bound in bind group 3, with a bind group cached per texture pair on the render context (design 08 §6.3.4, MS15) |
 | `src/rendering/materials/uniform-value.ts`, `create-uniform-upload.ts`, `material.ts` | Modified | `Matrix3x3` leaves `UniformValue` (design 02's `Matrix3` covers `mat3`); color uniforms upload linear values |
 | `src/rendering/terrain/*`                                    | Modified | A transparent-phase item with `layer`, drawn through its entity's transform; `createTerrainRenderEcsSystem` removed; `createTerrainMesh` loses `position` and `angle` |
 | `src/ui/utilities/create-ui-canvas.ts`                       | Modified | World-space canvases are depth groups (screen-space canvas cameras lose their target in design 06 task 2.4) |
@@ -802,7 +802,8 @@ other designs, and all of them held. Changes made:
 - **Ownership stated** (§6.8): UI layout does write the transform and
   sprite and mask sizes; `layer` for meshes is on `MeshEcsComponent`
   (design 08 §6.2); moving `SpriteMaterial` onto material blocks is design
-  08 task 1.6.
+  05 Phase 3, which builds design 08 §6.3, with its two textures as draw
+  textures in bind group 3 (design 08 MS15).
 - **Costs named**: per-view sorting (§6.9), the six e2e specs (§6.10.2),
   the custom-shader and MSDF text changes (§6.6.4), `Matrix3x3`'s uniform
   and documentation users, text effect units in perspective (open

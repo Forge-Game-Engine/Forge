@@ -21,7 +21,6 @@
 | `src/lighting/shadows/`                                           | New      | The shadow map array, cascades per lit view, the tile allocator, cache validation, the shadow passes                                   |
 | `src/lighting/shaders/`                                           | New      | `forge/lights` and `forge/shadows` includes; `ForgeLight`; caster bias and pancaking for shadow variants                               |
 | `src/lighting/feature.ts`                                         | New      | `lighting(options)`: the pipeline feature (design 06) that adds passes, extraction, includes and view block fields                     |
-| `src/rendering/gpu-scene/`                                        | Modified | The per-frame change list records each changed slot's previous and new bounding sphere (§6.5.6; cross-doc for design 06)               |
 | `e2e/specs/`, `e2e/golden/`, `e2e/allocation/`, `bench/`          | New      | §6.10                                                                                                                                  |
 | `documentation-site/docs/docs/lighting/` (new)                    | New      | `index.md`, `lights.md`, `shadows.md`, `light-units-and-exposure.md`                                                                   |
 | `documentation-site/src/pages/demos/lighting-and-shadows/` (new)  | New      | Demo with every light type and shadows; an entry in `documentation-site/src/data/demos.ts`                                             |
@@ -166,8 +165,8 @@ budget.
 | --- | -------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---- |
 | 4.1 | Tile allocator       | §6.5.4: a quadtree per local layer; ranking by priority and largest projected size; hysteresis; previous tiles kept      | M    |
 | 4.2 | Spot and point tiles | Widened projections with real depth in the border; face selection; lookups clamped to tiles; clearing a tile with a quad | M    |
-| 4.3 | Shadow cache         | §6.5.6: per-world entries, stored values, the change list, hooked casters, deformation, reallocation and context restore | L    |
-| 4.4 | Change list spheres  | The GPU scene's change list records previous and new bounding spheres (design 06, cross-doc)                             | S    |
+| 4.3 | Shadow cache         | §6.5.6: per-world entries, stored values, design 06's change list, hooked casters, deformation, reallocation and context restore | L    |
+| 4.4 | Kept tiles' casters  | §6.5.6: each entry records the dynamic caster slots its last render drew; while its tiles are kept, culling counts them as visible (design 06 §6.8.1, design 12 AN26) | S |
 
 **Definition of done:** B5 meets its budget; a still scene with eight
 shadowed spot lights renders no local shadow view after the first frame;
@@ -430,9 +429,9 @@ Each run:
 
 The arrays are scratch on the world's lighting state, fully rewritten each
 run (README §4.4). The system reads components and writes none. Hidden
-lights are dropped later, when lights are culled per view, using the same
+lights are dropped later, when lights are culled per view, using the
 per-frame hidden-subtree resolution design 06 §6.8.1 computes for meshes
-(cross-doc: it covers light entities too).
+and light entities.
 
 The lighting state is kept per world, beside the GPU scene (design 06
 §6.7.1), so two worlds sharing a render context never share tiles or
@@ -443,11 +442,12 @@ from components and is dropped with the world's GPU scene.
 
 A view is **lit** when its pipeline has `lighting()` and, after culling,
 one of its opaque, alpha-tested or transparent items uses a lit material
-(a `PbrMaterial`, or any material with `shadingModel: 'custom'`) (decision
-L17). This needs design 06 to cull every view before building the frame
-graph and to record the flag in its culling loop, while it writes the
-view's object index lists (cross-doc; design 06 §6.1 places culling in
-the GPU scene step before the build but doesn't say so per view).
+(decision L17): a `PbrMaterial`, with or without light and ambient hooks
+(design 10 PB35 removed the `shadingModel` option), or a custom material
+whose color sources include `forge/lights`, detected when it's created as
+design 08 §6.9 detects its other includes. Design 06 culls every view
+before building the frame graph and records the flag in its culling loop,
+while it writes the view's object index lists (design 06 §6.8.1).
 
 - Lit views get light data, clusters, directional lights in their view
   block, and cascades when a directional light casts shadows.
@@ -790,7 +790,9 @@ for slots (design 06 §6.7.1). An entry holds:
   its range; its depth bias; the tile rectangles;
 - whether its last render drew a **hooked** caster: one from a bin whose
   shadow variant runs a vertex hook or a surface hook (design 08 §6.8.3),
-  or one drawn from an instance stream (design 15's mesh particles).
+  or one drawn from an instance stream (design 15's mesh particles);
+- the **dynamic caster slots** its last render drew, from its shadow
+  views' culling.
 
 An entry is dropped, and its tiles freed, when its light is removed
 (§6.2.1) or stops casting shadows. A shadowed light that no lit view sees
@@ -817,12 +819,23 @@ when:
    (§6.8).
 
 The **change list** is the GPU scene's per-frame record (design 06
-§6.7.2, cross-doc) of slots whose transform row changed, slots added and
-removed (removed ones with their last sphere), slots that moved between
-bins or changed `castsShadows` (design 08 §6.2.2), slots whose
-alpha-tested shadow material's `version` changed, and slots whose
-deformation tick advanced (design 12 §6.14, cross-doc: the deformation
-extraction appends them), each with its previous and new sphere.
+§6.7.2) of slots whose transform row changed, slots added and removed
+(removed ones with their last sphere), slots that moved between bins or
+changed `castsShadows` (design 08 §6.2.2), slots whose alpha-tested shadow
+material's `version` changed, slots whose deformation tick advanced
+(design 12 §6.14 stamps it), and slots whose shadow variant became ready
+(design 08 §6.10.1: a caster that becomes drawable counts as entering),
+each with its previous and new sphere.
+
+**Casters seen only through a kept tile.** A tile that isn't re-rendered
+has no shadow view this frame, so culling wouldn't count its casters as
+seen, and an animated character visible only through its cached shadow
+would stop being sampled (design 12 AN20), never deform, and so never
+invalidate the tile. While an entry's tiles are kept, design 06's
+visibility feedback therefore writes `lastVisibleFrame` for the dynamic
+caster slots its last render drew. The character keeps animating, its
+deformation tick advances, and rule 4 re-renders the tile. Cost: one store
+per dynamic caster of a kept tile.
 
 Cost: rules 1 to 3 are comparisons per shadowed light. Rule 4 is sphere
 tests proportional to changed slots times cached lights, zero in a still
@@ -890,12 +903,13 @@ Design 08's `forge_light` hook receives:
 
 ```glsl
 struct ForgeLight {
-  vec3 direction;     // unit, from the surface towards the light, world orientation
-  vec3 color;         // the light's linear color, unitless
-  float illuminance;  // lux on a surface facing the light: E for directional, I · window · cone / d² otherwise
-  float shadow;       // 0 (fully shadowed) to 1 (lit); 1 for unshadowed lights
-  float distance;     // to the light's center; 0 for directional
-  int type;           // FORGE_LIGHT_DIRECTIONAL, FORGE_LIGHT_POINT, FORGE_LIGHT_SPOT
+  vec3 direction;      // unit, from the surface towards the light, world orientation
+  vec3 color;          // the light's linear color, unitless
+  float illuminance;   // lux on a surface facing the light: E for directional, I · window · cone / d² otherwise
+  float shadow;        // 0 (fully shadowed) to 1 (lit); 1 for unshadowed lights
+  float distance;      // to the light's center; 0 for directional
+  float angularRadius; // radians, from the shaded point: asin(min(radius / distance, 1)) for point and spot, angularDiameter / 2 for directional, 0 without a size
+  int type;            // FORGE_LIGHT_DIRECTIONAL, FORGE_LIGHT_POINT, FORGE_LIGHT_SPOT
 };
 ```
 
@@ -904,7 +918,10 @@ cell's lights), samples the shadow before calling the hook, and sums the
 results. The physically based contribution is
 `f · light.color · light.illuminance · light.shadow · max(dot(n, l), 0)`;
 a toon material can instead quantize `dot(normal, direction) * shadow`
-without reimplementing clustering or shadows. `illuminance` is one value
+without reimplementing clustering or shadows. The loop fills
+`angularRadius` from the light data it already reads, so a light hook
+that calls design 10's `forge_pbrLight` keeps the widened highlight of a
+light with a size (design 10 §6.6.4). `illuminance` is one value
 because the falloff is part of the light's physics; a stylized falloff can
 be built from `distance`.
 
@@ -1087,7 +1104,7 @@ designs and acted on. Changes made:
 - **Gaps filled**: `priority` is a setting; the four-directional-light
   limit and the choice of the shadowed one are stated (L8); units say
   illuminance, not radiance; `ForgeLight` carries `color` and
-  `illuminance` (cross-doc for design 08 §6.8.4); L1 names Godot's GPU
+  `illuminance` (design 08 §6.8.4 now says so); L1 names Godot's GPU
   clusters and its WebGL2 renderer, which isn't clustered; L4 names the
   spot convention of Three.js and Unity's HD render pipeline.
 - **Tests added**: the 16-unit budget, the cache after context loss,

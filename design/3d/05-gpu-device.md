@@ -7,7 +7,7 @@
 | **Engine version at time of writing** | `0.26.1`                                                                                              |
 | **Program**                           | [Forge 3D](./README.md), milestone M2                                                                 |
 | **Depends on**                        | Nothing in this program; lands before [06 Render pipeline](./06-render-pipeline.md)                   |
-| **Related**                           | [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md) (bind groups, shader variants), [13 Post-processing](./13-post-processing-and-anti-aliasing.md) (MSAA resolve) |
+| **Related**                           | [07 2D on the render pipeline](./07-2d-on-the-render-pipeline.md) (instance locations, the mask table), [08 Meshes, materials and shaders](./08-meshes-materials-and-shaders.md) (bind groups, shader variants, material blocks built in Phase 3), [09 Lighting](./09-lighting-and-shadows.md) and [10 PBR](./10-pbr-and-environment-lighting.md) (engine texture units, the restore notification), [11 glTF and asset lifetime](./11-gltf-and-asset-lifetime.md) (asynchronous restore, samplers, integer vertex formats), [12 Animation](./12-skeletal-and-morph-animation.md) (the second joint set), [13 Post-processing](./13-post-processing-and-anti-aliasing.md) (MSAA resolve, alpha-to-coverage, the readback slot) |
 
 ## 0. Targeted modules
 
@@ -16,12 +16,15 @@
 | `src/rendering/device/` (new)                             | New      | `GpuDevice`, buffers, textures, samplers, pipelines, bind groups, render passes, state cache, capabilities, counters |
 | `src/rendering/render-context.ts`                         | Modified | Creates and owns the device; extensions and limits move to `device.capabilities`; `clearStrategy` removed in design 06 |
 | `src/rendering/gpu-resource-registry.ts`                  | Modified | Becomes the device's registry of every GL object it created                                                      |
-| `src/rendering/texture.ts`, `owned-texture.ts`, `texture-cache.ts` | Modified | `Texture` wraps a `GpuTexture` and a `GpuSampler`; mipmaps, color space, cube, array and compressed formats   |
+| `src/rendering/texture.ts`, `owned-texture.ts`, `texture-cache.ts` | Modified | `Texture` wraps a `GpuTexture` and a `GpuSampler`; `withSampler`; sampler options replace `filter` and `wrap`; mipmaps, color space, cube, array and compressed formats |
 | `src/rendering/render-target.ts`, `ping-pong-target.ts`   | Modified | Built on device textures; depth attachments and MSAA                                                             |
 | `src/rendering/geometry/geometry.ts`                      | Modified | Built on device buffers; replaced by meshes in design 08                                                         |
-| `src/rendering/materials/shader-program.ts`, `material.ts` | Modified | Programs linked by the device; uniform blocks bound through bind groups                                          |
+| `src/rendering/materials/shader-program.ts`, `material.ts` | Modified | Programs linked by the device; uniform blocks bound through bind groups; material blocks generated from loose uniforms (design 08 §6.3, task 3.5) |
+| `src/rendering/shaders/pre-processing/`                   | Modified | Material block generation: explicit precision, struct and macro resolution, literal sizes, placement (design 08 §6.3.2) |
 | `src/rendering/fullscreen-pass.ts`, `systems/*`, `terrain/*`, `src/text/rendering/*` | Modified | Draw through a render pass encoder instead of raw GL                            |
-| `documentation-site/docs/docs/rendering/`                 | Modified | `textures.md` (formats, mipmaps, color space), `context-loss.md`, a new `gpu-device.md` for custom passes        |
+| `e2e/fixtures/scenes/material-uniform-array.ts`, `material-unused-uniform.ts` and their specs | Modified | Read the material block back with `getBufferSubData` and the driver's `getActiveUniforms` offsets (task 3.5); their images don't change |
+| `AGENTS.md`                                               | Modified | "GPU Resources and Context Loss": `isContextLost` stays true until asynchronous restore sources finish, and `onContextRestored` is raised after the whole restore (§6.10); "Test Conventions": the `Material` mock paragraph describes material blocks (task 3.5) |
+| `documentation-site/docs/docs/rendering/`                 | Modified | `textures.md` (formats, mipmaps, color space, sampler options), `context-loss.md`, `material-uniforms.md` (rewritten for blocks, task 3.5), a new `gpu-device.md` for custom passes |
 
 ---
 
@@ -73,7 +76,7 @@ second implementation of that interface.
 
 ### Out of scope
 
-- **The WebGPU backend.** A later design (README open question 5).
+- **The WebGPU backend.** A later design (README open question 6).
 - **Compute shaders and storage buffers.** WebGL2 has neither.
 - **Command recording on WebGL2.** Decision D2.
 - **Occlusion queries for culling.** They need a frame of latency and a
@@ -118,23 +121,33 @@ MSAA-resolved mesh into a texture through the encoder only.
 | --- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 3.1 | Resources                  | `Texture`, `RenderTarget`, `PingPongTarget`, `Geometry`, `ShaderProgram`, `Material` on device objects                          | L    |
 | 3.2 | Draw sites                 | The render system, present, bloom, blur, tone mapping, terrain, text and full-screen passes draw through passes and encoders   | L    |
-| 3.3 | Context loss               | §6.10: the device rebuilds everything; per-wrapper rebuild code deleted                                                         | M    |
+| 3.3 | Context loss               | §6.10: the device rebuilds everything, waits for asynchronous restore sources, then raises one restore notification; per-wrapper rebuild code deleted | M    |
 | 3.4 | Escape hatch               | `renderContext.gl` stays, with `device.resetState()` for game code that calls GL directly                                       | S    |
+| 3.5 | Material blocks            | Design 08 §6.3: block generation with explicit `highp`, struct and macro resolution, literal sizes and placement; std140 scatter in `setUniform`, with copy semantics; shared block buffers with CPU mirrors; `SpriteMaterial` and today's custom-material demos on blocks; the `material-uniform-array` and `material-unused-uniform` scenes and specs rewritten to read the block back; `material-uniforms.md`; `AGENTS.md`'s `Material` mock paragraph | L |
 
 The canvas keeps its current context attributes (`antialias: true`) in
 this phase: 2D still draws into it directly until design 06 Phase 2 adds
 the output pass and offscreen MSAA (§6.11).
 
 **Definition of done:** every e2e spec and golden passes with no changed
-images; nothing outside `src/rendering/device` calls `gl` directly except
-the documented escape hatch; B7 is no slower than the baseline.
+images (the `material-uniform-array` and `material-unused-uniform` scenes
+are rewritten to read the material block, and their images don't change);
+nothing outside `src/rendering/device` calls `gl` directly except the
+documented escape hatch; B7 is no slower than the baseline.
+
+Uploads stop color-converting in this phase (§6.4), which changes images
+that carry color chunks. The e2e fixtures load only
+`assets/fonts/default/default.png`, which has none, so no golden changes.
+About 1,500 demo and docs-site PNGs (the Kenney packs) carry `gAMA` 1/2.2
+and 14 carry `cHRM`; browsers converted those on upload and no longer do,
+so those demos' sprites change slightly. The phase's changelog says so.
 
 ### Phase 4: Parallel compilation, readback and profiling
 
 | #   | Task                       | Description                                                                                                  | Size |
 | --- | -------------------------- | ------------------------------------------------------------------------------------------------------------ | ---- |
 | 4.1 | Asynchronous pipelines     | `createRenderPipelineAsync` with `KHR_parallel_shader_compile`; link-time binding deferred until completion; errors mapped to source lines | M |
-| 4.2 | Asynchronous readback      | `readTextureAsync` through a pixel buffer and a fence, for picking and tests                                 | S    |
+| 4.2 | Asynchronous readback      | §6.13: `readTextureAsync` through a pixel buffer and a fence, polled on a timer when no frame runs; a reusable readback slot without a promise per read. Users: tests, environment harmonics (design 10), auto exposure (design 13) | S |
 | 4.3 | Counters and GPU timing    | §6.12                                                                                                        | S    |
 | 4.4 | Guide                      | `gpu-device.md`: resources, passes and encoders for custom passes; the escape hatch                          | M    |
 
@@ -154,10 +167,10 @@ frame after loading; counters feed the design 01 runner.
 | D5  | Format names                                | (a) WebGPU's format names (`rgba8unorm-srgb`, `depth24plus`); (b) GL enums; (c) Forge's own names                                     | (a)    | Precise, documented and portable to the future backend. The existing `RENDER_TARGET_FORMAT` (`ldr`/`hdr`) maps onto `rgba8unorm` and `rgba16float`.                                                                                                                                                                   |
 | D6  | MSAA                                        | (a) Multisampled renderbuffers resolved with `blitFramebuffer` into a texture of the same format; (b) the canvas's own antialiasing      | (a)    | WebGL2 can't sample a multisampled texture, so offscreen MSAA must be renderbuffers plus a resolve, which requires matching formats. The canvas's antialiasing only applies to drawing straight into the canvas, which a linear, HDR pipeline doesn't do (design 06). The device hides the renderbuffer behind a texture with `sampleCount > 1`, as WebGPU does. |
 | D7  | Direct GL access                            | (a) Keep `renderContext.gl`, with `device.resetState()` after direct calls; (b) remove it                                                | (a)    | Games and tests sometimes need raw GL (a custom extension, a debugging read). Documented as WebGL-only, and as unavailable on a future WebGPU backend.                                                                                                                                                                 |
-| D8  | Validation                                  | (a) Validate when pipelines, bind groups and passes are created; (b) also validate every draw                                           | (a)    | Creation-time checks (attachment formats match the pipeline, layouts match, sizes fit limits) catch the same mistakes at no per-draw cost. GL errors are only read after compiling and linking, never in the draw path (`getError` stalls).                                                                          |
+| D8  | Validation                                  | (a) Validate when pipelines, bind groups and passes are created; (b) also validate every draw                                           | (a)    | Creation-time checks (attachment formats match the pipeline, layouts match, sizes fit limits, alpha-to-coverage only with an alpha target at location 0) catch the same mistakes at no per-draw cost. They include WebGPU's rules that WebGL2 doesn't enforce, so a mistake shows before the WebGPU backend exists. GL errors are only read after compiling and linking, never in the draw path (`getError` stalls). |
 | D9  | Per-frame dynamic data                      | (a) Written into CPU-side staging arrays during the frame and uploaded with one `bufferSubData` per buffer before the passes that read them; (b) a ring of buffer regions with fences | (a) | `bufferSubData` is already correct when the GPU is still reading earlier contents (the driver handles it), and WebGPU's `writeBuffer` has the same guarantee. Fences and a growing ring add complexity for no correctness gain. One upload per buffer per frame keeps the call count low. |
 | D10 | Attribute locations                         | (a) A fixed table of locations per vertex semantic, bound before linking; (b) matched by name per pipeline                              | (a)    | WebGPU uses numbered locations, and a fixed table means one vertex array layout serves every pipeline that reads the same mesh. Shaders still don't need `layout(location)` qualifiers: the device calls `bindAttribLocation` from the table.                                                                         |
-| D11 | Lit 3D on devices without float color buffers | (a) Require `EXT_color_buffer_float` or `EXT_color_buffer_half_float` for HDR views, with a clear error; (b) an LDR shading path that tone maps in every material | (a), decided with the product owner | One shading path to build, test and keep fast. Nearly every WebGL2 device has one of the extensions. 2D views render to 8-bit sRGB targets and are unaffected. |
+| D11 | Lit 3D on devices without float color buffers | (a) Require `EXT_color_buffer_float` or `EXT_color_buffer_half_float` for HDR views, with a clear error; (b) an LDR shading path that tone maps in every material | (a), decided with the product owner | One shading path to build, test and keep fast. Nearly every WebGL2 device has one of the extensions. 2D views render to 8-bit sRGB targets and are unaffected. Design 13 asks to extend the requirement to 2D cameras with bloom, tone mapping or auto exposure, which need an HDR view (its PP29 and open question 1); that amendment waits for the product owner (README open question 1). |
 
 ---
 
@@ -261,9 +274,43 @@ corner texture coordinates start from.
 
 Samplers: `minFilter`, `magFilter`, `mipmapFilter`, `addressModeU/V/W`
 (`repeat`, `mirror-repeat`, `clamp-to-edge`), `maxAnisotropy`, `lodMinClamp`,
-`lodMaxClamp` and `compare` (for shadow maps). The public `Texture` class
-pairs a `GpuTexture` with a sampler; `TextureOptions` gains `mipmaps`,
-`anisotropy`, `colorSpace: 'srgb' | 'linear'` and the extra wrap modes.
+`lodMaxClamp` and `compare` (for shadow maps), deduplicated by descriptor.
+
+The public `Texture` class pairs a `GpuTexture` with a sampler.
+`TextureOptions` gains `mipmaps` and `colorSpace: 'srgb' | 'linear'`, and
+its single `filter` and `wrap` are replaced by public sampler options,
+which glTF samplers need (separate S and T wrapping, separate filters,
+`TextureSettingsTest`):
+
+```ts
+interface SamplerOptions {
+  addressModeU?: 'repeat' | 'mirror-repeat' | 'clamp-to-edge'; // default 'clamp-to-edge'
+  addressModeV?: 'repeat' | 'mirror-repeat' | 'clamp-to-edge'; // default 'clamp-to-edge'
+  magFilter?: 'nearest' | 'linear';                            // default 'linear'
+  minFilter?: 'nearest' | 'linear';                            // default 'linear'
+  mipmapFilter?: 'nearest' | 'linear' | null;                  // default 'linear' with mipmaps, else null
+  maxAnisotropy?: number;                                      // default 1
+}
+
+const pixelArt = texture.withSampler({ magFilter: 'nearest', minFilter: 'nearest' });
+```
+
+`texture.withSampler(options)` returns a `Texture` that shares the GPU
+texture with another sampler (deduplicated by the device). It owns no GPU
+memory: disposing it releases nothing, and disposing one whose source
+belongs to design 11's asset store throws, since the store owns the
+source. One image sampled two ways is uploaded once (design 11 GA23).
+Today's `filter: 'nearest'` becomes `magFilter` and `minFilter`
+`'nearest'`, and `wrap: 'repeat'` becomes both address modes `'repeat'`;
+the changelog maps them.
+
+**One depth texture on two units.** A depth texture may be bound on two
+units at once with two sampler objects, one with `compare` and one
+without: a sampler object's compare mode overrides the texture's, so each
+unit is consistent. A depth texture sampled without comparison must use
+`nearest` filtering (OpenGL ES 3.0), which the device validates when the
+bind group is created. Design 09's shadow map array is read this way
+(comparison for lookups, raw depths for the soft-shadow blocker search).
 
 ### 6.5 Render pipelines
 
@@ -287,12 +334,26 @@ const pipeline = device.createRenderPipeline({
 
 - **Attribute locations** come from a fixed table (decision D10):
   `position` 0, `normal` 1, `tangent` 2, `uv0` 3, `uv1` 4, `color0` 5,
-  `joints0` 6, `weights0` 7, and 8 to 15 for per-instance data (sprites,
-  text). Shaders name inputs `a_position`, `a_normal`, ...; the device binds
-  them before linking.
-- Attribute formats include normalized and integer types (`unorm8x4`,
-  `snorm16x4`, `uint16x2`, `float16x4`...) so meshes can use quantized
-  vertex data (design 11's `KHR_mesh_quantization`).
+  `joints0` 6, `weights0` 7, `joints1` 8 and `weights1` 9 (design 12's
+  eight-influence skinning), and 8 to 15 for per-instance data: sprite
+  layouts use 8 to 13 and text layouts 8 to 14 (design 07 §6.2.2). The
+  second joint set overlaps the per-instance range; no pipeline reads
+  both, since skinned meshes draw from GPU scene slots, not instance
+  streams. Shaders name inputs `a_position`, `a_normal`, ...; the device
+  binds them before linking.
+- Attribute formats include float, normalized and integer types
+  (`float16x4`, `unorm8x4`, `snorm16x4`, `uint16x2`, `sint16x4`...) so
+  meshes can use quantized vertex data (design 11's
+  `KHR_mesh_quantization`). Only normalized formats convert in vertex
+  fetch, to floats in `[0, 1]` or `[-1, 1]`. Integer formats (`uint8x4`,
+  `sint16x4`, `uint16x2`, ...) are read as integers on both backends:
+  WebGL2 binds them with `vertexAttribIPointer` and the shader declares
+  the input as `uvec` or `ivec`. No format reads integers as floats,
+  because WebGPU has none; design 08's integer-attribute mesh features
+  convert such positions and UVs in `forge/vertex`.
+- `multisample.alphaToCoverage` requires `targets[0]` to exist and its
+  format to have an alpha channel, or creating the pipeline throws, as
+  WebGPU validates (D8; design 13 §6.4.2 relies on it).
 - Pipelines with identical state share one entry; programs with identical
   sources and defines share one link.
 - `frontFace` is pipeline state, so a mirrored object (negative scale
@@ -308,10 +369,13 @@ const pipeline = device.createRenderPipeline({
 
 | Group | Name     | Holds                                                                                          | Changes            |
 | ----- | -------- | ---------------------------------------------------------------------------------------------- | ------------------ |
-| 0     | Frame    | Time, frame index, exposure; the BRDF lookup table                                             | Once per frame     |
-| 1     | View     | Camera matrices and position (high and low parts), viewport; light, cluster, shadow and environment textures (design 09, 10) | Once per view |
+| 0     | Frame    | Time, frame index; the BRDF lookup table (design 10)                                           | Once per frame     |
+| 1     | View     | Camera matrices and position (high and low parts), viewport, exposure and environment values (design 10); the cluster, light data, shadow map and environment textures (designs 09, 10), ambient occlusion (design 13), the 2D mask table (design 07) | Once per view |
 | 2     | Material | The material's parameter block and textures                                                     | Per material       |
-| 3     | Draw     | The draw's offset into the view's object index list (design 06); the GPU scene, skinning and morph textures | Per draw     |
+| 3     | Draw     | The draw's offset into the view's object index list (design 06); the GPU scene, skinning and morph textures; per-draw fragment textures of a material kind that declares them (a sprite batch's texture and emissive map, design 08 MS15) | Per draw |
+
+Exposure is in the view group, not the frame group, because each camera
+has its own (design 10 §6.13).
 
 GLSL ES 3.00 can't declare bindings in the shader, so the device assigns
 them when it links:
@@ -323,12 +387,21 @@ them when it links:
   is `MAX_TEXTURE_IMAGE_UNITS` per shader stage, which is 16 on many
   devices (Apple GPUs through ANGLE's Metal backend, many Android GPUs),
   not the 32 combined units. The engine reserves at most 7 fragment units
-  (BRDF lookup, cluster data, light data, cascade shadows, the local
-  shadow atlas, environment, ambient occlusion), leaving a material at
-  least 9 on a 16-unit device and more where the device reports more.
-  Vertex-stage units (GPU scene, skinning, morph targets) are a separate
-  budget. Design 08 states what a material does when it would exceed its
-  share.
+  for lit programs: the BRDF lookup table and the environment cube
+  (design 10); cluster data (headers and 16-bit indices in one `r32uint`
+  texture), light data (the lights and their shadow records), and the
+  shadow map array twice, through a comparison sampler and through a
+  `nearest` sampler without comparison for the soft-shadow blocker search
+  (design 09); and ambient occlusion (design 13). That leaves a material
+  at least 9 on a 16-unit device and more where the device reports more.
+  The 2D mask table (design 07 §6.4.1) is an engine unit only in programs
+  that include `spriteMask`, which declare none of the lighting textures.
+  A material's share also covers its kind's per-draw textures (group 3).
+  Vertex-stage units (GPU scene, object index list, skinning, morph
+  targets) are a separate budget. A hooked or custom material whose
+  required samplers exceed its share throws when it's created (design 08
+  §6.3.5, MS20); `PbrMaterial` drops optional extension maps instead
+  (design 10 §6.4).
 - The unit for each sampler is set once with `uniform1i` after linking. A
   draw then binds only buffer ranges and textures, never uniform locations.
 
@@ -406,6 +479,34 @@ refill lazily. The per-wrapper rebuild code that exists today (textures,
 render targets, geometry, programs) is deleted. The `webgl-context-loss`
 e2e spec keeps passing, and gains a 3D scene.
 
+**Asynchronous restore sources.** A texture created from encoded bytes
+(design 11's images and KTX2 files, kept as a `Blob`) registers a source
+that decodes or transcodes asynchronously. On restore the device gives
+each such texture empty storage of its size and format at once, so render
+targets and bind groups that use it are valid, then decodes and uploads
+it. Synchronous sources (pixels, typed arrays, render targets) restore as
+today.
+
+**When the context counts as restored.** `renderContext.isContextLost`
+stays `true` until every asynchronous source has finished, so engine draw
+functions keep returning early, and `onContextRestored` is raised only
+then. The device restores against the live context internally while the
+public flag is still `true`. Resources game code creates in that window
+record their data, as they do while the context is lost, and are created
+when the restore finishes. Today `_restore` clears the flag first (line
+514) and raises the event after one synchronous pass (line 532,
+`src/rendering/render-context.ts`); this changes that order, and
+`AGENTS.md`'s "GPU Resources and Context Loss" says so.
+
+**The restore notification.** `onContextRestored` is the notification for
+owners of textures whose contents the GPU generated (design 10's BRDF
+lookup table, environment specular cubes and procedural bakes): it runs
+after every resource, asynchronous ones included, has been recreated, so
+they can regenerate from their sources. A source that fails (a worker
+refused by a tightened policy, for example) is reported with the
+restore's other failures, thrown together as today, and its texture stays
+empty.
+
 ### 6.11 Canvas context attributes
 
 Until design 06 Phase 2, the canvas keeps `antialias: true` and 2D keeps
@@ -426,7 +527,7 @@ is present and profiling is enabled (`device.profiler.enable()`), each
 render pass records GPU time, reported per pass label a few frames later.
 Both feed the design 01 runner and the stats overlay (design 06).
 
-### 6.13 Asynchronous compilation
+### 6.13 Asynchronous compilation and readback
 
 With `KHR_parallel_shader_compile`, `createRenderPipelineAsync` compiles and
 links without waiting, then polls `COMPLETION_STATUS_KHR` once per frame.
@@ -434,6 +535,21 @@ Only when the link is complete does it query block indices, call
 `uniformBlockBinding` and set sampler units, since those calls would
 otherwise block until the link finishes. A pipeline is usable once that's
 done; design 08 §6.10 says what draws do meanwhile.
+
+**Readback** never blocks. `readTextureAsync(texture, region)` copies into
+a pixel buffer with `readPixels`, inserts a fence, and resolves its
+promise once the fence has signaled, when it copies the bytes out with
+`getBufferSubData`. It polls the fence each frame, and on a timer while
+no frame runs, so a read started before `game.run()` (design 10 creates
+environment maps then) still resolves. Users: tests, and design 10's
+environment harmonics (an `rgba8unorm` read of a packed cube level).
+
+A **readback slot** is the allocation-free form for reads that repeat
+every frame: `device.createReadbackSlot(byteSize)` owns a pixel buffer and
+a fence, `slot.read(texture, region)` starts a copy, and
+`slot.poll(out)` copies the bytes into `out` and returns `true` once the
+fence has signaled. There is no promise per read. Design 13's auto
+exposure keeps one per camera.
 
 ### 6.14 Performance
 
@@ -454,10 +570,18 @@ done; design 08 §6.10 says what draws do meanwhile.
   vertex array caching, staging uploads, validation errors.
 - Browser tests (e2e): every format creates, uploads and samples; MSAA
   resolve; depth test; compressed formats when the GPU has them; parallel
-  compile; asynchronous readback; pixel storage (a normal map's values
-  read back unchanged).
+  compile; asynchronous readback, including a read started before the
+  first frame and a readback slot polled over several frames; pixel
+  storage (a normal map's values read back unchanged); integer vertex
+  formats read as integers; one depth texture bound on two units, with a
+  comparison sampler and a `nearest` sampler without comparison, on every
+  ANGLE backend CI offers; alpha-to-coverage without an alpha target at
+  location 0 rejected.
 - The existing e2e and golden suites, unchanged, prove the 2D port.
-- Context loss: lose and restore with every resource kind alive.
+- Context loss: lose and restore with every resource kind alive;
+  `isContextLost` stays `true` and `onContextRestored` waits until an
+  asynchronous source has finished; a resource created during the restore
+  is created when it finishes.
 
 ---
 
@@ -486,3 +610,14 @@ PlayCanvas and Filament). Changes made:
 - The first draft's claim that draw sites leave blending enabled was
   wrong (they disable it); corrected.
 - The LDR fallback is dropped (D11), decided with the product owner.
+
+Changes from designs 07 to 15, applied when the program was reconciled:
+material blocks are built here (task 3.5, design 08 MS1); exposure moved
+to the view group and the seven engine units are design 09's packed set;
+group 3 can hold per-draw textures; sampler options and `withSampler`
+(design 11); asynchronous restore sources and one restore notification
+(designs 10 and 11); integer vertex formats read as integers (design 11);
+`joints1` and `weights1` at 8 and 9 (design 12); the sprite and text
+instance locations and the mask table (design 07); alpha-to-coverage
+validation and the readback slot (design 13); the Phase 3 definition of
+done names the images whose color chunks are no longer applied.
