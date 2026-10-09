@@ -2,6 +2,7 @@ export * from './clamp.js';
 export * from './degrees-to-radians.js';
 export * from './radians-to-degrees.js';
 export * from './lerp.js';
+export * from './geometry/index.js';
 export * from './matrices/index.js';
 export * from './quaternion.js';
 export * from './random.js';

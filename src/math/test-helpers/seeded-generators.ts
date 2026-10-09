@@ -1,7 +1,9 @@
+import type { BoundingBox } from '../geometry/bounding-box.js';
+import type { Ray } from '../geometry/ray.js';
 import { Mat4, Matrix4 } from '../matrices/matrix4.js';
 import { Quat, Quaternion } from '../quaternion.js';
 import { Random } from '../random.js';
-import type { Vector3 } from '../vector3.js';
+import { Vec3, Vector3 } from '../vector3.js';
 
 /** How many seeded cases a property test runs by default. */
 export const defaultPropertyCases = 1000;
@@ -134,4 +136,31 @@ export const randomTransform = (
   const matrix = Mat4.fromTransform(Mat4.create(), position, rotation, scale);
 
   return { position, rotation, scale, matrix };
+};
+
+/**
+ * Creates a ray with a random origin and a uniformly distributed direction.
+ * @param random - The seeded generator.
+ * @param extent - The largest absolute value of each origin component.
+ * @returns A new ray.
+ */
+export const randomRay = (random: Random, extent: number = 10): Ray => ({
+  origin: randomVec3(random, -extent, extent),
+  direction: randomUnitVec3(random),
+});
+
+/**
+ * Creates a non-empty box inside `[-extent, extent)` on each axis.
+ * @param random - The seeded generator.
+ * @param extent - The largest absolute value of each coordinate.
+ * @returns A new box.
+ */
+export const randomBox = (random: Random, extent: number = 10): BoundingBox => {
+  const a = randomVec3(random, -extent, extent);
+  const b = randomVec3(random, -extent, extent);
+
+  return {
+    min: Vec3.min(Vec3.clone(a), b),
+    max: Vec3.max(a, b),
+  };
 };
