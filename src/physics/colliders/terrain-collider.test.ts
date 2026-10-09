@@ -61,6 +61,19 @@ describe('TerrainCollider', () => {
       expect(collider.type).toBe('terrain');
     });
 
+    it('should give a flat terrain the moment of inertia of its rectangular slab', () => {
+      const collider = new TerrainCollider(
+        [
+          { x: 0, y: 0 },
+          { x: 4, y: 0 },
+        ],
+        2,
+      );
+
+      expect(collider.mass).toBeCloseTo(8);
+      expect(collider.momentOfInertia).toBeCloseTo((8 * (4 * 4 + 2 * 2)) / 12);
+    });
+
     it('should set bottomY to depth below the point with the least y', () => {
       const collider = new TerrainCollider(
         [

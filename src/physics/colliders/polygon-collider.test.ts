@@ -63,6 +63,18 @@ describe('PolygonCollider', () => {
       expect(triangle.localCenterOfMass.y).toBeCloseTo(4 / 3);
     });
 
+    it('should give a box the moment of inertia m(w² + h²) / 12', () => {
+      const box = new PolygonCollider([
+        { x: 0, y: 0 },
+        { x: 4, y: 0 },
+        { x: 4, y: 2 },
+        { x: 0, y: 2 },
+      ]);
+
+      expect(box.mass).toBeCloseTo(8);
+      expect(box.momentOfInertia).toBeCloseTo((8 * (4 * 4 + 2 * 2)) / 12);
+    });
+
     it('should compute its moment of inertia about its centroid, wherever it is authored', () => {
       const vertices = [
         { x: 0, y: 0 },

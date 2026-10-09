@@ -66,11 +66,20 @@ export function calculateNormals(vertices: readonly Vector2[]): Vector2[] {
 }
 
 /**
- * Calculates the moment of inertia of a polygon about its own centroid, for
- * a given mass.
+ * Calculates the polar moment of inertia of a uniform-density polygon about
+ * its own centroid, for a given mass. A rectangle gets `m(w² + h²) / 12`.
+ *
+ * The polygon is split into a fan of triangles from the centroid. Triangle
+ * `(0, pᵢ, pᵢ₊₁)` has twice-area `cᵢ = pᵢ × pᵢ₊₁` and polar moment
+ * `ρ · cᵢ · (pᵢ·pᵢ + pᵢ·pᵢ₊₁ + pᵢ₊₁·pᵢ₊₁) / 12` about the fan's apex. The
+ * mass is `ρ · Σcᵢ / 2`, so `ρ = 2m / Σcᵢ`, which gives `m / 6` times the
+ * area-weighted sum. `cᵢ` keeps its sign, so a triangle that faces away
+ * from the centroid (in a concave polygon such as a terrain silhouette)
+ * subtracts its share, and either winding order gives the same result.
  * @param mass - The mass of the polygon.
  * @param verticesAboutCentroid - The polygon's vertices, in order, already
  * expressed relative to their own centroid.
+ * @returns The moment of inertia about the centroid.
  */
 export function calculatePolygonMomentOfInertia(
   mass: number,
@@ -82,7 +91,7 @@ export function calculatePolygonMomentOfInertia(
   for (let i = 0; i < verticesAboutCentroid.length; i++) {
     const current = verticesAboutCentroid[i];
     const next = verticesAboutCentroid[(i + 1) % verticesAboutCentroid.length];
-    const cross = Math.abs(Vec2.cross(current, next));
+    const cross = Vec2.cross(current, next);
 
     numerator +=
       cross *
@@ -92,7 +101,7 @@ export function calculatePolygonMomentOfInertia(
     denominator += cross;
   }
 
-  return (mass / 3) * (numerator / denominator);
+  return (mass / 6) * (numerator / denominator);
 }
 
 /**
