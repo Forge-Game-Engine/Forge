@@ -6,7 +6,7 @@
 | **Kind**                              | Feature and refactor                                                                  |
 | **Engine version at time of writing** | `0.26.1`                                                                              |
 | **Program**                           | [Forge 3D](./README.md), milestone M1                                                 |
-| **Related**                           | [04 Transforms](./04-transforms.md) (uses ticks, exclusions and stages), [06 Render pipeline](./06-render-pipeline.md) and [14 Physics 3D](./14-physics-3d.md) (use declared queries, journals, singletons and the fixed step) |
+| **Related**                           | [04 Transforms](./04-transforms.md) (uses ticks, exclusions and stages), [06 Render pipeline](./06-render-pipeline.md) and [14 Physics 3D](./14-physics-3d.md) (use declared queries, journals, singletons and the fixed step, including `fixedStepIndex`), [15 Audio, particles and picking](./15-audio-particles-and-picking-in-3d.md) (message streams) |
 
 ## 0. Targeted modules
 
@@ -17,7 +17,7 @@
 | `src/ecs/ecs-system.ts`                           | Modified | `without`, `queries`, `stage`; `QueryResult` gains `added`, `removed`, `lastRunTick`                    |
 | `src/ecs/stages.ts` (new)                         | New      | The built-in stages                                                                                     |
 | `src/ecs/ecs-world.ts` start-of-tick logic        | Removed  | Game-state groups become groups inside the `first` stage                                                 |
-| `src/common/time/Time.ts`                         | Modified | Fixed-step accumulator; `deltaTimeInSeconds` is the fixed step inside the fixed stages                  |
+| `src/common/time/Time.ts`                         | Modified | Fixed-step accumulator; `deltaTimeInSeconds` is the fixed step inside the fixed stages; `fixedStepIndex` |
 | `src/utilities/game.ts`, `create-game.ts`         | Modified | The world takes its clock                                                                               |
 | `src/input/**`                                    | Modified | Input manager as a singleton; stages; triggers latched for fixed steps                                  |
 | `src/states/**`                                   | Modified | State store in a component; groups inside `first`                                                      |
@@ -25,7 +25,7 @@
 | `src/rendering/utilities/resolve-instance-mask.ts`, `src/ui/systems/ui-text-input-system.ts` | Modified | Their `world.query` calls become declared queries                  |
 | Every engine system factory                       | Modified | Declares its stage                                                                                      |
 | `documentation-site/docs/docs/ecs/`               | Modified | `world.md`, `system.md`: declared queries, journals, ticks, stages, fixed step, singletons, what a system may keep |
-| `AGENTS.md`                                       | Modified | "Architecture" and "System Pattern": the state rule (README §4.4), stages, change ticks                 |
+| `AGENTS.md`                                       | Modified | "Architecture" and "System Pattern": the state rule (README §4.4), per-frame message streams, stages, change ticks |
 
 ---
 
@@ -134,7 +134,7 @@ same frame still sees the owner's stamp on its next run; journal tests pass.
 | 3.2 | Input manager, game states | `registerInputs` and `createGameState` keep their state in components                                             | S    |
 | 3.3 | Text shaping, text input   | Their closure state moves to components (§6.5)                                                                     | M    |
 | 3.4 | Audit                      | Every remaining entry in §6.5 assigned to the design that moves it; `onRegister`'s documentation stops suggesting state | S |
-| 3.5 | `AGENTS.md`                | The rule from README §4.4 and what a system may keep                                                              | S    |
+| 3.5 | `AGENTS.md`                | The rule from README §4.4, what a system may keep, and per-frame message streams (§6.5) beside "one writer per value" | S    |
 
 **Definition of done:** the §6.5 table has no entry without an owner; the
 ones this design owns are moved.
@@ -350,6 +350,17 @@ README §4.4, applied to systems:
   avoid allocating, on the service or singleton, never in module scope
   (module scope is shared by every world in the page).
 
+**Per-frame message streams** are the one named pattern beside "one
+writer per value". A message stream is an append-only list on a
+singleton that several systems append to in one frame. No system edits
+or removes an entry another appended; one owning system clears the
+stream once per frame, before the writers run; readers run after the
+writers. A stream holds events of the frame (what was hit, what to
+draw), not a value with an owner, so many appenders don't make many
+writers of one value. Design 06's debug-draw shape buffers and design
+15's `picking.hits` are message streams. Bevy's buffered messages work
+the same way.
+
 The audit of `0.26.1`:
 
 | Where                                              | What                                                                      | Kind                          | Moved by                                         |
@@ -403,11 +414,11 @@ being iterated.
 | Stage             | Engine systems                                                                                                     |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `first`           | Game state transitions, exit, scoped removal, enter                                                                |
-| `preUpdate`       | Input update; audio unlock                                                                                         |
+| `preUpdate`       | Input update; picking: pointer rays, hit testers and the pointer interaction system; UI input (navigation, toggles, sliders, scroll views) in `uiInputGroup` (design 15). No audio system: the mixer unlocks audio itself, from DOM gesture listeners (`src/audio/sound-mixer.ts`) |
 | `fixedUpdate`     | The game's fixed systems (forces, character movement)                                                              |
 | `fixedPostUpdate` | 2D and 3D physics (design 14); the input module's fixed-step latch reset (last)                                   |
 | `update`          | Game logic (the default); lifecycle and timers                                                                     |
-| `postUpdate`      | Animation sampling (design 12), UI layout, physics pose write-back and interpolation (design 14), transform propagation (design 04), camera controllers and follow, audio listener and emitters (design 15) |
+| `postUpdate`      | Animation sampling (design 12), UI layout, physics pose write-back and interpolation (design 14), transform propagation (design 04), camera controllers and follow, the sound system and particle simulation (design 15) |
 | `render`          | Extraction, the render pipeline (design 06)                                                                        |
 | `last`            | Input reset                                                                                                        |
 
@@ -424,6 +435,7 @@ place a system elsewhere, and orders systems within a group with
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `fixedTimestepInSeconds` (settable) | The step, default `1 / 60`                                                                                        |
 | `fixedStepsThisFrame`               | How many times the fixed stages run this frame                                                                    |
+| `fixedStepIndex`                    | The 0-based index of the running fixed step within the frame, `0` to `fixedStepsThisFrame − 1`; meaningful while `isInFixedStep` |
 | `fixedInterpolationAlpha`           | The leftover fraction of a step, in `[0, 1)`, for interpolating presentation between the last two steps           |
 | `deltaTimeInSeconds`                | Inside the fixed stages, the fixed step; elsewhere, the frame delta, as today                                     |
 | `isInFixedStep`                     | Whether the fixed stages are running                                                                              |
@@ -440,7 +452,9 @@ frame at four 60 Hz steps.
 
 The world runs `fixedUpdate` then `fixedPostUpdate`,
 `time.fixedStepsThisFrame` times, between `preUpdate` and `update`, setting
-`time.isInFixedStep` around the span.
+`time.isInFixedStep` around the span and `time.fixedStepIndex` before each
+step. Design 14 uses `fixedStepsThisFrame − fixedStepIndex` to spread an
+animated body's per-frame motion over the frame's remaining steps.
 
 #### 6.7.3 Input
 
@@ -480,7 +494,8 @@ frame of delay.
   can't be ordered against a group in another stage.
 - Fixed step: steps per simulated second at several frame rates, the
   first frame, the cap, `timeScale`, alpha, `deltaTimeInSeconds` inside and
-  outside the span, triggers seen once.
+  outside the span, `fixedStepIndex` counting `0` to
+  `fixedStepsThisFrame − 1` within a frame, triggers seen once.
 - Allocation spec (design 01) for a still 2D scene and a particle scene:
   no ECS allocations.
 

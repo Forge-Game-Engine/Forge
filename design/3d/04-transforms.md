@@ -7,23 +7,24 @@
 | **Engine version at time of writing** | `0.26.1`                                                                                                |
 | **Program**                           | [Forge 3D](./README.md), milestone M1                                                                   |
 | **Depends on**                        | [02 Math](./02-math.md), [03 ECS foundations](./03-ecs-foundations.md)                                 |
-| **Related**                           | [06 Render pipeline](./06-render-pipeline.md) (GPU scene uploads on `changedTick`), [07 2D on the render pipeline](./07-2d-on-the-render-pipeline.md), [14 Physics 3D](./14-physics-3d.md) |
+| **Related**                           | [06 Render pipeline](./06-render-pipeline.md) (GPU scene uploads on `changedTick`), [07 2D on the render pipeline](./07-2d-on-the-render-pipeline.md), [12 Skeletal and morph animation](./12-skeletal-and-morph-animation.md) and [14 Physics 3D](./14-physics-3d.md) (`getCurrentWorldMatrix`), [15 Audio, particles and picking](./15-audio-particles-and-picking-in-3d.md) (`TransformOptions`) |
 
 ## 0. Targeted modules
 
 | Path                                                                  | Change   | Notes                                                                                                       |
 | --------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
-| `src/common/components/transform-component.ts`                        | New      | `TransformEcsComponent`, `addTransformComponent`, `staticTransformTag`                                      |
+| `src/common/components/transform-component.ts`                        | New      | `TransformEcsComponent`, `addTransformComponent`, `TransformOptions`, `staticTransformTag`                  |
 | `src/common/components/position-component.ts`, `rotation-component.ts`, `scale-component.ts` | Removed | Replaced by the transform                                                     |
 | `src/common/systems/transform-system.ts`                              | Modified | Rewritten: 3D composition, change detection, static subtrees excluded, no closure state                     |
 | `src/common/transform-2d.ts`                                          | New      | `getLocalAngle`, `setLocalAngle`, `addLocalAngle`, `getWorldAngle`                                           |
-| `src/common/transform-helpers.ts`                                     | New      | World-space getters and setters, point conversion, reparenting that keeps the world transform, `propagateTransform` |
+| `src/common/transform-helpers.ts`                                     | New      | World-space getters and setters, point conversion, reparenting that keeps the world transform, `propagateTransform`, `getCurrentWorldMatrix` |
 | `src/common/space/`                                                   | Removed  | `Space` has no callers                                                                                      |
 | `src/physics/**`                                                      | Modified | Reads `transform.world`, writes `transform.local`; revolute joints measure the relative angle from the relative rotation |
 | `src/rendering/**`, `src/ui/**`, `src/particles/**`, `src/text/**`    | Modified | Read `transform.world`, write `transform.local` (§6.7)                                                       |
 | `demo/`, `e2e/`, `documentation-site/src/pages/demos/**`              | Modified | Migrated                                                                                                    |
 | `documentation-site/docs/docs/common/transforms.md`, `physics/index.md`, `math/angles-and-rotation.md` | Modified | Rewritten for the component, stages and wrapped angles                   |
 | `AGENTS.md`                                                           | Modified | "Transforms" and "Angles and Directions"                                                                    |
+| `.claude/skills/create-component/SKILL.md`                            | Modified | Its naming example's `positionId`/`'position'` becomes `transformId`/`'transform'`                          |
 
 ---
 
@@ -102,7 +103,7 @@ compatibility layer, which the change philosophy rules out.
 | 1.2 | Transform system             | §6.3, without change detection: composes every visited transform                                                                   | M    |
 | 1.3 | 2D and world-space helpers   | §6.4, §6.5                                                                                                                         | M    |
 | 1.4 | Engine migration             | Every `/src` caller (§6.7), including the revolute joint's relative angle                                                          | L    |
-| 1.5 | Demo, e2e and docs migration | `/demo`, about 35 files in demos and e2e scenes, every guide that shows the old components; the physics guide's ordering section   | L    |
+| 1.5 | Demo, e2e and docs migration | `/demo`, about 35 files in demos and e2e scenes, every guide that shows the old components; the physics guide's ordering section; the `create-component` skill's naming example | L    |
 | 1.6 | Deletions                    | The three old components, the old system's helpers, `Space`                                                                       | S    |
 | 1.7 | Changelog                    | `#### Changed`: one bullet with the migration (`addPositionComponent(w, e, { local: p })` → `addTransformComponent(w, e, { position: p })`, `position.world` → `transform.world.position`, angles through the helpers, angles now wrap to `(-π, π]`, revolute limits within `(-π, π)`); `#### Removed`: `Space` | S |
 
@@ -203,6 +204,9 @@ addTransformComponent(world, entity, {
   isStatic: true,                  // adds staticTransformTag
 });
 ```
+
+`TransformOptions`, exported with the factory, so other factories can take
+transform options as they are (design 15's `spawnParticleBurst` does):
 
 | Option     | Type                         | Default     |
 | ---------- | ---------------------------- | ----------- |
@@ -334,9 +338,18 @@ say this.
 | `setWorldRotation(world, entity, rotation)`                 | The same for rotation                                                                            |
 | `setParentKeepingWorldTransform(world, child, parent)`      | Reparents and rewrites `local` so the world transform is unchanged (`setParent` keeps `local`)   |
 | `propagateTransform(world, entity)`                         | Recomputes `entity`'s subtree now (decision X8)                                                  |
+| `getCurrentWorldMatrix(out, world, entity)`                 | Composes the entity's current `local` with its ancestors' current `local` values up to the root, stopping with identity at a transformless ancestor (X6). Values written since the last propagation count; nothing is written |
 
 The setters write `local` (the input); `world` catches up at propagation,
 or immediately with `propagateTransform`.
+
+`getCurrentWorldMatrix` answers "where is this entity now" for a system
+that runs before propagation and can't wait for it: physics registers
+bodies, follows `animated` bodies and writes poses back with it (design
+14), and pose adjustments convert between world and model space with it
+(design 12). It reads `local` values only, so it never sees a stale
+`world`, and it writes nothing, so the transform module stays the only
+writer of `world`. It costs one affine product per ancestor.
 
 ### 6.6 Following other entities
 
@@ -391,6 +404,9 @@ costs a full composition per object. No allocation per tick.
 - Transformless entities cut the chain.
 - 2D helpers: round-trips; wrapping; the revolute limit across a half turn.
 - World-space helpers against the matrix math.
+- `getCurrentWorldMatrix`: equals `world.matrix` after propagation; sees
+  `local` values written since the last propagation, on the entity and on
+  an ancestor; stops with identity at a transformless ancestor.
 - The full e2e and golden suites pass after migration with no changed
   images.
 
