@@ -383,7 +383,9 @@ export class WebGl2RenderPassEncoder implements GpuRenderPassEncoder {
   ): void {
     this._assertOpen();
 
-    if (!this._isActive || this._host.isContextLost) {
+    // A context lost during the pass ignores calls, so draws need no check
+    // of their own.
+    if (!this._isActive) {
       return;
     }
 
@@ -404,7 +406,9 @@ export class WebGl2RenderPassEncoder implements GpuRenderPassEncoder {
   ): void {
     this._assertOpen();
 
-    if (!this._isActive || this._host.isContextLost) {
+    // A context lost during the pass ignores calls, so draws need no check
+    // of their own.
+    if (!this._isActive) {
       return;
     }
 
