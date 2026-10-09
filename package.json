@@ -146,6 +146,8 @@
     "test:e2e": "playwright test --config e2e/playwright.config.ts",
     "pretest:e2e:ui": "node -e \"console.log('[e2e] npm run test:e2e:ui starting', new Date().toISOString())\"",
     "test:e2e:ui": "playwright test --config e2e/playwright.config.ts --ui",
+    "test:golden": "node scripts/golden/run-golden.mjs",
+    "test:golden:update": "node scripts/golden/run-golden.mjs --update",
     "check-exports": "attw --pack . --ignore-rules false-esm internal-resolution-error --profile esm-only --exclude-entrypoints ./fonts/default/default.json ./fonts/default/default.png",
     "check-types": "tsc --noEmit --project tsconfig.ci.json",
     "check-types:e2e": "tsc --noEmit --project e2e/tsconfig.json",

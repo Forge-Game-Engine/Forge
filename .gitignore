@@ -132,4 +132,6 @@ dist
 # Playwright
 /e2e/playwright-report/
 /e2e/test-results/
+/e2e/golden-report/
+/e2e/golden-results/
 /e2e/.cache/
