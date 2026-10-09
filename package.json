@@ -142,6 +142,9 @@
     "test:ui": "vitest --reporter=html",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
+    "bench:micro": "vitest bench --run --outputJson bench/results/micro.json",
+    "bench:compare": "node bench/compare-micro.mjs",
+    "test:allocation": "playwright test --config e2e/playwright.allocation.config.ts",
     "pretest:e2e": "node -e \"console.log('[e2e] npm run test:e2e starting', new Date().toISOString())\"",
     "test:e2e": "playwright test --config e2e/playwright.config.ts",
     "pretest:e2e:ui": "node -e \"console.log('[e2e] npm run test:e2e:ui starting', new Date().toISOString())\"",
@@ -168,8 +171,8 @@
     "@playwright/test": "1.62.1",
     "@types/node": "^26.2.0",
     "@types/seedrandom": "^3.0.8",
-    "@vitest/coverage-v8": "^4.1.10",
-    "@vitest/ui": "^4.0.6",
+    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/ui": "4.1.11",
     "cspell": "^10.0.1",
     "eslint": "^10.8.1",
     "eslint-config-prettier": "^10.1.8",
@@ -187,7 +190,7 @@
     "typescript-eslint": "^8.67.0",
     "vite": "^8.1.5",
     "vite-plugin-dts": "^5.0.3",
-    "vitest": "^4.1.10"
+    "vitest": "4.1.11"
   },
   "peerDependencies": {
     "msdf-bmfont-xml": "^2.8.0"
