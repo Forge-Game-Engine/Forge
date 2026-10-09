@@ -3,26 +3,9 @@ import { Axis1dAction } from '@forge-game-engine/forge/input';
 import { GroundContactEcsComponent } from './_ground-contact.component';
 
 /**
- * Marks the chassis for mid-air pitch control:
- * `createAirControlEcsSystem` drives the chassis's angular velocity
- * towards a target proportional to `throttleInput` (the same
- * targetVelocity/maxTorque approach `AngularVelocityMotorEcsComponent` uses
- * for the wheels) whenever both `frontWheelGroundContact` and
- * `rearWheelGroundContact` report their wheel touching no ground - gas
- * pitches the nose up and back, brake pitches it down and forward, the same
- * "tilt in the air" control the genre is named for. Driving towards a
- * target angular *velocity*, rather than just applying a constant torque,
- * gives the player direct, bounded control of the rotation rate: releasing
- * the input targets zero rotation and actively cancels existing spin
- * (within `maxTorque`) instead of only bleeding off via the chassis's own
- * angular drag, so a bad rotation can be caught and corrected mid-air
- * rather than fought against.
- *
- * `frontWheelGroundContact`/`rearWheelGroundContact` are each the same
- * `GroundContactEcsComponent` object attached to that wheel's own entity
- * (see `createWheel`) - held here by direct reference rather than joined
- * via an ECS query, since this component lives on the chassis's entity, not
- * either wheel's.
+ * Mid-air pitch control. While both wheels are off the ground, the chassis
+ * spins towards `throttleInput * maxAngularSpeed`: gas tilts the nose up,
+ * brake tilts it down, and letting go stops the spin.
  */
 export interface AirControlEcsComponent {
   chassisEntity: number;

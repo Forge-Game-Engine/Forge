@@ -1,17 +1,8 @@
 import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
 
 /**
- * Tracks how many static (ground) bodies this entity is currently touching,
- * recomputed every tick by `createGroundContactEcsSystem` from the entity's
- * `ContactsEcsComponent`. A count rather than a boolean so it generalizes to
- * any number of static bodies a wheel might simultaneously touch.
- *
- * Attached directly to the wheel's own entity, so anything else on that
- * same entity (e.g. `WheelDriveEcsComponent`) can query for it jointly.
- * `AirControlEcsComponent`/`ChassisStabilizerEcsComponent` live on a
- * different entity (the chassis) but need to know about *both* wheels, so
- * they instead hold direct references to each wheel's
- * `GroundContactEcsComponent` object.
+ * How many static (ground) bodies this wheel is touching. Updated every
+ * tick by `createGroundContactEcsSystem`.
  */
 export interface GroundContactEcsComponent {
   groundContacts: number;
@@ -21,9 +12,7 @@ export const groundContactId =
   createComponentId<GroundContactEcsComponent>('groundContact');
 
 /**
- * Returns whether `groundContact` currently reports its entity touching no
- * ground.
- * @param groundContact - The ground-contact state to check.
+ * Returns whether the entity is touching the ground.
  */
 export function isGrounded(groundContact: GroundContactEcsComponent): boolean {
   return groundContact.groundContacts > 0;
@@ -31,12 +20,7 @@ export function isGrounded(groundContact: GroundContactEcsComponent): boolean {
 
 /**
  * Attaches a {@link GroundContactEcsComponent} to `entity`.
- * @param world - The ECS world `entity` belongs to.
- * @param entity - The entity to attach the component to.
- * @returns The attached component, so it can be handed to other components
- * that need to read this entity's grounded state (see the class doc
- * comment). `groundContacts` starts at `0`, since it's system-managed
- * state, not configuration.
+ * @returns The component, so the chassis's components can read it too.
  */
 export function addGroundContactComponent(
   world: EcsWorld,

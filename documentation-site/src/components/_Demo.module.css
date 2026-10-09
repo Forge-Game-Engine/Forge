@@ -23,23 +23,6 @@
   height: 100%;
 }
 
-.fullscreenButton {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1;
-  background-color: rgb(50, 50, 50);
-  border: none;
-  border-radius: 5px;
-  color: white;
-  padding: 8px 10px;
-  cursor: pointer;
-}
-
-.fullscreenButton:hover {
-  background-color: var(--card-highlight-color);
-}
-
 .demoContainer h1 {
   width: 100%;
   text-align: center;

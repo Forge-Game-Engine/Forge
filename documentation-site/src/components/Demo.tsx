@@ -1,13 +1,12 @@
 import React, { FC, ReactNode, useRef } from 'react';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
-import { useLocation } from '@docusaurus/router';
-import clsx from 'clsx';
 import { CreateDemoGame, useGame } from '@site/src/hooks/useGame';
 import { useFullscreen } from '@site/src/hooks/useFullscreen';
-import { demoCategories } from '@site/src/data/demo-categories';
+import { useDemoBackLink } from '@site/src/hooks/useDemoBackLink';
 import styles from './_Demo.module.css';
 import { CodeSelector } from './_CodeSelector';
+import { FullscreenButton } from './_FullscreenButton';
 
 interface CodeFile {
   name: string;
@@ -42,21 +41,7 @@ export const Demo: FC<DemoProps> = ({
   // game in place instead of needing a restart.
   useGame(createGame);
 
-  // The category page a demo was navigated from is threaded through as a
-  // `from` query param (see `DemoCard`), so the back button returns to the
-  // specific category the user was browsing rather than always the full
-  // demo catalogue.
-  const location = useLocation();
-  const fromCategory = demoCategories.find(
-    (category) =>
-      category.slug === new URLSearchParams(location.search).get('from'),
-  );
-  const backLink = fromCategory
-    ? {
-        to: `/demos/category/${fromCategory.slug}`,
-        label: `← Back to ${fromCategory.title}`,
-      }
-    : { to: '/demos', label: '← All demos' };
+  const backLink = useDemoBackLink();
 
   return (
     <Layout
@@ -72,19 +57,10 @@ export const Demo: FC<DemoProps> = ({
         {interactions}
         <div className={styles.demoContainer}>
           <div id="demo-game" ref={demoBoxRef} className={styles.demoBox}>
-            <button
-              type="button"
-              className={styles.fullscreenButton}
-              onClick={toggleFullscreen}
-              aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-            >
-              <i
-                className={clsx(
-                  'fa-solid',
-                  isFullscreen ? 'fa-compress' : 'fa-expand',
-                )}
-              ></i>
-            </button>
+            <FullscreenButton
+              isFullscreen={isFullscreen}
+              onToggle={toggleFullscreen}
+            />
           </div>
           <CodeSelector codeFiles={codeFiles} />
         </div>
