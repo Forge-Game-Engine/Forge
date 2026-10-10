@@ -201,10 +201,9 @@ const FeaturedDemos = (): ReactNode => {
 
   return (
     <section className={styles.section}>
-      <p className="eyebrow">See it running</p>
       <h2 className={styles.sectionTitle}>Demos</h2>
       <p className={styles.sectionIntro}>
-        Every demo runs in your browser, with its full source beside it.
+        Try each feature live, with the code that runs it right beside it.
       </p>
       <div className={styles.demoGrid}>
         {featured.map((demo) => (

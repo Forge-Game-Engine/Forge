@@ -30,7 +30,7 @@ export default function Demos(): JSX.Element {
         <p className="eyebrow">See it running</p>
         <h1>Demos</h1>
         <p className={styles.intro}>
-          Every demo runs in your browser, with its full source beside it.
+          Try each feature live, with the code that runs it right beside it.
           Browse by category, or search by title.
         </p>
         <DemoSearch value={query} onChange={setQuery} />
