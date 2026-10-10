@@ -144,41 +144,65 @@ const engineModules: EngineModule[] = [
 
 const featuredDemoSlugs = ['car', 'space-shooter', 'text', 'physics'];
 
+// Gameplay of Galactic Journey, a game built with Forge, as WebM (VP9) and
+// MP4 (H.264): each browser plays the first format it supports.
+const heroVideoPaths = {
+  webm: '/videos/galactic-journey.webm',
+  mp4: '/videos/galactic-journey.mp4',
+};
+const galacticJourneyUrl = 'https://galactic-journey-6517e.web.app';
+
 const Hero = (): ReactNode => {
-  const videoUrl = useBaseUrl('/videos/Hero.mp4');
+  const webmUrl = useBaseUrl(heroVideoPaths.webm);
+  const mp4Url = useBaseUrl(heroVideoPaths.mp4);
 
   return (
     <header className={styles.hero}>
-      <video
-        className={styles.heroVideo}
-        src={videoUrl}
-        autoPlay
-        loop
-        muted
-        playsInline
-      />
-      <div className={styles.heroShade} />
       <div className={styles.heroInner}>
-        <h1 className={styles.heroTitle}>Forge</h1>
-        <p className={styles.heroIntro}>
-          Build 2D games for the web in TypeScript. Code only, built on an ECS
-          core, rendered with WebGL2.
-        </p>
-        <div className={styles.heroActions}>
-          <Link className="button button--primary button--lg" to="/docs/intro">
-            Get started
-          </Link>
-          <Link
-            className={clsx(
-              'button button--secondary button--lg',
-              styles.heroSecondary,
-            )}
-            to="/demos"
-          >
-            Browse demos
-          </Link>
+        <div className={styles.heroText}>
+          <h1 className={styles.heroTitle}>Forge</h1>
+          <p className={styles.heroIntro}>
+            Build 2D games for the web in TypeScript. Code only, built on an ECS
+            core, rendered with WebGL2.
+          </p>
+          <div className={styles.heroActions}>
+            <Link
+              className="button button--primary button--lg"
+              to="/docs/intro"
+            >
+              Get started
+            </Link>
+            <Link
+              className={clsx(
+                'button button--secondary button--lg',
+                styles.heroSecondary,
+              )}
+              to="/demos"
+            >
+              Browse demos
+            </Link>
+          </div>
+          <InstallCommand />
         </div>
-        <InstallCommand />
+        <figure className={styles.heroMedia}>
+          <div className={styles.heroScreen}>
+            <video
+              className={styles.heroVideo}
+              autoPlay
+              loop
+              muted
+              playsInline
+              aria-label="Gameplay of Galactic Journey, a game made with Forge"
+            >
+              <source src={webmUrl} type="video/webm" />
+              <source src={mp4Url} type="video/mp4" />
+            </video>
+          </div>
+          <figcaption className={styles.heroCaption}>
+            Galactic Journey, made with Forge ·{' '}
+            <Link to={galacticJourneyUrl}>Play it</Link>
+          </figcaption>
+        </figure>
       </div>
     </header>
   );
