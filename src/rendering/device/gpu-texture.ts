@@ -226,18 +226,26 @@ export interface GpuTexture {
    * texels tightly packed, row after row and layer after layer, in the
    * texture's format (half-float formats also accept a `Float32Array`).
    * An image source is uploaded with its texels unchanged.
+   *
+   * A write that covers whole layers of a mip level keeps `source` by
+   * reference, to upload it again if the WebGL context is lost and
+   * restored, so don't change or close it afterwards (a canvas is uploaded
+   * with what it shows then, and a closed `ImageBitmap` or `VideoFrame`
+   * can't be). Write a copy, or create the texture with a
+   * `restoreSource`, for contents that change.
    * @param source - The texels to upload.
    * @param options - Where they go.
    * @throws An error if the texture can't be written (it lacks the
    * `'copy-destination'` usage, or is multisampled), if the region doesn't
-   * fit the mip level, or if the source can't fill this format.
+   * fit the mip level, if the source can't fill this format, or while a
+   * render pass is open.
    */
   write(source: GpuTextureSource, options?: GpuTextureWriteOptions): void;
 
   /**
    * Fills mip levels `1` and up from level `0`, by repeated downsampling.
    * @throws An error if the format can't be both rendered to and filtered
-   * on this device, or is compressed.
+   * on this device, or is compressed, or while a render pass is open.
    */
   generateMipmaps(): void;
 

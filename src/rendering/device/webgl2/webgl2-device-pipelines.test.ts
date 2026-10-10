@@ -685,26 +685,55 @@ describe('WebGL2 pipelines, bind groups and passes', () => {
       ]);
     });
 
-    it('binds its textures again after a texture is written during the pass', () => {
+    it('binds its textures again after a texture is created during the pass', () => {
       const { pass } = setUpDraw();
       const unit0 = `0:${glc.GL_TEXTURE_2D}`;
 
       pass.drawIndexed(3);
 
       const bound = recording.state.textures.get(unit0);
-      const written = device.createTexture({
+
+      device.createTexture({
         format: 'rgba8unorm',
         size: { width: 1, height: 1 },
-        usage: ['sampled', 'copy-destination'],
+        usage: ['sampled'],
       });
-
-      written.write(new Uint8Array(4));
 
       expect(recording.state.textures.get(unit0)).not.toBe(bound);
 
       pass.drawIndexed(3);
 
       expect(recording.state.textures.get(unit0)).toBe(bound);
+    });
+
+    it('rejects writes to resources while it is open', () => {
+      const { pass } = setUpDraw();
+      const buffer = device.createBuffer({ usage: 'uniform', size: 16 });
+      const staging = device.createStagingBuffer({ usage: 'uniform' });
+      const texture = device.createTexture({
+        format: 'rgba8unorm',
+        size: { width: 2, height: 2 },
+        mipLevelCount: 'full',
+        usage: ['sampled', 'copy-destination'],
+      });
+
+      expect(() => {
+        buffer.write(0, new Uint8Array(4));
+      }).toThrow(/while a render pass is open/);
+      expect(() => staging.allocate(4)).toThrow(/while a render pass is open/);
+      expect(() => {
+        staging.markDirty(0, 4);
+      }).toThrow(/while a render pass is open/);
+      expect(() => {
+        texture.write(new Uint8Array(16));
+      }).toThrow(/while a render pass is open/);
+      expect(() => {
+        texture.generateMipmaps();
+      }).toThrow(/while a render pass is open/);
+
+      pass.end();
+      buffer.write(0, new Uint8Array(4));
+      texture.generateMipmaps();
     });
 
     it('rebinds only the range of a bind group whose dynamic offset changed', () => {

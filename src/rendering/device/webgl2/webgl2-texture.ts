@@ -428,6 +428,7 @@ export class WebGl2Texture implements GpuTexture, RestorableResource {
     options: GpuTextureWriteOptions = {},
   ): void {
     this._assertAlive();
+    this._context.assertNoOpenPass(`Writing texture "${this.label}"`);
 
     if (!this.usage.includes('copy-destination')) {
       throw new Error(
@@ -457,6 +458,9 @@ export class WebGl2Texture implements GpuTexture, RestorableResource {
 
   public generateMipmaps(): void {
     this._assertAlive();
+    this._context.assertNoOpenPass(
+      `Generating mipmaps of texture "${this.label}"`,
+    );
 
     const { capabilities } = this._context;
 

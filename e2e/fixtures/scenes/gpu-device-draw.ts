@@ -311,6 +311,7 @@ export const createScene: CreateScene = (
   const drawView = (
     view: View,
     encoder: ReturnType<GpuDevice['createCommandEncoder']>,
+    offsets: { near: number; far: number },
   ): void => {
     const pass = encoder.beginRenderPass({
       label: view.pipeline.label,
@@ -331,14 +332,6 @@ export const createScene: CreateScene = (
       },
     });
 
-    drawData.reset();
-
-    const near = drawData.allocate(16);
-    const far = drawData.allocate(16);
-
-    drawData.float32.set([0, 0, 1, 1], near / 4);
-    drawData.float32.set([0, 0, 1, 1], far / 4);
-
     pass.setPipeline(view.pipeline);
     pass.setBindGroup(bindGroupSlots.frame, emptyGroup);
     pass.setBindGroup(bindGroupSlots.view, emptyGroup);
@@ -347,9 +340,9 @@ export const createScene: CreateScene = (
     pass.setIndexBuffer(mesh.indexBuffer, 'uint16');
     // Near first, so the far quad drawn after it fails the depth test where
     // they overlap.
-    pass.setBindGroup(bindGroupSlots.draw, drawGroup, [near]);
+    pass.setBindGroup(bindGroupSlots.draw, drawGroup, [offsets.near]);
     pass.drawIndexed(6);
-    pass.setBindGroup(bindGroupSlots.draw, drawGroup, [far]);
+    pass.setBindGroup(bindGroupSlots.draw, drawGroup, [offsets.far]);
     pass.drawIndexed(6, 1, 6);
     pass.end();
   };
@@ -397,10 +390,22 @@ export const createScene: CreateScene = (
 
   return {
     step(): void {
+      // Per-draw data is written before the passes that read it; the
+      // staging buffer is uploaded when the first of them begins.
+      drawData.reset();
+
+      const offsets = {
+        near: drawData.allocate(16),
+        far: drawData.allocate(16),
+      };
+
+      drawData.float32.set([0, 0, 1, 1], offsets.near / 4);
+      drawData.float32.set([0, 0, 1, 1], offsets.far / 4);
+
       const encoder = device.createCommandEncoder({ label: 'frame' });
 
       for (const view of views) {
-        drawView(view, encoder);
+        drawView(view, encoder, offsets);
       }
 
       const present = encoder.beginRenderPass({

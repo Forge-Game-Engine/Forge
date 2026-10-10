@@ -95,6 +95,7 @@ export class WebGl2Buffer implements GpuBuffer, RestorableResource {
 
   public write(byteOffset: number, data: ArrayBufferView): void {
     this._assertAlive();
+    this._context.assertNoOpenPass(`Writing buffer "${this.label}"`);
     assertAligned('A buffer write offset', byteOffset);
     assertAligned('A buffer write size', data.byteLength);
 

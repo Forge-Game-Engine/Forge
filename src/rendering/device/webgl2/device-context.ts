@@ -27,6 +27,15 @@ export interface DeviceContext {
   beginOperation(): void;
 
   /**
+   * Throws if a render pass is open. Writes to resources happen between
+   * passes: on WebGPU they land before every pass submitted with them, so
+   * one made in the middle of a pass would reach its earlier draws too.
+   * @param operation - What was attempted, for the error.
+   * @throws An error while a pass is open.
+   */
+  assertNoOpenPass(operation: string): void;
+
+  /**
    * Returns a number unique among the device's resources, for cache keys.
    * @returns The id.
    */

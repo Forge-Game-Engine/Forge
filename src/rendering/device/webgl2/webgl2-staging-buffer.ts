@@ -96,6 +96,9 @@ export class WebGl2StagingBuffer
 
   public allocate(byteSize: number): number {
     this._assertAlive();
+    this._context.assertNoOpenPass(
+      `Allocating in staging buffer "${this.buffer.label}"`,
+    );
 
     if (!Number.isInteger(byteSize) || byteSize <= 0) {
       throw new Error(
@@ -119,6 +122,9 @@ export class WebGl2StagingBuffer
 
   public markDirty(byteOffset: number, byteSize: number): void {
     this._assertAlive();
+    this._context.assertNoOpenPass(
+      `Changing staging buffer "${this.buffer.label}"`,
+    );
 
     if (byteOffset < 0 || byteOffset + byteSize > this._data.byteLength) {
       throw new Error(

@@ -41,9 +41,6 @@ export interface VertexBufferBinding {
 
 /** What a render pass needs from its device. */
 export interface RenderPassHost extends DeviceContext {
-  /** Whether any staging buffer has changes to upload. */
-  readonly hasDirtyStaging: boolean;
-
   /** Uploads every staging buffer's changes. */
   flushStaging(): void;
 
@@ -624,10 +621,6 @@ export class WebGl2RenderPassEncoder implements GpuRenderPassEncoder {
 
     if (!pipeline) {
       throw new Error(`Render pass "${this._label}" draws without a pipeline.`);
-    }
-
-    if (host.hasDirtyStaging) {
-      host.flushStaging();
     }
 
     host.state.bindFramebuffer(this._framebuffer);

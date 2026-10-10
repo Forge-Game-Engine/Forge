@@ -39,12 +39,12 @@ export interface GpuBuffer {
   readonly label: string;
 
   /**
-   * Replaces bytes of the buffer. A draw issued before the write reads
-   * the old contents, and one issued after reads the new.
+   * Replaces bytes of the buffer. Passes that begin after the write read
+   * the new contents.
    * @param byteOffset - Where the write starts. A multiple of `4`.
    * @param data - The bytes to write. Its byte length is a multiple of `4`.
    * @throws An error if the write doesn't fit the buffer, isn't aligned, or
-   * the buffer is destroyed.
+   * the buffer is destroyed, or while a render pass is open.
    */
   write(byteOffset: number, data: ArrayBufferView): void;
 
@@ -68,8 +68,8 @@ export interface GpuStagingBufferDescriptor {
  * A GPU buffer written through a CPU-side array: per-frame data (view
  * blocks, per-draw offsets, instance data), or a CPU mirror of data that
  * changes now and then. Code writes into the array and marks what it
- * changed; the device uploads the changed range once, before the next
- * render pass or draw that could read it, with one call per buffer.
+ * changed between render passes; the device uploads the changed range
+ * once, when the next pass begins, with one call per buffer.
  *
  * Space is handed out by {@link GpuStagingBuffer.allocate}, and the arrays
  * grow to whatever a frame needs and are reused, so steady state allocates
@@ -111,14 +111,15 @@ export interface GpuStagingBuffer {
    * buffers' at multiples of `4`.
    * @param byteSize - The number of bytes to reserve.
    * @returns The byte offset of the reserved range.
+   * @throws An error while a render pass is open.
    */
   allocate(byteSize: number): number;
 
   /**
-   * Marks bytes as changed, so they're uploaded before the next pass or
-   * draw.
+   * Marks bytes as changed, so they're uploaded when the next pass begins.
    * @param byteOffset - The first changed byte.
    * @param byteSize - The number of changed bytes.
+   * @throws An error while a render pass is open.
    */
   markDirty(byteOffset: number, byteSize: number): void;
 

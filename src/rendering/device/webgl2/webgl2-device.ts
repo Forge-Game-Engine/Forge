@@ -207,10 +207,6 @@ export class WebGl2Device implements GpuDevice, RenderPassHost {
     return this._isLost();
   }
 
-  get hasDirtyStaging(): boolean {
-    return this._dirtyStagingBuffers.size > 0;
-  }
-
   public createBuffer(descriptor: GpuBufferDescriptor): GpuBuffer {
     const contents = new Uint8Array(descriptor.size);
 
@@ -405,9 +401,9 @@ export class WebGl2Device implements GpuDevice, RenderPassHost {
   }
 
   public beginOperation(): void {
-    // Inside a pass the cache stays valid, but an upload or a link may
-    // rebind what the pass's next draw uses, so the pass applies its state
-    // again (only what changed reaches WebGL).
+    // Inside a pass the cache stays valid, but creating a resource or
+    // linking a program rebinds what the pass's next draw uses, so the pass
+    // applies its state again (only what changed reaches WebGL).
     if (this._openPass) {
       this._openPass.invalidate();
 
@@ -415,6 +411,14 @@ export class WebGl2Device implements GpuDevice, RenderPassHost {
     }
 
     this.state.reset();
+  }
+
+  public assertNoOpenPass(operation: string): void {
+    if (this._openPass) {
+      throw new Error(
+        `${operation} can't happen while a render pass is open. Write resources before beginning the pass.`,
+      );
+    }
   }
 
   public nextId(): number {
