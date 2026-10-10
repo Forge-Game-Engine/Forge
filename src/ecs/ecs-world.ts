@@ -98,6 +98,16 @@ interface ScheduledGroup {
   readonly systems: readonly SystemRecord[];
 }
 
+// Reverses `values` from `start` up to, but not including, `end`, in place.
+const reverse = (values: number[], start: number, end: number): void => {
+  for (let i = start, j = end - 1; i < j; i++, j--) {
+    const value = values[i];
+
+    values[i] = values[j];
+    values[j] = value;
+  }
+};
+
 const formatSystemName = (system: { name?: string }): string =>
   system.name ?? 'unnamed system';
 
@@ -126,6 +136,11 @@ export class EcsWorld implements Updatable, Stoppable {
 
   private readonly _componentSets: Map<symbol, SparseSet<unknown>>;
 
+  // The same keys and sets as `_componentSets`, as arrays, so
+  // `removeEntity` can walk them without a Map iterator allocating.
+  private readonly _componentKeyList: symbol[] = [];
+  private readonly _componentSetList: SparseSet<unknown>[] = [];
+
   // Each parent's children, in sibling order. The reverse direction (each
   // child's parent) is the child's `ParentEcsComponent`.
   private readonly _childrenByParent: Map<number, number[]> = new Map();
@@ -134,11 +149,14 @@ export class EcsWorld implements Updatable, Stoppable {
   private readonly _liveHandles: number[] = [];
 
   // The handles free slots will be reused with (their next generation), in
-  // the order the slots were freed. Read from `_freeHandlesHead` onwards, so
-  // the least recently freed slot is reused first and no single slot's
-  // generation climbs much faster than the rest.
+  // the order the slots were freed, so the least recently freed slot is
+  // reused first and no single slot's generation climbs much faster than the
+  // rest. A ring: `_freeHandlesCount` handles from `_freeHandlesHead`,
+  // wrapping around, so freeing and reusing slots every frame doesn't
+  // allocate once it has grown.
   private readonly _freeHandles: number[] = [];
   private _freeHandlesHead = 0;
+  private _freeHandlesCount = 0;
 
   // The creation sequence of the entity in each slot. Handles are reused,
   // so they can't tell which of two entities was created first; this can.
@@ -441,12 +459,17 @@ export class EcsWorld implements Updatable, Stoppable {
     this._updateDepth++;
 
     try {
-      for (const { runIf, systems } of schedule) {
+      // Indexed loops: an iterator would allocate on every tick.
+      for (let g = 0; g < schedule.length; g++) {
+        const { runIf, systems } = schedule[g];
+
         if (!this._shouldRun(runIf)) {
           continue;
         }
 
-        for (const record of systems) {
+        for (let i = 0; i < systems.length; i++) {
+          const record = systems[i];
+
           if (this._shouldRun(record.runIf)) {
             this._runSystem(record);
           }
@@ -518,10 +541,11 @@ export class EcsWorld implements Updatable, Stoppable {
    * entities.
    */
   public createEntity(): number {
-    if (this._freeHandlesHead < this._freeHandles.length) {
+    if (this._freeHandlesCount > 0) {
       const entity = this._freeHandles[this._freeHandlesHead];
-      this._freeHandlesHead += 1;
-      this._compactFreeHandles();
+      this._freeHandlesHead =
+        (this._freeHandlesHead + 1) % this._freeHandles.length;
+      this._freeHandlesCount -= 1;
       this._liveHandles[entityIndex(entity)] = entity;
       this._creationSequences[entityIndex(entity)] = this
         ._nextCreationSequence++;
@@ -598,14 +622,18 @@ export class EcsWorld implements Updatable, Stoppable {
     this._removeChildren(entity);
     this._detachFromParent(entity);
 
-    for (const [key, componentSet] of this._componentSets) {
-      this._deleteComponent(entity, key, componentSet);
+    for (let i = 0; i < this._componentSetList.length; i++) {
+      this._deleteComponent(
+        entity,
+        this._componentKeyList[i],
+        this._componentSetList[i],
+      );
     }
 
     // Queued before the event, so a listener that throws can't leak the
     // slot. The slot's next handle is a new generation, so reusing it from a
     // listener can't be mistaken for this entity.
-    this._freeHandles.push(
+    this._enqueueFreeHandle(
       createEntityHandle(index, entityGeneration(entity) + 1),
     );
     this.onEntityRemoved.raise(entity);
@@ -733,7 +761,7 @@ export class EcsWorld implements Updatable, Stoppable {
    */
   public addTag(entity: number, tagKey: TagKey): void {
     this._requireAlive(entity, tagKey, 'tag');
-    this._writeComponent(entity, tagKey, true, true);
+    this._writeComponent(entity, tagKey, true);
   }
 
   /**
@@ -905,13 +933,8 @@ export class EcsWorld implements Updatable, Stoppable {
   // The one path every component and tag write takes, so no membership can
   // miss a change. Writing the object an entity already has is not a
   // change.
-  private _writeComponent(
-    entity: number,
-    key: symbol,
-    data: unknown,
-    isTag: boolean = false,
-  ): void {
-    const componentSet = this._getComponentOrCreateSetByKey(key, isTag);
+  private _writeComponent(entity: number, key: symbol, data: unknown): void {
+    const componentSet = this._getComponentOrCreateSetByKey(key);
 
     if (componentSet.has(entity)) {
       if (componentSet.get(entity) === data) {
@@ -923,8 +946,8 @@ export class EcsWorld implements Updatable, Stoppable {
       const memberships = this._membershipsByKey.get(key);
 
       if (memberships) {
-        for (const membership of memberships) {
-          membership.replace(entity);
+        for (let i = 0; i < memberships.length; i++) {
+          memberships[i].replace(entity);
         }
       }
 
@@ -956,8 +979,8 @@ export class EcsWorld implements Updatable, Stoppable {
       return;
     }
 
-    for (const membership of memberships) {
-      membership.refresh(entity);
+    for (let i = 0; i < memberships.length; i++) {
+      memberships[i].refresh(entity);
     }
   }
 
@@ -968,8 +991,8 @@ export class EcsWorld implements Updatable, Stoppable {
   private _runSystem(record: SystemRecord): void {
     const { lastRunTick } = record;
 
-    for (const state of record.states) {
-      state.apply(lastRunTick);
+    for (let i = 0; i < record.states.length; i++) {
+      record.states[i].apply(lastRunTick);
     }
 
     record.lastRunTick = this._changeTick;
@@ -1037,6 +1060,11 @@ export class EcsWorld implements Updatable, Stoppable {
   }
 
   private _releaseRemovedSystemRecords(): void {
+    // Runs after every tick, so it allocates no iterator while empty.
+    if (this._recordsToRelease.length === 0) {
+      return;
+    }
+
     for (const record of this._recordsToRelease) {
       this._releaseSystemRecord(record);
     }
@@ -1186,16 +1214,28 @@ export class EcsWorld implements Updatable, Stoppable {
     }
   }
 
-  // Drops the free handles already reused once they make up half the
-  // queue, so it doesn't grow forever while entities are being created and
-  // removed every frame.
-  private _compactFreeHandles(): void {
-    if (this._freeHandlesHead * 2 < this._freeHandles.length) {
+  // Appends to the ring of free handles. When it's full, it's rotated in
+  // place so its oldest handle is first, and grows at the end.
+  private _enqueueFreeHandle(handle: number): void {
+    const ring = this._freeHandles;
+
+    if (this._freeHandlesCount < ring.length) {
+      ring[(this._freeHandlesHead + this._freeHandlesCount) % ring.length] =
+        handle;
+      this._freeHandlesCount += 1;
+
       return;
     }
 
-    this._freeHandles.splice(0, this._freeHandlesHead);
-    this._freeHandlesHead = 0;
+    if (this._freeHandlesHead !== 0) {
+      reverse(ring, 0, this._freeHandlesHead);
+      reverse(ring, this._freeHandlesHead, ring.length);
+      reverse(ring, 0, ring.length);
+      this._freeHandlesHead = 0;
+    }
+
+    ring.push(handle);
+    this._freeHandlesCount += 1;
   }
 
   private _entityHasAllKeys(entity: number, keys: readonly symbol[]): boolean {
@@ -1233,15 +1273,14 @@ export class EcsWorld implements Updatable, Stoppable {
     return driver;
   }
 
-  private _getComponentOrCreateSetByKey<T>(
-    key: symbol,
-    isTag: boolean = false,
-  ): SparseSet<T> {
+  private _getComponentOrCreateSetByKey<T>(key: symbol): SparseSet<T> {
     let componentSet = this._componentSets.get(key);
 
     if (!componentSet) {
-      componentSet = new SparseSet<T>(isTag);
+      componentSet = new SparseSet<T>();
       this._componentSets.set(key, componentSet);
+      this._componentKeyList.push(key);
+      this._componentSetList.push(componentSet);
     }
 
     return componentSet as SparseSet<T>;

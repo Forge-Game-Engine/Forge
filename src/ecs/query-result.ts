@@ -3,17 +3,20 @@ import { ComponentKey, KeysFromComponents, TagKey } from './ecs-component.js';
 /**
  * The entities matching a query, and their components, at one moment.
  * `EcsWorld.query` returns one built when it's called.
+ *
+ * Every array is read-only: a system's result arrays belong to the world, so
+ * a system that needs them in another order copies them first.
  * @typeParam T - The queried component types, in query order.
  */
 export interface QueryMatches<T extends readonly unknown[]> {
   /** The matching entities' handles. */
-  entities: readonly number[];
+  readonly entities: readonly number[];
 
   /**
    * One array per queried component key, in query order: `components[k][i]`
    * is the component for key `k` of `entities[i]`.
    */
-  components: { [K in keyof T]: T[K][] };
+  readonly components: { readonly [K in keyof T]: readonly T[K][] };
 }
 
 /**
@@ -24,7 +27,8 @@ export interface QueryMatches<T extends readonly unknown[]> {
  * The arrays belong to the world and are reused from run to run. They don't
  * change while the `update` that received them runs, even if that `update`
  * adds or removes components or entities. Don't keep them after `update`
- * returns. Their order is unspecified: a system that needs an order sorts.
+ * returns. Their order is unspecified: a system that needs an order sorts a
+ * copy.
  * @typeParam T - The queried component types, in query order.
  */
 export interface QueryResult<
@@ -36,7 +40,7 @@ export interface QueryResult<
    * replaced with another object is in both `added` and `removed`, unless it
    * started matching since the last run, when it's only in `added`.
    */
-  added: readonly number[];
+  readonly added: readonly number[];
 
   /**
    * Entities that stopped matching since this system last ran. They may no
@@ -44,14 +48,14 @@ export interface QueryResult<
    * is in both `removed` and `added`: process `removed` first. An entity
    * that started and stopped matching between two runs is in neither.
    */
-  removed: readonly number[];
+  readonly removed: readonly number[];
 
   /**
    * `EcsWorld.changeTick` during this system's previous run, or `0` on its
    * first. A value stamped with a change tick greater than this changed
    * after the system last looked at it.
    */
-  lastRunTick: number;
+  readonly lastRunTick: number;
 }
 
 /**

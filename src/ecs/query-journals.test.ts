@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createComponentId } from './ecs-component.js';
 import { EcsSystem } from './ecs-system.js';
 import { EcsWorld } from './ecs-world.js';
+import { QueryResult } from './query-result.js';
 
 interface Value {
   value: number;
@@ -209,22 +210,50 @@ describe('query journals', () => {
   });
 
   it('reuses the same result arrays from run to run', () => {
-    const results: unknown[] = [];
+    const results: QueryResult<[Value]>[] = [];
+    const snapshots: unknown[][] = [];
+
+    world.removeSystem(system);
+    world.addSystem<[Value]>({
+      query: [valueId],
+      update: (_world, result) => {
+        results.push(result);
+        snapshots.push([result.entities, result.components[0], result.added]);
+      },
+    });
+
+    const entity = world.createEntity();
+
+    world.addComponent(entity, valueId, { value: 1 });
+    world.update();
+    world.addComponent(world.createEntity(), valueId, { value: 1 });
+    world.update();
+    world.removeEntity(entity);
+    world.update();
+
+    expect(results[1]).toBe(results[0]);
+    expect(results[2]).toBe(results[0]);
+    snapshots[0].forEach((array, i) => {
+      expect(snapshots[1][i]).toBe(array);
+    });
+    expect(snapshots[2][0]).toBe(snapshots[0][0]);
+    expect(snapshots[2][1]).toBe(snapshots[0][1]);
+  });
+
+  it('reports empty journals as arrays that cannot be changed', () => {
+    const journals: (readonly number[])[] = [];
 
     world.removeSystem(system);
     world.addSystem({
       query: [valueId],
-      update: (_world, result) => {
-        results.push(result, result.entities, result.added, result.removed);
+      update: (_world, { added, removed }) => {
+        journals.push(added, removed);
       },
     });
     world.update();
-    world.addComponent(world.createEntity(), valueId, { value: 1 });
-    world.update();
 
-    results.slice(0, 4).forEach((item, i) => {
-      expect(item).toBe(results[i + 4]);
-    });
+    expect(journals).toEqual([[], []]);
+    journals.forEach((journal) => expect(Object.isFrozen(journal)).toBe(true));
   });
 });
 

@@ -288,6 +288,10 @@ The contract changes from "new arrays built when the query runs" to:
 > the `update` that received them runs, even if that `update` adds or
 > removes components. Don't keep them after `update` returns.
 
+Every array in a `QueryResult` is typed read-only, columns included, so a
+system can't sort or splice what the world will patch next tick; it sorts
+a copy.
+
 `world.query(keys, tags)` keeps today's behavior (new arrays, no journals)
 for code that runs outside a system's `update`: setup code, `cleanup`, DOM
 event handlers, functions game code calls, and tests. Inside `update`,
@@ -322,14 +326,14 @@ effect.
 
 ```ts
 interface QueryResult<T extends readonly unknown[]> {
-  entities: readonly number[];
-  components: { [K in keyof T]: T[K][] };
+  readonly entities: readonly number[];
+  readonly components: { readonly [K in keyof T]: readonly T[K][] };
   /** Entities that started matching since this system last ran. */
-  added: readonly number[];
+  readonly added: readonly number[];
   /** Entities that stopped matching since this system last ran. They may no longer be alive. */
-  removed: readonly number[];
+  readonly removed: readonly number[];
   /** The change tick of this system's previous run, 0 on its first. */
-  lastRunTick: number;
+  readonly lastRunTick: number;
 }
 ```
 
@@ -580,12 +584,25 @@ frame of delay.
 ### 6.8 Performance
 
 - No allocation in the ECS on any tick, once arrays have grown to the
-  scene's size.
+  scene's size: a still tick, and churn that adds about as many entities to
+  each result as it removes. Results are patched by index and each array's
+  length is set once per run, so leaving and entering in the same run never
+  shrinks the storage; empty journals are one shared frozen array, so the
+  arrays behind `added` and `removed` keep their storage across quiet runs;
+  the free-handle queue is a ring; hot loops use indices, not iterators.
+- The limit, without changing `QueryResult`: V8 gives an array's storage
+  back when its length drops below about half of its capacity (all of it at
+  length 0) and allocates when it regrows. A result or journal that shrinks
+  that far (a scene that empties, or a burst of changes followed by a
+  smaller one) allocates in proportion to the growth when it grows back.
+  Removing that too needs a different `QueryResult` shape (a count beside
+  fixed-capacity arrays, or typed-array views), which is a product decision.
 - A structural change costs `O(memberships mentioning the key)`; patching a
   system's arrays costs `O(entities that entered or left)`.
 - Microbenchmarks (design 01): 100,000 entities, 20 systems with
-  overlapping declarations, for a still tick, 1% churn and full churn,
-  against the `0.26.1` baseline.
+  overlapping declarations, for a still tick, 1% churn, 1% churn every
+  other tick and full churn, with the heap each scene holds and the bytes
+  each tick allocates (`src/ecs/ecs-world.bench.ts`).
 
 ### 6.9 Testing
 

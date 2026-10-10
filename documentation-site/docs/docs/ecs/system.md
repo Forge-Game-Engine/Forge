@@ -50,8 +50,10 @@ so work that runs once per tick, or that needs every match at once (sorting,
 spatial partitioning, batching), goes directly in `update`. `name` is
 optional and identifies the system in error messages.
 
-The order of `entities` is unspecified. A system that needs an order sorts
-the entities itself.
+The order of `entities` is unspecified. Every array in a query result is
+read-only (`readonly number[]`, and `readonly` component columns), because
+the world owns it and patches it on the next tick: a system that needs an
+order sorts a copy.
 
 An empty `query` with no `tags` matches no entity. A system that only does
 work once per tick, such as spawning, declares `query: []`.

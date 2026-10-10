@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Changed
 
 - **ecs:** A system's query result arrays now belong to the world and are reused from tick to tick, patched with what changed. They still don't change during the `update` that received them, but don't keep them after `update` returns. Their order is unspecified
+- **ecs:** `QueryResult` and `QueryMatches` are read-only: `entities`, every `components` column, `added` and `removed` are `readonly` arrays, and the properties themselves can't be reassigned. A system that sorted or spliced one of them sorts a copy (`[...entities].sort(...)`). An empty `added` or `removed` is a shared frozen array
 - **ecs:** `EcsWorld.query` now returns a `QueryMatches` (`entities` and `components`); `QueryResult` is what a system receives. Systems no longer call `world.query` inside `update`: declare a secondary query in `queries` and read it from `update`'s third argument. Code outside a system's `update` (setup, `cleanup`, DOM handlers) keeps using `world.query`. A test that called `system.update(world, queryResult)` directly registers the system and calls `world.update()` instead
 - **ecs:** `EcsWorld.addSystem` throws when the system is already registered. To order an existing system against a new one, pass the ordering when adding the new one
 - **input:** `registerInputs` adds the input manager as the `inputsId` singleton, so a system reads it with `world.getSingleton(inputsId).inputManager`. Calling `registerInputs` twice for one world now throws
@@ -35,6 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **ui:** `TextInputEcsComponent.caretBlink` holds the caret's blink state, written by the text input system, and the system keeps each field's hidden input, the pressed field and its DOM listeners in a `UiTextInputStateEcsComponent` singleton (`uiTextInputStateId`) it adds when it's registered. A field's hidden input is disposed when the field's component is removed or replaced by one with another input. Code that builds a `TextInputEcsComponent` without `addTextInputComponent` sets `caretBlink: null`
 - **ui:** `raycastUiCanvas` takes the interactables to test as a fifth parameter: pass a system's declared query on `uiInteractableId` and `rectTransformId`, or `world.query([uiInteractableId, rectTransformId])` outside a system
 - **math:** `Vec3.forward` is now `(0, 0, -1)` and `Vec3.backward` `(0, 0, 1)`: the 3D space is right-handed and Y-up, and cameras, lights and anything that aims look along `-Z`. Code that used `Vec3.forward` for `+Z` uses `Vec3.backward`, or `Vec3.modelFront` for the direction a model faces
+
+#### Removed
+
+- **utilities:** `SparseSet.isTag` and the `SparseSet` constructor's `isTag` parameter, which nothing read. Construct it with `new SparseSet()`
 
 #### Fixed
 

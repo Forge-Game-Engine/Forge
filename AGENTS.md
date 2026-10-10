@@ -389,7 +389,14 @@ export const createMyEcsSystem = (): EcsSystem<
 Never call `world.query` inside `update`: it scans the world and allocates
 on every call. The result arrays belong to the world, are reused every
 tick, don't change during the `update` that received them, and must not be
-kept after it returns.
+kept after it returns. They're typed read-only (`entities`, every
+`components` column, `added`, `removed`): copy one before sorting it. Once
+they've grown to the scene's size, patching them doesn't allocate while
+entities enter about as fast as they leave; an empty journal is a shared
+frozen array. A list that shrinks below about half of its largest size
+gives V8 its storage back, so growing it again allocates in proportion to
+the growth. Keep ECS hot paths free of iterators (`for...of` over a `Map`,
+spread, `splice`) for the same reason.
 
 A system's `query`, `tags`, `without` and `queries` are fixed: a
 `create<Name>EcsSystem` factory never takes options that change which
