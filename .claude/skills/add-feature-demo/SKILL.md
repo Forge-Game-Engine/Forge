@@ -138,11 +138,18 @@ feature:
   `.component.ts`/`.system.ts` suffixes: the explorer's type icons and
   filter come from them. Import each via `!!raw-loader!` exactly like
   `gameCode`, which pulls in the raw source text at build time.
+- **Never list React or other framework code** (`.tsx`/`.jsx`) in
+  `fileGroups`. The explorer shows engine code a reader can reuse in their
+  own game; a settings panel that only exists to drive this site's page
+  isn't that. `DemoPage` throws if a `.tsx`/`.jsx` file is listed.
 
 If the demo needs something else beside the game, such as live settings (a
 slider, a toggle) or a legend for colors in the scene, pass it as `panels`,
-wrapped in `DemoPanel` (with `DemoLegend` for a legend). See
-`ui-anchors/index.tsx` and `easing-functions/index.tsx`.
+wrapped in `DemoPanel` (with `DemoLegend` for a legend). Build live
+settings from `DemoSettings`, `DemoSlider`, `DemoToggle`, `DemoChoice` and
+`DemoTextField`. Keep the game-side logic the panel changes in a plain
+`.ts` file (shown in the explorer) and the React panel itself out of the
+explorer. See `text/index.tsx` and `easing-functions/index.tsx`.
 
 ## 4. Add it to the demo catalogue
 

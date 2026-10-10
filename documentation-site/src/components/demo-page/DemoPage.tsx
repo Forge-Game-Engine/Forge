@@ -70,6 +70,16 @@ export const DemoPage: FC<DemoPageProps> = ({
     throw new Error(`No demo with slug "${slug}" in src/data/demos.ts.`);
   }
 
+  // The explorer shows code a reader can use in their own game. React
+  // components that only drive this site's settings panels aren't that.
+  for (const file of fileGroups.flatMap((group) => group.files)) {
+    if (/\.[jt]sx$/.test(file.name)) {
+      throw new Error(
+        `"${file.name}" is page code, not engine code, so the code explorer doesn't show it.`,
+      );
+    }
+  }
+
   for (const highlight of highlights) {
     if (highlight.file) {
       findFile(fileGroups, highlight.file);

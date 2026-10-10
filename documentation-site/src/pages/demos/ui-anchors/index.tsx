@@ -2,7 +2,6 @@ import React, { JSX, useCallback, useRef, useState } from 'react';
 import { createAnchorsGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 import createAnchorPlaygroundCode from '!!raw-loader!./_create-anchor-playground';
-import playgroundControlsCode from '!!raw-loader!./_PlaygroundControls';
 
 import { DemoPage, DemoPanel } from '@site/src/components/demo-page';
 import {
@@ -169,12 +168,6 @@ export default function UiAnchors(): JSX.Element {
               summary:
                 "The anchor presets and functions that write the controls into the panel's rect transform.",
               content: createAnchorPlaygroundCode,
-            },
-            {
-              name: 'PlaygroundControls.tsx',
-              summary:
-                'The React preset picker and position and size sliders beside the game.',
-              content: playgroundControlsCode,
             },
           ],
         },

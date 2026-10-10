@@ -19,7 +19,9 @@ export interface DemoControl {
 }
 
 /**
- * A source file shown in the code explorer.
+ * A source file shown in the code explorer: engine code a reader can reuse
+ * in their own game. Never a React (`.tsx`) file that only drives the
+ * site's page.
  */
 export interface DemoFile {
   name: string;

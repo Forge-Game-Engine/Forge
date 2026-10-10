@@ -2,7 +2,6 @@ import React, { JSX, useCallback, useRef, useState } from 'react';
 import { createTextGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 import createPlaygroundCode from '!!raw-loader!./_create-playground';
-import playgroundControlsCode from '!!raw-loader!./_PlaygroundControls';
 
 import { DemoPage, DemoPanel } from '@site/src/components/demo-page';
 import {
@@ -90,11 +89,6 @@ export default function Text(): JSX.Element {
               summary:
                 'Creates the text and its guides, and applies the settings to them.',
               content: createPlaygroundCode,
-            },
-            {
-              name: 'PlaygroundControls.tsx',
-              summary: 'The settings panel beside the game.',
-              content: playgroundControlsCode,
             },
           ],
         },
