@@ -76,7 +76,7 @@ const engineModules: EngineModule[] = [
   },
   {
     title: 'Particles',
-    description: 'Emitters, bursts and fading sparks',
+    description: 'Emitters, bursts and spawn shapes',
     icon: 'particles',
     to: '/docs/docs/particles',
   },
