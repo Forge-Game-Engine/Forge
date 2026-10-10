@@ -12,6 +12,7 @@ import {
 } from '../common/index.js';
 import { createComponentId, createTagId } from './ecs-component.js';
 import { entityGeneration, entityIndex, formatEntity } from './entity.js';
+import { QueryResult } from './query-result.js';
 import { Vec2 } from '../math/index.js';
 
 const trackingSystem = (name: string, calls: string[]): EcsSystem<[]> => ({
@@ -57,6 +58,7 @@ describe('EcsWorld', () => {
         entities: [entity1],
         components: [[pos1], [rot1]],
       }),
+      {},
     );
   });
 
@@ -129,6 +131,7 @@ describe('EcsWorld', () => {
         entities: [entity2],
         components: [[position2], [speed2]],
       }),
+      {},
     );
   });
 
@@ -174,6 +177,7 @@ describe('EcsWorld', () => {
     expect(update).toHaveBeenCalledWith(
       world,
       expect.objectContaining({ entities: [entity1, entity2] }),
+      {},
     );
   });
 
@@ -196,6 +200,7 @@ describe('EcsWorld', () => {
     expect(update).toHaveBeenCalledWith(
       world,
       expect.objectContaining({ entities: [], components: [[]] }),
+      {},
     );
   });
 
@@ -220,7 +225,7 @@ describe('EcsWorld', () => {
     const update = vi.fn(
       (
         _world: EcsWorld,
-        { components: [positions] }: { components: [PositionEcsComponent[]] },
+        { components: [positions] }: QueryResult<[PositionEcsComponent]>,
       ) => {
         for (const position of positions) {
           position.local.x += 10;
@@ -269,7 +274,7 @@ describe('EcsWorld', () => {
       update: vi.fn(
         (
           _world: EcsWorld,
-          { components: [positions] }: { components: [PositionEcsComponent[]] },
+          { components: [positions] }: QueryResult<[PositionEcsComponent]>,
         ) => {
           for (const position of positions) {
             position.local.x += 10;
@@ -283,7 +288,7 @@ describe('EcsWorld', () => {
       update: vi.fn(
         (
           _world: EcsWorld,
-          { components: [rotations] }: { components: [RotationEcsComponent[]] },
+          { components: [rotations] }: QueryResult<[RotationEcsComponent]>,
         ) => {
           for (const rotation of rotations) {
             rotation.local *= 2;
@@ -482,10 +487,14 @@ describe('EcsWorld', () => {
       const a: EcsSystem<[]> = { name: 'a', query: [], update: () => {} };
       const b: EcsSystem<[]> = { name: 'b', query: [], update: () => {} };
 
+      const c: EcsSystem<[]> = { name: 'c', query: [], update: () => {} };
+
       world.addSystem(a);
       world.addSystem(b, { after: [a] });
 
-      expect(() => world.addSystem(a, { after: [b] })).toThrow(/cycle/);
+      expect(() => world.addSystem(c, { before: [a], after: [b] })).toThrow(
+        /cycle/,
+      );
     });
 
     it('orders systems with no "name" without throwing', () => {
@@ -511,12 +520,13 @@ describe('EcsWorld', () => {
       const world = new EcsWorld();
       const a: EcsSystem<[]> = { query: [], update: () => {} };
       const b: EcsSystem<[]> = { query: [], update: () => {} };
+      const c: EcsSystem<[]> = { query: [], update: () => {} };
 
       world.addSystem(a);
       world.addSystem(b, { after: [a] });
 
-      expect(() => world.addSystem(a, { after: [b] })).toThrow(
-        /unnamed system/,
+      expect(() => world.addSystem(c, { before: [a], after: [b] })).toThrow(
+        /cycle: unnamed system/,
       );
     });
 
@@ -1222,6 +1232,40 @@ describe('EcsWorld', () => {
         ),
       ).toEqual([b, a, c].map(entityIndex));
       expect(entityIndex(world.createEntity())).toBe(3);
+    });
+
+    it('keeps reusing the least recently freed slot first while slots are freed and reused in turn', () => {
+      const world = new EcsWorld();
+      const entities = Array.from({ length: 6 }, () => world.createEntity());
+      const freed: number[] = [];
+      const reused: number[] = [];
+
+      // Frees more slots than it reuses, in a varying order, so the queue
+      // of free slots wraps around and grows while it isn't empty.
+      for (const order of [
+        [4, 1, 5],
+        [0, 2],
+        [3, 4, 1],
+      ]) {
+        for (const position of order) {
+          if (world.removeEntity(entities[position])) {
+            freed.push(entityIndex(entities[position]));
+          }
+        }
+
+        const created = world.createEntity();
+
+        reused.push(entityIndex(created));
+        entities[entities.findIndex((e) => entityIndex(e) === reused.at(-1))] =
+          created;
+      }
+
+      while (reused.length < freed.length) {
+        reused.push(entityIndex(world.createEntity()));
+      }
+
+      expect(reused).toEqual(freed);
+      expect(entityIndex(world.createEntity())).toBe(6);
     });
 
     it('throws when adding a component or tag to a removed entity', () => {

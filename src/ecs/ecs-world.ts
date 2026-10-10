@@ -2,27 +2,20 @@ import { ComponentKey, TagKey } from './ecs-component.js';
 import { createSystemGroup, EcsSystemGroup } from './ecs-system-group.js';
 import { Stoppable, Updatable } from '../common/index.js';
 import { DirectedAcyclicGraph, SparseSet } from '../utilities/index.js';
+import { Diagnostics } from '../utilities/diagnostics.js';
 import { ParameterizedForgeEvent } from '../events/parameterized-forge-event.js';
 import { EcsSystem } from './ecs-system.js';
 import { entityGeneration, entityIndex, formatEntity } from './entity.js';
 import { createEntityHandle, maxEntities } from './entity-layout.js';
 import { ParentEcsComponent, parentId } from './hierarchy.js';
+import { QueryMembership, QueryResultState } from './query-membership.js';
+import {
+  NoQueries,
+  QueryDeclaration,
+  QueryMatches,
+  QueryResult,
+} from './query-result.js';
 import { RunCondition } from './run-condition.js';
-
-/**
- * The entities matching a query, and their components. Both are new arrays
- * built when the query runs, so they don't change when the world does.
- * @typeParam T - The queried component types, in query order.
- */
-export interface QueryResult<T extends readonly unknown[]> {
-  /** The matching entities' handles. */
-  entities: readonly number[];
-  /**
-   * One array per queried component key, in query order: `components[k][i]`
-   * is the component for key `k` of `entities[i]`.
-   */
-  components: { [K in keyof T]: T[K][] };
-}
 
 /**
  * Options for `EcsWorld.addSystem`.
@@ -49,7 +42,8 @@ export interface AddSystemOptions {
   /**
    * Runs the system only on ticks where this returns `true`. Checked each
    * tick just before the system would run, after its group's own `runIf`.
-   * A system that doesn't run isn't queried.
+   * A system that doesn't run keeps collecting its `added` and `removed`
+   * journals until it next runs.
    */
   runIf?: RunCondition;
 }
@@ -78,6 +72,44 @@ export interface AddSystemGroupOptions {
 }
 
 const noChildren: readonly number[] = Object.freeze([]);
+const noKeys: readonly symbol[] = Object.freeze([]);
+
+type AnySystem = EcsSystem<
+  readonly unknown[],
+  Record<string, readonly unknown[]>
+>;
+
+// What the world keeps for each registered system: where it runs, and its
+// result for each declaration it made.
+interface SystemRecord {
+  readonly system: AnySystem;
+  readonly group: EcsSystemGroup;
+  readonly runIf: RunCondition | undefined;
+  readonly primary: QueryResultState;
+  readonly secondary: Record<string, QueryResult<unknown[]>>;
+  readonly states: readonly QueryResultState[];
+  readonly memberships: readonly QueryMembership[];
+  lastRunTick: number;
+}
+
+// One group of the cached schedule, with its systems in order.
+interface ScheduledGroup {
+  readonly runIf: RunCondition | undefined;
+  readonly systems: readonly SystemRecord[];
+}
+
+// Reverses `values` from `start` up to, but not including, `end`, in place.
+const reverse = (values: number[], start: number, end: number): void => {
+  for (let i = start, j = end - 1; i < j; i++, j--) {
+    const value = values[i];
+
+    values[i] = values[j];
+    values[j] = value;
+  }
+};
+
+const formatSystemName = (system: { name?: string }): string =>
+  system.name ?? 'unnamed system';
 
 // Only `setParent`/`removeParent` may write the parent component, so the
 // children index can't go stale.
@@ -96,7 +128,18 @@ export class EcsWorld implements Updatable, Stoppable {
    */
   public readonly onEntityRemoved: ParameterizedForgeEvent<number>;
 
+  /**
+   * The channel warnings and errors about this world's entities and systems
+   * are reported through. Systems read it here.
+   */
+  public readonly diagnostics: Diagnostics;
+
   private readonly _componentSets: Map<symbol, SparseSet<unknown>>;
+
+  // The same keys and sets as `_componentSets`, as arrays, so
+  // `removeEntity` can walk them without a Map iterator allocating.
+  private readonly _componentKeyList: symbol[] = [];
+  private readonly _componentSetList: SparseSet<unknown>[] = [];
 
   // Each parent's children, in sibling order. The reverse direction (each
   // child's parent) is the child's `ParentEcsComponent`.
@@ -106,11 +149,14 @@ export class EcsWorld implements Updatable, Stoppable {
   private readonly _liveHandles: number[] = [];
 
   // The handles free slots will be reused with (their next generation), in
-  // the order the slots were freed. Read from `_freeHandlesHead` onwards, so
-  // the least recently freed slot is reused first and no single slot's
-  // generation climbs much faster than the rest.
+  // the order the slots were freed, so the least recently freed slot is
+  // reused first and no single slot's generation climbs much faster than the
+  // rest. A ring: `_freeHandlesCount` handles from `_freeHandlesHead`,
+  // wrapping around, so freeing and reusing slots every frame doesn't
+  // allocate once it has grown.
   private readonly _freeHandles: number[] = [];
   private _freeHandlesHead = 0;
+  private _freeHandlesCount = 0;
 
   // The creation sequence of the entity in each slot. Handles are reused,
   // so they can't tell which of two entities was created first; this can.
@@ -118,34 +164,56 @@ export class EcsWorld implements Updatable, Stoppable {
   private _nextCreationSequence = 0;
   private readonly _systemGraphsByGroup: Map<
     EcsSystemGroup,
-    DirectedAcyclicGraph<EcsSystem<readonly unknown[]>>
+    DirectedAcyclicGraph<AnySystem>
   >;
-  private readonly _groupBySystem: Map<
-    EcsSystem<readonly unknown[]>,
-    EcsSystemGroup
-  >;
+  private readonly _systemRecords: Map<AnySystem, SystemRecord>;
   private readonly _groupGraph: DirectedAcyclicGraph<EcsSystemGroup>;
   private readonly _firstSystemGroup: EcsSystemGroup;
   private readonly _defaultSystemGroup: EcsSystemGroup;
   private readonly _startOfTickGroups: Set<EcsSystemGroup>;
   private readonly _restOfTickGroups: Set<EcsSystemGroup>;
-  private readonly _systemRunConditions: Map<
-    EcsSystem<readonly unknown[]>,
-    RunCondition
-  >;
   private readonly _groupRunConditions: Map<EcsSystemGroup, RunCondition>;
 
-  constructor() {
+  // Every membership a registered system declared, by its declaration's
+  // canonical id, and indexed by every key it mentions.
+  private readonly _memberships: Map<string, QueryMembership> = new Map();
+  private readonly _membershipsByKey: Map<symbol, QueryMembership[]> =
+    new Map();
+
+  // A small number per key, to build a declaration's canonical id from.
+  private readonly _keyIds: Map<symbol, number> = new Map();
+
+  // The flattened order systems run in, rebuilt only when systems or groups
+  // change. A change made while a tick runs builds a new list rather than
+  // editing the one being iterated, so it takes effect next tick.
+  private _schedule: readonly ScheduledGroup[] | null = null;
+
+  // How many `update` calls are running, and the systems removed during
+  // them, whose results are released once the tick ends.
+  private _updateDepth = 0;
+  private readonly _recordsToRelease: SystemRecord[] = [];
+
+  // Starts at 1 so a value stamped before the first run is newer than the
+  // `lastRunTick` of `0` every system's first run gets.
+  private _changeTick = 1;
+
+  /**
+   * Creates an empty world.
+   * @param diagnostics - The channel the world and its systems report
+   * warnings and errors through. `createGame` passes the game's own; when
+   * omitted, the world creates one that writes to the console.
+   */
+  constructor(diagnostics: Diagnostics = new Diagnostics()) {
     this.onEntityRemoved = new ParameterizedForgeEvent('entityRemoved');
+    this.diagnostics = diagnostics;
     this._componentSets = new Map();
     this._systemGraphsByGroup = new Map();
-    this._groupBySystem = new Map();
+    this._systemRecords = new Map();
     this._groupGraph = new DirectedAcyclicGraph<EcsSystemGroup>(
       (group) => group.name,
     );
     this._startOfTickGroups = new Set();
     this._restOfTickGroups = new Set();
-    this._systemRunConditions = new Map();
     this._groupRunConditions = new Map();
 
     this._firstSystemGroup = createSystemGroup('first');
@@ -181,12 +249,34 @@ export class EcsWorld implements Updatable, Stoppable {
   }
 
   /**
+   * The world's change tick. Each system run happens at its own tick, and
+   * the tick advances by one when the run ends, so outside a system's
+   * `update` (game code, DOM handlers, `onRegister`) it's newer than every
+   * system's last run. The owner of a value stamps it with this tick when it
+   * changes the value; a reader compares the stamp with its
+   * `QueryResult.lastRunTick` to see whether the value changed since it last
+   * ran: a reader never sees its own stamps again, and every other reader
+   * sees each stamp once.
+   *
+   * Ticks are plain numbers (doubles) and only ever grow, so they're exact
+   * for 2^53 runs. Don't store a tick or a stamp in a `Uint32Array` or other
+   * 32-bit field: it would wrap after 2^32 runs (about 41 days at 60 frames
+   * per second with 20 systems), and comparing wrapped values with `>` would
+   * report old stamps as new, unless the comparison handles wraparound.
+   */
+  get changeTick(): number {
+    return this._changeTick;
+  }
+
+  /**
    * Calls `cleanup` on every registered system, in the order they run. The
    * systems stay registered. `Game.stop` calls it.
    */
   public stop(): void {
-    for (const system of this._getOrderedSystems()) {
-      system.cleanup?.(this);
+    for (const { systems } of this._getSchedule()) {
+      for (const { system } of systems) {
+        system.cleanup?.(this);
+      }
     }
   }
 
@@ -244,6 +334,8 @@ export class EcsWorld implements Updatable, Stoppable {
     if (runIf) {
       this._groupRunConditions.set(group, runIf);
     }
+
+    this._schedule = null;
   }
 
   /**
@@ -251,108 +343,153 @@ export class EcsWorld implements Updatable, Stoppable {
    * its group, and calls its `onRegister`. Systems with no ordering
    * constraint between them run in the order they were added. A system added
    * while `update()` is running its systems first runs on the next tick.
+   *
+   * The world reads the system's declarations (`query`, `tags`, `without`
+   * and `queries`) here, once, and from then on keeps their matching
+   * entities up to date.
    * @param system - The system to register.
    * @param options - Which group to register the system in, `before`/
    * `after` systems (within that same group) to order it against, and a
    * `runIf` condition.
-   * @throws An error if `options.group` isn't registered, if a `before`/
-   * `after` system isn't registered in the same group, or if the ordering
-   * would create a cycle.
+   * @throws An error if the system is already registered, if
+   * `options.group` isn't registered, if a `before`/`after` system isn't
+   * registered in the same group, or if the ordering would create a cycle.
    */
-  public addSystem<T extends readonly unknown[]>(
-    system: EcsSystem<T>,
-    options: AddSystemOptions = {},
-  ): void {
+  public addSystem<
+    T extends readonly unknown[],
+    Q extends Record<string, readonly unknown[]> = NoQueries,
+  >(system: EcsSystem<T, Q>, options: AddSystemOptions = {}): void {
     const {
       group = this._defaultSystemGroup,
       before = [],
       after = [],
       runIf,
     } = options;
+    const anySystem = system as unknown as AnySystem;
+
+    if (this._systemRecords.has(anySystem)) {
+      throw new Error(
+        `Unable to add system "${formatSystemName(system)}", it's already registered with this world.`,
+      );
+    }
 
     if (!this._groupGraph.has(group)) {
       throw new Error(
-        `Unable to add system "${system.name ?? 'unnamed system'}" to group "${group.name}", the group has not been registered with addSystemGroup.`,
+        `Unable to add system "${formatSystemName(system)}" to group "${group.name}", the group has not been registered with addSystemGroup.`,
       );
+    }
+
+    for (const other of [...before, ...after]) {
+      this._requireSameGroup(anySystem, other, group);
     }
 
     let systemGraph = this._systemGraphsByGroup.get(group);
 
     if (!systemGraph) {
-      systemGraph = new DirectedAcyclicGraph<EcsSystem<readonly unknown[]>>(
-        (otherSystem) => otherSystem.name ?? 'unnamed system',
-      );
+      systemGraph = new DirectedAcyclicGraph<AnySystem>(formatSystemName);
       this._systemGraphsByGroup.set(group, systemGraph);
     }
 
-    systemGraph.addNode(system);
-    this._groupBySystem.set(system, group);
+    systemGraph.addNode(anySystem);
 
-    if (runIf) {
-      this._systemRunConditions.set(system, runIf);
+    try {
+      for (const beforeSystem of before) {
+        systemGraph.addEdge(anySystem, beforeSystem);
+      }
+
+      for (const afterSystem of after) {
+        systemGraph.addEdge(afterSystem, anySystem);
+      }
+    } catch (error) {
+      systemGraph.removeNode(anySystem);
+
+      throw error;
     }
 
-    for (const beforeSystem of before) {
-      this._requireSameGroup(system, beforeSystem, group);
-      systemGraph.addEdge(system, beforeSystem);
-    }
-
-    for (const afterSystem of after) {
-      this._requireSameGroup(system, afterSystem, group);
-      systemGraph.addEdge(afterSystem, system);
-    }
+    this._systemRecords.set(
+      anySystem,
+      this._createSystemRecord(anySystem, group, runIf),
+    );
+    this._schedule = null;
 
     system.onRegister?.(this);
   }
 
   /**
-   * Unregisters a system and calls its `cleanup`. A system removed while
-   * `update()` is running its systems still runs in that tick, since the
-   * tick's list of systems is taken before the first one runs.
+   * Unregisters a system, discards its query results and journals, and
+   * calls its `cleanup`. A system removed while `update()` is running its
+   * systems still runs in that tick, since the tick's list of systems is
+   * taken before the first one runs.
    * @param system - The system to remove.
    */
-  public removeSystem<T extends readonly unknown[]>(
-    system: EcsSystem<T>,
-  ): void {
-    const group = this._groupBySystem.get(system);
+  public removeSystem<
+    T extends readonly unknown[],
+    Q extends Record<string, readonly unknown[]> = NoQueries,
+  >(system: EcsSystem<T, Q>): void {
+    const anySystem = system as unknown as AnySystem;
+    const record = this._systemRecords.get(anySystem);
 
-    if (group) {
-      this._systemGraphsByGroup.get(group)?.removeNode(system);
-      this._groupBySystem.delete(system);
+    if (record) {
+      this._systemGraphsByGroup.get(record.group)?.removeNode(anySystem);
+      this._systemRecords.delete(anySystem);
+      this._schedule = null;
+
+      if (this._updateDepth > 0) {
+        this._recordsToRelease.push(record);
+      } else {
+        this._releaseSystemRecord(record);
+      }
     }
-
-    this._systemRunConditions.delete(system);
 
     system.cleanup?.(this);
   }
 
   /**
    * Runs one tick: every group in order, and every system of each group in
-   * order. A group or system whose `runIf` returns `false` is skipped
-   * without being queried. Conditions are checked just before the group or
-   * system would run, so they see what earlier systems of the tick did.
+   * order. A group or system whose `runIf` returns `false` is skipped.
+   * Conditions are checked just before the group or system would run, so
+   * they see what earlier systems of the tick did.
+   *
+   * Before each system runs, its query results are patched with what
+   * changed since it last ran; after it runs, the change tick advances.
    */
   public update(): void {
-    for (const { group, systems } of this._getOrderedGroups()) {
-      if (!this._shouldRun(this._groupRunConditions.get(group))) {
-        continue;
-      }
+    const schedule = this._getSchedule();
 
-      for (const system of systems) {
-        if (!this._shouldRun(this._systemRunConditions.get(system))) {
+    this._updateDepth++;
+
+    try {
+      // Indexed loops: an iterator would allocate on every tick.
+      for (let g = 0; g < schedule.length; g++) {
+        const { runIf, systems } = schedule[g];
+
+        if (!this._shouldRun(runIf)) {
           continue;
         }
 
-        const results = this.query(system.query, system.tags);
-        system.update(this, results);
+        for (let i = 0; i < systems.length; i++) {
+          const record = systems[i];
+
+          if (this._shouldRun(record.runIf)) {
+            this._runSystem(record);
+          }
+        }
+      }
+    } finally {
+      this._updateDepth--;
+
+      if (this._updateDepth === 0) {
+        this._releaseRemovedSystemRecords();
       }
     }
   }
 
   /**
    * Finds the entities that have every component in `componentKeys` and
-   * every tag in `tags`. Builds new arrays on every call; for per-frame
-   * processing, register a system with a `query` instead.
+   * every tag in `tags`, by scanning the world. Builds new arrays on every
+   * call. Use it outside a system's `update`: in setup code, `cleanup`, DOM
+   * event handlers and functions game code calls. A system declares the
+   * queries it reads each tick instead (`query` and `queries`).
    * @param componentKeys - The components an entity must have. Their data is
    * returned in this order.
    * @param tags - The tags an entity must have.
@@ -361,7 +498,7 @@ export class EcsWorld implements Updatable, Stoppable {
   public query<T extends readonly unknown[]>(
     componentKeys: readonly ComponentKey<unknown>[],
     tags: readonly TagKey[] = [],
-  ): QueryResult<T> {
+  ): QueryMatches<T> {
     const driver = this._getDriverComponentSet(componentKeys, tags);
 
     if (!driver) {
@@ -404,10 +541,11 @@ export class EcsWorld implements Updatable, Stoppable {
    * entities.
    */
   public createEntity(): number {
-    if (this._freeHandlesHead < this._freeHandles.length) {
+    if (this._freeHandlesCount > 0) {
       const entity = this._freeHandles[this._freeHandlesHead];
-      this._freeHandlesHead += 1;
-      this._compactFreeHandles();
+      this._freeHandlesHead =
+        (this._freeHandlesHead + 1) % this._freeHandles.length;
+      this._freeHandlesCount -= 1;
       this._liveHandles[entityIndex(entity)] = entity;
       this._creationSequences[entityIndex(entity)] = this
         ._nextCreationSequence++;
@@ -484,14 +622,18 @@ export class EcsWorld implements Updatable, Stoppable {
     this._removeChildren(entity);
     this._detachFromParent(entity);
 
-    for (const componentSet of this._componentSets.values()) {
-      componentSet.remove(entity);
+    for (let i = 0; i < this._componentSetList.length; i++) {
+      this._deleteComponent(
+        entity,
+        this._componentKeyList[i],
+        this._componentSetList[i],
+      );
     }
 
     // Queued before the event, so a listener that throws can't leak the
     // slot. The slot's next handle is a new generation, so reusing it from a
     // listener can't be mistaken for this entity.
-    this._freeHandles.push(
+    this._enqueueFreeHandle(
       createEntityHandle(index, entityGeneration(entity) + 1),
     );
     this.onEntityRemoved.raise(entity);
@@ -542,10 +684,7 @@ export class EcsWorld implements Updatable, Stoppable {
     siblings.push(child);
 
     const component: ParentEcsComponent = { parent };
-    this._getComponentOrCreateSetByKey<ParentEcsComponent>(parentId).add(
-      child,
-      component,
-    );
+    this._writeComponent(child, parentId, component);
   }
 
   /**
@@ -555,7 +694,12 @@ export class EcsWorld implements Updatable, Stoppable {
    */
   public removeParent(child: number): void {
     this._detachFromParent(child);
-    this._componentSets.get(parentId)?.remove(child);
+
+    const componentSet = this._componentSets.get(parentId);
+
+    if (componentSet) {
+      this._deleteComponent(child, parentId, componentSet);
+    }
   }
 
   /**
@@ -582,7 +726,8 @@ export class EcsWorld implements Updatable, Stoppable {
 
   /**
    * Adds a component to an entity, replacing any it already has for
-   * `componentKey`.
+   * `componentKey`. Adding the object the entity already has is not a
+   * change: no system's journal records it.
    * @param entity - The entity to add the component to.
    * @param componentKey - The component's key.
    * @param componentData - The component.
@@ -602,24 +747,90 @@ export class EcsWorld implements Updatable, Stoppable {
     }
 
     this._requireAlive(entity, componentKey, 'component');
-
-    const componentSet = this._getComponentOrCreateSetByKey(componentKey);
-    componentSet.add(entity, componentData);
+    this._writeComponent(entity, componentKey, componentData);
 
     return componentData;
   }
 
   /**
-   * Adds a tag to an entity.
+   * Adds a tag to an entity. Adding a tag the entity already has does
+   * nothing.
    * @param entity - The entity to tag.
    * @param tagKey - The tag's key.
    * @throws An error if `entity` isn't alive.
    */
   public addTag(entity: number, tagKey: TagKey): void {
     this._requireAlive(entity, tagKey, 'tag');
+    this._writeComponent(entity, tagKey, true);
+  }
 
-    const componentSet = this._getComponentOrCreateSetByKey(tagKey, true);
-    componentSet.add(entity, true);
+  /**
+   * Creates an entity holding the only component for `componentKey`: a
+   * singleton, for state a whole subsystem shares (an input manager, a
+   * physics world). It's an ordinary component on an ordinary entity, so
+   * `removeEntity` removes it and declared queries match it.
+   * @param componentKey - The component's key.
+   * @param componentData - The component.
+   * @returns `componentData`.
+   * @throws An error if an entity already has a component for
+   * `componentKey`.
+   */
+  public addSingleton<T>(componentKey: ComponentKey<T>, componentData: T): T {
+    const componentSet = this._componentSets.get(componentKey);
+
+    if (componentSet && componentSet.size > 0) {
+      throw new Error(
+        `Unable to add singleton "${componentKey.toString()}", entity ${formatEntity(componentSet.denseEntities[0])} already has one.`,
+      );
+    }
+
+    return this.addComponent(this.createEntity(), componentKey, componentData);
+  }
+
+  /**
+   * Reads the singleton component for `componentKey` (see `addSingleton`),
+   * in constant time.
+   * @param componentKey - The component's key.
+   * @returns The component of the only entity that has one.
+   * @throws An error if no entity, or more than one, has a component for
+   * `componentKey`.
+   */
+  public getSingleton<T>(componentKey: ComponentKey<T>): T {
+    const component = this.tryGetSingleton(componentKey);
+
+    if (component === null) {
+      throw new Error(
+        `Unable to get singleton "${componentKey.toString()}", no entity has one.`,
+      );
+    }
+
+    return component;
+  }
+
+  /**
+   * Reads the singleton component for `componentKey` (see `addSingleton`),
+   * in constant time, if there is one.
+   * @param componentKey - The component's key.
+   * @returns The component of the only entity that has one, or `null` if
+   * none has.
+   * @throws An error if more than one entity has a component for
+   * `componentKey`.
+   */
+  public tryGetSingleton<T>(componentKey: ComponentKey<T>): T | null {
+    const componentSet = this._componentSets.get(componentKey) as
+      SparseSet<T> | undefined;
+
+    if (!componentSet || componentSet.size === 0) {
+      return null;
+    }
+
+    if (componentSet.size > 1) {
+      throw new Error(
+        `Unable to get singleton "${componentKey.toString()}", ${componentSet.size} entities have one.`,
+      );
+    }
+
+    return componentSet.denseComponents[0];
   }
 
   /**
@@ -712,7 +923,232 @@ export class EcsWorld implements Updatable, Stoppable {
       );
     }
 
-    this._componentSets.get(componentKey)?.remove(entity);
+    const componentSet = this._componentSets.get(componentKey);
+
+    if (componentSet) {
+      this._deleteComponent(entity, componentKey, componentSet);
+    }
+  }
+
+  // The one path every component and tag write takes, so no membership can
+  // miss a change. Writing the object an entity already has is not a
+  // change.
+  private _writeComponent(entity: number, key: symbol, data: unknown): void {
+    const componentSet = this._getComponentOrCreateSetByKey(key);
+
+    if (componentSet.has(entity)) {
+      if (componentSet.get(entity) === data) {
+        return;
+      }
+
+      componentSet.add(entity, data);
+
+      const memberships = this._membershipsByKey.get(key);
+
+      if (memberships) {
+        for (let i = 0; i < memberships.length; i++) {
+          memberships[i].replace(entity);
+        }
+      }
+
+      return;
+    }
+
+    componentSet.add(entity, data);
+    this._refreshMemberships(entity, key);
+  }
+
+  // The one path every component and tag removal takes.
+  private _deleteComponent(
+    entity: number,
+    key: symbol,
+    componentSet: SparseSet<unknown>,
+  ): void {
+    if (!componentSet.has(entity)) {
+      return;
+    }
+
+    componentSet.remove(entity);
+    this._refreshMemberships(entity, key);
+  }
+
+  private _refreshMemberships(entity: number, key: symbol): void {
+    const memberships = this._membershipsByKey.get(key);
+
+    if (!memberships) {
+      return;
+    }
+
+    for (let i = 0; i < memberships.length; i++) {
+      memberships[i].refresh(entity);
+    }
+  }
+
+  // A run happens at the current tick, and the tick advances once it ends,
+  // even if `update` throws. So the tick outside any run is always newer than
+  // every system's last run, and a stamp written there (by game code, a DOM
+  // handler or `onRegister`) is seen by every system on its next run.
+  private _runSystem(record: SystemRecord): void {
+    const { lastRunTick } = record;
+
+    for (let i = 0; i < record.states.length; i++) {
+      record.states[i].apply(lastRunTick);
+    }
+
+    record.lastRunTick = this._changeTick;
+
+    try {
+      record.system.update(this, record.primary.result, record.secondary);
+    } finally {
+      this._changeTick++;
+    }
+  }
+
+  private _createSystemRecord(
+    system: AnySystem,
+    group: EcsSystemGroup,
+    runIf: RunCondition | undefined,
+  ): SystemRecord {
+    const states: QueryResultState[] = [];
+    const memberships: QueryMembership[] = [];
+
+    const declare = (
+      declaration: QueryDeclaration<readonly unknown[]>,
+    ): QueryResultState => {
+      const membership = this._acquireMembership(declaration);
+      const state = new QueryResultState(
+        declaration.query.map((key) => this._getComponentOrCreateSetByKey(key)),
+      );
+
+      membership.subscribe(state);
+      states.push(state);
+      memberships.push(membership);
+
+      return state;
+    };
+
+    const primary = declare(system);
+    const secondary: Record<string, QueryResult<unknown[]>> = {};
+
+    for (const [name, declaration] of Object.entries(system.queries ?? {})) {
+      secondary[name] = declare(declaration).result;
+    }
+
+    return {
+      system,
+      group,
+      runIf,
+      primary,
+      secondary,
+      states,
+      memberships,
+      lastRunTick: 0,
+    };
+  }
+
+  private _releaseSystemRecord(record: SystemRecord): void {
+    for (let i = 0; i < record.states.length; i++) {
+      const membership = record.memberships[i];
+
+      membership.unsubscribe(record.states[i]);
+      membership.referenceCount--;
+
+      if (membership.referenceCount === 0) {
+        this._dropMembership(membership);
+      }
+    }
+  }
+
+  private _releaseRemovedSystemRecords(): void {
+    // Runs after every tick, so it allocates no iterator while empty.
+    if (this._recordsToRelease.length === 0) {
+      return;
+    }
+
+    for (const record of this._recordsToRelease) {
+      this._releaseSystemRecord(record);
+    }
+
+    this._recordsToRelease.length = 0;
+  }
+
+  // Finds the membership for a declaration, or creates it and finds the
+  // entities that already match.
+  private _acquireMembership(
+    declaration: QueryDeclaration<readonly unknown[]>,
+  ): QueryMembership {
+    const required: readonly symbol[] = [
+      ...declaration.query,
+      ...(declaration.tags ?? noKeys),
+    ];
+    const excluded: readonly symbol[] = declaration.without ?? noKeys;
+    const id = `${this._canonicalKeyList(required)}|${this._canonicalKeyList(excluded)}`;
+    let membership = this._memberships.get(id);
+
+    if (!membership) {
+      membership = new QueryMembership(
+        id,
+        required.map((key) => this._getComponentOrCreateSetByKey(key)),
+        excluded.map((key) => this._getComponentOrCreateSetByKey(key)),
+      );
+      this._memberships.set(id, membership);
+
+      // A declaration with no required key matches nothing, so no change
+      // can affect it.
+      if (required.length > 0) {
+        for (const key of new Set([...required, ...excluded])) {
+          this._indexMembership(key, membership);
+        }
+      }
+    }
+
+    membership.referenceCount++;
+
+    return membership;
+  }
+
+  private _dropMembership(membership: QueryMembership): void {
+    this._memberships.delete(membership.id);
+
+    for (const [key, memberships] of this._membershipsByKey) {
+      const index = memberships.indexOf(membership);
+
+      if (index === -1) {
+        continue;
+      }
+
+      memberships.splice(index, 1);
+
+      if (memberships.length === 0) {
+        this._membershipsByKey.delete(key);
+      }
+    }
+  }
+
+  private _indexMembership(key: symbol, membership: QueryMembership): void {
+    let memberships = this._membershipsByKey.get(key);
+
+    if (!memberships) {
+      memberships = [];
+      this._membershipsByKey.set(key, memberships);
+    }
+
+    memberships.push(membership);
+  }
+
+  private _canonicalKeyList(keys: readonly symbol[]): string {
+    const ids = keys.map((key) => {
+      let id = this._keyIds.get(key);
+
+      if (id === undefined) {
+        id = this._keyIds.size;
+        this._keyIds.set(key, id);
+      }
+
+      return id;
+    });
+
+    return [...new Set(ids)].sort((a, b) => a - b).join(',');
   }
 
   private _requireAlive(
@@ -778,16 +1214,28 @@ export class EcsWorld implements Updatable, Stoppable {
     }
   }
 
-  // Drops the free handles already reused once they make up half the
-  // queue, so it doesn't grow forever while entities are being created and
-  // removed every frame.
-  private _compactFreeHandles(): void {
-    if (this._freeHandlesHead * 2 < this._freeHandles.length) {
+  // Appends to the ring of free handles. When it's full, it's rotated in
+  // place so its oldest handle is first, and grows at the end.
+  private _enqueueFreeHandle(handle: number): void {
+    const ring = this._freeHandles;
+
+    if (this._freeHandlesCount < ring.length) {
+      ring[(this._freeHandlesHead + this._freeHandlesCount) % ring.length] =
+        handle;
+      this._freeHandlesCount += 1;
+
       return;
     }
 
-    this._freeHandles.splice(0, this._freeHandlesHead);
-    this._freeHandlesHead = 0;
+    if (this._freeHandlesHead !== 0) {
+      reverse(ring, 0, this._freeHandlesHead);
+      reverse(ring, this._freeHandlesHead, ring.length);
+      reverse(ring, 0, ring.length);
+      this._freeHandlesHead = 0;
+    }
+
+    ring.push(handle);
+    this._freeHandlesCount += 1;
   }
 
   private _entityHasAllKeys(entity: number, keys: readonly symbol[]): boolean {
@@ -810,20 +1258,8 @@ export class EcsWorld implements Updatable, Stoppable {
 
     let driver: SparseSet<unknown> | null = null;
 
-    for (const key of componentKeys) {
-      const componentSet = this._getComponentSet(key);
-
-      if (!componentSet) {
-        return null;
-      }
-
-      if (!driver || componentSet.size < driver.size) {
-        driver = componentSet;
-      }
-    }
-
-    for (const tagKey of tags) {
-      const componentSet = this._getComponentSet(tagKey);
+    for (const key of [...componentKeys, ...tags]) {
+      const componentSet = this._componentSets.get(key);
 
       if (!componentSet) {
         return null;
@@ -837,32 +1273,27 @@ export class EcsWorld implements Updatable, Stoppable {
     return driver;
   }
 
-  private _getComponentSet(componentName: symbol): SparseSet<unknown> | null {
-    return this._componentSets.get(componentName) ?? null;
-  }
-
-  private _getComponentOrCreateSetByKey<T>(
-    key: symbol,
-    isTag: boolean = false,
-  ): SparseSet<T> {
+  private _getComponentOrCreateSetByKey<T>(key: symbol): SparseSet<T> {
     let componentSet = this._componentSets.get(key);
 
     if (!componentSet) {
-      componentSet = new SparseSet<T>(isTag);
+      componentSet = new SparseSet<T>();
       this._componentSets.set(key, componentSet);
+      this._componentKeyList.push(key);
+      this._componentSetList.push(componentSet);
     }
 
     return componentSet as SparseSet<T>;
   }
 
   private _requireSameGroup(
-    system: EcsSystem<readonly unknown[]>,
-    other: EcsSystem<readonly unknown[]>,
+    system: AnySystem,
+    other: AnySystem,
     group: EcsSystemGroup,
   ): void {
-    const otherGroup = this._groupBySystem.get(other);
-    const systemName = system.name ?? 'unnamed system';
-    const otherName = other.name ?? 'unnamed system';
+    const otherGroup = this._systemRecords.get(other)?.group;
+    const systemName = formatSystemName(system);
+    const otherName = formatSystemName(other);
 
     if (!otherGroup) {
       throw new Error(
@@ -877,18 +1308,19 @@ export class EcsWorld implements Updatable, Stoppable {
     }
   }
 
-  private _getOrderedGroups(): {
-    group: EcsSystemGroup;
-    systems: EcsSystem<readonly unknown[]>[];
-  }[] {
-    return this._groupGraph.topologicalSort().map((group) => ({
-      group,
-      systems: this._systemGraphsByGroup.get(group)?.topologicalSort() ?? [],
-    }));
-  }
+  private _getSchedule(): readonly ScheduledGroup[] {
+    if (this._schedule) {
+      return this._schedule;
+    }
 
-  private _getOrderedSystems(): EcsSystem<readonly unknown[]>[] {
-    return this._getOrderedGroups().flatMap(({ systems }) => systems);
+    this._schedule = this._groupGraph.topologicalSort().map((group) => ({
+      runIf: this._groupRunConditions.get(group),
+      systems: (this._systemGraphsByGroup.get(group)?.topologicalSort() ?? [])
+        .map((system) => this._systemRecords.get(system))
+        .filter((record) => record !== undefined),
+    }));
+
+    return this._schedule;
   }
 
   private _shouldRun(runIf: RunCondition | undefined): boolean {

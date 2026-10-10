@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createSystemGroup, EcsSystem, EcsWorld } from '../ecs/index.js';
+import { gameStateId } from './components/game-state-component.js';
 import {
   addStateScopedComponent,
   stateScopedId,
@@ -349,5 +350,57 @@ describe('createGameState', () => {
     world.update();
 
     expect(calls).toEqual([]);
+  });
+
+  it("keeps the state in a GameStateEcsComponent on the state's own entity", () => {
+    const world = new EcsWorld();
+    const state = createGameState<Name>(world, 'menu');
+
+    world.update();
+    state.set('playing');
+    world.update();
+
+    expect(world.getComponent(state.entity, gameStateId)).toEqual({
+      current: 'playing',
+      entered: 'playing',
+      exited: 'menu',
+      next: null,
+      hasEntered: true,
+    });
+  });
+
+  it('sets hasEntered only when the transition system runs', () => {
+    const world = new EcsWorld();
+    const state = createGameState<Name>(world, 'menu');
+    const component = world.getComponentRequired(state.entity, gameStateId);
+
+    state.set('playing');
+
+    expect(component.hasEntered).toBe(false);
+
+    world.update();
+
+    expect(component.hasEntered).toBe(true);
+  });
+
+  it('enters the current state again on the first tick after its systems are cleaned up', () => {
+    const world = new EcsWorld();
+    const state = createGameState<Name>(world, 'menu');
+    const entered: (Name | null)[] = [];
+
+    world.addSystem(
+      recordingSystem([], () => {
+        entered.push(state.entered);
+
+        return '';
+      }),
+    );
+
+    world.update();
+    world.update();
+    world.stop();
+    world.update();
+
+    expect(entered).toEqual(['menu', null, 'menu']);
   });
 });

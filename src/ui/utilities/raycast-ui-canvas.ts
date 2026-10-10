@@ -1,4 +1,5 @@
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { QueryMatches } from '../../ecs/query-result.js';
 import { Rects, Vector2 } from '../../math/index.js';
 import {
   CameraEcsComponent,
@@ -19,10 +20,7 @@ import {
   RectTransformEcsComponent,
   rectTransformId,
 } from '../components/rect-transform-component.js';
-import {
-  UiInteractableEcsComponent,
-  uiInteractableId,
-} from '../components/ui-interactable-component.js';
+import { UiInteractableEcsComponent } from '../components/ui-interactable-component.js';
 import { findOwningCanvas } from './find-owning-canvas.js';
 import { resolveCanvasGroupState } from './resolve-canvas-group-state.js';
 import { resolveCanvasPointerPosition } from './resolve-canvas-pointer-position.js';
@@ -116,6 +114,9 @@ function isInsideMasks(
  * through, used to convert the pointer position.
  * @param viewportPosition - The pointer position, in CSS pixels from the
  * canvas's top-left corner, Y-down.
+ * @param interactables - Every entity with a `UiInteractableEcsComponent`
+ * and a `RectTransformEcsComponent`, and those components: a system's
+ * declared query for them, or `world.query`'s result outside a system.
  * @returns The topmost hit entity, or `null` if nothing was hit (or the
  * canvas's camera can't convert the position).
  */
@@ -124,6 +125,9 @@ export function raycastUiCanvas(
   canvasEntity: number,
   renderContext: RenderContext,
   viewportPosition: Vector2,
+  interactables: QueryMatches<
+    [UiInteractableEcsComponent, RectTransformEcsComponent]
+  >,
 ): number | null {
   const canvas = world.getComponentRequired<CanvasEcsComponent>(
     canvasEntity,
@@ -142,18 +146,15 @@ export function raycastUiCanvas(
 
   const {
     entities,
-    components: [interactables, rectTransforms],
-  } = world.query<[UiInteractableEcsComponent, RectTransformEcsComponent]>([
-    uiInteractableId,
-    rectTransformId,
-  ]);
+    components: [interactableComponents, rectTransforms],
+  } = interactables;
 
   const candidates: number[] = [];
   const rectTransformByEntity = new Map<number, RectTransformEcsComponent>();
 
   for (let i = 0; i < entities.length; i++) {
     if (
-      interactables[i].blocksRaycasts &&
+      interactableComponents[i].blocksRaycasts &&
       findOwningCanvas(world, entities[i]) === canvasEntity &&
       isVisibleInHierarchy(world, entities[i])
     ) {

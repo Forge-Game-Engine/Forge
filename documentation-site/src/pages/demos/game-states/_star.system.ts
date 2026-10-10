@@ -74,17 +74,22 @@ export const createStarEcsSystem = (
   round: Round,
   playArea: { halfWidth: number; halfHeight: number },
   time: Time,
-): EcsSystem<[StarEcsComponent, PositionEcsComponent]> => ({
+): EcsSystem<
+  [StarEcsComponent, PositionEcsComponent],
+  { players: [PlayerEcsComponent, PositionEcsComponent] }
+> => ({
   name: 'star',
   query: [starId, positionId],
-  update: (world, { entities, components: [stars, positions] }) => {
-    const {
-      components: [players, playerPositions],
-    } = world.query<[PlayerEcsComponent, PositionEcsComponent]>([
-      playerId,
-      positionId,
-    ]);
-
+  queries: { players: { query: [playerId, positionId] } },
+  update: (
+    world,
+    { entities, components: [stars, positions] },
+    {
+      players: {
+        components: [players, playerPositions],
+      },
+    },
+  ) => {
     for (let i = 0; i < entities.length; i++) {
       const position = positions[i];
 

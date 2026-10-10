@@ -204,6 +204,7 @@ describe('createRenderEcsSystem', () => {
       glyphs: [],
       bounds: { width: 0, height: 0 },
       caretStops: [],
+      shapedFrom: null,
       ...mesh,
     });
 

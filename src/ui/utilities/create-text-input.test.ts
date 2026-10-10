@@ -1,12 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createTextInput } from './create-text-input.js';
 import { EcsWorld } from '../../ecs/index.js';
-import {
-  Color,
-  RenderContext,
-  Texture,
-  visibilityId,
-} from '../../rendering/index.js';
+import { createTextEntryService } from '../../input/index.js';
+import { Color, Texture, visibilityId } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { textId } from '../../text/index.js';
 import { uiColorTransitionId } from '../components/ui-color-transition-component.js';
@@ -42,22 +38,18 @@ const buildSprite = () => ({
 
 describe('createTextInput', () => {
   const container = document.createElement('div');
-  const canvas = document.createElement('canvas');
-
-  container.appendChild(canvas);
-
-  const renderContext = { canvas } as unknown as RenderContext;
+  const textEntries = createTextEntryService(container);
 
   afterEach(() => {
-    container.replaceChildren(canvas);
+    textEntries.releaseAll();
   });
 
-  it('builds an interactable field with a text entry in the canvas container', () => {
+  it("builds an interactable field with a text entry from the service, owned by the field's entity", () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
     const field = createTextInput(world, parent, {
-      renderContext,
+      textEntries,
       sprite: buildSprite(),
       fillSprite: buildSprite(),
       fontAtlas,
@@ -82,6 +74,7 @@ describe('createTextInput', () => {
     expect(field.textInput.attributes).toEqual({ ariaLabel: 'Name' });
     expect(field.textInput.entry.element.parentElement).toBe(container);
     expect(field.textInput.entry.value).toBe('hi');
+    expect(textEntries.get(field.entity)).toBe(field.textInput.entry);
 
     expect(world.getComponent(field.textLabel, textId)!.text).toBe('hi');
     expect(world.getComponent(field.textLabel, textId)!.richText).toBe(false);
@@ -109,7 +102,7 @@ describe('createTextInput', () => {
     const filter = (text: string): string => text.toUpperCase();
 
     const field = createTextInput(world, world.createEntity(), {
-      renderContext,
+      textEntries,
       sprite: buildSprite(),
       fillSprite: buildSprite(),
       fontAtlas,
@@ -125,21 +118,5 @@ describe('createTextInput', () => {
     expect(field.textInput.filter).toBe(filter);
     expect(field.textInput.maxLength).toBe(Number.POSITIVE_INFINITY);
     expect(world.getComponent(field.textLabel, textId)!.category).toBe(4);
-  });
-
-  it('throws when the render context canvas has no parent element', () => {
-    const world = new EcsWorld();
-
-    expect(() =>
-      createTextInput(world, world.createEntity(), {
-        renderContext: {
-          canvas: document.createElement('canvas'),
-        } as unknown as RenderContext,
-        sprite: buildSprite(),
-        fillSprite: buildSprite(),
-        fontAtlas,
-        size: 20,
-      }),
-    ).toThrow(/no parent element/);
   });
 });

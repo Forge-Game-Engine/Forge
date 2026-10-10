@@ -9,8 +9,9 @@ their components and tags, and the systems that process them. It:
 
 - creates and removes entities
 - stores component data grouped by component key
-- stores registered systems
-- answers queries for entities by component keys and tags
+- stores registered systems, and keeps the entities matching each system's
+  declared queries up to date
+- answers ad-hoc queries for entities by component keys and tags
 - runs its systems when you call `update()` (one world tick)
 
 ## Creating a new entity in the world
@@ -47,9 +48,10 @@ While the descendants' events are raised, the entity is already not alive but
 still has its components, so a listener for a descendant can read its
 ancestors' components.
 
-A system's query result is taken before the system runs, so removing an entity
-can remove other entities later in the same result: its descendants. A loop
-that removes entities and then acts on later ones should check `isAlive` first:
+A system's query result doesn't change while the system runs, so removing an
+entity can remove other entities later in the same result: its descendants. A
+loop that removes entities and then acts on later ones should check `isAlive`
+first:
 
 ```ts
 for (const entity of entities) {
@@ -137,12 +139,39 @@ Tags aren't returned in the `components` array passed to a system's `update`
 method, but queries can require them. `removeComponent(entity, tagKey)`
 removes a tag. See [Component](component.md#tags).
 
+## Singleton components
+
+A singleton is a component that exactly one entity has, holding state a
+whole subsystem shares, such as the input manager. `addSingleton` creates
+an entity, adds the component to it and returns the component;
+`getSingleton` reads it in constant time:
+
+```ts
+const scoreId = createComponentId<{ points: number }>('score');
+
+world.addSingleton(scoreId, { points: 0 });
+
+// In a system:
+world.getSingleton(scoreId).points += 10;
+```
+
+- `addSingleton` throws if an entity already has the component.
+- `getSingleton` throws if no entity, or more than one, has the component.
+  `tryGetSingleton` returns `null` when none has it.
+
+A singleton is an ordinary component on an ordinary entity: `removeEntity`
+removes it, a `StateScopedEcsComponent` scopes it to a game state, and
+systems' queries match it.
+
 ## Querying for entities
 
-You can query the world directly for entity ids (and their component data) that
-have a set of component keys using `query(componentKeys, tags?)`. It returns an
-object with an `entities` array and a `components` array (one array per queried
-component key, in query order).
+Code that runs outside a system's `update` (setup code, `cleanup`, DOM event
+handlers, functions game code calls, tests) can query the world directly for
+entity ids (and their component data) that have a set of component keys using
+`query(componentKeys, tags?)`. It returns a
+[`QueryMatches`](/Forge/docs/api/interfaces/QueryMatches): an `entities` array
+and a `components` array (one array per queried component key, in query
+order).
 
 ```ts
 const {
@@ -156,15 +185,19 @@ for (let i = 0; i < entities.length; i++) {
 ```
 
 :::caution
-Each `query` call builds new arrays of every matching entity and component.
-For per-frame processing, register a system with a `query` instead of
-calling `world.query` every frame.
+Each `query` call scans the world and builds new arrays of every matching
+entity and component. Don't call it inside a system's `update`: declare the
+query on the system instead (see
+[Reading other entities with secondary queries](system.md#reading-other-entities-with-secondary-queries)).
 :::
 
 ## Adding a system
 
-Create a system object that declares a `query` (component keys), optional `tags`,
-and an `update(world, queryResult)` method. Register it with `addSystem(system, options?)`.
+Create a system object that declares a `query` (component keys), optional
+`tags`, `without` and secondary `queries`, and an `update(world, queryResult)`
+method (see [System](system.md)). Register it with
+`addSystem(system, options?)`. The world reads the declarations once, here,
+and finds the entities that already match.
 
 ```ts
 const moverSystem = {
@@ -182,7 +215,7 @@ world.addSystem(moverSystem);
 ```
 
 `name` is optional. It identifies the system in error messages, such as
-an ordering error.
+an ordering error. Adding a system that's already registered throws.
 
 :::info[Systems With No Ordering Constraint]
 When multiple systems are registered with no ordering relationship between
@@ -279,10 +312,14 @@ tick, whether the system or group runs. See
 ## Running a world tick
 
 Call `world.update()` to run the registered systems for a single frame. For
-each registered system, the world queries `query` (and `tags`) and invokes the
-system's `update` exactly once with the batch of matches, regardless of how
-many entities matched (including zero). A system or group whose `runIf`
-returns `false` is skipped, and the skipped system isn't queried.
+each registered system, the world patches the system's query results with
+what changed since it last ran, invokes the system's `update` exactly once
+with the batch of matches, regardless of how many entities matched
+(including zero), and then advances `world.changeTick`. A system or group
+whose `runIf` returns `false` is skipped.
+
+The order systems run in is worked out once and kept until a system or group
+is added or removed.
 
 A [`Game`](game.md) calls `update()` on its worlds every frame. Call
 `update()` directly to run one tick without a `Game`, for example in a unit
@@ -295,7 +332,9 @@ world.update();
 
 ## Removing a system
 
-Remove a system with `removeSystem(system)`.
+Remove a system with `removeSystem(system)`. Its query results and their
+`added`/`removed` journals are discarded, so a system added again starts
+over, with every match in `added`.
 
 ```ts
 world.removeSystem(moverSystem);

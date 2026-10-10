@@ -1,53 +1,50 @@
 import { EcsSystem } from '../../ecs/index.js';
-
-/**
- * The part of a `GameState` its transition system writes. Kept out of
- * the public interface so the transition system is the only writer of
- * `current`, `entered` and `exited`.
- */
-export interface GameStateStore<TName extends string> {
-  current: TName;
-  entered: TName | null;
-  exited: TName | null;
-  /** The last state requested with `set` since the previous transition. */
-  next: TName | null;
-}
+import { gameStateId } from '../components/game-state-component.js';
 
 /**
  * Creates the system that applies a game state's requested transition. It
  * runs in the world's `firstSystemGroup`, so a transition happens before
  * any other system of the tick, and it's the only writer of the state's
- * `current`, `entered` and `exited`. `createGameState` registers it.
- * @param store - The state's writable fields.
+ * `current`, `entered`, `exited` and `hasEntered`. `createGameState`
+ * registers it.
+ * @param stateEntity - The entity holding the state's
+ * `GameStateEcsComponent`.
  * @returns The ECS system.
  */
-export function createStateTransitionEcsSystem<TName extends string>(
-  store: GameStateStore<TName>,
+export function createStateTransitionEcsSystem(
+  stateEntity: number,
 ): EcsSystem<[]> {
-  let isFirstTick = true;
-
   return {
     name: 'state-transition',
     query: [],
-    update: (): void => {
-      store.entered = null;
-      store.exited = null;
+    update: (world): void => {
+      const state = world.getComponentRequired(stateEntity, gameStateId);
 
-      if (isFirstTick) {
-        isFirstTick = false;
-        store.entered = store.current;
+      state.entered = null;
+      state.exited = null;
+
+      if (!state.hasEntered) {
+        state.hasEntered = true;
+        state.entered = state.current;
 
         return;
       }
 
-      if (store.next === null) {
+      if (state.next === null) {
         return;
       }
 
-      store.exited = store.current;
-      store.entered = store.next;
-      store.current = store.next;
-      store.next = null;
+      state.exited = state.current;
+      state.entered = state.next;
+      state.current = state.next;
+      state.next = null;
+    },
+    cleanup: (world): void => {
+      const state = world.getComponent(stateEntity, gameStateId);
+
+      if (state) {
+        state.hasEntered = false;
+      }
     },
   };
 }

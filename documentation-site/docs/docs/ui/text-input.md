@@ -22,21 +22,40 @@ ordinary UI entities.
   on the same entity, holding the field's `value`, its `isEditing` state,
   its settings and its events;
 - a [`TextEntry`](/Forge/docs/api/interfaces/TextEntry) (the
-  component's `entry`): the hidden `<input>`, added to the element the
-  game's canvas is in;
+  component's `entry`): the hidden `<input>`, created by the game's
+  [`TextEntryService`](/Forge/docs/api/interfaces/TextEntryService) in the
+  element the game's canvas is in;
 - child entities for the text label, the placeholder label, the caret, the
   selection highlight and the IME composition underline.
 
-`registerUiSystems` registers `createUiTextInputEcsSystem`, which runs
-every field.
+## Registering the text input system
+
+The hidden inputs are DOM resources, owned by a `TextEntryService`, the way
+GPU resources belong to the render context. Create one for the game and
+give it to `registerUiSystems`, which then registers
+`createUiTextInputEcsSystem` to run every field:
+
+```ts
+import { createTextEntryService } from '@forge-game-engine/forge/input';
+import { registerUiSystems } from '@forge-game-engine/forge/ui';
+
+const textEntries = createTextEntryService(game.container);
+
+registerUiSystems(world, renderContext, time, {
+  pointerSource: mouseInputSource,
+  textEntries,
+});
+```
 
 ## Creating a text input
+
+Pass the same service to every field:
 
 ```ts
 import { createTextInput, UiAnchor } from '@forge-game-engine/forge/ui';
 
 const nameField = createTextInput(world, canvas, {
-  renderContext,
+  textEntries,
   sprite: fieldSprite,
   fillSprite: whiteSprite,
   fontAtlas,
@@ -185,5 +204,6 @@ drags.
 ## Removing a text input
 
 Removing the field's entity, or its `TextInputEcsComponent`, removes its
-hidden input on the next tick. When the text input system is removed from
+hidden input on the next tick, even when the field is removed before the
+text input system first runs it. When the text input system is removed from
 the world, or the world is stopped, every field's hidden input is removed.

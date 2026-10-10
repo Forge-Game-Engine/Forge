@@ -76,3 +76,23 @@ input lost focus.
 ## Removing a text entry
 
 `dispose()` removes the input and its event listeners.
+
+## Text entries owned by a service
+
+A [`TextEntryService`](/Forge/docs/api/interfaces/TextEntryService) owns the
+hidden inputs of a game's [text fields](../ui/text-input.md), one per field
+entity, the way the render context owns GPU resources:
+
+```ts
+import { createTextEntryService } from '@forge-game-engine/forge/input';
+
+const textEntries = createTextEntryService(game.container);
+const entry = textEntries.create(fieldEntity);
+```
+
+`create(owner)` creates an entry in the service's container for an entity,
+replacing (and disposing) one the entity already had. `get(owner)` reads
+it and `release(owner)` disposes it. `releaseAll()` disposes every entry,
+and removes the listeners attached to the container with `listen`.
+`createTextInput` creates its field's entry this way, and the text input
+system releases it when the field goes away.

@@ -9,6 +9,7 @@ import {
   scaleId,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { QueryMatches } from '../../ecs/query-result.js';
 import { clamp, Rect, Rects, Vector2 } from '../../math/index.js';
 import {
   LinearMaskOrigin,
@@ -259,14 +260,17 @@ function applyMask(
  * render system creates one per frame. When the world has no masks, it
  * returns `null` for every entity without walking the hierarchy.
  * @param world - The world the entities belong to.
+ * @param masks - Every entity with a `MaskEcsComponent`: the render system's
+ * declared query for them, or `world.query([maskId])` outside a system.
  * @returns The resolver.
  * @throws From the resolver: an error if two linear or radial masks apply
  * to one entity, or a mask's entity has no position.
  */
 export function createInstanceMaskResolver(
   world: EcsWorld,
+  masks: QueryMatches<[MaskEcsComponent]>,
 ): InstanceMaskResolver {
-  if (world.query([maskId]).entities.length === 0) {
+  if (masks.entities.length === 0) {
     return unmaskedResolver;
   }
 

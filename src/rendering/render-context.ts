@@ -1,6 +1,7 @@
 import { ImageCache } from '../asset-loading/index.js';
 import { Resizable } from '../common/index.js';
 import { ForgeEvent } from '../events/index.js';
+import { Diagnostics } from '../utilities/diagnostics.js';
 import { Color } from './color.js';
 import { CLEAR_STRATEGY, CLEAR_STRATEGY_KEYS } from './enums/index.js';
 import { createQuadGeometry } from './geometry/create-quad-geometry.js';
@@ -72,6 +73,12 @@ export class RenderContext implements Resizable {
   /** The canvas element associated with the render context. */
   public readonly canvas: HTMLCanvasElement;
 
+  /**
+   * The channel rendering warnings and errors are reported through, such
+   * as a geometry attribute a shader doesn't read.
+   */
+  public readonly diagnostics: Diagnostics;
+
   /** The WebGL2 rendering context. */
   public readonly gl: WebGL2RenderingContext;
 
@@ -125,6 +132,7 @@ export class RenderContext implements Resizable {
    * @param clearStrategy - The strategy for clearing the render context (default: CLEAR_STRATEGY.blank).
    * @param preserveDrawingBuffer - Whether to retain the drawing buffer after presentation instead of letting the browser clear it, required for reading back the canvas's pixels (e.g. `toDataURL`, `drawImage`) after a frame has already been presented (default: false, since most consumers never read the canvas back and the retained buffer costs GPU memory bandwidth).
    * @param maxPixelRatio - The highest `pixelRatio` to render at (default: no limit). See `maxPixelRatio`.
+   * @param diagnostics - The channel rendering warnings and errors are reported through (default: a new `Diagnostics`, which writes them to the console).
    * @remarks The canvas's current on-page size (or, if it hasn't been laid out yet, its `width`/`height` attributes - the size an unstyled canvas is shown at) is taken as its CSS size. Its CSS size is then pinned via `style.width`/`style.height` and its drawing buffer is resized to that times the display's current `devicePixelRatio` (clamped to `maxPixelRatio`), so it renders at native resolution from the first frame.
    * @throws An error if `maxPixelRatio` is not a positive number.
    */
@@ -135,8 +143,11 @@ export class RenderContext implements Resizable {
     clearStrategy: CLEAR_STRATEGY_KEYS = CLEAR_STRATEGY.blank,
     preserveDrawingBuffer: boolean = false,
     maxPixelRatio: number = Number.POSITIVE_INFINITY,
+    diagnostics: Diagnostics = new Diagnostics(),
   ) {
     assertValidPixelRatio('maxPixelRatio', maxPixelRatio);
+
+    this.diagnostics = diagnostics;
 
     this.shaderCache = shaderCache;
     this.imageCache = imageCache;
@@ -580,6 +591,13 @@ export interface RenderContextOptions {
    * (default: no limit). See `RenderContext.maxPixelRatio`.
    */
   maxPixelRatio?: number;
+
+  /**
+   * The channel rendering warnings and errors are reported through
+   * (default: a new `Diagnostics`, which writes them to the console).
+   * `createGame` passes the game's own.
+   */
+  diagnostics?: Diagnostics;
 }
 
 /**
@@ -601,6 +619,7 @@ export function createRenderContext(
     clearStrategy,
     preserveDrawingBuffer,
     maxPixelRatio,
+    diagnostics,
   } = options;
 
   return new RenderContext(
@@ -610,5 +629,6 @@ export function createRenderContext(
     clearStrategy,
     preserveDrawingBuffer,
     maxPixelRatio,
+    diagnostics,
   );
 }

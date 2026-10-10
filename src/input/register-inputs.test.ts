@@ -27,15 +27,16 @@ describe('registerInputs', () => {
     expect(inputManager).toBeInstanceOf(InputManager);
   });
 
-  it('attaches the InputManager to a new entity in the world', () => {
+  it('adds the InputManager to the world as the inputs singleton', () => {
     const inputManager = registerInputs(world, time);
 
-    const entities = world.query([inputsId]).entities;
+    expect(world.getSingleton(inputsId).inputManager).toBe(inputManager);
+  });
 
-    expect(entities).toHaveLength(1);
-    expect(world.getComponent(entities[0], inputsId)?.inputManager).toBe(
-      inputManager,
-    );
+  it('throws when the world already has an inputs singleton', () => {
+    registerInputs(world, time);
+
+    expect(() => registerInputs(world, time)).toThrow(/singleton/);
   });
 
   it('registers actions passed in options with the InputManager', () => {

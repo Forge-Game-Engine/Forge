@@ -79,7 +79,11 @@ follows these rules:
   writes it; everything else reads it. When two systems write the same
   field (e.g. physics and the transform system both writing
   `position.world`), that's the bug, whichever one the symptom shows up in.
-  See "Transforms" under "Common Patterns".
+  See "Transforms" under "Common Patterns". Two patterns sit beside it and
+  aren't violations: a per-frame message stream and a single-consumer
+  queue (see "Where State Lives" under "Module Organization").
+- **State lives in components.** A system keeps nothing between runs in its
+  closure or in module scope. See "Where State Lives".
 - **Flag designs that don't fit instead of building on them.** If a request
   only works by bending a core part of the engine, or a relationship
   doesn't make sense in an ECS engine, stop and raise it with the user
@@ -165,17 +169,21 @@ factory functions, not classes:
    that attaches it to a caller-supplied entity (see "Component Pattern"
    below). Components carry no logic.
 
-2. **Systems** (`EcsSystem<TQuery>`): Plain objects, produced by
+2. **Systems** (`EcsSystem<TQuery, TQueries>`): Plain objects, produced by
    `create<Name>EcsSystem` factory functions, not classes. A system declares
-   a `query` (the component keys it reads, in order) and an optional set of
-   `tags`, and implements `update(world, queryResult)`. `queryResult` is a
-   batch for the whole tick - `entities: readonly number[]` and a
-   `components` array (one array per queried component type, in query
-   order) - so `update` runs exactly once per tick regardless of how many
-   entities matched (including zero), and the system iterates the batch
-   itself. An optional `cleanup(world)` hook runs once when the system is
-   removed from an `EcsWorld` or the world is stopped. See "System Pattern"
-   below and `/documentation-site/docs/docs/ecs/system.md`.
+   every query it reads: a primary `query` (the component keys it reads, in
+   order) with optional `tags` and `without` (keys an entity must not
+   have), and optional named secondary `queries`. It implements
+   `update(world, queryResult, queries)`. `queryResult` is a batch for the
+   whole tick - `entities: readonly number[]`, a `components` array (one
+   array per queried component type, in query order), the `added`/`removed`
+   journals since the system last ran, and `lastRunTick` - so `update` runs
+   exactly once per tick regardless of how many entities matched (including
+   zero), and the system iterates the batch itself. `queries` holds one
+   such result per secondary declaration. An optional `cleanup(world)` hook
+   runs once when the system is removed from an `EcsWorld` or the world is
+   stopped. See "System Pattern" below and
+   `/documentation-site/docs/docs/ecs/system.md`.
 
 3. **Entities**: Just numeric ids (`number`), created with
    `EcsWorld.createEntity()`. Components are attached/detached by id via the
@@ -188,10 +196,15 @@ factory functions, not classes:
    too, so loops that remove entities check `isAlive` first.
 
 4. **World** (`EcsWorld`): Container for component data and registered
-   systems. Stores component data grouped by component key, runs each
-   registered system's `update` once per `EcsWorld.update()` tick (in
-   registration-order), and exposes `query(componentKeys, tags?)` for
-   ad-hoc lookups outside of a system's own `query`.
+   systems. Stores component data grouped by component key, keeps one
+   membership (the matching entities) per distinct declared query up to
+   date through a single internal add/remove path, patches each system's
+   reused result arrays from its journal just before its `update`, and runs
+   each registered system's `update` once per `EcsWorld.update()` tick (in
+   registration order, from a cached schedule). It exposes
+   `query(componentKeys, tags?)` for ad-hoc lookups outside a system's
+   `update` (setup, `cleanup`, DOM handlers, tests); no system calls it
+   inside `update`.
 
 ### Key Patterns
 
@@ -355,14 +368,117 @@ export const createMyEcsSystem = (): EcsSystem<[MyComponent]> => ({
 ```
 
 See `/documentation-site/docs/docs/ecs/system.md` for the full contract,
-including the optional `tags` and `cleanup` fields.
+including the optional `tags`, `without`, `queries` and `cleanup` fields.
 
-A system's `query` and `tags` are fixed: a `create<Name>EcsSystem` factory
-never takes options that change which components or tags it matches. A
+A system that reads a second set of entities declares it as a named
+secondary query and reads it from `update`'s third argument:
+
+```typescript
+export const createMyEcsSystem = (): EcsSystem<
+  [MyComponent],
+  { targets: [TargetComponent, PositionEcsComponent] }
+> => ({
+  query: [myComponentId],
+  queries: { targets: { query: [targetId, positionId] } },
+  update: (world, { components: [myComponents] }, { targets }) => {
+    // ...
+  },
+});
+```
+
+Never call `world.query` inside `update`: it scans the world and allocates
+on every call. The result arrays belong to the world, are reused every
+tick, don't change during the `update` that received them, and must not be
+kept after it returns. They're typed read-only (`entities`, every
+`components` column, `added`, `removed`): copy one before sorting it. Once
+they've grown to the scene's size, patching them doesn't allocate while
+entities enter about as fast as they leave; an empty journal is a shared
+frozen array. A list that shrinks below about half of its largest size
+gives V8 its storage back, so growing it again allocates in proportion to
+the growth. Keep ECS hot paths free of iterators (`for...of` over a `Map`,
+spread, `splice`) for the same reason.
+
+A system's `query`, `tags`, `without` and `queries` are fixed: a
+`create<Name>EcsSystem` factory never takes options that change which
+components or tags it matches. A
 system processes every entity that has its components, which is what makes
 a component mean the same thing everywhere. If a system matches entities it
 shouldn't touch, the entities' components are wrong, or another system is
 writing a value this one owns. Fix that instead.
+
+### Where State Lives
+
+| Kind of data                                               | Lives in                                                                                  |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Anything a game can read or that changes behavior          | Components, including singleton components (`world.addSingleton`)                         |
+| Derived, rebuildable caches of GPU, audio or DOM resources | The service that owns the resource (`RenderContext`, the audio mixer, `TextEntryService`) |
+| Configuration a game builds once                           | Plain objects passed to a factory                                                         |
+| Nothing                                                    | A system's closure                                                                        |
+
+- A system's closure holds the services and configuration its factory
+  received, and nothing written during one run that a later run reads.
+- State a later run needs goes in a component: on the entities it's about,
+  or in the subsystem's singleton. `world.addSingleton(key, value)` creates
+  an entity holding the only component for `key`, and
+  `world.getSingleton(key)` reads it in constant time (it throws when none
+  or several entities have it; `tryGetSingleton` returns `null` for none).
+  A singleton is an ordinary component: `removeEntity` removes it, a
+  `StateScopedEcsComponent` scopes it, declared queries match it. The
+  input manager (`inputsId`), each game state (`gameStateId`) and the UI
+  text input system (`uiTextInputStateId`, its pressed field) keep their
+  state this way.
+- DOM resources (hidden inputs, listeners on the game's container) belong
+  to a service the system's factory receives, like GPU resources belong to
+  the render context: the text fields' hidden inputs and the text input
+  system's tap listeners are the `TextEntryService`'s. A system that
+  derives such a resource per entity releases it from its `removed`
+  journal; one created before the system saw its entity is tracked by the
+  service until the system claims it, so an entity removed between two runs
+  (in neither journal) doesn't leak it.
+- Scratch arrays fully written before being read each run may be kept to
+  avoid allocating, on the service or the singleton, never in module scope
+  (module scope is shared by every world in the page).
+- `onRegister` acquires resources outside the ECS through the services the
+  system received; it may add the subsystem's singleton, but never keeps
+  state in the system.
+
+Two named patterns sit beside "one writer per value":
+
+- **Per-frame message streams.** An append-only list on a singleton that
+  several systems append to in one frame. No system edits or removes an
+  entry another appended; one owning system clears it once per frame
+  (once per fixed step for a stream written from fixed-step systems),
+  before the writers run, and readers run after the writers. A stream
+  holds events of the frame (what was hit, what to draw), not a value with
+  an owner, so many appenders don't make many writers of one value.
+- **Single-consumer queues.** Any system or module function appends; the
+  one consumer reads and empties it each run. The consumer clears it, not
+  an owner before the writers, so an entry waits however long it takes
+  the consumer to run. A `GameState`'s `next` is one: `set` appends (the
+  last request wins) and the transition system consumes it.
+
+### Journals and Change Ticks
+
+A query result's `added` and `removed` list the entities that started or
+stopped matching since the system last ran (every match is in `added` on
+its first run). A system that keeps derived data per entity (a GPU slot, a
+physics proxy) creates it from `added` and frees it from `removed`,
+processing `removed` first, instead of diffing the whole set every tick.
+
+To detect a changed _value_, its owner stamps it: when the owning system
+actually changes an output, it writes `changedTick = world.changeTick` on
+it (e.g. `transform.world.changedTick`). Each system run happens at its own
+tick and `world.changeTick` advances when the run ends, so outside a run
+(game code, DOM handlers, `onRegister`) the tick is newer than every
+system's last run, the way Bevy's world tick is. Each run gets its previous
+run's tick as `queryResult.lastRunTick`, so a reader tests
+`value.changedTick > lastRunTick` and keeps nothing itself; it sees every
+stamp written since it last ran, wherever it was written, except its own.
+Only the owner writes the stamp (it's part of the value it owns), and only
+when the value changed. Don't add proxies, setters or hand-set dirty flags
+for this. Ticks and stamps are doubles: never store one in a `Uint32Array`
+(or other 32-bit field) without wraparound-aware comparison, since 2^32
+runs is about 41 days at 60 FPS with 20 systems.
 
 ### Index Files
 
@@ -939,6 +1055,26 @@ unregisters in `dispose`.
 
 `e2e/specs/webgl-context-loss.spec.ts` loses and restores a real context
 with `WEBGL_lose_context`.
+
+### Diagnostics
+
+Warnings and errors that don't stop the caller go through one channel,
+`Diagnostics` (`src/utilities/diagnostics.ts`), never a bare
+`console.warn`/`console.error`:
+
+- `diagnostics.warn({ code, message, entity?, assetUrl?, label? })` for
+  something the engine worked around, `diagnostics.error(...)` for a
+  failure, such as an asynchronous one that would otherwise be lost in a
+  detached promise. A call that returns a promise the game awaits still
+  rejects.
+- Each diagnostic is raised once per `code` and key (the entity, asset URL
+  or label), so reporting a per-frame condition every frame is fine.
+- `Diagnostics` raises it through `onWarning`/`onError`, or writes it to the
+  console while nothing listens.
+- `createGame` creates one and passes it to the world (`world.diagnostics`)
+  and the render context (`renderContext.diagnostics`); systems and
+  services read it there. Tests pass their own to assert on what was
+  reported.
 
 ### Readonly Fields
 

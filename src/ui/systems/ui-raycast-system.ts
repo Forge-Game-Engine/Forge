@@ -4,6 +4,14 @@ import {
   CanvasEcsComponent,
   canvasId,
 } from '../components/canvas-component.js';
+import {
+  RectTransformEcsComponent,
+  rectTransformId,
+} from '../components/rect-transform-component.js';
+import {
+  UiInteractableEcsComponent,
+  uiInteractableId,
+} from '../components/ui-interactable-component.js';
 import { UiPointerSource } from '../types/ui-pointer-source.js';
 import { raycastUiCanvas } from '../utilities/raycast-ui-canvas.js';
 
@@ -28,10 +36,20 @@ import { raycastUiCanvas } from '../utilities/raycast-ui-canvas.js';
 export const createUiRaycastEcsSystem = (
   pointerSource: UiPointerSource,
   renderContext: RenderContext,
-): EcsSystem<[CanvasEcsComponent]> => ({
+): EcsSystem<
+  [CanvasEcsComponent],
+  { interactables: [UiInteractableEcsComponent, RectTransformEcsComponent] }
+> => ({
   name: 'uiRaycast',
   query: [canvasId],
-  update: (world, { entities: canvasEntities, components: [canvases] }) => {
+  queries: {
+    interactables: { query: [uiInteractableId, rectTransformId] },
+  },
+  update: (
+    world,
+    { entities: canvasEntities, components: [canvases] },
+    { interactables },
+  ) => {
     for (let c = 0; c < canvasEntities.length; c++) {
       const canvas = canvases[c];
       const hitEntity = raycastUiCanvas(
@@ -39,6 +57,7 @@ export const createUiRaycastEcsSystem = (
         canvasEntities[c],
         renderContext,
         pointerSource.position,
+        interactables,
       );
 
       canvas.hoveredEntity = hitEntity;

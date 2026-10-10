@@ -25,6 +25,11 @@ const gameState = createGameState<GameStateName>(world, 'menu');
 
 `gameState.current` is the current state.
 
+The state is kept in a
+[`GameStateEcsComponent`](/Forge/docs/api/interfaces/GameStateEcsComponent)
+on its own entity, `gameState.entity`, which the `GameState` reads. Only
+the state's transition system writes it; change the state with `set`.
+
 ## Changing state
 
 `set` requests a transition:

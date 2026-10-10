@@ -1,6 +1,8 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import type { Vector2 } from '../../math/index.js';
 import type { Color } from '../../rendering/color.js';
+import type { FontAtlas } from '../font-atlas/font-atlas.js';
+import type { TextEcsComponent } from './text-component.js';
 
 /**
  * A single shaped glyph's quad: structurally identical to a
@@ -41,6 +43,25 @@ export interface GlyphQuad {
 }
 
 /**
+ * The `TextEcsComponent` fields a text mesh's shape depends on, as they
+ * were when it was shaped. `color`, `layer`, `category` and `enabled`
+ * change how or whether the mesh is drawn, not its shape, so they aren't
+ * included.
+ */
+export interface TextShapeInputs {
+  readonly text: string;
+  readonly fontAtlas: FontAtlas;
+  readonly size: number;
+  readonly letterSpacing: number;
+  readonly lineHeight: number;
+  readonly horizontalAlign: TextEcsComponent['horizontalAlign'];
+  readonly verticalAlign: TextEcsComponent['verticalAlign'];
+  readonly maxWidth: number | undefined;
+  readonly horizontalAlignPivot: number;
+  readonly richText: boolean;
+}
+
+/**
  * The shaped output of a `TextEcsComponent`: one quad per visible
  * (non-whitespace, in-charset) glyph, plus the shaped block's own bounds.
  *
@@ -65,6 +86,13 @@ export interface TextMeshEcsComponent {
    * Used to draw a text field's caret and selection.
    */
   readonly caretStops: readonly Vector2[];
+
+  /**
+   * The text fields this mesh was shaped from. The shaping system shapes
+   * the text again when any of them differs from the `TextEcsComponent`'s,
+   * or when this is `null`.
+   */
+  readonly shapedFrom: TextShapeInputs | null;
 }
 
 export const textMeshId = createComponentId<TextMeshEcsComponent>('textMesh');

@@ -3,58 +3,39 @@ import { TextEcsComponent, textId } from '../components/text-component.js';
 import {
   TextMeshEcsComponent,
   textMeshId,
+  TextShapeInputs,
 } from '../components/text-mesh-component.js';
-import type { FontAtlas } from '../font-atlas/font-atlas.js';
 import { shapeText } from '../utilities/shape-text.js';
 
-/**
- * The shape-relevant subset of a `TextEcsComponent`'s fields, snapshotted
- * per entity so `createTextShapingEcsSystem` can skip re-shaping text that
- * hasn't changed since it was last shaped. `color`, `layer`, `category` and
- * `enabled` affect how/whether the mesh is drawn, not its shape, so they're
- * deliberately excluded.
- */
-interface ShapeSnapshot {
-  text: string;
-  fontAtlas: FontAtlas;
-  size: number;
-  letterSpacing: number;
-  lineHeight: number;
-  horizontalAlign: TextEcsComponent['horizontalAlign'];
-  verticalAlign: TextEcsComponent['verticalAlign'];
-  maxWidth: number | undefined;
-  horizontalAlignPivot: number;
-  richText: boolean;
-}
-
-function isSameSnapshot(a: ShapeSnapshot, b: ShapeSnapshot): boolean {
+// Whether `text`'s shape inputs are still the ones its mesh was shaped
+// from. Reads the component directly, so the check runs every tick without
+// allocating.
+function isShapedFrom(
+  text: TextEcsComponent,
+  shapedFrom: TextShapeInputs,
+): boolean {
   return (
-    a.text === b.text &&
-    a.fontAtlas === b.fontAtlas &&
-    a.size === b.size &&
-    a.letterSpacing === b.letterSpacing &&
-    a.lineHeight === b.lineHeight &&
-    a.horizontalAlign === b.horizontalAlign &&
-    a.verticalAlign === b.verticalAlign &&
-    a.maxWidth === b.maxWidth &&
-    a.horizontalAlignPivot === b.horizontalAlignPivot &&
-    a.richText === b.richText
+    text.text === shapedFrom.text &&
+    text.fontAtlas === shapedFrom.fontAtlas &&
+    text.size === shapedFrom.size &&
+    text.letterSpacing === shapedFrom.letterSpacing &&
+    text.lineHeight === shapedFrom.lineHeight &&
+    text.horizontalAlign === shapedFrom.horizontalAlign &&
+    text.verticalAlign === shapedFrom.verticalAlign &&
+    text.maxWidth === shapedFrom.maxWidth &&
+    text.horizontalAlignPivot === shapedFrom.horizontalAlignPivot &&
+    text.richText === shapedFrom.richText
   );
 }
 
 /**
- * Creates a text shaping ECS system: turns dirty `TextEcsComponent`s into
+ * Creates a text shaping ECS system: turns `TextEcsComponent`s into
  * `TextMeshEcsComponent`s (glyph quads + bounds), only re-shaping an
- * entity's text when a shape-relevant field has actually changed since the
- * last tick this system ran against it.
+ * entity's text when a field its shape depends on differs from the ones its
+ * mesh was shaped from (`TextMeshEcsComponent.shapedFrom`).
  * @returns The ECS system.
  */
 export const createTextShapingEcsSystem = (): EcsSystem<[TextEcsComponent]> => {
-  const lastShapedSnapshotByComponent = new WeakMap<
-    TextEcsComponent,
-    ShapeSnapshot
-  >();
-
   return {
     query: [textId],
     update: (world, { entities, components: [textComponents] }) => {
@@ -62,7 +43,16 @@ export const createTextShapingEcsSystem = (): EcsSystem<[TextEcsComponent]> => {
         const entity = entities[i];
         const textComponent = textComponents[i];
 
-        const snapshot: ShapeSnapshot = {
+        const shapedFrom = world.getComponent<TextMeshEcsComponent>(
+          entity,
+          textMeshId,
+        )?.shapedFrom;
+
+        if (shapedFrom && isShapedFrom(textComponent, shapedFrom)) {
+          continue;
+        }
+
+        const snapshot: TextShapeInputs = {
           text: textComponent.text,
           fontAtlas: textComponent.fontAtlas,
           size: textComponent.size,
@@ -74,40 +64,18 @@ export const createTextShapingEcsSystem = (): EcsSystem<[TextEcsComponent]> => {
           horizontalAlignPivot: textComponent.horizontalAlignPivot,
           richText: textComponent.richText,
         };
-
-        const lastSnapshot = lastShapedSnapshotByComponent.get(textComponent);
-        const alreadyShaped =
-          world.getComponent<TextMeshEcsComponent>(entity, textMeshId) !== null;
-
-        if (
-          alreadyShaped &&
-          lastSnapshot &&
-          isSameSnapshot(lastSnapshot, snapshot)
-        ) {
-          continue;
-        }
-
         const { glyphs, bounds, caretStops } = shapeText(
-          textComponent.text,
-          textComponent.fontAtlas.data,
-          {
-            size: textComponent.size,
-            letterSpacing: textComponent.letterSpacing,
-            lineHeight: textComponent.lineHeight,
-            horizontalAlign: textComponent.horizontalAlign,
-            verticalAlign: textComponent.verticalAlign,
-            maxWidth: textComponent.maxWidth,
-            horizontalAlignPivot: textComponent.horizontalAlignPivot,
-            richText: textComponent.richText,
-          },
+          snapshot.text,
+          snapshot.fontAtlas.data,
+          snapshot,
         );
 
         world.addComponent<TextMeshEcsComponent>(entity, textMeshId, {
           glyphs,
           bounds,
           caretStops,
+          shapedFrom: snapshot,
         });
-        lastShapedSnapshotByComponent.set(textComponent, snapshot);
       }
     },
   };

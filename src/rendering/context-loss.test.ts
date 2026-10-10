@@ -519,7 +519,8 @@ describe('WebGL context loss', () => {
       geometry.bind(createMaterial());
 
       expect(warn).toHaveBeenCalledWith(
-        'Attribute a_position not found in shader',
+        '[geometry-attribute-not-found] Attribute a_position not found in shader',
+        expect.objectContaining({ label: 'a_position' }),
       );
       expect(gl.vertexAttribPointer).not.toHaveBeenCalled();
       warn.mockRestore();

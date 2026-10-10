@@ -10,17 +10,14 @@ export class SparseSet<T> {
   public readonly sparseArray: Array<number>;
   public readonly denseEntities: Array<number>;
   public readonly denseComponents: Array<T>;
-  public readonly isTag: boolean;
 
   /**
-   * Creates a new SparseSet instance.
-   * @param isTag - Indicates whether the set is a tag component (default: false).
+   * Creates an empty SparseSet.
    */
-  constructor(isTag: boolean = false) {
+  constructor() {
     this.sparseArray = [];
     this.denseEntities = [];
     this.denseComponents = [];
-    this.isTag = isTag;
   }
 
   /**

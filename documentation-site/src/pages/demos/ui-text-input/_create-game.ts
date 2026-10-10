@@ -8,6 +8,7 @@ import defaultFontImageUrl from '@forge-game-engine/forge/fonts/default/default.
 import {
   Axis2dAction,
   buttonMoments,
+  createTextEntryService,
   KeyboardAxis2dBinding,
   keyCodes,
   KeyboardInputSource,
@@ -178,8 +179,11 @@ export const createTextInputGame = async (): Promise<Game> => {
     game,
   );
 
+  const textEntries = createTextEntryService(game.container);
+
   registerUiSystems(world, renderContext, time, {
     pointerSource: mouseInputSource,
+    textEntries,
   });
 
   const canvas = createUiCanvas(world, renderContext, {
@@ -216,7 +220,7 @@ export const createTextInputGame = async (): Promise<Game> => {
   };
 
   const fieldOptions = {
-    renderContext,
+    textEntries,
     sprite: panelSprite,
     fillSprite,
     fontAtlas,

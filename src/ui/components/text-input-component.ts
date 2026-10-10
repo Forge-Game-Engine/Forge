@@ -20,9 +20,11 @@ export type TextInputAttributes = Omit<TextEntryAttributes, 'maxLength'>;
  */
 export interface TextInputRequiredOptions {
   /**
-   * The field's hidden DOM input (see `createTextEntry`). It holds the text,
+   * The field's hidden DOM input, created for the field's entity by a
+   * `TextEntryService` (`textEntries.create(entity)`). It holds the text,
    * the selection and the IME composition; the component mirrors them.
-   * Disposed by `createUiTextInputEcsSystem` when the component is removed.
+   * `createUiTextInputEcsSystem` has the service release it when the
+   * component is removed, or replaced by one with another entry.
    */
   readonly entry: TextEntry;
 
@@ -71,6 +73,27 @@ export interface TextInputDefaultedOptions {
 }
 
 /**
+ * What a text field's caret was last drawn for, and how long it has been
+ * blinking since any of it changed.
+ */
+export interface TextInputCaretBlink {
+  /** The text shown when the caret was last drawn. */
+  text: string;
+
+  /** The selection's start when the caret was last drawn. */
+  selectionStart: number;
+
+  /** The selection's end when the caret was last drawn. */
+  selectionEnd: number;
+
+  /** Whether the field was being edited when the caret was last drawn. */
+  isEditing: boolean;
+
+  /** How long the caret has been blinking unchanged, in milliseconds. */
+  elapsedMilliseconds: number;
+}
+
+/**
  * A single-line text field: the player types into a hidden DOM input
  * (`entry`), and the field draws its value, caret and selection with
  * ordinary UI entities. Build one with `createTextInput`.
@@ -96,6 +119,14 @@ export interface TextInputEcsComponent
    * with `editTextInput`.
    */
   isEditing: boolean;
+
+  /**
+   * The caret's blink: what it was last drawn for and how long it has
+   * blinked since, so it restarts whenever the text or selection changes.
+   * `null` until the field is first drawn. System-owned, written by
+   * `createUiTextInputEcsSystem`.
+   */
+  caretBlink: TextInputCaretBlink | null;
 
   /** Raised with the new `value` whenever it changes. */
   readonly onValueChanged: ParameterizedForgeEvent<string>;
@@ -141,6 +172,7 @@ export function addTextInputComponent(
     ...withDefaults(defaultTextInputOptions, rest),
     value: options.entry.value,
     isEditing: false,
+    caretBlink: null,
     onValueChanged: new ParameterizedForgeEvent('textInput.onValueChanged'),
     onSubmit: new ParameterizedForgeEvent('textInput.onSubmit'),
     onCancel: new ForgeEvent('textInput.onCancel'),

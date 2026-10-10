@@ -1,7 +1,7 @@
 import { PositionEcsComponent, positionId, Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
-import type { TextEntry } from '../../input/text-entry/text-entry.js';
+import type { TextEntryService } from '../../input/text-entry/text-entry-service.js';
 import { Vector2 } from '../../math/index.js';
 import {
   CameraEcsComponent,
@@ -29,6 +29,7 @@ import {
   TextInputEcsComponent,
   textInputId,
 } from '../components/text-input-component.js';
+import { uiTextInputStateId } from '../components/ui-text-input-state-component.js';
 import {
   UiInteractableEcsComponent,
   uiInteractableId,
@@ -42,15 +43,6 @@ import { resolveCanvasGroupState } from '../utilities/resolve-canvas-group-state
 const caretBlinkHalfPeriodMilliseconds = 530;
 
 const primaryButton = 0;
-
-/** What the caret was last drawn for, to restart its blink on any change. */
-interface CaretState {
-  text: string;
-  selectionStart: number;
-  selectionEnd: number;
-  isEditing: boolean;
-  elapsedMilliseconds: number;
-}
 
 /**
  * Removes the characters `glyphs` has no glyph for, keeping spaces, so a
@@ -251,30 +243,32 @@ function toCanvasCssRect(
  * Fields on world-space canvases are edited and drawn the same way, but
  * their hidden input isn't moved over them.
  *
- * Every field's input is removed when its component is, and all of them
- * are removed in `cleanup`.
+ * The fields' hidden inputs belong to `textEntries`, which created them.
+ * The system releases a field's input when the field is removed, or its
+ * component is replaced by one with another input, including a field
+ * removed before the system first ran it, and releases every input and its
+ * own DOM listeners in `cleanup`. The pressed field lives in a
+ * `UiTextInputStateEcsComponent` singleton, which the system adds when it's
+ * registered, and each field's caret blink in its `TextInputEcsComponent`.
  *
  * Must be registered after `createUiNavigationEcsSystem` and
  * `createUiInteractionEcsSystem` (it reads `wasInvokedThisFrame`), which
  * `registerUiSystems` does.
  * @param renderContext - The render context whose canvas the fields are
- * drawn on. Its canvas's parent element receives the tap listeners.
+ * drawn on.
  * @param time - The time the caret blinks by. It uses unscaled time, so
  * the caret blinks while the game is paused.
+ * @param textEntries - The service that created the fields' hidden inputs
+ * (see `createTextInput`). Its container receives the tap listeners.
  * @returns The UI text input ECS system.
  */
 export const createUiTextInputEcsSystem = (
   renderContext: RenderContext,
   time: Time,
+  textEntries: TextEntryService,
 ): EcsSystem<
   [TextInputEcsComponent, UiInteractableEcsComponent, RectTransformEcsComponent]
 > => {
-  const entries = new Map<TextInputEcsComponent, TextEntry>();
-  const caretStates = new WeakMap<TextInputEcsComponent, CaretState>();
-  let currentWorld: EcsWorld | null = null;
-  let container: HTMLElement | null = null;
-  let pressedField: number | null = null;
-
   const toViewportPosition = (event: MouseEvent): Vector2 => {
     const bounds = renderContext.canvas.getBoundingClientRect();
 
@@ -297,16 +291,16 @@ export const createUiTextInputEcsSystem = (
   /**
    * The text field under a pointer event, or `null`. Only counts when it's
    * the single element hit across every canvas, so a field under an
-   * element on another canvas is never edited by mistake.
+   * element on another canvas is never edited by mistake. Runs in a DOM
+   * event handler, outside any system's `update`, so it queries the world
+   * directly.
    */
-  const findFieldAt = (event: MouseEvent): number | null => {
-    if (!currentWorld) {
-      return null;
-    }
-
-    const world = currentWorld;
+  const findFieldAt = (world: EcsWorld, event: MouseEvent): number | null => {
     const viewportPosition = toViewportPosition(event);
     const hits: number[] = [];
+    const interactables = world.query<
+      [UiInteractableEcsComponent, RectTransformEcsComponent]
+    >([uiInteractableId, rectTransformId]);
 
     for (const canvasEntity of world.query([canvasId]).entities) {
       const hit = raycastUiCanvas(
@@ -314,6 +308,7 @@ export const createUiTextInputEcsSystem = (
         canvasEntity,
         renderContext,
         viewportPosition,
+        interactables,
       );
 
       if (hit !== null) {
@@ -332,48 +327,102 @@ export const createUiTextInputEcsSystem = (
       : null;
   };
 
-  const onPointerDown = (event: PointerEvent): void => {
-    pressedField = event.button === primaryButton ? findFieldAt(event) : null;
-  };
-
-  // Pressing anywhere that isn't focusable moves the browser's focus to the
-  // page, which would end editing for a moment when the player presses the
-  // field they're typing in. A pressed field keeps focus where it is
-  // instead; the release then focuses it.
-  const onMouseDown = (event: MouseEvent): void => {
-    if (findFieldAt(event) !== null) {
-      event.preventDefault();
-    }
-  };
-
-  const onPointerUp = (event: PointerEvent): void => {
-    const field = pressedField;
-
-    pressedField = null;
-
-    if (
-      !currentWorld ||
-      field === null ||
-      event.button !== primaryButton ||
-      findFieldAt(event) !== field
-    ) {
+  /**
+   * Attaches the tap listeners to the canvas's container, bound to `world`.
+   * A phone only opens its keyboard when an input is focused inside the
+   * gesture's own handler, so the listeners focus the field right there.
+   */
+  const listen = (world: EcsWorld): void => {
+    if (textEntries.isListening) {
       return;
     }
 
-    currentWorld
-      .getComponentRequired<TextInputEcsComponent>(field, textInputId)
-      .entry.focus();
+    const state = world.getSingleton(uiTextInputStateId);
+
+    const onPointerDown = (event: PointerEvent): void => {
+      state.pressedField =
+        event.button === primaryButton ? findFieldAt(world, event) : null;
+    };
+
+    // Pressing anywhere that isn't focusable moves the browser's focus to
+    // the page, which would end editing for a moment when the player
+    // presses the field they're typing in. A pressed field keeps focus
+    // where it is instead; the release then focuses it.
+    const onMouseDown = (event: MouseEvent): void => {
+      if (findFieldAt(world, event) !== null) {
+        event.preventDefault();
+      }
+    };
+
+    const onPointerUp = (event: PointerEvent): void => {
+      const field = state.pressedField;
+
+      state.pressedField = null;
+
+      if (
+        field === null ||
+        event.button !== primaryButton ||
+        findFieldAt(world, event) !== field
+      ) {
+        return;
+      }
+
+      world
+        .getComponentRequired<TextInputEcsComponent>(field, textInputId)
+        .entry.focus();
+    };
+
+    textEntries.listen('pointerdown', onPointerDown);
+    textEntries.listen('mousedown', onMouseDown);
+    textEntries.listen('pointerup', onPointerUp);
   };
 
-  const listen = (): void => {
-    if (container) {
-      return;
+  // Whether `entity` is a text field whose entry is still the one
+  // `textEntries` holds for it.
+  const keepsEntry = (world: EcsWorld, entity: number): boolean => {
+    const entry = textEntries.get(entity);
+
+    return (
+      entry !== null &&
+      world.getComponent<TextInputEcsComponent>(entity, textInputId)?.entry ===
+        entry
+    );
+  };
+
+  /**
+   * Gives `textEntries` back the inputs of fields that went away. A field
+   * that stopped matching releases its input, unless it's still a field with
+   * the same input (it lost another component, or it left and came back):
+   * then it's unclaimed, and checked every run until it matches again or
+   * isn't a field any more. The same check releases the input of a field
+   * removed before this system first ran it, which no journal reports.
+   */
+  const releaseRemovedEntries = (
+    world: EcsWorld,
+    added: readonly number[],
+    removed: readonly number[],
+  ): void => {
+    for (let i = 0; i < removed.length; i++) {
+      const entity = removed[i];
+
+      if (keepsEntry(world, entity)) {
+        textEntries.unclaim(entity);
+      } else {
+        textEntries.release(entity);
+      }
     }
 
-    container = renderContext.canvas.parentElement;
-    container?.addEventListener('pointerdown', onPointerDown);
-    container?.addEventListener('mousedown', onMouseDown);
-    container?.addEventListener('pointerup', onPointerUp);
+    for (let i = 0; i < added.length; i++) {
+      textEntries.claim(added[i]);
+    }
+
+    for (let i = textEntries.unclaimedOwners.length - 1; i >= 0; i--) {
+      const owner = textEntries.unclaimedOwners[i];
+
+      if (!keepsEntry(world, owner)) {
+        textEntries.release(owner);
+      }
+    }
   };
 
   const updateEditing = (
@@ -478,7 +527,7 @@ export const createUiTextInputEcsSystem = (
     selectionStart: number,
     selectionEnd: number,
   ): boolean => {
-    const previous = caretStates.get(textInput);
+    const previous = textInput.caretBlink;
     const unchanged =
       previous &&
       previous.text === text &&
@@ -489,13 +538,21 @@ export const createUiTextInputEcsSystem = (
       ? previous.elapsedMilliseconds + time.rawDeltaTimeInMilliseconds
       : 0;
 
-    caretStates.set(textInput, {
-      text,
-      selectionStart,
-      selectionEnd,
-      isEditing: textInput.isEditing,
-      elapsedMilliseconds,
-    });
+    if (previous) {
+      previous.text = text;
+      previous.selectionStart = selectionStart;
+      previous.selectionEnd = selectionEnd;
+      previous.isEditing = textInput.isEditing;
+      previous.elapsedMilliseconds = elapsedMilliseconds;
+    } else {
+      textInput.caretBlink = {
+        text,
+        selectionStart,
+        selectionEnd,
+        isEditing: textInput.isEditing,
+        elapsedMilliseconds,
+      };
+    }
 
     return (
       elapsedMilliseconds % (caretBlinkHalfPeriodMilliseconds * 2) <
@@ -506,25 +563,32 @@ export const createUiTextInputEcsSystem = (
   return {
     name: 'uiTextInput',
     query: [textInputId, uiInteractableId, rectTransformId],
+    onRegister: (world) => {
+      if (world.tryGetSingleton(uiTextInputStateId)) {
+        return;
+      }
+
+      world.addSingleton(uiTextInputStateId, { pressedField: null });
+    },
     update: (
       world,
-      { entities, components: [textInputs, interactables, rectTransforms] },
+      {
+        entities,
+        components: [textInputs, interactables, rectTransforms],
+        added,
+        removed,
+      },
     ) => {
-      currentWorld = world;
-
-      const current = new Set<TextInputEcsComponent>();
+      releaseRemovedEntries(world, added, removed);
 
       if (entities.length > 0) {
-        listen();
+        listen(world);
       }
 
       for (let i = 0; i < entities.length; i++) {
         const entity = entities[i];
         const textInput = textInputs[i];
         const { entry } = textInput;
-
-        current.add(textInput);
-        entries.set(textInput, entry);
 
         // `maxLength` isn't passed on as the input's `maxlength`: the
         // browser would count characters the filters are about to remove,
@@ -572,26 +636,15 @@ export const createUiTextInputEcsSystem = (
 
         updateVisuals(world, textInput);
       }
-
-      for (const [textInput, entry] of entries) {
-        if (!current.has(textInput)) {
-          entry.dispose();
-          entries.delete(textInput);
-        }
-      }
     },
-    cleanup: () => {
-      container?.removeEventListener('pointerdown', onPointerDown);
-      container?.removeEventListener('mousedown', onMouseDown);
-      container?.removeEventListener('pointerup', onPointerUp);
-      container = null;
-      currentWorld = null;
+    cleanup: (world) => {
+      textEntries.releaseAll();
 
-      for (const entry of entries.values()) {
-        entry.dispose();
+      const state = world.tryGetSingleton(uiTextInputStateId);
+
+      if (state) {
+        state.pressedField = null;
       }
-
-      entries.clear();
     },
   };
 };

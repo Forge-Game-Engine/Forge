@@ -10,7 +10,7 @@ import {
 } from '../../common/index.js';
 import { Matrix3x3, Rect, Rects, Vec2 } from '../../math/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
-import { QueryResult } from '../../ecs/index.js';
+import { QueryMatches } from '../../ecs/index.js';
 import { matchesMask } from '../../utilities/matches-mask.js';
 import {
   TextEcsComponent,
@@ -28,6 +28,8 @@ import { pushTextRenderCommands } from '../../text/rendering/glyph-quad.js';
 import {
   CameraEcsComponent,
   cameraId,
+  MaskEcsComponent,
+  maskId,
   SpriteEcsComponent,
   spriteId,
 } from '../components/index.js';
@@ -434,8 +436,8 @@ function setDrawItem(
  */
 function collectDrawItems(
   resolver: DrawOrderResolver,
-  spriteQuery: QueryResult<[SpriteEcsComponent, PositionEcsComponent]>,
-  textQuery: QueryResult<
+  spriteQuery: QueryMatches<[SpriteEcsComponent, PositionEcsComponent]>,
+  textQuery: QueryMatches<
     [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
   >,
 ): number {
@@ -590,21 +592,30 @@ const drawOrderResolver = createDrawOrderResolver();
  */
 export const createRenderEcsSystem = (
   renderContext: RenderContext,
-): EcsSystem<[CameraEcsComponent, PositionEcsComponent]> => {
+): EcsSystem<
+  [CameraEcsComponent, PositionEcsComponent],
+  {
+    sprites: [SpriteEcsComponent, PositionEcsComponent];
+    texts: [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent];
+    masks: [MaskEcsComponent];
+  }
+> => {
   let resources: RenderResources | null = null;
 
   return {
     query: [cameraId, positionId],
-    update: (world, { components: [cameras, cameraPositions] }) => {
+    queries: {
+      sprites: { query: [spriteId, positionId] },
+      texts: { query: [textId, textMeshId, positionId] },
+      masks: { query: [maskId] },
+    },
+    update: (
+      world,
+      { components: [cameras, cameraPositions] },
+      { sprites: spriteQuery, texts: textQuery, masks },
+    ) => {
       clearedDestinationsThisFrame.clear();
       resources ??= createRenderResources(renderContext);
-
-      const spriteQuery = world.query<
-        [SpriteEcsComponent, PositionEcsComponent]
-      >([spriteId, positionId]);
-      const textQuery = world.query<
-        [TextEcsComponent, TextMeshEcsComponent, PositionEcsComponent]
-      >([textId, textMeshId, positionId]);
 
       drawOrderResolver.resolve(
         world,
@@ -644,7 +655,7 @@ export const createRenderEcsSystem = (
           world.getComponentAccessor<RotationEcsComponent>(rotationId),
         getScale: world.getComponentAccessor<ScaleEcsComponent>(scaleId),
         getFlip: world.getComponentAccessor<FlipEcsComponent>(flipId),
-        getMask: createInstanceMaskResolver(world),
+        getMask: createInstanceMaskResolver(world, masks),
       };
 
       for (let c = 0; c < cameras.length; c++) {

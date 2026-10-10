@@ -105,6 +105,86 @@ describe('createTextShapingEcsSystem', () => {
     expect(secondMesh).toBe(firstMesh);
   });
 
+  it('records the fields it shaped from on the mesh', () => {
+    const entity = world.createEntity();
+    const fontAtlas = buildFontAtlas();
+
+    addTextComponent(world, entity, { text: 'AB', fontAtlas, size: 10 });
+
+    world.update();
+
+    expect(
+      world.getComponent<TextMeshEcsComponent>(entity, textMeshId)?.shapedFrom,
+    ).toMatchObject({ text: 'AB', fontAtlas, size: 10 });
+  });
+
+  it('records a copy of the fields, which later changes to the text leave alone', () => {
+    const entity = world.createEntity();
+    const text = addTextComponent(world, entity, {
+      text: 'AB',
+      fontAtlas: buildFontAtlas(),
+      size: 10,
+    });
+
+    world.update();
+
+    const { shapedFrom } = world.getComponent<TextMeshEcsComponent>(
+      entity,
+      textMeshId,
+    )!;
+
+    text.text = 'ABC';
+
+    expect(shapedFrom).not.toBe(text);
+    expect(shapedFrom?.text).toBe('AB');
+  });
+
+  it('shapes a mesh that has no record of what it was shaped from', () => {
+    const entity = world.createEntity();
+
+    addTextComponent(world, entity, {
+      text: 'A',
+      fontAtlas: buildFontAtlas(),
+      size: 10,
+    });
+    world.addComponent<TextMeshEcsComponent>(entity, textMeshId, {
+      glyphs: [],
+      bounds: { width: 0, height: 0 },
+      caretStops: [],
+      shapedFrom: null,
+    });
+
+    world.update();
+
+    expect(
+      world.getComponent<TextMeshEcsComponent>(entity, textMeshId)?.glyphs,
+    ).toHaveLength(1);
+  });
+
+  it('keeps no state between runs outside the components', () => {
+    const entity = world.createEntity();
+    const fontAtlas = buildFontAtlas();
+
+    addTextComponent(world, entity, { text: 'A', fontAtlas, size: 10 });
+    world.update();
+
+    const mesh = world.getComponent<TextMeshEcsComponent>(entity, textMeshId);
+    const freshWorldSystem = createTextShapingEcsSystem();
+    const otherWorld = new EcsWorld();
+    const otherEntity = otherWorld.createEntity();
+
+    otherWorld.addSystem(freshWorldSystem);
+    addTextComponent(otherWorld, otherEntity, {
+      text: 'A',
+      fontAtlas,
+      size: 10,
+    });
+    otherWorld.addComponent(otherEntity, textMeshId, mesh!);
+    otherWorld.update();
+
+    expect(otherWorld.getComponent(otherEntity, textMeshId)).toBe(mesh);
+  });
+
   it('re-shapes when the text changes', () => {
     const entity = world.createEntity();
 

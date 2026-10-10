@@ -1,6 +1,7 @@
 import { Time } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import type { TextEntryService } from '../../input/text-entry/text-entry-service.js';
 import { RenderContext, SafeAreaInsets } from '../../rendering/index.js';
 import { createUiAspectRatioFitterEcsSystem } from '../systems/ui-aspect-ratio-fitter-system.js';
 import { createUiCanvasGroupEcsSystem } from '../systems/ui-canvas-group-system.js';
@@ -41,14 +42,23 @@ export interface RegisterUiSystemsOptions {
    * safe-area support.
    */
   getSafeAreaInsets?: () => SafeAreaInsets;
+
+  /**
+   * The service that owns the hidden inputs of the game's text fields
+   * (`createTextEntryService`). Supply it, and pass the same one to every
+   * `createTextInput`, to register `createUiTextInputEcsSystem`. Omit for a
+   * game without text fields.
+   */
+  textEntries?: TextEntryService;
 }
 
 /**
  * Registers every system a `createUiCanvas` canvas depends on: layout,
- * layout groups, aspect ratio fitting, progress bars, canvas groups, focus navigation, color transitions, toggles,
- * tooltips and text inputs - plus, once a
- * `pointerSource` is supplied, pointer raycasting/interaction/sliders/scroll rects, and
- * once `getSafeAreaInsets` is supplied, safe-area insetting - each wired in
+ * layout groups, aspect ratio fitting, progress bars, canvas groups, focus navigation, color transitions, toggles
+ * and tooltips - plus, once a
+ * `pointerSource` is supplied, pointer raycasting/interaction/sliders/scroll rects,
+ * once `getSafeAreaInsets` is supplied, safe-area insetting, and once
+ * `textEntries` is supplied, text inputs - each wired in
  * the order their cross-system reads/writes require.
  *
  * Call this once per `EcsWorld`, the same way a game calls `registerInputs`
@@ -89,8 +99,8 @@ export interface RegisterUiSystemsOptions {
  * against.
  * @param time - The time instance driving `createUiTransitionEcsSystem`'s
  * and `createUiTooltipEcsSystem`'s timers.
- * @param options - The pointer source and safe-area callback to wire up, if
- * this game uses them.
+ * @param options - The pointer source, safe-area callback and text entry
+ * service to wire up, if this game uses them.
  */
 export function registerUiSystems(
   world: EcsWorld,
@@ -98,7 +108,7 @@ export function registerUiSystems(
   time: Time,
   options: RegisterUiSystemsOptions = {},
 ): void {
-  const { pointerSource, getSafeAreaInsets } = options;
+  const { pointerSource, getSafeAreaInsets, textEntries } = options;
 
   const progressBar = createUiProgressBarEcsSystem();
   const aspectRatioFitter = createUiAspectRatioFitterEcsSystem();
@@ -147,9 +157,19 @@ export function registerUiSystems(
 
   world.addSystem(tooltip, { after: [navigation] });
 
-  const textInput = createUiTextInputEcsSystem(renderContext, time);
+  // The systems that read what the interaction system writes this tick.
+  const interactionReaders: EcsSystem[] = [transition, toggle, tooltip];
 
-  world.addSystem(textInput, { after: [navigation] });
+  if (textEntries) {
+    const textInput = createUiTextInputEcsSystem(
+      renderContext,
+      time,
+      textEntries,
+    );
+
+    world.addSystem(textInput, { after: [navigation] });
+    interactionReaders.push(textInput);
+  }
 
   if (pointerSource) {
     const raycast = createUiRaycastEcsSystem(pointerSource, renderContext);
@@ -163,7 +183,7 @@ export function registerUiSystems(
 
     world.addSystem(interaction, {
       after: [navigation, raycast],
-      before: [transition, toggle, tooltip, textInput],
+      before: interactionReaders,
     });
 
     const slider = createUiSliderEcsSystem(pointerSource, renderContext);

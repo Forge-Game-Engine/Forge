@@ -23,6 +23,11 @@ import {
   textInputId,
 } from '../components/text-input-component.js';
 import { addUiInteractableComponent } from '../components/ui-interactable-component.js';
+import { uiTextInputStateId } from '../components/ui-text-input-state-component.js';
+import {
+  createTextEntryService,
+  TextEntryService,
+} from '../../input/text-entry/text-entry-service.js';
 import { createTextInput, TextInput } from '../utilities/create-text-input.js';
 
 const glyph = (codePoint: number) => ({
@@ -75,6 +80,7 @@ const pointer = (type: string, x: number, y: number): MouseEvent =>
 describe('createUiTextInputEcsSystem', () => {
   let container: HTMLDivElement;
   let renderContext: RenderContext;
+  let textEntries: TextEntryService;
   let world: EcsWorld;
   let field: TextInput;
   let textInput: TextInputEcsComponent;
@@ -108,6 +114,7 @@ describe('createUiTextInputEcsSystem', () => {
       cssHeight: 600,
       pixelRatio: 1,
     } as unknown as RenderContext;
+    textEntries = createTextEntryService(container);
 
     world = new EcsWorld();
 
@@ -122,7 +129,7 @@ describe('createUiTextInputEcsSystem', () => {
     addCanvasComponent(world, canvasEntity, { camera });
 
     field = createTextInput(world, canvasEntity, {
-      renderContext,
+      textEntries,
       sprite: buildSprite(),
       fillSprite: buildSprite(),
       fontAtlas,
@@ -138,9 +145,11 @@ describe('createUiTextInputEcsSystem', () => {
     };
 
     world.addSystem(
-      createUiTextInputEcsSystem(renderContext, {
-        rawDeltaTimeInMilliseconds: 16,
-      } as Time),
+      createUiTextInputEcsSystem(
+        renderContext,
+        { rawDeltaTimeInMilliseconds: 16 } as Time,
+        textEntries,
+      ),
     );
   });
 
@@ -327,6 +336,7 @@ describe('createUiTextInputEcsSystem', () => {
         { x: 20, y: 0 },
         { x: 30, y: 0 },
       ],
+      shapedFrom: null,
     });
     editTextInput(world, field.entity);
     type('abc');
@@ -395,7 +405,7 @@ describe('createUiTextInputEcsSystem', () => {
     });
 
     const worldField = createTextInput(world, worldCanvas, {
-      renderContext,
+      textEntries,
       sprite: buildSprite(),
       fillSprite: buildSprite(),
       fontAtlas,
@@ -417,7 +427,7 @@ describe('createUiTextInputEcsSystem', () => {
     });
 
     const orphan = createTextInput(world, canvasWithoutCamera, {
-      renderContext,
+      textEntries,
       sprite: buildSprite(),
       fillSprite: buildSprite(),
       fontAtlas,
@@ -494,7 +504,7 @@ describe('createUiTextInputEcsSystem', () => {
 
   it("removes a field's hidden input with its component, and every input on cleanup", () => {
     const other = createTextInput(world, canvasEntity, {
-      renderContext,
+      textEntries,
       sprite: buildSprite(),
       fillSprite: buildSprite(),
       fontAtlas,
@@ -514,5 +524,87 @@ describe('createUiTextInputEcsSystem', () => {
     world.stop();
 
     expect(other.textInput.entry.element.isConnected).toBe(false);
+  });
+
+  it("removes a field's hidden input when its component is replaced by one with another input", () => {
+    world.update();
+
+    const { element } = textInput.entry;
+    const replacementEntry = textEntries.create(field.entity);
+
+    world.addComponent(field.entity, textInputId, {
+      ...textInput,
+      entry: replacementEntry,
+    });
+    world.update();
+
+    expect(element.isConnected).toBe(false);
+    expect(replacementEntry.element.isConnected).toBe(true);
+  });
+
+  it("removes the hidden input of a field removed before the system's first run", () => {
+    const { element } = textInput.entry;
+
+    world.removeEntity(field.entity);
+    world.update();
+
+    expect(element.isConnected).toBe(false);
+    expect(textEntries.get(field.entity)).toBeNull();
+  });
+
+  it('removes the hidden input of a field created and removed between two runs', () => {
+    world.update();
+
+    const transient = createTextInput(world, canvasEntity, {
+      textEntries,
+      sprite: buildSprite(),
+      fillSprite: buildSprite(),
+      fontAtlas,
+      size: 20,
+    });
+    const { element } = transient.textInput.entry;
+
+    world.removeComponent(transient.entity, textInputId);
+    world.update();
+
+    expect(element.isConnected).toBe(false);
+    expect(textInput.entry.element.isConnected).toBe(true);
+  });
+
+  it("keeps a field's input while the field is briefly not run, and removes it once the field is gone", () => {
+    world.update();
+
+    const { element } = textInput.entry;
+
+    world.removeComponent(field.entity, rectTransformId);
+    world.update();
+
+    expect(element.isConnected).toBe(true);
+    expect(textEntries.unclaimedOwners).toEqual([field.entity]);
+
+    world.removeComponent(field.entity, textInputId);
+    world.update();
+
+    expect(element.isConnected).toBe(false);
+    expect(textEntries.unclaimedOwners).toEqual([]);
+  });
+
+  it('claims the inputs of the fields it runs', () => {
+    expect(textEntries.unclaimedOwners).toEqual([field.entity]);
+
+    world.update();
+
+    expect(textEntries.unclaimedOwners).toEqual([]);
+  });
+
+  it('keeps the pressed field in the text input state singleton and the caret blink on the field', () => {
+    editTextInput(world, field.entity);
+    world.update();
+
+    expect(world.getSingleton(uiTextInputStateId).pressedField).toBeNull();
+    expect(textInput.caretBlink).toMatchObject({
+      isEditing: true,
+      elapsedMilliseconds: 0,
+    });
   });
 });
