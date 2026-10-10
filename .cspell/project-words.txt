@@ -391,6 +391,7 @@ webgl
 webglcontextlost
 webglcontextrestored
 Wenrexa
+wgpu
 wgsl
 winit
 wrensch's
