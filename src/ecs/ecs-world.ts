@@ -175,7 +175,9 @@ export class EcsWorld implements Updatable, Stoppable {
   private _updateDepth = 0;
   private readonly _recordsToRelease: SystemRecord[] = [];
 
-  private _changeTick = 0;
+  // Starts at 1 so a value stamped before the first run is newer than the
+  // `lastRunTick` of `0` every system's first run gets.
+  private _changeTick = 1;
 
   /**
    * Creates an empty world.
@@ -229,11 +231,20 @@ export class EcsWorld implements Updatable, Stoppable {
   }
 
   /**
-   * The world's change tick. It advances by one just before each system
-   * runs, so every system run has its own tick. The owner of a value stamps
-   * it with this tick when it changes the value; a reader compares the stamp
-   * with its `QueryResult.lastRunTick` to see whether the value changed
-   * since it last ran.
+   * The world's change tick. Each system run happens at its own tick, and
+   * the tick advances by one when the run ends, so outside a system's
+   * `update` (game code, DOM handlers, `onRegister`) it's newer than every
+   * system's last run. The owner of a value stamps it with this tick when it
+   * changes the value; a reader compares the stamp with its
+   * `QueryResult.lastRunTick` to see whether the value changed since it last
+   * ran: a reader never sees its own stamps again, and every other reader
+   * sees each stamp once.
+   *
+   * Ticks are plain numbers (doubles) and only ever grow, so they're exact
+   * for 2^53 runs. Don't store a tick or a stamp in a `Uint32Array` or other
+   * 32-bit field: it would wrap after 2^32 runs (about 41 days at 60 frames
+   * per second with 20 systems), and comparing wrapped values with `>` would
+   * report old stamps as new, unless the comparison handles wraparound.
    */
   get changeTick(): number {
     return this._changeTick;
@@ -421,8 +432,8 @@ export class EcsWorld implements Updatable, Stoppable {
    * Conditions are checked just before the group or system would run, so
    * they see what earlier systems of the tick did.
    *
-   * Before each system runs, the change tick advances and the system's
-   * query results are patched with what changed since it last ran.
+   * Before each system runs, its query results are patched with what
+   * changed since it last ran; after it runs, the change tick advances.
    */
   public update(): void {
     const schedule = this._getSchedule();
@@ -950,9 +961,11 @@ export class EcsWorld implements Updatable, Stoppable {
     }
   }
 
+  // A run happens at the current tick, and the tick advances once it ends,
+  // even if `update` throws. So the tick outside any run is always newer than
+  // every system's last run, and a stamp written there (by game code, a DOM
+  // handler or `onRegister`) is seen by every system on its next run.
   private _runSystem(record: SystemRecord): void {
-    this._changeTick++;
-
     const { lastRunTick } = record;
 
     for (const state of record.states) {
@@ -960,7 +973,12 @@ export class EcsWorld implements Updatable, Stoppable {
     }
 
     record.lastRunTick = this._changeTick;
-    record.system.update(this, record.primary.result, record.secondary);
+
+    try {
+      record.system.update(this, record.primary.result, record.secondary);
+    } finally {
+      this._changeTick++;
+    }
   }
 
   private _createSystemRecord(

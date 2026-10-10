@@ -125,11 +125,11 @@ what changed; no engine or docs-site demo system calls `world.query` inside
 Adds added and removed journals and change ticks, so a system can
 process only the entities that changed.
 
-| #   | Task                  | Description                                                                 | Size |
-| --- | --------------------- | --------------------------------------------------------------------------- | ---- |
-| 2.1 | `added` and `removed` | §6.2, with every edge case listed there tested                              | M    |
-| 2.2 | Change ticks          | §6.3: `world.changeTick` advances per system run; `QueryResult.lastRunTick` | S    |
-| 2.3 | Convention            | Owner-stamped `changedTick` in `AGENTS.md` and the system guide             | S    |
+| #   | Task                  | Description                                                                        | Size |
+| --- | --------------------- | ---------------------------------------------------------------------------------- | ---- |
+| 2.1 | `added` and `removed` | §6.2, with every edge case listed there tested                                     | M    |
+| 2.2 | Change ticks          | §6.3: `world.changeTick` advances after each system run; `QueryResult.lastRunTick` | S    |
+| 2.3 | Convention            | Owner-stamped `changedTick` in `AGENTS.md` and the system guide                    | S    |
 
 **Definition of done:** a system that runs before a value's owner in the
 same frame still sees the owner's stamp on its next run; journal tests pass.
@@ -348,9 +348,20 @@ Rules, each tested:
 
 ### 6.3 Change ticks
 
-`world.changeTick` advances by one before each system runs. An owner that
-writes an output stamps it with the current tick, only when the value
-actually changed:
+Each system run happens at its own tick: `world.changeTick` holds that
+tick while the system's `update` runs, and advances by one when the run
+ends. Outside any run (game code, DOM handlers, `onRegister`, between
+`update` calls) the tick is therefore newer than every system's last run,
+so a value stamped there is seen by every system on its next run, the last
+one in the schedule included. This is Bevy's model: the world's tick is
+always ahead of every system's `last_run`. (Advancing only before each run
+left `world.changeTick` equal to the last system's `lastRunTick` after
+`update`, so that system never saw a stamp written between ticks.) The tick
+starts at 1, so a stamp written before the first `update` is newer than the
+`0` every first run gets.
+
+An owner that writes an output stamps it with the current tick, only when
+the value actually changed:
 
 ```ts
 transform.world.changedTick = world.changeTick;
@@ -364,6 +375,15 @@ if (transform.world.changedTick > meshes.lastRunTick) {
   /* moved since I last looked */
 }
 ```
+
+A system never sees its own stamps again (they equal its next
+`lastRunTick`), and every other system sees each stamp exactly once.
+
+Ticks and stamps are JavaScript numbers (doubles), exact up to 2^53, which
+no game reaches. They must not be stored in a `Uint32Array` or another
+32-bit field without wraparound-aware comparison: 2^32 runs is about 41
+days at 60 frames per second with 20 systems, after which `>` reports old
+stamps as new.
 
 Derived caches outside systems (the GPU scene, design 06) record the stamp
 they last consumed per item and compare for inequality.

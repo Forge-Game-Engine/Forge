@@ -450,12 +450,18 @@ processing `removed` first, instead of diffing the whole set every tick.
 
 To detect a changed _value_, its owner stamps it: when the owning system
 actually changes an output, it writes `changedTick = world.changeTick` on
-it (e.g. `transform.world.changedTick`). `world.changeTick` advances before
-every system run, and each run gets its previous run's tick as
-`queryResult.lastRunTick`, so a reader tests
-`value.changedTick > lastRunTick` and keeps nothing itself. Only the
-owner writes the stamp (it's part of the value it owns), and only when the
-value changed. Don't add proxies, setters or hand-set dirty flags for this.
+it (e.g. `transform.world.changedTick`). Each system run happens at its own
+tick and `world.changeTick` advances when the run ends, so outside a run
+(game code, DOM handlers, `onRegister`) the tick is newer than every
+system's last run, the way Bevy's world tick is. Each run gets its previous
+run's tick as `queryResult.lastRunTick`, so a reader tests
+`value.changedTick > lastRunTick` and keeps nothing itself; it sees every
+stamp written since it last ran, wherever it was written, except its own.
+Only the owner writes the stamp (it's part of the value it owns), and only
+when the value changed. Don't add proxies, setters or hand-set dirty flags
+for this. Ticks and stamps are doubles: never store one in a `Uint32Array`
+(or other 32-bit field) without wraparound-aware comparison, since 2^32
+runs is about 41 days at 60 FPS with 20 systems.
 
 ### Index Files
 

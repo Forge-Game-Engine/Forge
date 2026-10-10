@@ -199,8 +199,11 @@ component's fields. For a value that a reader needs to know changed, such as
 a world transform, the value's owner stamps it with the world's change tick
 when it changes it, and readers compare the stamp with their own last run.
 
-`world.changeTick` advances by one just before each system runs, so every
-system run has its own tick. `queryResult.lastRunTick` is the change tick of
+Every system run happens at its own tick: `world.changeTick` holds it while
+the system's `update` runs, and advances by one when the run ends. Outside a
+system (in game code, a DOM event handler or `onRegister`), the tick is
+newer than every system's last run, so a value stamped there is seen by
+every system on its next run. `queryResult.lastRunTick` is the change tick of
 the system's previous run (`0` on its first):
 
 ```ts
@@ -218,8 +221,13 @@ update(world, { components: [transforms], lastRunTick }) {
 ```
 
 A reader sees each change once, whether it runs before or after the owner
-in the tick, and a reader that didn't run on some ticks sees the changes
-made while it was skipped. Only the owner writes the stamp, and only when
+in the tick or the value was stamped outside any system, and a reader that
+didn't run on some ticks sees the changes made while it was skipped. A
+system doesn't see its own stamps on its next run.
+
+Change ticks are ordinary numbers that only grow. Keep stamps in `number`
+fields; a `Uint32Array` would wrap after 2^32 system runs, and `>` would
+then report old stamps as new. Only the owner writes the stamp, and only when
 the value changed.
 
 ## Run conditions

@@ -229,7 +229,7 @@ describe('query journals', () => {
 });
 
 describe('change ticks', () => {
-  it('advances by one before each system runs', () => {
+  it('runs each system at its own tick and advances after each run', () => {
     const world = new EcsWorld();
     const ticks: number[] = [];
     const recorder: EcsSystem<[]> = {
@@ -242,8 +242,8 @@ describe('change ticks', () => {
     world.update();
     world.update();
 
-    expect(world.changeTick).toBe(4);
     expect(ticks).toEqual([1, 2, 3, 4]);
+    expect(world.changeTick).toBe(5);
   });
 
   it("passes each system its previous run's tick, 0 on its first run", () => {
@@ -350,6 +350,70 @@ describe('change ticks', () => {
       }
 
       expect(seen).toEqual([false, false, true, false]);
+    });
+
+    it('lets every system see a value stamped outside a system, once', () => {
+      const seen: boolean[][] = [[], [], []];
+
+      for (const seenBySystem of seen) {
+        world.addSystem(createReader(seenBySystem));
+      }
+
+      world.update();
+
+      const [stamped] = world.query<[Stamped]>([stampedId]).components[0];
+
+      stamped.value++;
+      stamped.changedTick = world.changeTick;
+
+      world.update();
+      world.update();
+
+      expect(seen).toEqual([
+        [false, true, false],
+        [false, true, false],
+        [false, true, false],
+      ]);
+    });
+
+    it('lets every system see a value stamped before the first update', () => {
+      const seen: boolean[][] = [[], []];
+      const [stamped] = world.query<[Stamped]>([stampedId]).components[0];
+
+      for (const seenBySystem of seen) {
+        world.addSystem(createReader(seenBySystem));
+      }
+
+      stamped.changedTick = world.changeTick;
+      world.update();
+      world.update();
+
+      expect(seen).toEqual([
+        [true, false],
+        [true, false],
+      ]);
+    });
+
+    it("doesn't show the owner its own stamps on its next run", () => {
+      const seen: boolean[] = [];
+      let frame = 0;
+
+      world.addSystem<[Stamped]>({
+        query: [stampedId],
+        update: (innerWorld, { components: [stampedValues], lastRunTick }) => {
+          seen.push(stampedValues[0].changedTick > lastRunTick);
+
+          if (frame === 1) {
+            stampedValues[0].changedTick = innerWorld.changeTick;
+          }
+        },
+      });
+
+      for (frame = 0; frame < 3; frame++) {
+        world.update();
+      }
+
+      expect(seen).toEqual([false, false, false]);
     });
 
     it('lets a reader that skipped runs see a change made while it was skipped', () => {

@@ -312,11 +312,11 @@ tick, whether the system or group runs. See
 ## Running a world tick
 
 Call `world.update()` to run the registered systems for a single frame. For
-each registered system, the world advances `world.changeTick`, patches the
-system's query results with what changed since it last ran, and invokes the
-system's `update` exactly once with the batch of matches, regardless of how
-many entities matched (including zero). A system or group whose `runIf`
-returns `false` is skipped.
+each registered system, the world patches the system's query results with
+what changed since it last ran, invokes the system's `update` exactly once
+with the batch of matches, regardless of how many entities matched
+(including zero), and then advances `world.changeTick`. A system or group
+whose `runIf` returns `false` is skipped.
 
 The order systems run in is worked out once and kept until a system or group
 is added or removed.
