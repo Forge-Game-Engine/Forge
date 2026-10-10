@@ -91,23 +91,6 @@
   --card-highlight-color: #1d4247;
 }
 
-/* The navy gradient that the dark theme sits on. */
-[data-theme='dark'] body {
-  background:
-    radial-gradient(
-      ellipse 80% 50% at 85% -10%,
-      rgba(79, 196, 196, 0.08),
-      transparent
-    ),
-    linear-gradient(180deg, #0b132b 0%, #0a1024 100%);
-  background-attachment: fixed;
-}
-
-[data-theme='dark'] .main-wrapper,
-[data-theme='dark'] .footer {
-  background-color: transparent;
-}
-
 .main-wrapper {
   align-items: stretch;
   justify-content: center;

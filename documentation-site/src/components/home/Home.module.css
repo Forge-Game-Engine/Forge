@@ -4,13 +4,7 @@
   overflow: hidden;
   padding: 6rem 1.5rem 5rem;
   color: var(--forge-periwinkle);
-  background:
-    radial-gradient(
-      ellipse 60% 70% at 80% 40%,
-      rgba(79, 196, 196, 0.12),
-      transparent
-    ),
-    var(--forge-navy);
+  background: var(--forge-navy);
 }
 
 .heroInner {
