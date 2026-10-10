@@ -822,6 +822,21 @@ describe('WebGL2 pipelines, bind groups and passes', () => {
       device.submit([encoder.finish()]);
     });
 
+    it('unbinds every sampler it bound when it ends, even after resetState', () => {
+      const { pass } = setUpDraw();
+
+      pass.drawIndexed(3);
+      device.resetState();
+      pass.end();
+
+      expect(recording.state.samplers.size).toBeGreaterThan(0);
+      expect(
+        [...recording.state.samplers.values()].every(
+          (sampler) => sampler === null,
+        ),
+      ).toBe(true);
+    });
+
     it('resolves a multisampled attachment into its resolve target when it ends', () => {
       const multisampled = device.createTexture({
         format: 'rgba8unorm',

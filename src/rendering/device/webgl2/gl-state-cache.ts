@@ -109,6 +109,9 @@ export class GlStateCache {
   private _activeTexture: number | undefined;
   private readonly _textures = new Map<number, WebGLTexture | null>();
   private readonly _samplers = new Map<number, WebGLSampler | null>();
+  // Units this cache bound a sampler to, kept through `reset`: a sampler
+  // stays bound whatever the cache forgets, until it's unbound.
+  private readonly _samplerUnits = new Set<number>();
   private readonly _buffers = new Map<number, WebGLBuffer | null>();
   private readonly _uniformBindings = new Map<number, UniformBinding>();
   private readonly _pixelStorage = new Map<number, number | boolean>();
@@ -194,6 +197,8 @@ export class GlStateCache {
   ): void {
     this._maxDrawBuffers = maxDrawBuffers;
     this._drawBuffersIndexed = drawBuffersIndexed;
+    // A restored context starts with no samplers bound.
+    this._samplerUnits.clear();
     this.reset();
   }
 
@@ -710,22 +715,21 @@ export class GlStateCache {
 
     this._gl.bindSampler(unit, sampler);
     this._samplers.set(unit, sampler);
+
+    if (sampler === null) {
+      this._samplerUnits.delete(unit);
+    } else {
+      this._samplerUnits.add(unit);
+    }
   }
 
   /**
-   * The units a sampler other than `null` is known to be bound to.
+   * The units this cache bound a sampler to and hasn't unbound, including
+   * any bound before the last `reset`.
    * @returns The units.
    */
   public unitsWithSamplers(): number[] {
-    const units: number[] = [];
-
-    for (const [unit, sampler] of this._samplers) {
-      if (sampler !== null) {
-        units.push(unit);
-      }
-    }
-
-    return units;
+    return [...this._samplerUnits];
   }
 
   /**
