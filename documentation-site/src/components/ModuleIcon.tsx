@@ -1,8 +1,10 @@
 import React, { FC, ReactNode } from 'react';
-import styles from './Home.module.css';
+import clsx from 'clsx';
+import styles from './_ModuleIcon.module.css';
 
 /**
- * Line icons for the engine's modules: teal strokes (`currentColor`) with
+ * Line icons for the engine's modules, used on the homepage and the demo
+ * categories: teal strokes (`currentColor`) with
  * one amber accent each, drawn on a 24x24 grid.
  */
 const icons = {
@@ -136,9 +138,14 @@ const icons = {
 
 export type ModuleIconName = keyof typeof icons;
 
-export const ModuleIcon: FC<{ name: ModuleIconName }> = ({ name }) => (
+interface ModuleIconProps {
+  name: ModuleIconName;
+  className?: string;
+}
+
+export const ModuleIcon: FC<ModuleIconProps> = ({ name, className }) => (
   <svg
-    className={styles.icon}
+    className={clsx(styles.icon, className)}
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"

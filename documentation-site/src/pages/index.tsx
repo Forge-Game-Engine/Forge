@@ -4,10 +4,7 @@ import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import Layout from '@theme/Layout';
 import { DemoCard } from '@site/src/components/DemoCard';
-import {
-  ModuleIcon,
-  ModuleIconName,
-} from '@site/src/components/home/ModuleIcon';
+import { ModuleIcon, ModuleIconName } from '@site/src/components/ModuleIcon';
 import styles from '@site/src/components/home/Home.module.css';
 import { InstallCommand } from '@site/src/components/home/InstallCommand';
 import { demos } from '@site/src/data/demos';

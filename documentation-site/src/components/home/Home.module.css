@@ -192,18 +192,6 @@
   color: var(--ifm-color-primary);
 }
 
-.icon {
-  flex-shrink: 0;
-  width: 2.5rem;
-  height: 2.5rem;
-  color: var(--ifm-color-primary);
-}
-
-.accent {
-  fill: var(--forge-amber);
-  stroke: var(--forge-amber);
-}
-
 .moduleTitle {
   margin: 0 0 0.2rem;
   font-size: 1.2rem;
