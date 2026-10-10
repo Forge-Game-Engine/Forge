@@ -162,10 +162,11 @@ const Hero = (): ReactNode => {
 
 const Modules = (): ReactNode => (
   <section className={styles.section}>
-    <h2 className={styles.sectionTitle}>Everything a 2D game needs</h2>
+    <h2 className={styles.sectionTitle}>
+      Everything you need to build a great 2D game
+    </h2>
     <p className={styles.sectionIntro}>
-      Rendering, physics, UI, audio and more, all built in. Pick one to read its
-      guide.
+      A complete toolbox, with minimal dependencies.
     </p>
     <div className={styles.moduleGrid}>
       {engineModules.map((engineModule) => (
