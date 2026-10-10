@@ -105,7 +105,7 @@ const srgbToLinear = (value: number): number => {
 const rgba8 = [51, 102, 153, 204];
 const rgba8Expected = rgba8.map((value) => value / 255);
 const floats = [0.25, 0.5, 0.75, 1];
-const uints = [7, 11, 13, 4000000000];
+const uintValues = [7, 11, 13, 4000000000];
 
 /** A BC1 block of solid green: two equal RGB565 colors, all indices 0. */
 const solidGreenBc1 = new Uint8Array([0xe0, 0x07, 0xe0, 0x07, 0, 0, 0, 0]);
@@ -209,7 +209,7 @@ const textureChecks: TextureCheck[] = [
     kind: 'uint',
     format: 'r32uint',
     data: new Uint32Array([7]),
-    expected: uints,
+    expected: uintValues,
     mask: [1, 0, 0, 0],
   },
   {
@@ -217,15 +217,15 @@ const textureChecks: TextureCheck[] = [
     kind: 'uint',
     format: 'rg32uint',
     data: new Uint32Array([7, 11]),
-    expected: uints,
+    expected: uintValues,
     mask: [1, 1, 0, 0],
   },
   {
     name: 'rgba32uint',
     kind: 'uint',
     format: 'rgba32uint',
-    data: new Uint32Array(uints),
-    expected: uints,
+    data: new Uint32Array(uintValues),
+    expected: uintValues,
   },
   {
     name: 'depth16unorm',
