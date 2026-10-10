@@ -135,9 +135,6 @@ const Hero = (): ReactNode => {
       />
       <div className={styles.heroShade} />
       <div className={styles.heroInner}>
-        <p className={clsx('eyebrow', styles.heroEyebrow)}>
-          Browser game engine
-        </p>
         <h1 className={styles.heroTitle}>Forge</h1>
         <p className={styles.heroIntro}>
           Build 2D games for the web in TypeScript. Code only, built on an ECS
@@ -165,7 +162,6 @@ const Hero = (): ReactNode => {
 
 const Modules = (): ReactNode => (
   <section className={styles.section}>
-    <p className="eyebrow">The engine · One npm package</p>
     <h2 className={styles.sectionTitle}>What Forge is</h2>
     <p className={styles.sectionIntro}>
       A TypeScript game engine for the browser. Import only the modules your
