@@ -137,8 +137,8 @@ const Hero = (): ReactNode => {
       <div className={styles.heroInner}>
         <h1 className={styles.heroTitle}>Forge</h1>
         <p className={styles.heroIntro}>
-          Build 2D games for the web in TypeScript. Code only, built on an ECS
-          core, rendered with WebGL2.
+          Build 2D games for the web in TypeScript. Built on an ECS core,
+          rendered with WebGL2.
         </p>
         <div className={styles.heroActions}>
           <Link className="button button--primary button--lg" to="/docs/intro">
@@ -162,12 +162,8 @@ const Hero = (): ReactNode => {
 
 const Modules = (): ReactNode => (
   <section className={styles.section}>
-    <h2 className={styles.sectionTitle}>
-      Everything you need to build a great 2D game
-    </h2>
-    <p className={styles.sectionIntro}>
-      A complete toolbox, with minimal dependencies.
-    </p>
+    <h2 className={styles.sectionTitle}>Everything you need</h2>
+    <p className={styles.sectionIntro}>To build a great 2D game.</p>
     <div className={styles.moduleGrid}>
       {engineModules.map((engineModule) => (
         <Link
@@ -203,7 +199,7 @@ const FeaturedDemos = (): ReactNode => {
     <section className={styles.section}>
       <h2 className={styles.sectionTitle}>Demos</h2>
       <p className={styles.sectionIntro}>
-        Try each feature live, with the code that runs it right beside it.
+        Try features and games live in your browser.
       </p>
       <div className={styles.demoGrid}>
         {featured.map((demo) => (
@@ -221,7 +217,7 @@ export default function Home(): ReactNode {
   return (
     <Layout
       title="Browser game engine"
-      description="Forge is a TypeScript game engine for the browser: code only, built on an ECS core and rendered with WebGL2."
+      description="Forge is a TypeScript game engine for the browser: built on an ECS core and rendered with WebGL2."
     >
       <Hero />
       <main>
