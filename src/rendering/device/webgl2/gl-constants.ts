@@ -227,6 +227,7 @@ export const GL_UNPACK_ALIGNMENT = 0x0cf5;
 export const GL_UNPACK_FLIP_Y_WEBGL = 0x9240;
 export const GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL = 0x9241;
 export const GL_UNPACK_COLORSPACE_CONVERSION_WEBGL = 0x9243;
+export const GL_BROWSER_DEFAULT_WEBGL = 0x9244;
 
 // Limits and queries
 export const GL_SAMPLES = 0x80a9;

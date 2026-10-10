@@ -4,12 +4,48 @@ import {
   RecordingGl,
 } from '../../test-helpers/recording-gl.js';
 import type { GpuDevice } from '../gpu-device.js';
+import { createTexture } from '../../texture.js';
 import * as glc from './gl-constants.js';
 import { textureFormats } from './texture-formats.js';
+
+const uploadPixelStorage = new Map([
+  [glc.GL_UNPACK_FLIP_Y_WEBGL, 0],
+  [glc.GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0],
+  [glc.GL_UNPACK_ALIGNMENT, 1],
+  [glc.GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, glc.GL_NONE],
+]);
+
+const defaultPixelStorage = new Map([
+  [glc.GL_UNPACK_FLIP_Y_WEBGL, 0],
+  [glc.GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0],
+  [glc.GL_UNPACK_ALIGNMENT, 4],
+  [glc.GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, glc.GL_BROWSER_DEFAULT_WEBGL],
+]);
 
 describe('the WebGL2 GPU device', () => {
   let recording: RecordingGl;
   let device: GpuDevice;
+
+  /**
+   * The pixel storage WebGL has when a call is made: the defaults, changed
+   * by every `pixelStorei` before it.
+   */
+  const pixelStorageAt = (
+    name: string,
+    index: number = recording.calls.findIndex((call) => call.name === name),
+  ): Map<number, unknown> => {
+    const storage = new Map<number, unknown>(defaultPixelStorage);
+
+    expect(recording.calls[index]?.name).toBe(name);
+
+    for (const call of recording.calls.slice(0, index)) {
+      if (call.name === 'pixelStorei') {
+        storage.set(call.args[0] as number, call.args[1]);
+      }
+    }
+
+    return storage;
+  };
 
   beforeEach(() => {
     const context = createRecordingRenderContext();
@@ -356,14 +392,8 @@ describe('the WebGL2 GPU device', () => {
 
       texture.write(new Uint8Array(16));
 
-      expect(recording.state.pixelStorage).toEqual(
-        new Map([
-          [glc.GL_UNPACK_FLIP_Y_WEBGL, 0],
-          [glc.GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0],
-          [glc.GL_UNPACK_ALIGNMENT, 1],
-          [glc.GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, glc.GL_NONE],
-        ]),
-      );
+      expect(pixelStorageAt('texSubImage2D')).toEqual(uploadPixelStorage);
+      expect(recording.state.pixelStorage).toEqual(defaultPixelStorage);
       expect(recording.callsTo('texSubImage2D')[0].args.slice(0, 8)).toEqual([
         glc.GL_TEXTURE_2D,
         0,
@@ -374,6 +404,34 @@ describe('the WebGL2 GPU device', () => {
         glc.GL_RGBA,
         glc.GL_UNSIGNED_BYTE,
       ]);
+    });
+
+    it("leaves WebGL's default pixel storage for the engine's 2D textures, before and after a restore", () => {
+      const context = createRecordingRenderContext();
+      const texture = context.renderContext.device.createTexture({
+        format: 'rgba8unorm',
+        size: { width: 1, height: 1 },
+        usage: ['sampled', 'copy-destination'],
+      });
+
+      texture.write(new Uint8Array(4));
+      recording = context.recording;
+      createTexture(context.renderContext, document.createElement('canvas'));
+
+      expect(pixelStorageAt('texImage2D')).toEqual(defaultPixelStorage);
+
+      context.loseContext();
+      context.recording.clearCalls();
+      context.restoreContext();
+
+      const restoredUpload = context.recording.calls.findLastIndex(
+        (call) => call.name === 'texImage2D',
+      );
+
+      expect(pixelStorageAt('texImage2D', restoredUpload)).toEqual(
+        defaultPixelStorage,
+      );
+      expect(pixelStorageAt('texSubImage2D')).toEqual(uploadPixelStorage);
     });
 
     it('uploads a typed array to each cube face it covers', () => {

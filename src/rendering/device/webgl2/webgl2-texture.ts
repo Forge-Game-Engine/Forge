@@ -658,7 +658,19 @@ export class WebGl2Texture implements GpuTexture, RestorableResource {
     state.pixelStorei(glc.GL_UNPACK_ALIGNMENT, 1);
     state.pixelStorei(glc.GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, glc.GL_NONE);
     state.bindTexture(0, this.glTarget, this._glTexture);
+    this._uploadRegion(source, region);
 
+    // The engine's 2D textures upload with WebGL's default pixel storage
+    // (browser color conversion included) without setting it, so it's put
+    // back after every upload.
+    state.pixelStorei(glc.GL_UNPACK_ALIGNMENT, 4);
+    state.pixelStorei(
+      glc.GL_UNPACK_COLORSPACE_CONVERSION_WEBGL,
+      glc.GL_BROWSER_DEFAULT_WEBGL,
+    );
+  }
+
+  private _uploadRegion(source: GpuTextureSource, region: WriteRegion): void {
     if (this.dimension === 'cube') {
       this._uploadCubeFaces(source, region);
 
