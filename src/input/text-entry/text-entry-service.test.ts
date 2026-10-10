@@ -32,7 +32,7 @@ describe('createTextEntryService', () => {
     expect(service.unclaimedOwners).toEqual([7]);
   });
 
-  it('claims and unclaims owners that have an entry', () => {
+  it('claims an owner, and puts it back when told to', () => {
     service.create(1);
     service.create(2);
 
