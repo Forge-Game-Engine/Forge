@@ -1,13 +1,12 @@
 import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { ForgeEvent, ParameterizedForgeEvent } from '../../events/index.js';
-import { createTextEntry } from '../../input/text-entry/text-entry.js';
+import type { TextEntryService } from '../../input/text-entry/text-entry-service.js';
 import { Vector2 } from '../../math/index.js';
 import {
   addVisibilityComponent,
   Color,
   NineSliceOptions,
-  RenderContext,
   SpriteEcsComponent,
 } from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
@@ -42,10 +41,12 @@ import { withDefaults } from '../../utilities/with-defaults.js';
  */
 export interface CreateTextInputRequiredOptions {
   /**
-   * The render context the field is drawn with. The field's hidden input
-   * is added to its canvas's parent element (the game's container).
+   * The service that creates and owns the field's hidden input (see
+   * `createTextEntryService`). Pass the same one to `registerUiSystems`, so
+   * the text input system runs the field and releases its input when the
+   * field is removed.
    */
-  renderContext: RenderContext;
+  textEntries: TextEntryService;
 
   /** The sprite to draw the field's background with, e.g. from `createImageSprite`. */
   sprite: SpriteEcsComponent;
@@ -181,10 +182,9 @@ const originAnchor = (pivot: Vector2, size: Vector2): UiAnchorConfig => ({
  * @param world - The ECS world to create the field in.
  * @param parent - The parent entity - a canvas (see `createUiCanvas`) or
  * another UI element.
- * @param options - Options for configuring the field. `renderContext`,
+ * @param options - Options for configuring the field. `textEntries`,
  * `sprite`, `fillSprite`, `fontAtlas` and `size` must always be provided.
  * @returns The created field.
- * @throws An error if the render context's canvas isn't in the document.
  */
 export function createTextInput(
   world: EcsWorld,
@@ -207,7 +207,7 @@ export function createTextInput(
   };
 
   const {
-    renderContext,
+    textEntries,
     anchor,
     anchoredPosition,
     sprite,
@@ -230,14 +230,6 @@ export function createTextInput(
     interactable: interactableOptions,
     transition: transitionOptions,
   } = withDefaults(defaultCreateTextInputOptions, options);
-
-  const container = renderContext.canvas.parentElement;
-
-  if (!container) {
-    throw new Error(
-      'Unable to create a text input: the render context canvas has no parent element to add its hidden input to.',
-    );
-  }
 
   const entity = createPanel(world, parent, {
     anchor,
@@ -327,7 +319,7 @@ export function createTextInput(
   );
 
   const textInput = addTextInputComponent(world, entity, {
-    entry: createTextEntry(container),
+    entry: textEntries.create(entity),
     textLabel,
     placeholderLabel,
     caret,

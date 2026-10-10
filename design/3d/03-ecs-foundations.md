@@ -475,11 +475,26 @@ and adds what it finds:
 | `draw-order.ts` (module scope)                                     | `digitCounts`, the radix sort's counting scratch used by the render system | Scratch, shared across worlds | Design 07 (render context frame scratch)                      |
 
 Phase 3 moved the four rows this design owns. The text-input row's input
-elements are tracked, by field entity, in a `UiTextInputStateEcsComponent`
-singleton that also holds the pressed field and the system's DOM
-listeners, rather than in a separate text-entry service: the entries
-already live on each field's `TextInputEcsComponent`, so the singleton only
-records which ones to dispose when the `removed` journal reports a field.
+elements belong to a `TextEntryService` (`createTextEntryService(container)`
+in the input module), which `createTextInput` creates each field's entry
+through, keyed by the field's entity, and which `registerUiSystems` passes
+to the text input system (the system is registered only when it gets one).
+The service also holds the system's DOM listeners on the container. The
+`UiTextInputStateEcsComponent` singleton keeps only the pressed field.
+
+The system releases entries from its journals, not by rebuilding a set of
+live fields every tick:
+
+- `removed`: a field that stopped matching releases its entry, unless it's
+  still a field with the same entry (it lost another component, or left and
+  came back); then it's unclaimed.
+- `added`: the system claims the field's entry.
+- The service's unclaimed owners (entries created since the last run, and
+  unclaimed ones) are checked every run, and an entry whose field is gone
+  is released. This covers a field created and removed between two runs,
+  which neither journal reports (E8), so its hidden input doesn't leak.
+
+`cleanup` releases every entry and listener.
 
 ### 6.6 Stages
 

@@ -408,12 +408,12 @@ writing a value this one owns. Fix that instead.
 
 ### Where State Lives
 
-| Kind of data                                          | Lives in                                                              |
-| ----------------------------------------------------- | --------------------------------------------------------------------- |
-| Anything a game can read or that changes behavior     | Components, including singleton components (`world.addSingleton`)     |
-| Derived, rebuildable caches of GPU or audio resources | The service that owns the resource (`RenderContext`, the audio mixer) |
-| Configuration a game builds once                      | Plain objects passed to a factory                                     |
-| Nothing                                               | A system's closure                                                    |
+| Kind of data                                               | Lives in                                                                                  |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Anything a game can read or that changes behavior          | Components, including singleton components (`world.addSingleton`)                         |
+| Derived, rebuildable caches of GPU, audio or DOM resources | The service that owns the resource (`RenderContext`, the audio mixer, `TextEntryService`) |
+| Configuration a game builds once                           | Plain objects passed to a factory                                                         |
+| Nothing                                                    | A system's closure                                                                        |
 
 - A system's closure holds the services and configuration its factory
   received, and nothing written during one run that a later run reads.
@@ -425,12 +425,22 @@ writing a value this one owns. Fix that instead.
   A singleton is an ordinary component: `removeEntity` removes it, a
   `StateScopedEcsComponent` scopes it, declared queries match it. The
   input manager (`inputsId`), each game state (`gameStateId`) and the UI
-  text input system (`uiTextInputStateId`) keep their state this way.
+  text input system (`uiTextInputStateId`, its pressed field) keep their
+  state this way.
+- DOM resources (hidden inputs, listeners on the game's container) belong
+  to a service the system's factory receives, like GPU resources belong to
+  the render context: the text fields' hidden inputs and the text input
+  system's tap listeners are the `TextEntryService`'s. A system that
+  derives such a resource per entity releases it from its `removed`
+  journal; one created before the system saw its entity is tracked by the
+  service until the system claims it, so an entity removed between two runs
+  (in neither journal) doesn't leak it.
 - Scratch arrays fully written before being read each run may be kept to
   avoid allocating, on the service or the singleton, never in module scope
   (module scope is shared by every world in the page).
-- `onRegister` acquires resources outside the ECS (DOM listeners); it may
-  add the subsystem's singleton, but never keeps state in the system.
+- `onRegister` acquires resources outside the ECS through the services the
+  system received; it may add the subsystem's singleton, but never keeps
+  state in the system.
 
 Two named patterns sit beside "one writer per value":
 

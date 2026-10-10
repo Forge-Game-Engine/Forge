@@ -9,6 +9,7 @@ import { EcsWorld } from '../../../src/ecs/index.js';
 import {
   Axis2dAction,
   buttonMoments,
+  createTextEntryService,
   KeyboardAxis2dBinding,
   KeyboardInputSource,
   KeyboardTriggerBinding,
@@ -147,8 +148,11 @@ export const createScene: CreateScene = async (
     cullingMask: worldRenderCategory,
   });
 
+  const textEntries = createTextEntryService(container);
+
   registerUiSystems(world, renderContext, time, {
     pointerSource: mouseInputSource,
+    textEntries,
   });
 
   const uiCanvas = createUiCanvas(world, renderContext, {
@@ -177,7 +181,7 @@ export const createScene: CreateScene = async (
   const buttonInteractable = addUiInteractableComponent(world, button);
 
   const field = createTextInput(world, uiCanvas, {
-    renderContext,
+    textEntries,
     sprite: sprite(Color.white),
     fillSprite: sprite(Color.white),
     fontAtlas,

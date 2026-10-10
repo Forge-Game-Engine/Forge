@@ -20,10 +20,11 @@ export type TextInputAttributes = Omit<TextEntryAttributes, 'maxLength'>;
  */
 export interface TextInputRequiredOptions {
   /**
-   * The field's hidden DOM input (see `createTextEntry`). It holds the text,
+   * The field's hidden DOM input, created for the field's entity by a
+   * `TextEntryService` (`textEntries.create(entity)`). It holds the text,
    * the selection and the IME composition; the component mirrors them.
-   * Disposed by `createUiTextInputEcsSystem` when the component is removed
-   * or replaced by one with another entry.
+   * `createUiTextInputEcsSystem` has the service release it when the
+   * component is removed, or replaced by one with another entry.
    */
   readonly entry: TextEntry;
 
