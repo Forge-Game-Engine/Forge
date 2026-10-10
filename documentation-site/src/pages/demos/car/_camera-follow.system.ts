@@ -11,14 +11,8 @@ import {
 } from './_camera-follow.component';
 
 /**
- * Smoothly moves each matched entity's `PositionEcsComponent` towards its
- * `CameraFollowEcsComponent.targetEntity` position every tick, via
- * `smoothDampVector2`. Reads the target's `local` position (it has no
- * parent, so that's its current position whenever this runs) and writes the
- * camera's `local` position, which `createTransformEcsSystem` turns into the
- * `world` position the render system reads.
- * @param time - The time instance used to advance `smoothDampVector2` by
- * the tick's delta time.
+ * Moves each following camera towards its target with `smoothDampVector2`.
+ * @param time - The time instance used to advance the smoothing.
  */
 export const createCameraFollowEcsSystem = (
   time: Time,

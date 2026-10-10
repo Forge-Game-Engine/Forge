@@ -43,9 +43,7 @@ const renderLayers = {
 export const createCarGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  // `isStatic: true` since this camera's position is driven by
-  // `createCameraFollowEcsSystem` rather than `createCameraEcsSystem`'s
-  // input-driven pan/zoom.
+  // Static: the camera-follow system moves this camera, not pan/zoom input.
   const cameraEntity = createCamera(world, {
     isStatic: true,
     zoom: 0.5,
@@ -80,53 +78,23 @@ export const createCarGame = async (): Promise<Game> => {
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  // Each wheel mount chains two joints through its upright (chassis <->
-  // upright via the prismatic joint, upright <-> wheel via the revolute
-  // joint), and both mounts share the chassis body - the single-iteration
-  // default is enough for an isolated joint, but this shared-body chain
-  // needs several more per tick to stay stable at this rig's mass/torque
-  // scale (confirmed empirically: with the default of 1, the chassis
-  // tumbles and the car flies apart within the first second).
+  // Each wheel hangs from two chained joints that share the chassis, which
+  // needs more solver iterations than the default to stay stable.
   const jointIterations = { iterations: 8 };
 
-  // `createCollisionResolutionEcsSystem`'s default `maxBiasSpeed` (3 units/
-  // second) is tuned for Box2D's own meters-scale default (its
-  // `contactPushMaxSpeed` is `3.0 * b2_lengthUnitsPerMeter`) - this course's
-  // world units are pixel-scale instead (`gravity` above is -600, roughly
-  // 60x real-world `g`, and `wheelRadius` alone is 100 units), so a wheel
-  // that lands hard after catching air off a hill can end up tens of units
-  // deep in the terrain, and 3 units/second of correction then takes many
-  // seconds to dig it back out - long enough to read as the wheel being
-  // stuck clipped into the ground rather than momentarily compressed into
-  // it. Scaling the cap up by roughly the same ~60-100x
-  // this course's units are bigger than Box2D's assumed meters (confirmed
-  // empirically: 300 clears a hard landing within a fraction of a second,
-  // matching how quickly the suspension itself settles, without changing
-  // resting behavior on flat ground - the cap only matters once penetration
-  // is already large) restores the "quickly digs itself back out" feel
-  // `maxBiasSpeed` is meant to provide at this course's actual scale.
+  // The default correction speed is tuned for metre-scale worlds. This
+  // world is pixel-scale, so a wheel that lands hard would take seconds to
+  // dig itself out of the ground.
   const collisionResolutionOptions = { maxBiasSpeed: 300 };
 
-  // `createCarResetEcsSystem` may teleport every body back to its spawn
-  // transform, so it runs first, followed by `createTransformEcsSystem`,
-  // which turns every entity's `local` pose into the `world` pose that the
-  // physics and render systems read. `createGroundContactEcsSystem` recomputes
-  // each wheel's grounded state from the wheel's contacts (filled by
-  // narrow-phase, just before it), and
-  // `createWheelDriveEcsSystem` (sets each wheel's motor target from
-  // `throttleInput`, but only requests full speed while that wheel's own
-  // ground contact says it's grounded) / `createChassisStabilizerEcsSystem`
-  // / `createAirControlEcsSystem` must run after it in this same list, so
-  // they see this tick's grounded state rather than last tick's. The
-  // suspension's spring/damper forces run before collision resolution (like
-  // gravity), and the prismatic/revolute joints that hard-constrain each
-  // wheel mount run after it, so they get the "last word" on velocity each
-  // tick. `createContinuousCollisionEcsSystem` runs right after
-  // `createEulerIntegrationEcsSystem`, so it can stop a wheel that this
-  // tick's integration would sink deep into the terrain at the surface
-  // instead. `createCameraFollowEcsSystem` writes the camera's `local` position
-  // after `createTransformEcsSystem` has run, so its smoothed camera
-  // position is rendered from the next tick on.
+  // System order matters:
+  // 1. Reset, then transforms, so a restart shows up this tick.
+  // 2. Ground contact after narrow phase (which fills contacts), and before
+  //    the systems that read it (wheel drive, stabilizer, air control).
+  // 3. Springs and dampers before collision resolution; joints after it, so
+  //    they get the last word on velocity.
+  // 4. Continuous collision right after integration, so a fast wheel stops
+  //    at the ground instead of sinking into it.
   world.addSystem(createCarResetEcsSystem());
   world.addSystem(createTransformEcsSystem());
   world.addSystem(createGravityEcsSystem(time));

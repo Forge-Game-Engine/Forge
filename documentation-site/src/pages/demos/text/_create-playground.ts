@@ -1,196 +1,160 @@
-import { addPositionComponent } from '@forge-game-engine/forge/common';
+import {
+  addPositionComponent,
+  PositionEcsComponent,
+} from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
-import { Vector2 } from '@forge-game-engine/forge/math';
-import { Color, SpriteEcsComponent } from '@forge-game-engine/forge/rendering';
+import {
+  addSpriteComponent,
+  Color,
+  SpriteEcsComponent,
+} from '@forge-game-engine/forge/rendering';
 import {
   addTextComponent,
   FontAtlas,
   TextEcsComponent,
+  TextHorizontalAlign,
+  TextVerticalAlign,
 } from '@forge-game-engine/forge/text';
-import { createGuideBox } from './_create-guide-box';
 
-export type PlaygroundHorizontalAlign = TextEcsComponent['horizontalAlign'];
+/**
+ * Everything the playground's controls can change.
+ */
+export interface PlaygroundSettings {
+  text: string;
+  size: number;
+  wrapWidth: number;
+  lineHeight: number;
+  horizontalAlign: TextHorizontalAlign;
+  verticalAlign: TextVerticalAlign;
+  richText: boolean;
+  outline: boolean;
+  outlineWidth: number;
+  glow: boolean;
+  glowOffsetX: number;
+  glowOffsetY: number;
+  glowSoftness: number;
+}
 
-// The same conservative, documented-safe effect values used by
-// `_create-effects-examples.ts` - see `text-effects.md`'s "Choosing a safe
-// range" section for why the playground doesn't default to an atlas's
-// absolute maximum. Fixed rather than user-controllable: an `<input
-// type="color">` control was tried here and dropped for being noticeably
-// slow to interact with, so only width/offset/softness are adjustable.
-const outlineColor = new Color(1, 0.55, 0.15, 1);
-const glowColor = new Color(0.15, 0.65, 1, 1);
-
-/** The values the playground's controls start at (see `_PlaygroundControls.tsx`). */
-export const playgroundDefaults = {
-  text: "Type your own text here! This is the engine's shipped default font atlas (Liberation Sans, SIL OFL 1.1) - zero font setup required. Try <b>bold</b> and <color=#ff7a3d>color</color> tags.",
-  size: 24,
-  minSize: 12,
-  maxSize: 56,
-  horizontalAlign: 'left' as PlaygroundHorizontalAlign,
-  wrapEnabled: true,
-
-  outlineEnabled: false,
+export const defaultPlaygroundSettings: PlaygroundSettings = {
+  text: 'Forge draws text from a <b>signed distance field</b> font, so it stays <color=#ffbc42>sharp</color> at any size. Type here and drag the sliders to watch it reflow.',
+  size: 32,
+  wrapWidth: 560,
+  lineHeight: 1,
+  horizontalAlign: 'left',
+  verticalAlign: 'top',
+  richText: true,
+  outline: false,
   outlineWidth: 1.2,
-  minOutlineWidth: 0.1,
-  maxOutlineWidth: 4,
-
-  glowEnabled: false,
-  glowAlpha: 0.95,
+  glow: false,
   glowOffsetX: 0.8,
   glowOffsetY: -0.8,
-  minGlowOffset: -3,
-  maxGlowOffset: 3,
   glowSoftness: 1.4,
-  minGlowSoftness: 0,
-  maxGlowSoftness: 4,
 };
 
-const captionColor = new Color(0.55, 0.6, 0.72, 1);
-const bodyColor = new Color(0.9, 0.92, 0.96, 1);
-const captionGap = 22;
-const boxHeight = 220;
+const columnColor = new Color(0.16, 0.17, 0.21, 1);
+const anchorColor = new Color(0.95, 0.55, 0.25, 1);
+const textColor = new Color(0.92, 0.94, 0.97, 1);
+const outlineColor = new Color(1, 0.45, 0.15, 1);
+const glowColor = new Color(0.15, 0.65, 1, 0.95);
+const anchorThickness = 2;
 
+// The demo's canvas is always at least 3:2, so its view is at least 900
+// world units wide; this leaves a margin either side.
+export const playgroundMaxWrapWidth = 800;
+// Tall enough to cover the view at any canvas size.
+const columnHeight = 2000;
+
+/**
+ * The playground's live entities, which `applyPlaygroundSettings` updates.
+ */
 export interface Playground {
-  /** The live `TextEcsComponent` the controls mutate directly. */
-  textComponent: TextEcsComponent;
-
-  /** The `maxWidth` to restore when the "Wrap" toggle is turned back on. */
-  wrapWidth: number;
-
-  /** The y coordinate immediately below this section's content. */
-  bottom: number;
+  text: TextEcsComponent;
+  textPosition: PositionEcsComponent;
+  column: SpriteEcsComponent;
+  anchorLine: SpriteEcsComponent;
 }
 
 /**
- * Sets `textComponent.maxWidth` from the "Wrap" toggle: `wrapWidth` when
- * enabled, `undefined` (never wrap) when disabled.
- * @param textComponent - The playground's live text component.
- * @param wrapWidth - The width to wrap at when `enabled`.
- * @param enabled - Whether wrapping is turned on.
- */
-export function setPlaygroundWrap(
-  textComponent: TextEcsComponent,
-  wrapWidth: number,
-  enabled: boolean,
-): void {
-  textComponent.maxWidth = enabled ? wrapWidth : undefined;
-}
-
-/**
- * Sets `textComponent`'s outline fields from the outline controls.
- * `outlineWidth` of `0` (when `enabled` is `false`) draws no outline, the
- * same "width is its own off switch" semantics
- * `TextEcsComponent.outlineWidth` itself documents.
- * @param textComponent - The playground's live text component.
- * @param enabled - Whether the outline is turned on.
- * @param width - The outline width, in screen-pixel-range units.
- */
-export function setPlaygroundOutline(
-  textComponent: TextEcsComponent,
-  enabled: boolean,
-  width: number,
-): void {
-  textComponent.outlineColor = outlineColor;
-  textComponent.outlineWidth = enabled ? width : 0;
-}
-
-/**
- * Sets `textComponent`'s soft-shadow/glow fields from the glow controls.
- * A transparent `shadowColor` (when `enabled` is `false`) draws no glow,
- * the same "alpha is its own off switch" semantics
- * `TextEcsComponent.shadowColor` itself documents.
- * @param textComponent - The playground's live text component.
- * @param enabled - Whether the glow is turned on.
- * @param offset - The glow's offset from the glyph, in screen-pixel-range units.
- * @param softness - How far the glow fades out, in screen-pixel-range units.
- */
-export function setPlaygroundGlow(
-  textComponent: TextEcsComponent,
-  enabled: boolean,
-  offset: Vector2,
-  softness: number,
-): void {
-  textComponent.shadowColor = new Color(
-    glowColor.r,
-    glowColor.g,
-    glowColor.b,
-    enabled ? playgroundDefaults.glowAlpha : 0,
-  );
-  textComponent.shadowOffset = offset;
-  textComponent.shadowSoftness = softness;
-}
-
-/**
- * Builds the interactive playground: a live-typed `TextEcsComponent` whose
- * text, size, alignment, wrapping, outline, and glow are all driven by
- * `_PlaygroundControls.tsx` mutating the returned `textComponent` directly -
- * `createTextShapingEcsSystem`'s own dirty tracking (see
- * `text-shaping-system.ts`) picks up each change on its own, no extra
- * plumbing needed.
- * @param world - The ECS world to add the label entities to.
- * @param fontAtlas - The font atlas the label draws from.
- * @param whiteSprite - A plain white sprite template for the guide box.
- * @param guideLayer - The draw-order layer for the guide box (drawn behind text).
- * @param contentLayer - The draw-order layer for the caption/body text.
- * @param topLeft - This section's top-left corner, in world units.
- * @param usableWidth - The wrap width used while "Wrap" is enabled.
- * @returns The playground's live text component, its wrap width, and the y
- * coordinate immediately below the section's content.
+ * Builds the playground: one block of text, a dark column showing its wrap
+ * width, and an orange line through the point the text is anchored to.
+ * The text is centered on the canvas and anchored at its middle, so every
+ * `verticalAlign` value moves the text relative to the line.
+ * @param world - The ECS world to add the entities to.
+ * @param fontAtlas - The font the text is drawn with.
+ * @param whiteSprite - A plain white sprite to tint into the column and line.
+ * @returns The live entities, for `applyPlaygroundSettings`.
  */
 export function createPlayground(
   world: EcsWorld,
   fontAtlas: FontAtlas,
   whiteSprite: SpriteEcsComponent,
-  guideLayer: number,
-  contentLayer: number,
-  topLeft: Vector2,
-  usableWidth: number,
 ): Playground {
-  const captionEntity = world.createEntity();
-  addPositionComponent(world, captionEntity, {
-    local: { x: topLeft.x, y: topLeft.y },
-  });
-  addTextComponent(world, captionEntity, {
-    text: 'Try it yourself',
-    fontAtlas,
-    size: 13,
-    color: captionColor,
-    layer: contentLayer,
+  const columnEntity = world.createEntity();
+  addPositionComponent(world, columnEntity);
+  const column = addSpriteComponent(world, columnEntity, {
+    ...whiteSprite,
+    height: columnHeight,
+    tintColor: columnColor,
+    layer: 0,
   });
 
-  const boxTop = topLeft.y - captionGap;
-
-  createGuideBox(
-    world,
-    whiteSprite,
-    { x: topLeft.x, y: boxTop },
-    { x: usableWidth, y: boxHeight },
-    guideLayer,
-  );
+  const anchorEntity = world.createEntity();
+  addPositionComponent(world, anchorEntity);
+  const anchorLine = addSpriteComponent(world, anchorEntity, {
+    ...whiteSprite,
+    height: anchorThickness,
+    tintColor: anchorColor,
+    layer: 1,
+  });
 
   const textEntity = world.createEntity();
-  addPositionComponent(world, textEntity, {
-    local: { x: topLeft.x, y: boxTop },
-  });
-  const textComponent = addTextComponent(world, textEntity, {
-    text: playgroundDefaults.text,
+  const textPosition = addPositionComponent(world, textEntity);
+  const text = addTextComponent(world, textEntity, {
+    text: defaultPlaygroundSettings.text,
+    size: defaultPlaygroundSettings.size,
     fontAtlas,
-    size: playgroundDefaults.size,
-    horizontalAlign: playgroundDefaults.horizontalAlign,
-    maxWidth: usableWidth,
-    color: bodyColor,
+    color: textColor,
     outlineColor,
-    shadowOffset: {
-      x: playgroundDefaults.glowOffsetX,
-      y: playgroundDefaults.glowOffsetY,
-    },
-    shadowSoftness: playgroundDefaults.glowSoftness,
-    layer: contentLayer,
+    layer: 2,
   });
 
-  return {
-    textComponent,
-    wrapWidth: usableWidth,
-    bottom: boxTop - boxHeight,
-  };
+  const playground = { text, textPosition, column, anchorLine };
+
+  applyPlaygroundSettings(playground, defaultPlaygroundSettings);
+
+  return playground;
+}
+
+/**
+ * Writes `settings` into the playground's text and resizes its guides to
+ * match. The text shaping system reshapes the text on its next update.
+ * @param playground - The playground to update.
+ * @param settings - The values to show.
+ */
+export function applyPlaygroundSettings(
+  playground: Playground,
+  settings: PlaygroundSettings,
+): void {
+  const { text, textPosition, column, anchorLine } = playground;
+  const wrapWidth = Math.min(settings.wrapWidth, playgroundMaxWrapWidth);
+
+  // The text's x is the left edge of its wrap width, so centering the
+  // column on the canvas means starting the text half a column to the left.
+  textPosition.local = { x: -wrapWidth / 2, y: 0 };
+  column.width = wrapWidth;
+  anchorLine.width = wrapWidth;
+
+  text.text = settings.text;
+  text.size = settings.size;
+  text.maxWidth = wrapWidth;
+  text.lineHeight = settings.lineHeight;
+  text.horizontalAlign = settings.horizontalAlign;
+  text.verticalAlign = settings.verticalAlign;
+  text.richText = settings.richText;
+
+  // A zero outline width and a transparent shadow draw nothing.
+  text.outlineWidth = settings.outline ? settings.outlineWidth : 0;
+  text.shadowColor = settings.glow ? glowColor : Color.transparent;
+  text.shadowOffset = { x: settings.glowOffsetX, y: settings.glowOffsetY };
+  text.shadowSoftness = settings.glowSoftness;
 }

@@ -2,42 +2,60 @@ import React, { JSX } from 'react';
 import { createDropdownGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 
-import { Demo } from '@site/src/components/Demo';
-import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
-
-const badgeStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 20,
-  height: 20,
-  borderRadius: '50%',
-  backgroundColor: 'var(--ifm-color-emphasis-300)',
-  fontSize: 12,
-};
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function UiDropdown(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'UI Dropdown',
-        description:
-          'A demo showcasing createDropdown from the ui module: a header button showing the selected option, plus a click-to-open list of option rows.',
-      }}
-      header="UI Dropdown"
-      blurb="createDropdown builds a header (an ordinary createButton showing the currently-selected option) with a UiDropdownEcsComponent, plus one option-row button per entry - stacked below the header and hidden until it's clicked open. A chevron on the header's right edge flips between v (closed) and ^ (open) as the list toggles. Selecting an option updates the header's label, raises onValueChanged, and closes the list. Clicking outside the open list doesn't close it - only clicking the header again or selecting an option does."
+    <DemoPage
+      slug="ui-dropdown"
       createGame={createDropdownGame}
-      interactions={
-        <InteractionInstruction
-          displayElement={
-            <div style={badgeStyle}>
-              <i className="fa-solid fa-computer-mouse" />
-            </div>
-          }
-          text="Click the dropdown to open it, then pick an option."
-        />
-      }
-      codeFiles={[{ name: 'game.ts', content: gameCode }]}
+      controls={[
+        {
+          inputs: [{ device: 'mouse', label: 'Click the header' }],
+          action: 'Open or close the list',
+        },
+        {
+          inputs: [{ device: 'mouse', label: 'Click an option' }],
+          action: 'Select it',
+        },
+      ]}
+      highlights={[
+        {
+          text: 'One createDropdown call builds a header button showing the selected option, plus one hidden button per option below it.',
+          file: 'create-game.ts',
+        },
+        {
+          text: 'Clicking the header shows or hides the list, and the chevron on its right edge flips to match.',
+          file: 'create-game.ts',
+        },
+        {
+          text: "Picking an option updates the header's label, raises onValueChanged and closes the list.",
+          file: 'create-game.ts',
+        },
+        {
+          text: 'Clicking outside the open list leaves it open; only the header or an option closes it.',
+        },
+      ]}
+      docLinks={[
+        { label: 'Controls', to: '/docs/docs/ui/controls' },
+        {
+          label: 'Buttons and interaction',
+          to: '/docs/docs/ui/buttons-and-interaction',
+        },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Sets up mouse input and a UI canvas, then creates a four-option dropdown.',
+              content: gameCode,
+            },
+          ],
+        },
+      ]}
     />
   );
 }

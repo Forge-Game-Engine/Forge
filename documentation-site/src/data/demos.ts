@@ -16,21 +16,21 @@ export const demos: Demo[] = [
     slug: 'space-shooter',
     title: 'Space Shooter',
     description:
-      'A complete space shooter with player movement, shooting, enemy spawning and collisions.',
+      'Fly a ship through an asteroid field and shoot it apart, with bloom, a blurred background, sprite-sheet explosions and audio buses.',
     categories: ['games'],
   },
   {
     slug: 'brick-breaker',
     title: 'Brick Breaker',
     description:
-      'A paddle-and-ball brick breaker built entirely from native rigid bodies.',
+      'Break a wall of bricks with a ball and paddle that are native rigid bodies, so every bounce comes from the physics engine.',
     categories: ['games'],
   },
   {
     slug: 'car',
     title: 'Car',
     description:
-      'A drivable car built from rigid bodies, joints, springs and motors.',
+      'Drive a car with working suspension over procedurally generated hills, built from rigid bodies, joints, springs and motors.',
     categories: ['physics', 'games'],
   },
   {
@@ -44,7 +44,7 @@ export const demos: Demo[] = [
     slug: 'ecs',
     title: 'ECS',
     description:
-      'A minimal walkthrough of creating a world, entity, component and system.',
+      'A star circling the screen, built from a world, an entity, its components and one system.',
     categories: ['ecs'],
   },
   {
@@ -65,42 +65,42 @@ export const demos: Demo[] = [
     slug: 'sensors',
     title: 'Sensors and Contacts',
     description:
-      'Trigger zones that detect bodies passing through without blocking them.',
+      'Falling balls pass through sensor zones that tint them on contact, while solid ramps bounce them.',
     categories: ['physics'],
   },
   {
     slug: 'raycasting',
     title: 'Raycasting',
     description:
-      'Casts a ray from a fixed point toward the cursor against static colliders.',
+      'Move the mouse to cast a ray toward the cursor and see where it first hits a collider.',
     categories: ['physics'],
   },
   {
     slug: 'rolling-ball',
     title: 'Rolling Ball',
     description:
-      'A ball rolls over procedurally generated terrain using TerrainCollider and friction.',
+      'Roll and jump a ball over curved terrain, driven by a motor and ground friction.',
     categories: ['physics'],
   },
   {
     slug: 'prismatic-joint',
     title: 'Prismatic Joint (Slider)',
     description:
-      'PrismaticJoint driving a piston, an elevator and an inclined slider.',
+      'A piston, an elevator and an inclined slider, each held to a single sliding axis by a prismatic joint.',
     categories: ['physics'],
   },
   {
     slug: 'revolute-joint',
     title: 'Revolute Joint (Hinge)',
     description:
-      'RevoluteJoint driving a hinged door, a free pendulum and a spinning wheel.',
+      'A limited door hinge, a free pendulum and a spinning wheel, each pinned at one point by a revolute joint.',
     categories: ['physics'],
   },
   {
     slug: 'torque',
     title: 'Torque and Motors',
     description:
-      'Spinning a flywheel by applying torque directly versus an AngularVelocityMotorEcsComponent.',
+      'Hold Space to spin one flywheel by applying torque, while a motor holds the other at a steady speed.',
     categories: ['physics'],
   },
   {
@@ -155,14 +155,14 @@ export const demos: Demo[] = [
     slug: 'nine-slice',
     title: 'Nine-Slice Sprites',
     description:
-      'Compares a stretched sprite to nine-sliced panels that keep crisp corners at any size.',
+      'Compares a stretched sprite to a nine-sliced one that keeps crisp corners at any size.',
     categories: ['rendering'],
   },
   {
     slug: 'context-loss',
     title: 'Context Loss',
     description:
-      'Losing and restoring the WebGL context without reloading the page.',
+      'Click to lose the WebGL context, and watch the engine rebuild its GPU resources when it comes back.',
     categories: ['rendering'],
   },
   {
@@ -176,28 +176,28 @@ export const demos: Demo[] = [
     slug: 'texture-filtering',
     title: 'Texture Filtering',
     description:
-      'Nearest-neighbor versus linear texture filtering side by side.',
+      'The same pixel-art texture drawn with nearest-neighbor filtering (crisp pixels) and linear filtering (smooth blur).',
     categories: ['rendering'],
   },
   {
     slug: 'text',
     title: 'Text Rendering',
     description:
-      'MSDF text rendering: alignment, line height, live reflow, rich text tags and outline/shadow effects.',
+      'Type your own text and change its size, wrapping, alignment, line height, outline and glow while it redraws live.',
     categories: ['rendering'],
   },
   {
     slug: 'ui-anchors',
     title: 'UI Anchors',
     description:
-      'An interactive playground for every UiAnchor preset and its position/size behavior.',
+      'Panels pinned to corners and edges of the canvas, plus one panel whose anchor, position and size you can change live.',
     categories: ['ui'],
   },
   {
     slug: 'ui-nested-resize',
     title: 'UI Nested Resize',
     description:
-      'A moving, resizing window with four levels of nested anchored children.',
+      'A window that moves and resizes on its own while its nested title bar, controls and corner tag follow through their anchors.',
     categories: ['ui'],
   },
   {
@@ -211,7 +211,7 @@ export const demos: Demo[] = [
     slug: 'ui-button',
     title: 'UI Buttons',
     description:
-      'Buttons with hover, click and keyboard/gamepad focus navigation.',
+      'Three buttons you can click, or move focus between with the keyboard, showing hover, press and focus states.',
     categories: ['ui'],
   },
   {
@@ -239,7 +239,7 @@ export const demos: Demo[] = [
     slug: 'ui-slider',
     title: 'UI Slider',
     description:
-      'A draggable slider whose whole track acts as the drag surface.',
+      "Drag a slider's handle, or click anywhere on its track, to set a value shown live in a label.",
     categories: ['ui'],
   },
   {
@@ -267,14 +267,14 @@ export const demos: Demo[] = [
     slug: 'layout-groups',
     title: 'UI Layout Groups',
     description:
-      'Vertical, horizontal and grid layout groups that arrange UI automatically.',
+      'Four panels arranged by vertical, horizontal and grid layout groups, with no hand-placed positions or sizes.',
     categories: ['ui'],
   },
   {
     slug: 'ui-canvas-group',
     title: 'UI Canvas Group',
     description:
-      'A CanvasGroup fades and disables an entire nested UI subtree at once.',
+      'One canvas group fades and disables a whole nested modal, including a button inside it, with a single toggle.',
     categories: ['ui'],
   },
   {

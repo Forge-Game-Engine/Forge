@@ -4,30 +4,54 @@ import gameCode from '!!raw-loader!./_create-game';
 import createEntityCode from '!!raw-loader!./_create-entity';
 import createSpriteCode from '!!raw-loader!./_create-sprite';
 
-import { Demo } from '@site/src/components/Demo';
+import { DemoPage } from '@site/src/components/demo-page';
 
-export default function Rendering(): JSX.Element {
+export default function TextureFiltering(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'Texture Filtering',
-        description: 'A demo showcasing how texture filtering works.',
-      }}
-      header="Texture Filtering"
-      blurb="This demo shows how texture filtering works. On the left, the planet is using nearest neighbor filtering (pixelated) and on the planet on the right is using linear filtering."
+    <DemoPage
+      slug="texture-filtering"
       createGame={createTextureFilteringGame}
-      codeFiles={[
+      highlights={[
         {
-          name: 'game.ts',
-          content: gameCode,
+          text: 'Both planets load the same small pixel-art image and scale it up 4.5 times.',
+          file: 'create-entity.ts',
         },
         {
-          name: 'create-entity.ts',
-          content: createEntityCode,
+          text: "The left planet's texture uses 'nearest' filtering, which keeps hard, blocky pixels.",
+          file: 'create-sprite.ts',
         },
         {
-          name: 'create-sprite.ts',
-          content: createSpriteCode,
+          text: "The right planet's texture uses 'linear' filtering, which blends neighboring pixels into a smooth, blurry image.",
+          file: 'create-sprite.ts',
+        },
+      ]}
+      docLinks={[{ label: 'Textures', to: '/docs/docs/rendering/textures' }]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary: 'Creates a pixelated and a smooth planet side by side.',
+              content: gameCode,
+            },
+          ],
+        },
+        {
+          title: 'Building the scene',
+          files: [
+            {
+              name: 'create-sprite.ts',
+              summary:
+                "Loads the planet texture with 'nearest' or 'linear' filtering.",
+              content: createSpriteCode,
+            },
+            {
+              name: 'create-entity.ts',
+              summary: 'Places a planet sprite, scaled up and rotated.',
+              content: createEntityCode,
+            },
+          ],
         },
       ]}
     />

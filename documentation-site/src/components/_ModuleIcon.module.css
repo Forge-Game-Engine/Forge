@@ -1,0 +1,11 @@
+.icon {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--ifm-color-primary);
+}
+
+.accent {
+  fill: var(--forge-amber);
+  stroke: var(--forge-amber);
+}

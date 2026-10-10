@@ -5,35 +5,69 @@ import spawnerComponentCode from '!!raw-loader!./_stress-test-spawner.component'
 import spawnerSystemCode from '!!raw-loader!./_stress-test-spawner.system';
 import fpsMonitorSystemCode from '!!raw-loader!./_fps-monitor.system';
 
-import { Demo } from '@site/src/components/Demo';
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function UiStressTest(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'UI Stress Test Demo',
-        description:
-          'A demo that stress tests the UI layout system by spawning grid-arranged UI panels until the frame rate drops.',
-      }}
-      header="UI Stress Test"
-      blurb="This demo spawns batches of small UI panels into a grid layout group at a regular interval, growing the on-screen UI element count over time. Open the browser console to see how many panels had been spawned when the frame rate first dropped below 100, 60, and 30 FPS. Spawning stops once the frame rate drops below 30. createUiLayoutEcsSystem/createUiLayoutGroupEcsSystem resolve every element fresh every frame with no dirty tracking (DL-12) - this demo is that design's own stress test."
+    <DemoPage
+      slug="ui-stress-test"
       createGame={createUiStressTestGame}
-      codeFiles={[
+      highlights={[
         {
-          name: 'game.ts',
-          content: gameCode,
+          text: 'A spawner adds 50 small panels to a grid layout group every tenth of a second.',
+          file: 'stress-test-spawner.system.ts',
         },
         {
-          name: 'stress-test-spawner.component.ts',
-          content: spawnerComponentCode,
+          text: 'The UI layout systems recompute every element every frame, with no dirty tracking, so layouts can never go stale.',
+          file: 'create-game.ts',
         },
         {
-          name: 'stress-test-spawner.system.ts',
-          content: spawnerSystemCode,
+          text: 'Open the browser console to see how many panels were on screen when the frame rate dropped below 100, 60 and 30 FPS.',
+          file: 'fps-monitor.system.ts',
         },
         {
-          name: 'fps-monitor.system.ts',
-          content: fpsMonitorSystemCode,
+          text: 'Spawning stops once the frame rate falls below 30 FPS.',
+          file: 'fps-monitor.system.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Layout groups', to: '/docs/docs/ui/layout-groups' },
+        { label: 'Systems', to: '/docs/docs/ecs/system' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Builds the full-screen grid, the spawner and the counter label, and registers the systems.',
+              content: gameCode,
+            },
+          ],
+        },
+        {
+          title: 'Spawning and measuring',
+          files: [
+            {
+              name: 'stress-test-spawner.component.ts',
+              summary:
+                'Holds the grid container, batch settings and how many panels were spawned.',
+              content: spawnerComponentCode,
+            },
+            {
+              name: 'stress-test-spawner.system.ts',
+              summary:
+                'Adds a batch of tinted panels to the grid at a fixed interval.',
+              content: spawnerSystemCode,
+            },
+            {
+              name: 'fps-monitor.system.ts',
+              summary:
+                'Logs the panel count at each FPS threshold and stops the spawner at the last.',
+              content: fpsMonitorSystemCode,
+            },
+          ],
         },
       ]}
     />

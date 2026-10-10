@@ -17,69 +17,30 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
-// How far apart (in world x) consecutive sampled height points are. Small
-// enough, relative to the wheel radius (see `wheelRadius` in
-// `_create-car.ts`), that a wheel spans more than one of the collider's
-// surface edges at once - deliberately exercising the multi-edge case the
-// old column-based terrain (each column its own `PolygonCollider` entity)
-// couldn't, since `TerrainCollider` resolves a body against every stretch
-// of its surface chain the body actually reaches (see
-// `detectCircleTerrainCollision`/`detectPolygonTerrainCollision`), rather
-// than against one column at a time.
+// Horizontal distance between sampled height points. Smaller than a wheel,
+// so a wheel often touches several surface edges at once.
 const pointSpacing = 60;
 
-// How far the solid slab extends below the lowest sampled point. A single
-// flat bottom edge for the whole course, so this only needs to cover the
-// tallest hill's height *above* the flat launch pad, not the pad's own
-// height (see `TerrainCollider`'s docs: `depth` is measured from the
-// lowest point across the whole collider).
+// How far the solid ground extends below the lowest point.
 const terrainDepth = 500;
 
-// `block_square.png` is a 64x64 rounded, bolted panel; tiled at its native
-// size it reads as a plated floor rather than smearing across the whole
-// course.
 const groundTextureUrl = getAssetUrl('img/physics/block_square.png');
 
-/**
- * How far the flat launch pad the car spawns on extends before the terrain
- * starts climbing, in world units.
- */
+// Length of the flat launch pad the car spawns on.
 const flatStartLength = 400;
 
-/**
- * Total horizontal distance the generated course covers, including the
- * flat launch pad.
- */
 const courseLength = 20000;
 
-/**
- * How far before the flat launch pad the sampled terrain starts, so the car
- * always has solid ground under it even while braking/reversing near the
- * spawn point.
- */
+// Ground behind the spawn point, so the car can reverse off the pad.
 const runoffLength = 500;
 
-/**
- * How far past `flatStartLength` the hills take to ramp up to full
- * amplitude. Without this, `rollingHills`/`climb`/`noise` would switch on
- * abruptly at `flatStartLength`, and since their slope there is nonzero,
- * that would make the very first sampled point a sharp kink (a car arriving
- * at speed would feel a sudden bump rather than easing onto a slope).
- * Smoothstep ramps `rollingHills`/`climb`/`noise` in with a slope of zero at
- * `flatStartLength`, so the ground eases out of the flat pad instead of
- * kinking.
- */
+// Distance over which the hills fade in, so the pad eases into the first
+// slope instead of ending in a kink.
 const hillRampLength = 400;
 
 /**
- * Computes the ground height at `x`: flat for `flatStartLength`, then a mix
- * of two sine waves at different frequencies (rolling hills), a slow upward
- * trend (so the course is a net "climb" rather than just undulating), and
- * small per-point noise so it doesn't read as perfectly periodic - all
- * ramped in smoothly over `hillRampLength` so the transition out of the
- * flat pad has no sudden change in slope.
- * @param x - The world-space x coordinate to sample.
- * @param random - The seeded random source used for per-point noise.
+ * The ground height at `x`: flat for the launch pad, then two sine waves
+ * (rolling hills), a slow climb and a little noise.
  */
 function heightAt(x: number, random: Random): number {
   if (x <= flatStartLength) {
@@ -101,10 +62,7 @@ function heightAt(x: number, random: Random): number {
 }
 
 /**
- * Samples `heightAt` left to right across the whole course, as the
- * terrain's surface points in world coordinates (the terrain entity sits at
- * the origin, unrotated, and its solid slab extends below the points).
- * @param random - The seeded random source used for per-point noise.
+ * Samples `heightAt` across the course, left to right.
  */
 function buildSurfacePoints(random: Random): Vector2[] {
   const points: Vector2[] = [];
@@ -138,17 +96,10 @@ function toCurvePoints(points: readonly Vector2[]): TerrainCurvePoint[] {
 }
 
 /**
- * Builds the course's terrain: a single, continuous `TerrainCollider`
- * following a procedurally generated height profile, starting with a flat
- * launch pad and climbing into gently rolling hills, plus a matching mesh
- * (see `createTerrainMesh`) built from the exact same points, so what's
- * drawn always matches what's touched. The mesh is attached to the terrain
- * entity via `addTerrainMeshComponent`, so `createTerrainRenderEcsSystem`
- * draws it automatically - the caller doesn't need to wire it up itself.
- * @param world - The ECS world to add the terrain entity to.
- * @param renderContext - The render context used to load the ground texture and build the mesh.
- * @param random - The seeded random source used to vary the terrain.
- * @returns A point on the flat launch pad, suitable for spawning the car above.
+ * Builds the course: one `TerrainCollider` for physics and a terrain mesh
+ * for rendering, both from the same points so what you see is what the car
+ * touches.
+ * @returns A point on the launch pad to spawn the car above.
  */
 export async function createTerrain(
   world: EcsWorld,

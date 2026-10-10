@@ -673,7 +673,14 @@ e2e/playwright-report` opens the HTML report, which links each test's
 
 `documentation-site/src/pages/demos/<name>/` holds interactive, in-browser
 demos of engine features (`physics`, `ecs`, `particles`, `rendering`, ...),
-each rendered through `documentation-site/src/components/Demo.tsx`.
+each rendered through `DemoPage` (`documentation-site/src/components/demo-page/`):
+the running game with its controls and a short "How it works" list beside
+it, and a code explorer for the demo's source below. Its title and summary
+come from the demo's entry in `documentation-site/src/data/demos.ts`. The
+`add-feature-demo` skill shows how to write a page. The code explorer only
+shows engine code a reader can reuse: never list React or other framework
+code (`.tsx`/`.jsx`) in it, such as a settings panel that only drives the
+site's page.
 
 **Critical gotcha**: these demos import the engine as a published package
 (e.g. `import { addRigidBodyComponent } from '@forge-game-engine/forge/physics'`),
@@ -721,8 +728,9 @@ wrapper around the shared `CategoryDemosPage` component.
 The catalogue's data lives separately from the demo pages themselves:
 
 - `documentation-site/src/data/demo-categories.ts` - the fixed list of
-  categories (slug, title, description, card image under
-  `static/img/demos/categories/`).
+  categories (slug, title, description, and the line icon its card shows,
+  from `src/components/ModuleIcon.tsx`, the same set the homepage's feature
+  grid uses).
 - `documentation-site/src/data/demos.ts` - one entry per demo (slug, title,
   short description, and the category slugs it belongs to). A demo can
   belong to more than one category - e.g. the car demo is tagged both
@@ -731,8 +739,8 @@ The catalogue's data lives separately from the demo pages themselves:
 
 **When adding a new demo**, also add an entry to `demos.ts` with the
 category slugs it belongs to (adding a new category itself means adding to
-`demo-categories.ts` and a matching SVG under
-`static/img/demos/categories/`, plus a new
+`demo-categories.ts` with a `ModuleIcon` name, drawing a new icon in
+`ModuleIcon.tsx` in the same style if none fits, plus a new
 `src/pages/demos/category/<slug>/index.tsx` wrapper). A demo that combines
 many engine features into a complete mini-game (like the space shooter,
 brick breaker and car demos) belongs in the `games` category regardless of

@@ -1,39 +1,70 @@
 .card {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  padding: 1.25rem;
+  border: 1px solid var(--card-border-color);
   border-radius: 12px;
   background-color: var(--card-background-color);
   color: var(--text-color);
   text-decoration: none;
   transition:
     transform 0.15s ease,
+    border-color 0.15s ease,
     box-shadow 0.15s ease;
 }
 
 .card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   color: var(--text-color);
   text-decoration: none;
 }
 
-.image {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  display: block;
+.top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
 }
 
-.body {
-  padding: 1rem 1.25rem 1.25rem;
+/* The icon sits on a faint teal tile, so it reads as a badge. */
+.iconTile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border: 1px solid rgba(79, 196, 196, 0.25);
+  border-radius: 10px;
+  background-color: rgba(79, 196, 196, 0.08);
+}
+
+.icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.count {
+  color: var(--text-muted-color);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .title {
   margin: 0 0 0.4rem;
+  font-size: 1.2rem;
+  transition: color 0.15s;
+}
+
+.card:hover .title {
+  color: var(--ifm-color-primary);
 }
 
 .description {
   margin: 0;
-  opacity: 0.85;
+  color: var(--text-muted-color);
+  font-size: 0.93rem;
 }

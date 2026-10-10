@@ -2,20 +2,51 @@ import React, { JSX } from 'react';
 import { createWorldSpaceCanvasGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 
-import { Demo } from '@site/src/components/Demo';
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function UiWorldSpaceCanvas(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'UI World-Space Canvas',
-        description:
-          'A demo showcasing renderMode: worldSpace - a diegetic health bar placed above its target, either parented to it or kept upright with anchoredPosition.',
-      }}
-      header="UI World-Space Canvas"
-      blurb="Two identical spinning 'enemies', each with a diegetic health-bar canvas (renderMode: 'worldSpace'). The left enemy's health bar is attached the ordinary way, with world.setParent - it inherits the enemy's full world transform and visibly spins and swings around as the enemy rotates, exactly like any other parented entity. The right enemy's has no parent and is placed above it with its anchoredPosition instead, so it stays upright regardless of which way the enemy is facing - the behavior a health bar almost always wants. For a moving target, a system of your own writes anchoredPosition from the target's position every frame."
+    <DemoPage
+      slug="ui-world-space-canvas"
       createGame={createWorldSpaceCanvasGame}
-      codeFiles={[{ name: 'game.ts', content: gameCode }]}
+      highlights={[
+        {
+          text: "Each health bar is a UI canvas with renderMode 'worldSpace', drawn by the same camera as the enemies.",
+          file: 'create-game.ts',
+        },
+        {
+          text: "The left bar is attached with world.setParent, so it inherits the enemy's rotation and spins with it.",
+          file: 'create-game.ts',
+        },
+        {
+          text: 'The right bar has no parent and sits above its enemy through anchoredPosition, so it stays upright.',
+          file: 'create-game.ts',
+        },
+        {
+          text: 'To follow a moving target, a system of your own writes anchoredPosition from its position every frame.',
+          file: 'create-game.ts',
+        },
+      ]}
+      docLinks={[
+        {
+          label: 'Creating a world-space canvas',
+          to: '/docs/docs/ui/creating-a-canvas#creating-a-world-space-canvas',
+        },
+        { label: 'Transforms', to: '/docs/docs/common/transforms' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Builds two spinning enemies, each with a world-space health bar attached a different way.',
+              content: gameCode,
+            },
+          ],
+        },
+      ]}
     />
   );
 }

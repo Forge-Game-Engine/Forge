@@ -56,7 +56,7 @@ export async function createRayVisual(
   const { textureCache } = renderContext;
 
   const markerTexture = await textureCache.getOrLoad(
-    getAssetUrl('img/blue-circle.png'),
+    getAssetUrl('img/White_Circle.png'),
   );
 
   const lineSprite = {
