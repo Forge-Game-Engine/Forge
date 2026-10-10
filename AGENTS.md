@@ -518,6 +518,13 @@ describe('MyClass', () => {
   stand-in for the Web Audio API, which jsdom lacks). `tsconfig.build.json`
   and the coverage config exclude `**/test-helpers/**`, so they never ship
   in `/dist`
+- Tests of the GPU device (`src/rendering/device/`) use the recording
+  WebGL2 context in `src/rendering/test-helpers/recording-gl.ts`
+  (`createRecordingRenderContext`) instead of a hand-written mock. It
+  records every call, models the bindings and fixed-function state, reports
+  the uniform blocks and uniforms a program's shaders declare, and can be
+  lost and restored, so a test asserts on the exact calls (e.g. that
+  setting the same pipeline twice issues none)
 
 ### Coverage
 
@@ -785,6 +792,10 @@ gl.ONE_MINUS_SRC_ALPHA)` (see `render-system.ts`). Never plain
   (see `present-system.ts`).
 - Clear colors are straight-alpha `Color`s and get premultiplied when
   written (`RenderContext.clear`, `createTerrainRenderEcsSystem`).
+- GPU device pipelines name these blends instead of spelling out factors:
+  `blendStates.straightAlphaOver` for straight-alpha fragments and
+  `blendStates.premultipliedOver` for premultiplied ones. A device render
+  pass leaves blending disabled when it ends.
 - Light that should only brighten what's beneath it (bloom's glow) is
   added to the color and leaves alpha untouched (see
   `bloom-composite.frag.glsl`). Giving it alpha of its own makes it cover,
@@ -937,8 +948,21 @@ unregisters in `dispose`.
   the terrain render system) return early while the context is lost, so
   game systems that draw through them need no guard of their own.
 
+The GPU device (`renderContext.device`) owns every GL object it creates
+and recreates them itself when the context is restored, before
+`onContextRestored` is raised; its resources don't register with
+`gpu-resource-registry.ts`. Its buffers keep a CPU copy, its textures keep
+their `restoreSource` or the latest write of each whole layer of each mip
+level, and its framebuffers and vertex arrays are recreated as passes and
+draws need them.
+
+Device resources are written between render passes, never during one
+(writes throw while a pass is open), and a device upload leaves WebGL's
+default pixel storage behind for the 2D textures, which rely on it.
+
 `e2e/specs/webgl-context-loss.spec.ts` loses and restores a real context
-with `WEBGL_lose_context`.
+with `WEBGL_lose_context`, and `e2e/specs/gpu-device-draw.spec.ts` does the
+same for the GPU device.
 
 ### Readonly Fields
 

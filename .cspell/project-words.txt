@@ -83,10 +83,12 @@ devicelost
 devicerestored
 diegetic
 dimforge
+disablei
 dobkin
 downsamples
 dppx
 eamodio
+enablei
 enterkeyhint
 equalpower
 equirectangular
@@ -184,6 +186,7 @@ lottes
 lowp
 luma
 mapface
+Maski
 matterjs
 maxlength
 mediump
@@ -244,6 +247,7 @@ premultiply
 premultiplying
 prepass
 prestart
+PUNCHTHROUGH
 pvrtc
 quadtree
 quaternius
@@ -261,6 +265,7 @@ rects
 refac
 reimplementation
 reinhard
+renderability
 Renderable
 renderables
 renderbuffer
@@ -287,6 +292,7 @@ schlick's
 screencoverage
 scroller
 selectability
+Separatei
 shaderstore
 shepperd
 shoemake
@@ -342,6 +348,7 @@ ultrawide
 unblurred
 undersamples
 unedit
+unfilterable
 unflipped
 unitless
 unmarks
@@ -384,6 +391,7 @@ webgl
 webglcontextlost
 webglcontextrestored
 Wenrexa
+wgpu
 wgsl
 winit
 wrensch's

@@ -16,3 +16,4 @@ export * from './texture-cache.js';
 export * from './ping-pong-target.js';
 export * from './fullscreen-pass.js';
 export * from './terrain/index.js';
+export * from './device/index.js';
