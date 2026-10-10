@@ -21,10 +21,18 @@ the people below. Thank you to all of them.
     pirate battle demo.
   - [Puzzle Pack 2](https://kenney.nl/assets/puzzle-pack-2): the sprites in
     the brick breaker demo.
-- [Screaming Brain Studios](https://opengameart.org/content/seamless-space-backgrounds):
-  space backgrounds.
+  - [Rolling Ball Assets](https://kenney.nl/assets/rolling-ball-assets): the
+    balls and blocks in the physics demos.
+  - [Simple Space](https://kenney.nl/assets/simple-space): ships, meteors and
+    stars in the space demos.
+- [Screaming Brain Studios](https://screamingbrainstudios.com/dl-seamless-space-backgrounds/):
+  the nebula space background.
 - [Wenrexa](https://opengameart.org/content/assets-free-laser-bullets-pack-2020):
-  laser bullets.
+  the laser bullets in the space shooter demo.
+- [Overcrafted](https://overcrafted.itch.io/free-paid-vehicle-car-sprites-):
+  the car body and wheels in the car demo.
+- [Deep-Fold's Pixel Planet Generator](https://deep-fold.itch.io/pixel-planet-generator):
+  the pixel-art planet in the rendering demos and blog.
 - [OboroPixel](https://oboropixel.itch.io/characters-animations-asset-pack):
   animated character sprite sheets.
 
