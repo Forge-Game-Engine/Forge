@@ -322,6 +322,14 @@ describe('WebGL2 pipelines, bind groups and passes', () => {
       ).toThrow(/alpha-to-coverage/);
     });
 
+    it('rejects a sample count the target and depth formats do not support', () => {
+      expect(() =>
+        device.createRenderPipeline(
+          describePipeline({ multisample: { count: 8 } }),
+        ),
+      ).toThrow(/asks for 8 samples of "rgba8unorm"/);
+    });
+
     it('needs OES_draw_buffers_indexed for targets that blend differently', () => {
       expect(() =>
         device.createRenderPipeline(

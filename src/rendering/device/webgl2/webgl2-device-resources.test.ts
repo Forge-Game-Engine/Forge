@@ -526,11 +526,11 @@ describe('the WebGL2 GPU device', () => {
       }).toThrow(/rendered to and filtered/);
     });
 
-    it("makes a multisampled texture a renderbuffer, clamped to the format's sample counts", () => {
+    it('makes a multisampled texture a renderbuffer, at a sample count the format supports', () => {
       const texture = device.createTexture({
         format: 'rgba8unorm',
         size: { width: 4, height: 4 },
-        sampleCount: 8,
+        sampleCount: 4,
         usage: ['render-attachment'],
       });
 
@@ -538,6 +538,16 @@ describe('the WebGL2 GPU device', () => {
       expect(
         recording.callsTo('renderbufferStorageMultisample')[0].args,
       ).toEqual([glc.GL_RENDERBUFFER, 4, glc.GL_RGBA8, 4, 4]);
+      expect(() =>
+        device.createTexture({
+          format: 'rgba8unorm',
+          size: { width: 4, height: 4 },
+          sampleCount: 8,
+          usage: ['render-attachment'],
+        }),
+      ).toThrow(
+        /asks for 8 samples of "rgba8unorm", which this device supports with 4, 2/,
+      );
       expect(() =>
         device.createTexture({
           format: 'rgba8unorm',

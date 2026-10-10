@@ -352,8 +352,8 @@ export interface GpuColorTargetState {
 /** Multisampling. */
 export interface GpuMultisampleState {
   /**
-   * The pass's sample count, clamped to the device's for the target
-   * formats. Defaults to `1`.
+   * The pass's sample count: one the device supports for every target
+   * and depth format (`capabilities.getSampleCounts`). Defaults to `1`.
    */
   count?: number;
 

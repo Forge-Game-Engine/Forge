@@ -11,6 +11,7 @@ import type {
   GpuTextureWriteOptions,
 } from '../gpu-texture.js';
 import type { DeviceContext, RestorableResource } from './device-context.js';
+import { assertSampleCountSupported } from './sample-counts.js';
 import * as glc from './gl-constants.js';
 import {
   getTextureFormatInfo,
@@ -285,9 +286,14 @@ function resolveSampleCount(
     );
   }
 
-  const supported = context.capabilities.getSampleCounts(descriptor.format);
+  assertSampleCountSupported(
+    context.capabilities,
+    descriptor.format,
+    requested,
+    resolved.name,
+  );
 
-  return supported.find((count) => count <= requested) ?? 1;
+  return requested;
 }
 
 /**

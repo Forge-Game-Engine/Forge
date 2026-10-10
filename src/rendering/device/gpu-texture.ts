@@ -127,8 +127,8 @@ export interface GpuTextureDescriptor {
    * The number of samples per texel. Above `1`, the texture is a
    * multisampled render attachment that can't be sampled or written, only
    * rendered into and resolved into a single-sampled texture of the same
-   * format by a render pass. Clamped to the highest count the device
-   * supports for the format. Defaults to `1`.
+   * format by a render pass. Must be one of the counts the device supports
+   * for the format (`capabilities.getSampleCounts`). Defaults to `1`.
    */
   sampleCount?: number;
 
@@ -212,7 +212,7 @@ export interface GpuTexture {
   /** The number of mip levels. */
   readonly mipLevelCount: number;
 
-  /** The number of samples per texel, after clamping to the device's. */
+  /** The number of samples per texel. */
   readonly sampleCount: number;
 
   /** What the texture is used for. */

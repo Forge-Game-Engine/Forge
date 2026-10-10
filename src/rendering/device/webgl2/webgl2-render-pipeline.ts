@@ -28,6 +28,7 @@ import { getTextureFormatInfo, isFormatRenderable } from './texture-formats.js';
 import { getVertexFormatInfo, VertexFormatInfo } from './vertex-formats.js';
 import type { AttributeBindings, WebGl2Program } from './webgl2-program.js';
 import { WebGl2BindGroupLayout } from './webgl2-bind-group.js';
+import { assertSampleCountSupported } from './sample-counts.js';
 import { compareFunctions } from './webgl2-sampler.js';
 
 /** The most bind group slots a pipeline has. */
@@ -550,13 +551,15 @@ export class WebGl2RenderPipeline implements GpuRenderPipeline {
       formats.push(descriptor.depthStencil.format);
     }
 
-    const clamped = formats.map(
-      (format) =>
-        context.capabilities
-          .getSampleCounts(format)
-          .find((count) => count <= requested) ?? 1,
-    );
+    for (const format of formats) {
+      assertSampleCountSupported(
+        context.capabilities,
+        format,
+        requested,
+        `Pipeline "${this.label}"`,
+      );
+    }
 
-    return Math.min(...clamped);
+    return requested;
   }
 }
