@@ -9,6 +9,7 @@ import {
   ModuleIconName,
 } from '@site/src/components/home/ModuleIcon';
 import styles from '@site/src/components/home/Home.module.css';
+import { InstallCommand } from '@site/src/components/home/InstallCommand';
 import { demos } from '@site/src/data/demos';
 
 interface EngineModule {
@@ -156,10 +157,7 @@ const Hero = (): ReactNode => {
             Browse demos
           </Link>
         </div>
-        <code className={styles.install}>
-          <span className={styles.installPrompt}>$</span>
-          npm install @forge-game-engine/forge
-        </code>
+        <InstallCommand />
       </div>
     </header>
   );

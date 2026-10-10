@@ -76,16 +76,49 @@
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.6rem 1rem;
+  max-width: 100%;
+  padding: 0.35rem 0.35rem 0.35rem 1rem;
   border: 1px solid rgba(207, 214, 234, 0.18);
   border-radius: 8px;
   background: rgba(11, 19, 43, 0.6);
-  color: #e6eaf5;
-  max-width: 100%;
+}
+
+.installCommand {
   overflow-x: auto;
-  font-family: var(--ifm-font-family-monospace);
+  padding: 0;
+  border: none;
+  background: none;
+  color: #e6eaf5;
   font-size: 0.9rem;
   white-space: nowrap;
+}
+
+.copyButton {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid rgba(207, 214, 234, 0.18);
+  border-radius: 6px;
+  background: transparent;
+  color: #c3cbe0;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.copyButton:hover {
+  border-color: var(--forge-amber);
+  color: var(--forge-amber);
+}
+
+.copyButtonCopied,
+.copyButtonCopied:hover {
+  border-color: #4fc4c4;
+  color: #4fc4c4;
 }
 
 .installPrompt {
@@ -193,8 +226,12 @@
     padding: 4rem 1rem 3.5rem;
   }
 
-  .install {
+  .installCommand {
     font-size: 0.78rem;
+  }
+
+  .copyLabel {
+    display: none;
   }
 
   .section {
