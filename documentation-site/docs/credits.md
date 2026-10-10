@@ -38,7 +38,7 @@ the people below. Thank you to all of them.
 - [Deep-Fold's Pixel Planet Generator](https://deep-fold.itch.io/pixel-planet-generator):
   the pixel-art planet in the rendering demos and blog.
 - [OboroPixel](https://oboropixel.itch.io/characters-animations-asset-pack):
-  animated character sprite sheets.
+  the soldier sprite sheets in the sprite animation docs.
 
 ## Music and sound effects
 
