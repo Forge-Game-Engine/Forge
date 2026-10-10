@@ -162,10 +162,10 @@ const Hero = (): ReactNode => {
 
 const Modules = (): ReactNode => (
   <section className={styles.section}>
-    <h2 className={styles.sectionTitle}>What Forge is</h2>
+    <h2 className={styles.sectionTitle}>Everything a 2D game needs</h2>
     <p className={styles.sectionIntro}>
-      A TypeScript game engine for the browser. Import only the modules your
-      game uses.
+      Rendering, physics, UI, audio and more, all built in. Pick one to read its
+      guide.
     </p>
     <div className={styles.moduleGrid}>
       {engineModules.map((engineModule) => (
