@@ -13,42 +13,13 @@ import {
 import { WheelDriveEcsComponent, wheelDriveId } from './_wheel-drive.component';
 
 /**
- * Sets each matched entity's `AngularVelocityMotorEcsComponent.targetVelocity`
- * and `maxTorque` from its `WheelDriveEcsComponent.throttleInput` every tick,
- * so `createAngularVelocityMotorEcsSystem` (registered afterwards) drives the
- * wheel towards it.
+ * Sets each wheel motor's target speed and torque from the throttle.
  *
- * The sign is flipped: with this engine's Y-up convention, a wheel rolling
- * without slipping to the right (positive world-space x velocity `V`) spins
- * with angular velocity `-V / radius` (positive angular velocity is
- * counter-clockwise, and the bottom contact point of a wheel moving right
- * traces backwards, i.e. clockwise). So driving the car forward (positive
- * throttle, positive x) needs a *negative* target angular velocity.
- *
- * While the wheel's `GroundContactEcsComponent` reports it touching the
- * ground, the throttle-desired target is used directly - the engine's own
- * friction model (see `createCollisionResolutionEcsSystem`) is what
- * correctly limits how much of that becomes real acceleration versus slip,
- * the same way it would for a real tire. Only while airborne is the target
- * clamped to within `maxSlipAngularSpeed` of the wheel's current rolling
- * speed - see `WheelDriveEcsComponent.maxSlipAngularSpeed` for why an
- * unclamped target would let an airborne wheel run away regardless of
- * `maxWheelSpeed`.
- *
- * `maxTorque` is dropped to `0` whenever `throttleInput.value` is exactly
- * `0`, rather than leaving it at `wheelDrive.maxTorque` and letting
- * `targetVelocity` fall to `0` - at `wheelDrive.maxTorque` (large enough to
- * punch through bumps), driving `targetVelocity` to `0` would brake the
- * wheel to a dead stop the instant the player releases the controls, acting
- * as a permanent parking brake and preventing the car from coasting downhill
- * under gravity. Dropping the torque budget to `0` instead leaves the motor
- * with nothing to push with, so the wheel spins freely at whatever rate
- * rolling contact and gravity give it.
- *
- * Must run after `createGroundContactEcsSystem` in the same tick (so it sees
- * this tick's grounded state) and before `createAngularVelocityMotorEcsSystem`,
- * which itself must run before whatever system integrates velocity into
- * position (`createEulerIntegrationEcsSystem`).
+ * - The sign is flipped: in a Y-up world a wheel rolling right spins
+ *   clockwise, which is a negative angle.
+ * - On the ground the target is used as is; friction limits the grip.
+ * - In the air the target stays close to the wheel's rolling speed.
+ * - With no throttle the torque drops to zero, so the car coasts.
  */
 export const createWheelDriveEcsSystem = (): EcsSystem<
   [

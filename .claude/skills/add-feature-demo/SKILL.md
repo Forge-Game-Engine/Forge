@@ -6,8 +6,8 @@ description: Use this skill when adding a new feature to the engine.
 # Add a Demo
 
 `documentation-site/src/pages/demos/<name>/` holds interactive, in-browser
-demos of engine features, each rendered through
-`documentation-site/src/components/Demo.tsx`. Read `AGENTS.md`'s
+demos of engine features, each rendered through `DemoPage`
+(`documentation-site/src/components/demo-page/`). Read `AGENTS.md`'s
 "Documentation Site Demos" section first for the `file:..`/`dist` gotcha
 that governs how demos are verified — it applies to every demo, new or
 existing.
@@ -57,8 +57,8 @@ Follow the existing file split, every demo uses the same shape:
   `_create-boundaries.ts` from `_spawn-shapes.ts`, not into one monolithic
   file — each file also becomes its own tab in the demo's code viewer (see
   step 3).
-- `index.tsx` — the page itself, a thin wrapper around `<Demo>` (see step
-  3).
+- `index.tsx` — the page itself, a thin wrapper around `<DemoPage>` (see
+  step 3).
 
 Demo-only components/systems (input handling for interaction, camera
 follow, reset-on-key, etc.) still follow the engine's own component/system
@@ -71,59 +71,93 @@ instead of `/src` because they're not part of the public API.
 import React, { JSX } from 'react';
 import { create<PascalName>Game } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
-import someOtherCode from '!!raw-loader!./_some-other-file';
+import thingSystemCode from '!!raw-loader!./_thing.system';
 
-import { Demo } from '@site/src/components/Demo';
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function <PascalName>(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: '<Human Title> Demo',
-        description: 'A demo showcasing <what it shows>.',
-      }}
-      header="<Human Title>"
-      blurb="<1-3 sentences: what the demo shows, what the engine feature
-        does, and how to interact with it (click/drag/keys) if applicable.>"
+    <DemoPage
+      slug="<kebab-case-name>"
       createGame={create<PascalName>Game}
-      codeFiles={[
-        { name: 'game.ts', content: gameCode },
-        { name: 'some-other-file.ts', content: someOtherCode },
+      controls={[
+        { inputs: ['←', 'A'], action: 'Move left' },
+        { inputs: [{ device: 'mouse', label: 'Click' }], action: 'Select' },
+      ]}
+      highlights={[
+        {
+          text: '<One short sentence on what the engine does here.>',
+          file: 'thing.system.ts',
+        },
+      ]}
+      docLinks={[{ label: '<Guide>', to: '/docs/docs/<module>/<page>' }]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary: '<One sentence on what the file does.>',
+              content: gameCode,
+            },
+          ],
+        },
+        {
+          title: '<Feature>',
+          files: [
+            {
+              name: 'thing.system.ts',
+              summary: '<One sentence.>',
+              content: thingSystemCode,
+            },
+          ],
+        },
       ]}
     />
   );
 }
 ```
 
-Each `codeFiles` entry drives one tab in the demo's live code viewer, so
-list every demo-source file the reader would need to fully understand the
-scene, in the order that makes it easiest to follow (usually `game.ts`
-first, since it's the entry point). Import each via `!!raw-loader!` exactly
-like `gameCode` — this is what pulls the raw source text in at build time,
-not the compiled/imported binding.
+The page's title and one-line summary come from the demo's entry in
+`documentation-site/src/data/demos.ts` (step 4), so the catalogue card and
+the page always agree. Write the rest for a reader who has never seen the
+feature:
 
-If the demo needs live interaction controls beyond canvas input (a slider,
-a toggle button), pass a React node via `interactions` — see
-`space-shooter/index.tsx` and `_BloomControls.tsx` for the pattern of a
-small controls component alongside the demo files.
+- `controls`: one row per action, with alternative inputs in the same
+  row. Check each binding against the demo's input code. Leave it out for
+  a demo you only watch.
+- `highlights`: 3-5 "How it works" points, one short sentence each, each
+  linked to the file that implements it. Clicking the link opens that file
+  in the code explorer.
+- `docLinks`: the guides under `documentation-site/docs/docs` that cover
+  the feature (`/docs/docs/<path>`, a folder's `index.md` is
+  `/docs/docs/<folder>`).
+- `fileGroups`: every demo-source file a reader needs, grouped by purpose,
+  with `create-game.ts` alone under "Start here". Name each after its
+  source file without the leading underscore, and keep the
+  `.component.ts`/`.system.ts` suffixes: the explorer's type icons and
+  filter come from them. Import each via `!!raw-loader!` exactly like
+  `gameCode`, which pulls in the raw source text at build time.
+- **Never list React or other framework code** (`.tsx`/`.jsx`) in
+  `fileGroups`. The explorer shows engine code a reader can reuse in their
+  own game; a settings panel that only exists to drive this site's page
+  isn't that. `DemoPage` throws if a `.tsx`/`.jsx` file is listed.
 
-## 4. Wire it into the navbar
+If the demo needs something else beside the game, such as live settings (a
+slider, a toggle) or a legend for colors in the scene, pass it as `panels`,
+wrapped in `DemoPanel` (with `DemoLegend` for a legend). Build live
+settings from `DemoSettings`, `DemoSlider`, `DemoToggle`, `DemoChoice` and
+`DemoTextField`. Keep the game-side logic the panel changes in a plain
+`.ts` file (shown in the explorer) and the React panel itself out of the
+explorer. See `text/index.tsx` and `easing-functions/index.tsx`.
 
-Add an entry to the `Demos` dropdown in
-`documentation-site/docusaurus.config.ts` (currently around line 114),
-alphabetical-ish grouping isn't strictly enforced but new entries are
-generally added near thematically similar ones (physics demos are grouped
-together, etc.):
+## 4. Add it to the demo catalogue
 
-```typescript
-{
-  to: 'demos/<kebab-case-name>',
-  label: '<Human Label>',
-},
-```
-
-This is the only place demos are registered/linked — there's no separate
-index page or sidebar to update.
+Add an entry to `documentation-site/src/data/demos.ts` with the demo's
+`slug` (its directory name), `title`, a one-sentence `description` (what
+you see or do, and which feature it shows; it's the page's summary too) and
+the category slugs it belongs to. See AGENTS.md's "Demo Catalogue and
+Categories" section.
 
 ## 5. Verify
 
@@ -138,23 +172,14 @@ verification checklist:
    already-built, unchanged API).
 2. From `documentation-site/`: `npm run typecheck`, then `npm run build`
    (`docusaurus build`) — this is what actually catches a broken import
-   against the published package surface or an MDX/broken-link error from
-   the navbar entry.
+   against the published package surface or a broken `docLinks` entry.
 3. `npm run start` in `documentation-site/` (or reuse a running dev
    server), open `demos/<kebab-case-name>` in a browser with a full page
    reload (fast refresh doesn't guarantee a clean re-init), and confirm it
-   renders and behaves correctly — click through any interactions the
-   `blurb` describes.
-4. **Also click the entry from the actual "Demos" navbar dropdown** - don't
-   only visit the URL directly. Adding the array entry in step 4 above is
-   necessary but not sufficient: the dropdown has grown to ~30 entries and
-   its `.dropdown__menu` is capped to the viewport height with internal
-   scrolling (`documentation-site/src/css/custom.css`) specifically so
-   every entry stays reachable regardless of list length - confirm your new
-   entry actually scrolls into view and is clickable in a real browser,
-   since a syntactically-correct array entry can still end up unreachable
-   if that CSS ever regresses or a future redesign changes the dropdown
-   markup.
+   renders and behaves correctly — try every control the page lists and
+   open each highlight's file link.
+4. Open the demo from its card on `/demos` too, to check the catalogue
+   entry.
 
 If this was prompted by a `/src` change (not a brand-new demo for existing
 functionality), also re-run the full root-level `CLAUDE.md` verification

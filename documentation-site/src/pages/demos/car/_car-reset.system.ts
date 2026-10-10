@@ -5,11 +5,8 @@ import { Vec2 } from '@forge-game-engine/forge/math';
 import { CarResetEcsComponent, carResetId } from './_car-reset.component';
 
 /**
- * Teleports every body in each matched entity's `CarResetEcsComponent.bodies`
- * back to its recorded spawn transform, with zero velocity, on the tick
- * `restartInput` fires. Writes each body's `local` pose, so it must run
- * before `createTransformEcsSystem`, so a restart applied this tick is
- * reflected in this same tick's physics step and render.
+ * Moves the car's bodies back to their spawn transforms, at rest, on the
+ * tick the restart input fires.
  */
 export const createCarResetEcsSystem = (): EcsSystem<
   [CarResetEcsComponent]

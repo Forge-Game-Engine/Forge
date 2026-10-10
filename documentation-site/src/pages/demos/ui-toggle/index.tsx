@@ -2,42 +2,53 @@ import React, { JSX } from 'react';
 import { createToggleGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 
-import { Demo } from '@site/src/components/Demo';
-import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
-
-const badgeStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 20,
-  height: 20,
-  borderRadius: '50%',
-  backgroundColor: 'var(--ifm-color-emphasis-300)',
-  fontSize: 12,
-};
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function UiToggle(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'UI Toggles',
-        description:
-          'A demo showcasing checkboxes and radio groups from the ui module: createToggle, UiToggleGroupEcsComponent.',
-      }}
-      header="UI Toggles"
-      blurb="The 'Mute' toggle (createToggle, no group) flips freely, checkbox-style. The three 'Difficulty' toggles share a UiToggleGroupEcsComponent (addUiToggleGroupComponent), making them a radio group - clicking one turns the others off, since a group always has exactly one selection by default (allowSwitchOff: false). Both are the same createToggle/UiToggleEcsComponent underneath; a shared group is the only thing that turns a set of checkboxes into radio buttons."
+    <DemoPage
+      slug="ui-toggle"
       createGame={createToggleGame}
-      interactions={
-        <InteractionInstruction
-          displayElement={
-            <div style={badgeStyle}>
-              <i className="fa-solid fa-computer-mouse" />
-            </div>
-          }
-          text="Click a toggle."
-        />
-      }
-      codeFiles={[{ name: 'game.ts', content: gameCode }]}
+      controls={[
+        {
+          inputs: [{ device: 'mouse', label: 'Click' }],
+          action: 'Flip a toggle',
+        },
+      ]}
+      highlights={[
+        {
+          text: "The 'Mute' toggle has no group, so it flips on and off freely, like a checkbox.",
+          file: 'create-game.ts',
+        },
+        {
+          text: "The three 'Difficulty' toggles share a toggle group, which turns them into radio buttons.",
+          file: 'create-game.ts',
+        },
+        {
+          text: 'A group keeps exactly one toggle on by default, so turning one on turns the others off.',
+          file: 'create-game.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Toggles', to: '/docs/docs/ui/controls#toggles' },
+        {
+          label: 'Grouping toggles',
+          to: '/docs/docs/ui/controls#grouping-toggles',
+        },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Builds a lone checkbox toggle and a three-way radio group with captions.',
+              content: gameCode,
+            },
+          ],
+        },
+      ]}
     />
   );
 }

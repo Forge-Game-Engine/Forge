@@ -1,0 +1,158 @@
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.fieldHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.fieldValue {
+  color: var(--ifm-color-emphasis-700);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.8rem;
+  font-weight: normal;
+}
+
+.slider {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--ifm-color-primary);
+}
+
+.textInput {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  background-color: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+  font: inherit;
+  font-size: 0.88rem;
+  resize: vertical;
+}
+
+.textInput:focus {
+  border-color: var(--ifm-color-primary);
+  outline: none;
+}
+
+.choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.choiceButton {
+  flex: 1 0 auto;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  background: none;
+  color: var(--ifm-font-color-base);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.choiceButton:hover {
+  background-color: var(--ifm-color-emphasis-200);
+}
+
+.choiceButtonSelected,
+.choiceButtonSelected:hover {
+  border-color: var(--ifm-color-primary);
+  background-color: var(--ifm-color-primary);
+  color: var(--ifm-background-color);
+  font-weight: 600;
+}
+
+.toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggleInput {
+  position: relative;
+  flex-shrink: 0;
+  width: 2.2rem;
+  height: 1.2rem;
+  margin: 0;
+  border-radius: 999px;
+  background-color: var(--ifm-color-emphasis-400);
+  appearance: none;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.toggleInput::after {
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background-color: white;
+  content: '';
+  transition: transform 0.15s;
+}
+
+.toggleInput:checked {
+  background-color: var(--ifm-color-primary);
+}
+
+.toggleInput:checked::after {
+  transform: translateX(1rem);
+}
+
+.toggleInput:focus-visible {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: 2px;
+}
+
+.toggleChildren {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--ifm-color-emphasis-300);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ifm-color-emphasis-600);
+}

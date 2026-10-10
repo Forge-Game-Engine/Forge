@@ -1,0 +1,32 @@
+.back {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.header {
+  margin-bottom: 1.25rem;
+}
+
+.title {
+  margin-bottom: 0.25rem;
+}
+
+.summary {
+  max-width: 70ch;
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.docLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.docLinks span {
+  color: var(--ifm-color-emphasis-700);
+}

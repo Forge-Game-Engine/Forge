@@ -1,5 +1,14 @@
 .container {
-  margin: 50px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.intro {
+  max-width: 48rem;
+  color: var(--text-muted-color);
+  font-size: 1.15rem;
 }
 
 .categoryGrid,

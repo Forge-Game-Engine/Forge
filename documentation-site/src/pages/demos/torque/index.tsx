@@ -7,51 +7,91 @@ import thrusterSystemCode from '!!raw-loader!./_thruster.system';
 import gustComponentCode from '!!raw-loader!./_gust.component';
 import gustSystemCode from '!!raw-loader!./_gust.system';
 
-import { Demo } from '@site/src/components/Demo';
-import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
-import { KeyboardKey } from '@site/src/components/_KeyboardKey';
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function Torque(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'Torque and Motors Demo',
-        description:
-          "A demo showcasing RigidBody.applyTorque and the physics engine's AngularVelocityMotorEcsComponent, for spinning a body with torque.",
-      }}
-      header="Torque and Motors"
-      blurb="This demo showcases the two ways to spin a RigidBody with torque. On the left, a flywheel carries a demo-specific ThrusterEcsComponent: while Space is held, createThrusterEcsSystem calls RigidBody.applyTorque on it directly every tick, spinning it up, and releasing lets a small angularDrag on the body gradually spin it back down, since nothing drives it once the torque stops. There's no engine-provided component for this one-shot/manual case, a game is expected to write a small system like this itself. On the right, a flywheel carries an AngularVelocityMotorEcsComponent, a built-in engine component that holds a steady target angular velocity on its own, no input needed, with no angularDrag of its own; a demo-only gust periodically knocks its speed off course, and the motor spends its limited maxTorque budget correcting back towards the target every tick afterwards."
+    <DemoPage
+      slug="torque"
       createGame={createTorqueGame}
-      interactions={
-        <InteractionInstruction
-          displayElement={<KeyboardKey keyCode="␣" />}
-          text="Hold to thrust"
-        />
-      }
-      codeFiles={[
+      controls={[
         {
-          name: 'game.ts',
-          content: gameCode,
+          inputs: ['Space'],
+          action: 'Spin the left flywheel',
+          detail: 'Hold to keep applying torque',
+        },
+      ]}
+      highlights={[
+        {
+          text: 'While Space is held, a small game system calls applyTorque on the left flywheel every tick.',
+          file: 'thruster.system.ts',
         },
         {
-          name: 'create-flywheels.ts',
-          content: createFlywheelsCode,
+          text: 'Let go and angular drag on the left flywheel slowly spins it back down, since nothing drives it anymore.',
+          file: 'create-flywheels.ts',
         },
         {
-          name: 'thruster.component.ts',
-          content: thrusterComponentCode,
+          text: "The right flywheel has the engine's AngularVelocityMotorEcsComponent, which holds a target spin speed with no input at all.",
+          file: 'create-flywheels.ts',
         },
         {
-          name: 'thruster.system.ts',
-          content: thrusterSystemCode,
+          text: 'Every few seconds a gust knocks the right flywheel off speed, and the motor uses its limited maxTorque to recover.',
+          file: 'gust.system.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Forces', to: '/docs/docs/physics/forces' },
+        { label: 'Rigid bodies', to: '/docs/docs/physics/rigid-bodies' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Binds Space, creates both flywheels and registers the systems in order.',
+              content: gameCode,
+            },
+            {
+              name: 'create-flywheels.ts',
+              summary:
+                'Builds the thruster flywheel and the motor-driven flywheel.',
+              content: createFlywheelsCode,
+            },
+          ],
         },
         {
-          name: 'gust.component.ts',
-          content: gustComponentCode,
+          title: 'Thruster',
+          files: [
+            {
+              name: 'thruster.component.ts',
+              summary: 'The input and torque for a player-driven thruster.',
+              content: thrusterComponentCode,
+            },
+            {
+              name: 'thruster.system.ts',
+              summary:
+                'Applies torque to the flywheel while the input is held.',
+              content: thrusterSystemCode,
+            },
+          ],
         },
         {
-          name: 'gust.system.ts',
-          content: gustSystemCode,
+          title: 'Gust',
+          files: [
+            {
+              name: 'gust.component.ts',
+              summary: 'How hard and how often a gust knocks a flywheel.',
+              content: gustComponentCode,
+            },
+            {
+              name: 'gust.system.ts',
+              summary:
+                "Periodically changes the flywheel's spin, alternating direction.",
+              content: gustSystemCode,
+            },
+          ],
         },
       ]}
     />

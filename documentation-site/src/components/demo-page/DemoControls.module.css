@@ -1,0 +1,59 @@
+.controls {
+  display: grid;
+  /* The keys column fits its widest row, up to about half the panel. */
+  grid-template-columns: fit-content(55%) minmax(0, 1fr);
+  gap: 0.6rem 1rem;
+  align-items: center;
+  margin: 0;
+}
+
+.control {
+  display: contents;
+}
+
+.controlKeys {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-weight: normal;
+}
+
+.controlOr {
+  font-size: 0.75rem;
+  color: var(--ifm-color-emphasis-600);
+}
+
+.key {
+  min-width: 2rem;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--ifm-color-emphasis-400);
+  border-bottom-width: 3px;
+  border-radius: 6px;
+  background-color: var(--ifm-color-emphasis-100);
+  color: var(--ifm-font-color-base);
+  font-family: var(--ifm-font-family-base);
+  font-size: 0.95rem;
+  font-weight: bold;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.controlAction {
+  margin: 0;
+  font-weight: 600;
+}
+
+.controlDetail {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: normal;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.inputIcon {
+  margin-right: 0.3rem;
+}

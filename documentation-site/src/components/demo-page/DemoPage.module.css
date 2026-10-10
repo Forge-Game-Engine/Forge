@@ -1,0 +1,61 @@
+.page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 3rem;
+}
+
+.stage {
+  --sidebar-width: 380px;
+  --stage-gap: 1.25rem;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--sidebar-width);
+  gap: var(--stage-gap);
+  container-type: inline-size;
+}
+
+/* The game grows to end level with the sidebar, but never past a 3:2
+ * shape: a taller canvas would show less of the world's width. Past that,
+ * the sidebar scrolls instead. */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: calc((100cqw - var(--sidebar-width) - var(--stage-gap)) / 1.5);
+  overflow-y: auto;
+}
+
+.source {
+  margin-top: 2.5rem;
+  scroll-margin-top: calc(var(--ifm-navbar-height) + 1rem);
+}
+
+.sourceTitle {
+  margin-bottom: 0.75rem;
+}
+
+@media (max-width: 1200px) {
+  .stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+@media (max-width: 996px) {
+  .page {
+    padding: 1rem 1rem 2rem;
+  }
+}
+
+/* The last panel fills any height left beside the game, so the sidebar
+ * ends level with it. */
+.sidebar > :last-child {
+  flex: 1;
+}

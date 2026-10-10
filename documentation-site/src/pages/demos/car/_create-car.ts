@@ -36,208 +36,54 @@ import { addWheelDriveComponent } from './_wheel-drive.component';
 
 const gravity = { x: 0, y: -600 };
 
+// The chassis is the heaviest body in the car, so it has enough rotational
+// inertia to absorb the wheels' drive torque instead of flipping forward.
 const chassisWidth = 450;
 const chassisHeight = 150;
-
-// With the wheel/upright mass this rig needs for stable joints (see
-// `uprightDensity` below), a chassis this light ends up the *lightest*
-// individual body in the car - `chassisWidth * chassisHeight *
-// chassisDensity` is only ~23,600 against ~15,700 per wheel and ~16,100 per
-// upright, i.e. under a third of the car's total mass, when in a real car
-// the body (chassis + engine) dwarfs the wheels. A chassis that light has
-// little rotational inertia to resist the torque the drive wheels'
-// ground-friction reaction transmits back through the suspension anchors
-// (see `createWheelMount`'s comment on that coupling) - accelerating hard,
-// especially uphill, could tip it into an uncontrolled forward pitch
-// (front digging in, the opposite of the intended throttle-lean) that then
-// only compounded once it went airborne. Raising `chassisDensity` so the
-// chassis is comfortably the heaviest single body (now ~56% of total mass)
-// gives it enough of its own rotational inertia to absorb that reaction
-// smoothly instead of snapping into it - confirmed empirically (accelerate
-// from a stop, sustain it uphill, brake hard) that this removes the
-// unwanted forward pitch while still leaving the deliberately weaker
-// stoppie-under-hard-braking-at-speed rotation clearly intact, and barely
-// changes resting suspension sag.
 const chassisDensity = 0.5;
 
 const wheelRadius = 100;
 const wheelDensity = 0.2;
-
-// Slightly below the wheel-ground friction a bare tire/asphalt pairing
-// would use (`1`, still the historical default here) - the peak transient
-// slip right as full throttle is first requested (before the wheel's spin
-// catches up to the car's speed) briefly demands close to this much
-// friction force at the contact patch, and with `chassisDensity` this low
-// used to translate a chunk of that force into unwanted chassis rotation
-// via the tilted suspension anchors. A little less peak grip there,
-// combined with the heavier chassis above, was enough (empirically) to
-// keep that transient from reaching the chassis at all, without making the
-// car noticeably harder to accelerate or climb with once rolling.
 const wheelFriction = 1;
 
-// The wheel doesn't mount to the chassis directly. A single linear spring
-// only constrains a wheel's *distance* from its anchor, leaving it free to
-// swing around that anchor like a pendulum - and a plain revolute joint or
-// prismatic joint wired straight to the wheel isn't right either: a
-// revolute joint would pin the wheel rigidly in place (no suspension travel
-// at all), and a prismatic joint locks the two bodies' *relative rotation*
-// (it captures a referenceAngle and holds it), which would lock the
-// wheel's spin to the chassis and make driving impossible.
-//
-// Instead each wheel gets a small intermediate "upright" body (a real car's
-// wheel hub/knuckle) invisible and non-colliding (no
-// `ColliderEcsComponent`), connected two different ways:
-//  - A prismatic joint pins the upright to the chassis, free to slide only
-//    along `suspensionAxis` (in the chassis's local space) - this is the
-//    suspension's travel, and it's fine that the joint locks the upright's
-//    rotation to the chassis's, since the upright itself never needs to
-//    spin.
-//  - A revolute joint pins the wheel's position to the upright (coincident
-//    centers) while leaving rotation completely free, so the wheel can
-//    still spin for driving.
-// A linear spring/damper pair along the same axis, between the chassis and
-// the upright, then provides the suspension's actual force. Unlike a
-// spring alone, both joints are hard, warm-started constraints (solved
-// every tick, the same as collision contacts) with no lateral give of
-// their own - so the wheel only ever moves along `suspensionAxis` relative
-// to the chassis, no swinging.
-// A tiny, near-massless upright (relative to the wheel and chassis it sits
-// between) makes both joint solvers badly ill-conditioned: resolving a
-// wheel-ground collision impulse through a light body sandwiched between
-// two much heavier ones (the wheel at one joint, the chassis at the other)
-// blows up within a couple of iterations. Keeping the upright's mass close
-// to the wheel's (`wheelRadius * wheelRadius * Math.PI * wheelDensity`,
-// currently ~15,700) keeps both joints' effective mass ratios reasonable -
-// `uprightDensity` has to scale with `wheelRadius`/`wheelDensity` to hold
-// that, since the upright's own radius stays small and unnoticeable.
+// Each wheel hangs from a small, invisible "upright" (a wheel hub). Its mass
+// is kept close to the wheel's: a near-massless body between two heavy ones
+// makes the joint solvers unstable.
 const uprightRadius = 8;
 const uprightDensity = 80;
 
-// Anchors are in the chassis's local space: roughly at the bottom corners,
-// inset a bit so the wheels sit under the body rather than past its edges.
+// Suspension anchors, in the chassis's local space.
 const frontAnchor = { x: chassisWidth / 2 - 115, y: -chassisHeight / 2 };
 const rearAnchor = { x: -(chassisWidth / 2 - 115), y: -chassisHeight / 2 };
 
-// Each wheel is constrained (via its mount's prismatic joint - see
-// `createWheelMount`) to slide only along this axis relative to its
-// anchor, so tilting it away from straight-up/down carries the wheel
-// itself further out from the chassis than its anchor: the line connecting
-// each anchor to its wheel splays outward into a trapezoid rather than a
-// rectangle, like a monster truck's lifted suspension. This also means an
-// impact that's perpendicular to the chassis (hitting a wall or ledge
-// face-on) now has a component along the suspension axis for the spring to
-// absorb, instead of landing entirely on the joint's hard, unsprung
-// constraint.
+// The suspension axes splay outwards like a monster truck's, so a head-on
+// impact is partly absorbed by the spring instead of the rigid joint.
 const frontSuspensionAxis = Vec2.rotate(Vec2.up, degreesToRadians(35));
 const rearSuspensionAxis = Vec2.rotate(Vec2.up, degreesToRadians(-35));
 
-// How far below each anchor a wheel starts, on top of the anchor's own
-// offset. Since `addLinearSpringComponent` defaults `restLength` to the
-// anchors' distance at attach time, this becomes the suspension's rest
-// length, and starting the wheel slightly higher than that (see
-// `wheelSpawnDrop` in `createCar`) lets the car visibly settle onto its
-// suspension as soon as the demo starts, the same way the Linear Spring and
-// Damper demo's wheels do. Kept just large enough that the wheels tuck in
-// close under the chassis (rather than dangling below it with an
-// unrealistic gap) while still leaving several times the equilibrium sag
-// of margin, so the wheel never has to cross (or come numerically close
-// to) the chassis anchor itself, where `createLinearSpringEcsSystem`'s
-// direction normalization becomes unstable as the anchor-to-wheel distance
-// approaches zero.
+// How far below its anchor a wheel starts. This becomes the springs' rest
+// length.
 const wheelDropHeight = 25;
 
-// Chosen so the car's weight compresses each suspension by a small fraction
-// of `wheelDropHeight` at rest (leaving visible, but bounded, suspension
-// travel) rather than anywhere close to all the way to the chassis anchor.
-// Kept well below the stiffness a spring-only mount would want: the
-// prismatic/revolute joint pair already hard-constrains everything but
-// the vertical travel every tick, so a stiffer spring on top of
-// that mostly ends up fighting the joints instead of damping out - a wheel
-// slamming into the ground can end up launching the whole car into the air
-// instead of just compressing the suspension.
-//
-// Being stable *at rest* isn't enough to verify this against: with
-// `frontSuspensionAxis`/`rearSuspensionAxis` tilted rather than vertical,
-// each wheel's ground-friction reaction force has a component along that
-// wheel's own axis, so accelerating or braking couples horizontal force
-// into each suspension corner's loading, not just vertical weight. The two
-// corners have no shared geometry (no anti-roll bar, no rigid axle) tying
-// their loading together, only independent springs - so under hard
-// driving torque this coupling is enough for one corner to unload faster
-// than the other can compensate, letting that wheel lift off entirely and
-// the chassis pitch hard, without player input, while still grounded. Raising
-// stiffness to shrink the *resting* sag (as this was previously tuned to
-// do) only pushes that dynamic imbalance further out of the range this
-// rig's independent-spring, no-shared-axle suspension can absorb - the
-// resting sag it leaves is a real trade-off, not a leftover to tune away.
-// Verify empirically against *driving* stability (accelerate from a stop,
-// sustain it, brake hard), not just resting stability, before changing
-// this.
+// Soft enough that the joints, not the spring, hold the wheel in line. A
+// stiffer spring fights the joints and can launch the car on hard landings.
 const suspensionStiffness = 1_000_000;
 const suspensionDamping = 165_000;
 
-// An engine is meant to feel overpowered enough to punch
-// through bumps and keep climbing rather than stalling on them.
-// `motorMaxTorque` is scaled up to match the car's current total mass:
-// raising `uprightDensity` to fix the wheel-mount mass ratio (see its
-// comment above) added a lot of mass that wasn't here when this was last
-// tuned - each upright went from ~1,200 to ~16,000, roughly a 50% increase
-// in the whole car's mass - and without a matching torque increase the
-// drivetrain no longer had enough force to meaningfully accelerate it.
-// Confirmed empirically that the car was still torque-limited (not just
-// grip-limited) at that scaled-up value - doubling it again visibly sped up
-// both the wheels' own spin-up and the chassis's acceleration, rather than
-// just wasting the extra torque as more wheel spin, so it was raised
-// further. Tested up to 3x this value too: that made launches snappier
-// still, but also made hard braking's chassis dive noticeably harder
-// (pushing back towards the exaggerated flip a previous fix addressed) for
-// only a marginal further gain in sustained speed - this is the point
-// past which more torque stops being "more power" and starts being "less
-// control."
-//
-// Raising `chassisDensity` (see its comment above, fixing an unwanted
-// forward-pitch-under-throttle bug) added roughly another 66% to the car's
-// total mass on top of that - scaled up again by the same ratio to keep
-// the previously-tuned acceleration feel rather than let the extra weight
-// quietly turn "overpowered" back into "sluggish."
-//
-// `maxWheelSpeed` is deliberately far higher than the car could ever
-// actually roll at - `WheelDriveEcsComponent.maxSlipAngularSpeed` is what
-// actually keeps a wheel grounded in reality (see its comment), by
-// clamping the target this produces to a bounded slip band around the
-// wheel's *current* rolling speed. That clamp is what matters; this is
-// just "go as fast as grip allows", not a speed the wheel is meant to
-// reach unassisted.
+// More torque than the tires can use, so grip (friction) is what limits
+// acceleration. `maxWheelSpeed` means "as fast as grip allows";
+// `maxSlipAngularSpeed` stops an airborne wheel from spinning up uselessly.
 const motorMaxTorque = 25_500_000_000;
 const maxWheelSpeed = 350;
-
-// How far past a wheel's current rolling speed its target is allowed to
-// stray (see `WheelDriveEcsComponent.maxSlipAngularSpeed`) - generous
-// enough for a deliberate wheel spin launch from a stop, bounded enough that
-// a wheel briefly unloaded by the chassis's throttle-lean can't run away to
-// `maxWheelSpeed` and waste torque spinning uselessly fast instead of
-// quickly regaining grip once it lands.
 const maxSlipAngularSpeed = 6;
 
-// See `ChassisStabilizerEcsComponent` for why this exists. Strong enough to
-// pull the chassis back to (roughly) level within a second or two of
-// nothing else disturbing it, but still far weaker than the pitch torque a
-// hard acceleration or brake produces, so the car still visibly leans under
-// throttle.
+// Pulls the chassis back to level on the ground, but far weaker than the
+// lean from accelerating or braking.
 const chassisLevelingStiffness = 300_000_000;
 const chassisLevelingDamping = 40_000_000;
 
-// The chassis's target angular speed at full throttle while airborne, and
-// the torque budget `AirControlEcsComponent` spends chasing it - the
-// classic "tilt in mid-air" control, gas pitching the nose
-// up and back, brake pitching it down and forward. Targeting a speed
-// (rather than just applying a constant torque) gives the player direct,
-// bounded control: releasing the input targets zero rotation and actively
-// cancels existing spin instead of coasting on whatever momentum was built
-// up. `airControlMaxTorque` is high enough (matching the chassis's
-// `chassisDensity`-driven moment of inertia) to reach `airControlMaxAngularSpeed`
-// within a few tenths of a second, so input reads as immediate rather than
-// a slow wind-up.
+// Mid-air pitch control: the chassis's target spin speed at full throttle,
+// and the torque spent reaching it.
 const airControlMaxAngularSpeed = 3.5;
 const airControlMaxTorque = 8_000_000_000;
 
@@ -247,13 +93,8 @@ interface CarSprites {
 }
 
 /**
- * A driven wheel's entity id alongside the `GroundContactEcsComponent`
- * tracking its own grounded state - `createWheel` attaches the latter
- * directly to the wheel's entity (so `WheelDriveEcsSystem` can query it
- * jointly), and returns it too so `createCar` can hand the same object by
- * reference to `AirControlEcsComponent`/`ChassisStabilizerEcsComponent`,
- * which live on the chassis's control entity and need to read both wheels'
- * grounded state.
+ * A wheel's entity and its ground contact, which the chassis's stabilizer
+ * and air control read to know whether the car is airborne.
  */
 interface Wheel {
   entity: number;
@@ -299,6 +140,9 @@ async function loadCarSprites(
   };
 }
 
+/**
+ * Creates a motor-driven wheel that tracks what it's touching.
+ */
 function createWheel(
   world: EcsWorld,
   sprite: SpriteEcsComponent,
@@ -348,21 +192,16 @@ function createWheel(
 }
 
 /**
- * Mounts `wheelEntity` to `chassisEntity` at `chassisAnchor` through an
- * intermediate "upright" body (see the module doc comment above for why:
- * a prismatic joint constrains the upright to slide only along
- * `suspensionAxis` relative to the chassis, a revolute joint pins the wheel
- * to that upright with its rotation left free, and a linear spring/
- * damper pair along the same axis supplies the suspension force).
- * @param world - The ECS world to add the mount's entities to.
- * @param chassisEntity - The chassis the wheel mounts to.
- * @param wheelEntity - The wheel being mounted.
- * @param chassisAnchor - Where on the chassis (in its local space) the
- * upright's prismatic joint and the spring/damper attach.
- * @param uprightPosition - The upright's initial world-space position,
- * directly below `chassisAnchor` by the suspension's rest length.
- * @returns The upright's entity id, so it can be included alongside the
- * chassis and wheel in `CarResetEcsComponent.bodies`.
+ * Mounts a wheel to the chassis through an invisible upright:
+ * - a prismatic joint lets the upright slide only along `suspensionAxis`,
+ * - a revolute joint pins the wheel to the upright but leaves it free to
+ *   spin,
+ * - a spring and damper along the same axis are the suspension.
+ *
+ * Joining the wheel to the chassis directly doesn't work: a revolute joint
+ * alone has no suspension travel, and a prismatic joint alone would stop
+ * the wheel from spinning.
+ * @returns The upright's entity, so the car reset can move it too.
  */
 function createWheelMount(
   world: EcsWorld,
@@ -423,24 +262,16 @@ function createWheelMount(
 }
 
 /**
- * Builds a car: a chassis with two wheels mounted
- * beneath it (see `createWheelMount`), each driven by an
- * `AngularVelocityMotorEcsComponent` whose target speed tracks
- * `throttleInput`. The mount constrains a wheel to only slide vertically
- * relative to the chassis - it's the linear spring/damper providing
- * that mount's force (not a rigid frame) that lets the chassis pitch under
- * acceleration and braking, the same "leaning" feel the genre is named for
- * - a light `ChassisStabilizerEcsComponent` only pulls it back level once
- * nothing else is actively tipping it.
+ * Builds the car: a chassis with two motor-driven wheels on spring
+ * suspension, plus the components that keep it level, steer it in mid-air
+ * and reset it.
  * @param world - The ECS world to add the car's entities to.
  * @param renderContext - The render context used to load sprites.
- * @param renderLayer - The render layer the car should be drawn on.
- * @param groundPosition - A point on the ground the car should spawn above.
- * @param throttleInput - Drives both wheels' motors: positive accelerates
- * forward, negative reverses/brakes.
- * @param restartInput - Teleports the car back to its spawn transform when
- * triggered (see `createCarResetEcsSystem`).
- * @returns The chassis's entity id, for the camera to follow.
+ * @param renderLayer - The render layer the car is drawn on.
+ * @param groundPosition - A point on the ground to spawn the car above.
+ * @param throttleInput - Positive drives forward, negative brakes/reverses.
+ * @param restartInput - Moves the car back to its spawn point.
+ * @returns The chassis's entity, for the camera to follow.
  */
 export async function createCar(
   world: EcsWorld,
@@ -452,12 +283,9 @@ export async function createCar(
 ): Promise<number> {
   const sprites = await loadCarSprites(renderContext, renderLayer);
 
-  // Spawn the chassis slightly above its resting ride height so the car
-  // visibly settles onto its suspension as the demo starts, without
-  // starting so high that the initial impact injects a lot of energy into
-  // the springs.
+  // Spawn slightly above ride height so the car visibly settles onto its
+  // suspension.
   const wheelSpawnDrop = wheelDropHeight - 8;
-  // clone: groundPosition is a caller-owned parameter, must not mutate it.
   const chassisPosition = Vec2.add(Vec2.clone(groundPosition), {
     x: 0,
     y: wheelRadius + wheelDropHeight + chassisHeight / 2 + 100,
@@ -484,23 +312,13 @@ export async function createCar(
     restitution: 0.1,
   });
   addRigidBodyComponent(world, chassisEntity, {
-    // Each wheel mount's prismatic joint hard-constrains it against
-    // swinging (see the module doc comment above), so this isn't
-    // compensating for that the way it originally was - it's just a
-    // small amount of drag so any pitch imparted while settling onto the
-    // suspension (or while landing after a jump) damps out over time
-    // instead of persisting indefinitely.
+    // A little drag so pitch from landings dies out over time.
     angularDrag: 0.5,
   });
   addGravityComponent(world, chassisEntity, { amount: gravity });
 
-  // Offset along the same tilted axis each wheel's mount constrains it to
-  // (see `frontSuspensionAxis`/`rearSuspensionAxis`), not straight down, so
-  // the wheel spawns already on its prismatic joint's constraint line
-  // instead of being yanked sideways onto it over the first few frames.
-  // clone: chassisPosition is reused below for the rear wheel too, and
-  // frontSuspensionAxis/rearSuspensionAxis are shared with the joint's
-  // `axis` below - none of these may be mutated in place.
+  // Each wheel spawns on its tilted suspension axis, so the joint doesn't
+  // yank it sideways in the first frames.
   const frontWheelPosition = Vec2.add(
     Vec2.add(
       Vec2.add(Vec2.clone(chassisPosition), frontAnchor),
@@ -516,6 +334,7 @@ export async function createCar(
     { x: 0, y: -wheelRadius },
   );
 
+  // Rear-wheel biased: the front wheel gets half the torque.
   const frontWheel = createWheel(
     world,
     sprites.wheel,
@@ -550,14 +369,8 @@ export async function createCar(
     rearSuspensionAxis,
   );
 
-  // Both live on this one entity so they're easy to find alongside each
-  // other, though neither is queried jointly with the other - each just
-  // holds direct references to `frontWheel.groundContact`/
-  // `rearWheel.groundContact` (see `AirControlEcsComponent`/
-  // `ChassisStabilizerEcsComponent`'s doc comments for why: those
-  // components live on their own control entity, not either wheel's, so an
-  // ECS query can't join them the way `WheelDriveEcsSystem` joins a wheel
-  // with its own `GroundContactEcsComponent`).
+  // Both need to know whether either wheel is on the ground, so they hold
+  // the wheels' ground-contact components directly.
   const chassisControlEntity = world.createEntity();
 
   addChassisStabilizerComponent(world, chassisControlEntity, {

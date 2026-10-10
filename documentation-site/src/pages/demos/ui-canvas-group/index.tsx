@@ -2,42 +2,62 @@ import React, { JSX } from 'react';
 import { createCanvasGroupGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 
-import { Demo } from '@site/src/components/Demo';
-import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
-
-const badgeStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 20,
-  height: 20,
-  borderRadius: '50%',
-  backgroundColor: 'var(--ifm-color-emphasis-300)',
-  fontSize: 12,
-};
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function UiCanvasGroup(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'UI Canvas Group',
-        description:
-          'A demo showcasing CanvasGroupEcsComponent fading and disabling a whole nested UI subtree at once.',
-      }}
-      header="UI Canvas Group"
-      blurb="A single CanvasGroupEcsComponent lives on the outer modal panel. Toggling 'Disable modal' fades and disables everything under it in one write - the nested card, its label, its long description, and its 'Confirm' button (a real createButton) - two and three levels down in the tree. createUiCanvasGroupEcsSystem walks the whole subtree, not just direct children, so alpha/interactable/blocksRaycasts propagate arbitrarily deep: 'Confirm' becomes genuinely unable to be clicked while disabled, not just dimmed. The toggle itself lives outside the group, so it stays fully opaque and clickable the whole time."
+    <DemoPage
+      slug="ui-canvas-group"
       createGame={createCanvasGroupGame}
-      interactions={
-        <InteractionInstruction
-          displayElement={
-            <div style={badgeStyle}>
-              <i className="fa-solid fa-computer-mouse" />
-            </div>
-          }
-          text="Click 'Disable modal' to fade the whole card."
-        />
-      }
-      codeFiles={[{ name: 'game.ts', content: gameCode }]}
+      controls={[
+        {
+          inputs: [{ device: 'mouse', label: 'Click' }],
+          action: "Toggle 'Disable modal'",
+        },
+        {
+          inputs: [{ device: 'mouse', label: 'Click' }],
+          action: 'Press Confirm',
+          detail: 'Does nothing while the modal is disabled',
+        },
+      ]}
+      highlights={[
+        {
+          text: 'One canvas group sits on the modal panel, and the toggle changes only that component.',
+          file: 'create-game.ts',
+        },
+        {
+          text: 'The fade and disable reach every descendant: the nested card, its labels and the Confirm button two or three levels down.',
+          file: 'create-game.ts',
+        },
+        {
+          text: 'While disabled, Confirm really ignores clicks, because the group turns off interactable and blocksRaycasts, not just alpha.',
+          file: 'create-game.ts',
+        },
+        {
+          text: 'The toggle lives outside the group, so it stays opaque and clickable the whole time.',
+          file: 'create-game.ts',
+        },
+      ]}
+      docLinks={[
+        {
+          label: 'Hiding, fading and tooltips',
+          to: '/docs/docs/ui/canvas-groups-and-tooltips',
+        },
+        { label: 'Controls', to: '/docs/docs/ui/controls' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Builds the modal with its canvas group, the nested card and the toggle that disables it.',
+              content: gameCode,
+            },
+          ],
+        },
+      ]}
     />
   );
 }

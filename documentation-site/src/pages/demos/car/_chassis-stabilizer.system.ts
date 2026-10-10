@@ -8,15 +8,8 @@ import {
 import { isGrounded } from './_ground-contact.component';
 
 /**
- * While a matched entity's `ChassisStabilizerEcsComponent.frontWheelGroundContact`
- * or `rearWheelGroundContact` reports its wheel touching the ground, applies
- * the restoring torque to the chassis every tick, via `applyTorque`. Does
- * nothing while both wheels are airborne, leaving the chassis entirely to
- * `AirControlEcsComponent`'s deliberate tilt input.
- *
- * Must run after `createGroundContactEcsSystem` in the same tick (so it
- * sees this tick's grounded state) and before whatever system integrates
- * velocity into position (`createEulerIntegrationEcsSystem`).
+ * Applies a spring-like torque towards level while either wheel is on the
+ * ground. Does nothing in the air, where air control takes over.
  * @param time - The time instance used to scale the torque by the tick's
  * delta time.
  */

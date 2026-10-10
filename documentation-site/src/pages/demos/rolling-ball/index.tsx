@@ -8,65 +8,99 @@ import rollSystemCode from '!!raw-loader!./_roll.system';
 import jumpSystemCode from '!!raw-loader!./_jump.system';
 import cameraFollowSystemCode from '!!raw-loader!./_camera-follow.system';
 
-import { Demo } from '@site/src/components/Demo';
-import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
-import { KeyboardKey } from '@site/src/components/_KeyboardKey';
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function RollingBall(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'Rolling Ball Demo',
-        description:
-          'A demo showcasing TerrainCollider with a smooth, textured, curve-generated course and a player-controlled ball that rolls via friction from an AngularVelocityMotorEcsComponent.',
-      }}
-      header="Rolling Ball"
-      blurb="A standalone showcase of TerrainCollider: a long course whose smooth silhouette comes from a Catmull-Rom curve through sparse, randomly-placed control points, triangulated into a single mesh and textured with a tileable grass-like border blending into a tileable dirt-like fill. TerrainCollider's own collision points are sampled from that exact same curve, so what's drawn always matches what the ball touches. Roll input drives the ball's AngularVelocityMotorEcsComponent, and friction against the terrain - ordinary collision resolution, nothing special-cased - turns that spin into rolling motion up and down the hills. A small camera-follow system keeps the ball in view as it travels, and a jump impulse fires while grounded (the ball's ContactsEcsComponent lists the terrain entity)."
+    <DemoPage
+      slug="rolling-ball"
       createGame={createRollingBallGame}
-      interactions={
-        <>
-          <InteractionInstruction
-            displayElement={<KeyboardKey keyCode="A" />}
-            text="Roll left"
-          />
-          <InteractionInstruction
-            displayElement={<KeyboardKey keyCode="D" />}
-            text="Roll right"
-          />
-          <InteractionInstruction
-            displayElement={<KeyboardKey keyCode="␣" />}
-            text="Jump"
-          />
-        </>
-      }
-      codeFiles={[
+      controls={[
+        { inputs: ['←', 'A'], action: 'Roll left' },
+        { inputs: ['→', 'D'], action: 'Roll right' },
+        { inputs: ['Space'], action: 'Jump', detail: 'Only on the ground' },
+      ]}
+      highlights={[
         {
-          name: 'game.ts',
-          content: gameCode,
+          text: 'The hills are a smooth curve through a few random control points, used for both the TerrainCollider and the drawn mesh, so what you see is what the ball touches.',
+          file: 'create-terrain.ts',
         },
         {
-          name: 'create-terrain.ts',
-          content: createTerrainCode,
+          text: 'The terrain mesh tiles a grass border near the surface that blends into a dirt fill below.',
+          file: 'create-terrain.ts',
         },
         {
-          name: 'create-player.ts',
-          content: createPlayerCode,
+          text: "Rolling sets the target speed of the ball's angular velocity motor, and ordinary friction with the ground turns that spin into movement.",
+          file: 'roll.system.ts',
         },
         {
-          name: 'create-inputs.ts',
-          content: createInputsCode,
+          text: 'The ball can jump only while its contacts list the terrain, and it respawns if it falls off the end.',
+          file: 'jump.system.ts',
         },
         {
-          name: 'roll.system.ts',
-          content: rollSystemCode,
+          text: 'The camera eases after the ball with exponential smoothing.',
+          file: 'camera-follow.system.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Terrain', to: '/docs/docs/physics/terrain' },
+        { label: 'Forces', to: '/docs/docs/physics/forces' },
+        { label: 'Collisions', to: '/docs/docs/physics/collisions' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Builds the terrain, ball and camera, and registers every system in order.',
+              content: gameCode,
+            },
+          ],
         },
         {
-          name: 'jump.system.ts',
-          content: jumpSystemCode,
+          title: 'Building the scene',
+          files: [
+            {
+              name: 'create-terrain.ts',
+              summary:
+                'Generates the curved hills, their collider and the textured mesh that draws them.',
+              content: createTerrainCode,
+            },
+            {
+              name: 'create-player.ts',
+              summary:
+                'Creates the ball as a rigid body with gravity, friction and a spin motor.',
+              content: createPlayerCode,
+            },
+            {
+              name: 'create-inputs.ts',
+              summary: 'Binds A/D, the arrow keys and Space to roll and jump.',
+              content: createInputsCode,
+            },
+          ],
         },
         {
-          name: 'camera-follow.system.ts',
-          content: cameraFollowSystemCode,
+          title: 'Systems',
+          files: [
+            {
+              name: 'roll.system.ts',
+              summary: "Sets the ball motor's target spin from the roll input.",
+              content: rollSystemCode,
+            },
+            {
+              name: 'jump.system.ts',
+              summary:
+                'Jumps while touching the terrain and respawns the ball if it falls.',
+              content: jumpSystemCode,
+            },
+            {
+              name: 'camera-follow.system.ts',
+              summary: 'Eases the camera towards the ball every tick.',
+              content: cameraFollowSystemCode,
+            },
+          ],
         },
       ]}
     />

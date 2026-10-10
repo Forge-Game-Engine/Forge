@@ -6,39 +6,80 @@ import spriteSpawnerComponentCode from '!!raw-loader!./_sprite-spawner.component
 import spriteSpawnerSystemCode from '!!raw-loader!./_sprite-spawner.system';
 import fpsMonitorSystemCode from '!!raw-loader!./_fps-monitor.system';
 
-import { Demo } from '@site/src/components/Demo';
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function StressTest(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'Stress Test Demo',
-        description:
-          'A demo that stress tests the rendering pipeline by spawning sprites until the frame rate drops.',
-      }}
-      header="Stress Test"
-      blurb="This demo spawns batches of sprites at a regular interval, growing the sprite count over time. Open the browser console to see how many sprites had been spawned when the frame rate first dropped below 100, 60 and 30 FPS. Spawning stops once the frame rate drops below 30."
+    <DemoPage
+      slug="stress-test"
       createGame={createStressTestGame}
-      codeFiles={[
+      highlights={[
         {
-          name: 'game.ts',
-          content: gameCode,
+          text: 'Every tenth of a second, a spawner adds 100 more sprites at random positions.',
+          file: 'sprite-spawner.system.ts',
         },
         {
-          name: 'create-sprite-spawner.ts',
-          content: createSpriteSpawnerCode,
+          text: 'All the sprites share one texture, so the renderer can batch them into instanced draws.',
+          file: 'create-sprite-spawner.ts',
         },
         {
-          name: 'sprite-spawner.component.ts',
-          content: spriteSpawnerComponentCode,
+          text: 'Open the browser console to see the sprite count when the frame rate first drops below 100, 60 and 30 FPS.',
+          file: 'fps-monitor.system.ts',
         },
         {
-          name: 'sprite-spawner.system.ts',
-          content: spriteSpawnerSystemCode,
+          text: 'Spawning stops once the frame rate falls below 30 FPS.',
+          file: 'fps-monitor.system.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Sprites', to: '/docs/docs/rendering/sprites' },
+        { label: 'Time', to: '/docs/docs/common/time' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Creates the spawner and registers the spawn, render and FPS systems.',
+              content: gameCode,
+            },
+          ],
         },
         {
-          name: 'fps-monitor.system.ts',
-          content: fpsMonitorSystemCode,
+          title: 'Spawning sprites',
+          files: [
+            {
+              name: 'create-sprite-spawner.ts',
+              summary:
+                'Loads the star sprite and creates the spawner across the camera view.',
+              content: createSpriteSpawnerCode,
+            },
+            {
+              name: 'sprite-spawner.component.ts',
+              summary:
+                'The batch size, timing, bounds and count of the spawner.',
+              content: spriteSpawnerComponentCode,
+            },
+            {
+              name: 'sprite-spawner.system.ts',
+              summary:
+                'Spawns a batch of sprites at random positions on a fixed interval.',
+              content: spriteSpawnerSystemCode,
+            },
+          ],
+        },
+        {
+          title: 'Measuring',
+          files: [
+            {
+              name: 'fps-monitor.system.ts',
+              summary:
+                'Logs the sprite count at each FPS threshold and stops the spawner.',
+              content: fpsMonitorSystemCode,
+            },
+          ],
         },
       ]}
     />
