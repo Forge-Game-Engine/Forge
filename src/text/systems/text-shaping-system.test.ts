@@ -118,6 +118,27 @@ describe('createTextShapingEcsSystem', () => {
     ).toMatchObject({ text: 'AB', fontAtlas, size: 10 });
   });
 
+  it('records a copy of the fields, which later changes to the text leave alone', () => {
+    const entity = world.createEntity();
+    const text = addTextComponent(world, entity, {
+      text: 'AB',
+      fontAtlas: buildFontAtlas(),
+      size: 10,
+    });
+
+    world.update();
+
+    const { shapedFrom } = world.getComponent<TextMeshEcsComponent>(
+      entity,
+      textMeshId,
+    )!;
+
+    text.text = 'ABC';
+
+    expect(shapedFrom).not.toBe(text);
+    expect(shapedFrom?.text).toBe('AB');
+  });
+
   it('shapes a mesh that has no record of what it was shaped from', () => {
     const entity = world.createEntity();
 

@@ -7,18 +7,24 @@ import {
 } from '../components/text-mesh-component.js';
 import { shapeText } from '../utilities/shape-text.js';
 
-function isSameSnapshot(a: TextShapeInputs, b: TextShapeInputs): boolean {
+// Whether `text`'s shape inputs are still the ones its mesh was shaped
+// from. Reads the component directly, so the check runs every tick without
+// allocating.
+function isShapedFrom(
+  text: TextEcsComponent,
+  shapedFrom: TextShapeInputs,
+): boolean {
   return (
-    a.text === b.text &&
-    a.fontAtlas === b.fontAtlas &&
-    a.size === b.size &&
-    a.letterSpacing === b.letterSpacing &&
-    a.lineHeight === b.lineHeight &&
-    a.horizontalAlign === b.horizontalAlign &&
-    a.verticalAlign === b.verticalAlign &&
-    a.maxWidth === b.maxWidth &&
-    a.horizontalAlignPivot === b.horizontalAlignPivot &&
-    a.richText === b.richText
+    text.text === shapedFrom.text &&
+    text.fontAtlas === shapedFrom.fontAtlas &&
+    text.size === shapedFrom.size &&
+    text.letterSpacing === shapedFrom.letterSpacing &&
+    text.lineHeight === shapedFrom.lineHeight &&
+    text.horizontalAlign === shapedFrom.horizontalAlign &&
+    text.verticalAlign === shapedFrom.verticalAlign &&
+    text.maxWidth === shapedFrom.maxWidth &&
+    text.horizontalAlignPivot === shapedFrom.horizontalAlignPivot &&
+    text.richText === shapedFrom.richText
   );
 }
 
@@ -37,6 +43,15 @@ export const createTextShapingEcsSystem = (): EcsSystem<[TextEcsComponent]> => {
         const entity = entities[i];
         const textComponent = textComponents[i];
 
+        const shapedFrom = world.getComponent<TextMeshEcsComponent>(
+          entity,
+          textMeshId,
+        )?.shapedFrom;
+
+        if (shapedFrom && isShapedFrom(textComponent, shapedFrom)) {
+          continue;
+        }
+
         const snapshot: TextShapeInputs = {
           text: textComponent.text,
           fontAtlas: textComponent.fontAtlas,
@@ -49,29 +64,10 @@ export const createTextShapingEcsSystem = (): EcsSystem<[TextEcsComponent]> => {
           horizontalAlignPivot: textComponent.horizontalAlignPivot,
           richText: textComponent.richText,
         };
-
-        const shapedFrom = world.getComponent<TextMeshEcsComponent>(
-          entity,
-          textMeshId,
-        )?.shapedFrom;
-
-        if (shapedFrom && isSameSnapshot(shapedFrom, snapshot)) {
-          continue;
-        }
-
         const { glyphs, bounds, caretStops } = shapeText(
-          textComponent.text,
-          textComponent.fontAtlas.data,
-          {
-            size: textComponent.size,
-            letterSpacing: textComponent.letterSpacing,
-            lineHeight: textComponent.lineHeight,
-            horizontalAlign: textComponent.horizontalAlign,
-            verticalAlign: textComponent.verticalAlign,
-            maxWidth: textComponent.maxWidth,
-            horizontalAlignPivot: textComponent.horizontalAlignPivot,
-            richText: textComponent.richText,
-          },
+          snapshot.text,
+          snapshot.fontAtlas.data,
+          snapshot,
         );
 
         world.addComponent<TextMeshEcsComponent>(entity, textMeshId, {
