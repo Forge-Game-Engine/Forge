@@ -56,11 +56,11 @@ const config: Config = {
           onUntruncatedBlogPosts: 'warn',
         },
         theme: {
-          // Self-hosted fonts: Exo 2 for headings, Inter for body text and
+          // Self-hosted fonts: Orbitron for headings, Inter for body text and
           // JetBrains Mono for code and small eyebrow labels.
           customCss: [
-            require.resolve('@fontsource/exo-2/600.css'),
-            require.resolve('@fontsource/exo-2/700.css'),
+            require.resolve('@fontsource/orbitron/600.css'),
+            require.resolve('@fontsource/orbitron/700.css'),
             require.resolve('@fontsource-variable/inter/index.css'),
             require.resolve('@fontsource/jetbrains-mono/400.css'),
             require.resolve('@fontsource/jetbrains-mono/500.css'),
