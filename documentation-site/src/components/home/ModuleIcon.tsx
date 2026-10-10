@@ -106,6 +106,32 @@ const icons = {
     </>
   ),
   gameLoop: <path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4" />,
+  stateMachines: (
+    <>
+      <circle cx="6" cy="6" r="2.8" />
+      <circle cx="18" cy="6" r="2.8" />
+      <circle cx="18" cy="18" r="2.8" className={styles.accent} />
+      <path d="M8.8 6h6.4M18 8.8v6.4M8 8l8 8" />
+    </>
+  ),
+  lifetimes: (
+    <>
+      <path d="M7 3h10M7 21h10M8 3c0 6 8 6 8 9s-8 3-8 9M16 3c0 6-8 6-8 9s8 3 8 9" />
+      <path d="M10 19h4l-2-2.5Z" className={styles.accent} />
+    </>
+  ),
+  storage: (
+    <>
+      <ellipse cx="12" cy="6" rx="7" ry="3" className={styles.accent} />
+      <path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3" />
+    </>
+  ),
+  math: (
+    <>
+      <path d="M4 3v17h17M7 16c3-9 6 2 11-9" />
+      <circle cx="18" cy="7" r="1.5" className={styles.accent} />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type ModuleIconName = keyof typeof icons;

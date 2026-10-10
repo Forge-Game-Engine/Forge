@@ -99,6 +99,12 @@ const engineModules: EngineModule[] = [
     to: '/docs/docs/states',
   },
   {
+    title: 'State machines',
+    description: 'States and the transitions between them',
+    icon: 'stateMachines',
+    to: '/docs/api/classes/FiniteStateMachine',
+  },
+  {
     title: 'Events',
     description: 'Decoupled game events',
     icon: 'events',
@@ -106,9 +112,27 @@ const engineModules: EngineModule[] = [
   },
   {
     title: 'Timers',
-    description: 'Timed tasks and lifetimes',
+    description: 'Delayed and repeating callbacks',
     icon: 'timers',
     to: '/docs/docs/timer',
+  },
+  {
+    title: 'Lifetimes',
+    description: 'Entity expiry and removal',
+    icon: 'lifetimes',
+    to: '/docs/docs/lifecycle',
+  },
+  {
+    title: 'Storage',
+    description: 'Persistent state and storage backends',
+    icon: 'storage',
+    to: '/docs/docs/storage',
+  },
+  {
+    title: 'Math',
+    description: 'Vectors, matrices and seeded random',
+    icon: 'math',
+    to: '/docs/docs/math',
   },
   {
     title: 'Game loop',
