@@ -956,6 +956,10 @@ their `restoreSource` or the latest write of each whole layer of each mip
 level, and its framebuffers and vertex arrays are recreated as passes and
 draws need them.
 
+Device resources are written between render passes, never during one
+(writes throw while a pass is open), and a device upload leaves WebGL's
+default pixel storage behind for the 2D textures, which rely on it.
+
 `e2e/specs/webgl-context-loss.spec.ts` loses and restores a real context
 with `WEBGL_lose_context`, and `e2e/specs/gpu-device-draw.spec.ts` does the
 same for the GPU device.
