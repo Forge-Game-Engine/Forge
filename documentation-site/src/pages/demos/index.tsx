@@ -27,8 +27,12 @@ export default function Demos(): JSX.Element {
       description="Interactive demos of the Forge Game Engine's features, sorted by category."
     >
       <div className={styles.container}>
+        <p className="eyebrow">See it running</p>
         <h1>Demos</h1>
-        <p>Browse interactive demos by category, or search for one by title.</p>
+        <p className={styles.intro}>
+          Every demo runs in your browser, with its full source beside it.
+          Browse by category, or search by title.
+        </p>
         <DemoSearch value={query} onChange={setQuery} />
         {trimmedQuery.length === 0 ? (
           <div className={styles.categoryGrid}>

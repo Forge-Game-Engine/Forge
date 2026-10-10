@@ -56,7 +56,16 @@ const config: Config = {
           onUntruncatedBlogPosts: 'warn',
         },
         theme: {
-          customCss: './src/css/custom.css',
+          // Self-hosted fonts: Exo 2 for headings, Inter for body text and
+          // JetBrains Mono for code and small eyebrow labels.
+          customCss: [
+            require.resolve('@fontsource/exo-2/600.css'),
+            require.resolve('@fontsource/exo-2/700.css'),
+            require.resolve('@fontsource-variable/inter/index.css'),
+            require.resolve('@fontsource/jetbrains-mono/400.css'),
+            require.resolve('@fontsource/jetbrains-mono/500.css'),
+            './src/css/custom.css',
+          ],
         },
       } satisfies Preset.Options,
     ],
@@ -95,6 +104,7 @@ const config: Config = {
     // Replace with your project's social card
     image: 'img/forge-social-card.jpg',
     colorMode: {
+      defaultMode: 'dark',
       respectPrefersColorScheme: true,
     },
     navbar: {

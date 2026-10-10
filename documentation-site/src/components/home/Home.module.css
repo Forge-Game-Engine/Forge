@@ -1,0 +1,208 @@
+/* Hero */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 7rem 1.5rem 6rem;
+  color: var(--forge-periwinkle);
+  background: var(--forge-navy);
+  isolation: isolate;
+}
+
+.heroVideo {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(6px) saturate(0.8);
+  transform: scale(1.06);
+}
+
+/* Fades the video into the navy page below, so the hero reads as part of
+ * the page rather than a separate banner. */
+.heroShade {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(11, 19, 43, 0.95) 0%,
+      rgba(11, 19, 43, 0.6) 100%
+    ),
+    linear-gradient(180deg, transparent 60%, var(--forge-navy) 100%);
+}
+
+.heroInner {
+  /* The same text column as the sections below. */
+  max-width: calc(1200px - 3rem);
+  margin: 0 auto;
+}
+
+.heroEyebrow {
+  color: #9aa4c4;
+}
+
+.heroTitle {
+  margin: 0 0 1rem;
+  color: #ffffff;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  line-height: 1;
+}
+
+.heroIntro {
+  max-width: 40rem;
+  margin: 0 0 2rem;
+  color: #c3cbe0;
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+  line-height: 1.5;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.heroSecondary {
+  border-color: rgba(207, 214, 234, 0.3);
+  color: #e6eaf5;
+}
+
+.install {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid rgba(207, 214, 234, 0.18);
+  border-radius: 8px;
+  background: rgba(11, 19, 43, 0.6);
+  color: #e6eaf5;
+  max-width: 100%;
+  overflow-x: auto;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.installPrompt {
+  color: var(--forge-amber);
+}
+
+/* Sections */
+
+.section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 5rem 1.5rem;
+}
+
+.sectionTitle {
+  margin: 0 0 1rem;
+  font-size: clamp(2.2rem, 5vw, 3.25rem);
+  line-height: 1.1;
+}
+
+.sectionIntro {
+  max-width: 48rem;
+  margin: 0 0 3rem;
+  color: var(--text-muted-color);
+  font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+  line-height: 1.5;
+}
+
+.sectionFooter {
+  margin-top: 2rem;
+  font-weight: 600;
+}
+
+/* Modules */
+
+.moduleGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem 1.5rem;
+}
+
+.module {
+  display: flex;
+  gap: 1rem;
+  margin: 0 -0.75rem;
+  padding: 0.9rem 0.75rem;
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+
+.module:hover {
+  background-color: var(--card-background-color);
+  color: inherit;
+  text-decoration: none;
+}
+
+.module:hover .moduleTitle {
+  color: var(--ifm-color-primary);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--ifm-color-primary);
+}
+
+.accent {
+  fill: var(--forge-amber);
+  stroke: var(--forge-amber);
+}
+
+.moduleTitle {
+  margin: 0 0 0.2rem;
+  font-size: 1.2rem;
+  transition: color 0.15s;
+}
+
+.moduleDescription {
+  margin: 0;
+  color: var(--text-muted-color);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+/* Demos */
+
+.demoGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+@media (max-width: 1100px) {
+  .moduleGrid,
+  .demoGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .hero {
+    padding: 4rem 1rem 3.5rem;
+  }
+
+  .install {
+    font-size: 0.78rem;
+  }
+
+  .section {
+    padding: 3.5rem 1rem;
+  }
+
+  .moduleGrid,
+  .demoGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

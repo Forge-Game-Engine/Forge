@@ -1,56 +1,111 @@
 /**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
+ * Global styles for the docs site. Infima (Docusaurus's CSS framework)
+ * reads the --ifm-* variables below, so most of the look is set here.
  */
 
 /*
- * Brand palette: https://coolors.co/0b132b-1c2541-cfd6ea-4e878c-ffbc42
- * #0b132b (navy), #1c2541 (dark blue), #cfd6ea (periwinkle), #4e878c (teal),
- * #ffbc42 (amber). Shade ramps below are the teal hue lightened/darkened
- * to keep AA contrast against each mode's background.
+ * Brand palette: navy (#0b132b), dark blue (#1c2541), periwinkle (#cfd6ea),
+ * teal and amber (#ffbc42). Dark mode is the brand's home: a deep navy
+ * background with a bright teal for links and icons and amber for accents.
+ * Light mode keeps the same hues, with a darker teal so links stay readable
+ * on white.
  */
 :root {
-  --ifm-color-primary: #4e878c;
-  --ifm-color-primary-dark: #3f6e72;
-  --ifm-color-primary-darker: #315458;
-  --ifm-color-primary-darkest: #1b2f30;
-  --ifm-color-primary-light: #5e9fa5;
-  --ifm-color-primary-lighter: #78afb4;
-  --ifm-color-primary-lightest: #9fc6ca;
-  /* The base teal only clears ~4:1 against a white background, so links
-   * (normal-weight body text) use the darker shade for AA contrast. */
+  --forge-navy: #0b132b;
+  --forge-navy-light: #1c2541;
+  --forge-periwinkle: #cfd6ea;
+  --forge-amber: #ffbc42;
+  --forge-amber-dark: #ffa605;
+
+  --ifm-font-family-base:
+    'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ifm-heading-font-family:
+    'Exo 2', 'Inter Variable', system-ui, -apple-system, sans-serif;
+  --ifm-font-family-monospace:
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --ifm-heading-font-weight: 700;
+  --ifm-code-font-size: 90%;
+  --ifm-global-radius: 8px;
+  --ifm-navbar-height: 4rem;
+
+  --ifm-color-primary: #2f7f86;
+  --ifm-color-primary-dark: #2a7279;
+  --ifm-color-primary-darker: #286c72;
+  --ifm-color-primary-darkest: #21595e;
+  --ifm-color-primary-light: #348c93;
+  --ifm-color-primary-lighter: #36929a;
+  --ifm-color-primary-lightest: #3da5ae;
   --ifm-link-color: var(--ifm-color-primary-dark);
-  --text-color: #1c2541;
-  --ifm-code-font-size: 95%;
+
+  --ifm-background-color: #f5f7fc;
+  --ifm-background-surface-color: #ffffff;
+  --ifm-font-color-base: #1c2541;
+  --ifm-heading-color: #0b132b;
+  --ifm-color-emphasis-700: #4a5578;
+  --ifm-toc-border-color: #dde2ef;
+  --ifm-hr-border-color: #dde2ef;
+
   --docusaurus-highlighted-code-line-bg: rgba(11, 19, 43, 0.08);
-  /* The hero is a fixed navy gradient in both themes (see .hero--primary),
-   * so one light text color covers both. */
-  --hero-font-color: #cfd6ea;
-  --card-highlight-color: #ffbc42;
-  --card-background-color: #cfd6ea;
-  --ifm-footer-background-color: #0b132b;
-  --ifm-footer-color: #cfd6ea;
-  --ifm-footer-link-color: #9fc6ca;
-  --ifm-footer-link-hover-color: #ffbc42;
+
+  /* Shared by the site's own components (cards, search, demo pages). */
+  --text-color: var(--ifm-font-color-base);
+  --text-muted-color: #5a6587;
+  --card-background-color: var(--ifm-background-surface-color);
+  --card-border-color: #dde2ef;
+  --card-highlight-color: var(--forge-amber);
+  --hero-font-color: var(--forge-periwinkle);
+
+  --ifm-footer-background-color: var(--forge-navy);
+  --ifm-footer-color: #9aa4c4;
+  --ifm-footer-link-color: #c3cbe0;
+  --ifm-footer-link-hover-color: var(--forge-amber);
   --ifm-footer-title-color: #ffffff;
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: #85b7bb;
-  --ifm-color-primary-dark: #6ba7ac;
-  --ifm-color-primary-darker: #559499;
-  --ifm-color-primary-darkest: #3f6e72;
-  --ifm-color-primary-light: #9fc6ca;
-  --ifm-color-primary-lighter: #b9d6d8;
-  --ifm-color-primary-lightest: #d4e5e7;
-  --text-color: #cfd6ea;
+  --ifm-color-primary: #4fc4c4;
+  --ifm-color-primary-dark: #3dbcbc;
+  --ifm-color-primary-darker: #39b1b1;
+  --ifm-color-primary-darkest: #2f9292;
+  --ifm-color-primary-light: #66cbcb;
+  --ifm-color-primary-lighter: #72cfcf;
+  --ifm-color-primary-lightest: #94dbdb;
+  --ifm-link-color: var(--ifm-color-primary);
+
+  --ifm-background-color: #0b132b;
+  --ifm-background-surface-color: #111b38;
+  --ifm-font-color-base: #c3cbe0;
+  --ifm-heading-color: #f2f4fa;
+  --ifm-color-emphasis-700: #9aa4c4;
+  --ifm-toc-border-color: rgba(207, 214, 234, 0.12);
+  --ifm-hr-border-color: rgba(207, 214, 234, 0.12);
+  --ifm-navbar-background-color: rgba(11, 19, 43, 0.85);
+  --ifm-code-background: rgba(207, 214, 234, 0.08);
+
   --docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.08);
-  /* Amber-on-light-text fails contrast, so dark mode's highlight uses the
-   * darker teal shade instead, which stays readable with light body text. */
-  --card-highlight-color: #315458;
-  --card-background-color: #1c2541;
+
+  --text-muted-color: #8f9abb;
+  --card-border-color: rgba(207, 214, 234, 0.12);
+  /* Amber text on amber fails contrast, so dark cards highlight with a
+   * deep teal instead. */
+  --card-highlight-color: #1d4247;
+}
+
+/* The navy gradient that the dark theme sits on. */
+[data-theme='dark'] body {
+  background:
+    radial-gradient(
+      ellipse 80% 50% at 85% -10%,
+      rgba(79, 196, 196, 0.08),
+      transparent
+    ),
+    linear-gradient(180deg, #0b132b 0%, #0a1024 100%);
+  background-attachment: fixed;
+}
+
+[data-theme='dark'] .main-wrapper,
+[data-theme='dark'] .footer {
+  background-color: transparent;
 }
 
 .main-wrapper {
@@ -58,39 +113,129 @@
   justify-content: center;
 }
 
-/* The hero CTA uses the amber accent (with dark navy text) so it pops
- * against the navy hero rather than blending into it. */
+h1,
+h2,
+h3 {
+  letter-spacing: 0.01em;
+}
+
+/* A small, letter-spaced monospace label above a heading. */
+.eyebrow {
+  margin-bottom: 0.5rem;
+  color: var(--ifm-color-emphasis-700);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* Navbar: translucent navy with a blur in both themes, so the white logo
+ * and the brand bar look the same in light mode. */
+.navbar {
+  --ifm-navbar-background-color: rgba(11, 19, 43, 0.92);
+  --ifm-navbar-link-color: #c3cbe0;
+  --ifm-navbar-link-hover-color: #ffffff;
+  --ifm-navbar-link-active-color: #4fc4c4;
+  --ifm-menu-color: #c3cbe0;
+
+  border-bottom: 1px solid rgba(207, 214, 234, 0.12);
+  box-shadow: none;
+  backdrop-filter: blur(12px);
+}
+
+.navbar__title {
+  color: #ffffff;
+}
+
+.navbar .clean-btn,
+.navbar__toggle {
+  color: #c3cbe0;
+}
+
+.navbar .navbar__title {
+  font-family: var(--ifm-heading-font-family);
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.navbar__link {
+  font-weight: 500;
+}
+
+/* Buttons: amber call to action, outlined secondary. */
+.button {
+  font-family: var(--ifm-heading-font-family);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
 .button--primary {
-  background: #ffbc42;
-  color: #1c2541;
   border: none;
+  background: var(--forge-amber);
+  color: var(--forge-navy);
 }
 
 .button--primary:hover {
-  background: #ffa605;
-  color: #1c2541;
-  box-shadow: 0 0 20px rgba(255, 188, 66, 0.6);
+  background: var(--forge-amber-dark);
+  color: var(--forge-navy);
+  box-shadow: 0 0 24px rgba(255, 188, 66, 0.45);
 }
 
 .button--secondary {
+  border: 1px solid var(--card-border-color);
   background: transparent;
-  color: var(--hero-font-color);
-  border: 1px solid rgba(207, 214, 234, 0.4);
+  color: var(--ifm-font-color-base);
   transition: none;
 }
 
 .button--secondary:hover {
-  background: #cfd6ea;
-  color: #1c2541;
-  border: 1px solid #cfd6ea;
+  border-color: var(--ifm-color-primary);
+  background: transparent;
+  color: var(--ifm-color-primary);
 }
 
-/* A fixed navy gradient (not the interactive teal primary) so the hero
- * reads as a bold brand statement in both themes, with teal and amber
- * reserved as accents on top of it. */
-.hero--primary {
-  background: linear-gradient(160deg, #0b132b 0%, #1c2541 100%);
-  color: var(--hero-font-color);
+/* Code blocks and inline code. */
+.theme-code-block {
+  border: 1px solid var(--card-border-color);
+  box-shadow: none;
+}
+
+code {
+  border: none;
+}
+
+/* Docs sidebar and table of contents. */
+.menu__link {
+  font-size: 0.92rem;
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  font-weight: 600;
+}
+
+.theme-doc-sidebar-container {
+  border-right-color: var(--card-border-color) !important;
+}
+
+/* Admonitions read as cards, not loud colored boxes. */
+.theme-admonition {
+  border: 1px solid var(--card-border-color);
+  border-left-width: 4px;
+  box-shadow: none;
+}
+
+.footer {
+  border-top: 1px solid var(--card-border-color);
+}
+
+.footer__title {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
 
 .code-block-removed-line {
