@@ -29,6 +29,8 @@ the people below. Thank you to all of them.
   the nebula space background.
 - [Wenrexa](https://opengameart.org/content/assets-free-laser-bullets-pack-2020):
   the laser bullets in the space shooter demo.
+- [Squaremeapixel](https://squaremeapixel.itch.io/space-pack): the
+  spaceships and asteroids in the space shooter demo.
 - [Overcrafted](https://overcrafted.itch.io/free-paid-vehicle-car-sprites-):
   the car body and wheels in the car demo.
 - [Deep-Fold's Pixel Planet Generator](https://deep-fold.itch.io/pixel-planet-generator):
