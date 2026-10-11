@@ -757,7 +757,13 @@ documentation. Enabled via the `blog` key in the `classic` preset options in
 Conventions:
 
 - One file per post: `blog/YYYY-MM-DD-slug.md`, with `slug`, `title`,
-  `authors`, and `tags` in frontmatter. Authors are defined once in
+  `description`, `authors`, `tags` and `image` in frontmatter. The
+  homepage's News section lists the three newest posts with their `image`
+  and `description` (`plugins/blog-with-recent-posts.ts`, which loads the
+  blog in place of the classic preset's, writes them to a generated
+  module). Give `image` relative to the post (`./banner.png`), and write
+  `description` as a one-sentence summary; without it Docusaurus uses the
+  post's first line, which is usually its banner image's alt text. Authors are defined once in
   `blog/authors.yml`; tags in `blog/tags.yml`.
 - Internal links (to docs, the API reference, or demos) must include the
   `/Forge` `baseUrl` prefix (e.g. `/Forge/demos/physics`,

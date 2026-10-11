@@ -16,8 +16,9 @@
      first seven columns, the video the last eight. */
   grid-template-columns: repeat(12, minmax(0, 1fr));
   align-items: center;
-  /* The same column as the sections below. */
-  max-width: calc(1200px - 3rem);
+  /* 10rem wider on each side than the sections below, so the video has room
+     and the gaps either side of the hero match. */
+  max-width: calc(1200px - 3rem + 20rem);
   margin: 0 auto;
 }
 
@@ -107,13 +108,11 @@
   grid-column: 1 / 8;
 }
 
-/* The gameplay video, framed like a screen. On wide screens it reaches up
-   to 10rem past the column, stopping 1.5rem from the edge of the page. */
+/* The gameplay video, framed like a screen. */
 .heroMedia {
   grid-row: 1;
   grid-column: 5 / 13;
   margin: 0;
-  margin-right: calc(-1 * max(0px, min(10rem, (100vw - 1200px) / 2)));
 }
 
 .heroScreen {
@@ -152,26 +151,38 @@
   text-align: right;
 }
 
+/* A round amber play button in the video's bottom-right corner, above the
+   left-edge gradient. */
 .heroPlayLink {
+  position: absolute;
+  z-index: 1;
+  right: 0.75rem;
+  bottom: 0.75rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  vertical-align: bottom;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--forge-amber);
+  border-radius: 50%;
+  background: rgba(11, 19, 43, 0.7);
+  color: var(--forge-amber);
+  transition:
+    background-color 0.15s,
+    color 0.15s;
 }
 
-/* A play button: an outlined circle around a filled triangle. */
+.heroPlayLink:hover,
+.heroPlayLink:focus-visible {
+  background: var(--forge-amber);
+  color: var(--forge-navy);
+  text-decoration: none;
+}
+
 .heroPlayIcon {
-  width: 1.1em;
-  height: 1.1em;
-}
-
-.heroPlayIcon circle {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.2;
-}
-
-.heroPlayIcon path {
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-left: 0.1rem;
   fill: currentColor;
 }
 
@@ -276,6 +287,12 @@
   padding: 5rem 1.5rem;
 }
 
+/* Neighboring sections share one gap, instead of each one's padding adding
+   up between them. */
+.section + .section {
+  padding-top: 0;
+}
+
 .sectionTitle {
   margin: 0 0 1rem;
   font-size: clamp(2.2rem, 5vw, 3.25rem);
@@ -291,7 +308,7 @@
 }
 
 .sectionFooter {
-  margin-top: 2rem;
+  margin: 2rem 0 0;
   font-weight: 600;
 }
 
@@ -345,6 +362,76 @@
   gap: 1.25rem;
 }
 
+/* News */
+
+.newsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.newsPost {
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+  border: 1px solid var(--card-border-color);
+  border-radius: 12px;
+  background-color: var(--card-background-color);
+  color: var(--text-color);
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.newsPost:hover {
+  transform: translateY(-3px);
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  color: var(--text-color);
+  text-decoration: none;
+}
+
+.newsImage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  border-bottom: 1px solid var(--card-border-color);
+  object-fit: cover;
+}
+
+.newsBody {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+}
+
+.newsDate {
+  margin-bottom: 0.5rem;
+  color: var(--ifm-color-emphasis-700);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.newsTitle {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+  line-height: 1.3;
+}
+
+.newsDescription {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--text-muted-color);
+  font-size: 0.93rem;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
 @media (max-width: 996px) {
   .heroInner {
     grid-template-columns: minmax(0, 1fr);
@@ -355,10 +442,6 @@
   .heroMedia {
     grid-row: auto;
     grid-column: auto;
-  }
-
-  .heroMedia {
-    margin-right: 0;
   }
 
   .heroScreen::after {
@@ -391,7 +474,8 @@
   }
 
   .moduleGrid,
-  .demoGrid {
+  .demoGrid,
+  .newsGrid {
     grid-template-columns: minmax(0, 1fr);
   }
 }
