@@ -287,6 +287,12 @@
   padding: 5rem 1.5rem;
 }
 
+/* Neighboring sections share one gap, instead of each one's padding adding
+   up between them. */
+.section + .section {
+  padding-top: 0;
+}
+
 .sectionTitle {
   margin: 0 0 1rem;
   font-size: clamp(2.2rem, 5vw, 3.25rem);
@@ -302,7 +308,7 @@
 }
 
 .sectionFooter {
-  margin-top: 2rem;
+  margin: 2rem 0 0;
   font-weight: 600;
 }
 
