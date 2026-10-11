@@ -162,15 +162,15 @@
 .heroTitle {
   margin: 0 0 1rem;
   color: #ffffff;
-  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-size: clamp(2rem, 4vw, 5.5rem);
   line-height: 1;
 }
 
 .heroIntro {
-  max-width: 40rem;
+  max-width: 30rem;
   margin: 0 0 2rem;
   color: #c3cbe0;
-  font-size: clamp(1.1rem, 2vw, 1.35rem);
+  font-size: clamp(1.1rem, 1vw, 1.35rem);
   line-height: 1.5;
 }
 
