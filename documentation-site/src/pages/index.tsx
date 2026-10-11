@@ -201,7 +201,7 @@ const Hero = (): ReactNode => {
             </video>
           </div>
           <figcaption className={styles.heroCaption}>
-            Galactic Journey, made with Forge ·{' '}
+            Galactic Journey | Forge ·{' '}
             <Link to={galacticJourneyUrl}>Play it</Link>
           </figcaption>
         </figure>
