@@ -108,8 +108,7 @@ const config: Config = {
   themes: ['@docusaurus/theme-mermaid'],
 
   themeConfig: {
-    // Replace with your project's social card
-    image: 'img/forge-social-card.jpg',
+    image: 'img/forge-social-card.png',
     colorMode: {
       defaultMode: 'dark',
       respectPrefersColorScheme: true,
