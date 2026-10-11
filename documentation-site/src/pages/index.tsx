@@ -287,9 +287,6 @@ const newsDateFormat = new Intl.DateTimeFormat('en', {
 const News = (): ReactNode => (
   <section className={styles.section}>
     <h2 className={styles.sectionTitle}>News</h2>
-    <p className={styles.sectionIntro}>
-      Release roundups and what's next for Forge.
-    </p>
     <div className={styles.newsGrid}>
       {recentPosts.map((post) => (
         <Link
