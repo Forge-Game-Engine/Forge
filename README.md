@@ -1,6 +1,11 @@
-# Forge
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/forge-logo-dark.png" />
+    <img src="assets/forge-logo-light.png" alt="Forge" width="160" />
+  </picture>
+</p>
 
-![logo](assets/forge-banner.png)
+# Forge
 
 Forge is a browser-based, code-only game engine. It has everything you'd
 expect from an engine, including rendering, audio, input, animations, an
@@ -9,26 +14,51 @@ Entity-Component-System (ECS) core, physics, and more.
 [![codecov](https://codecov.io/gh/Forge-Game-Engine/Forge/branch/dev/graph/badge.svg)](https://codecov.io/gh/Forge-Game-Engine/Forge)
 
 [Documentation](https://forge-game-engine.github.io/Forge/) ·
-[Demos](https://forge-game-engine.github.io/Forge/demos/ecs)
+[Demos](https://forge-game-engine.github.io/Forge/demos)
 
 ## Getting started
 
-```sh
-npm install @forge-game-engine/forge
-```
+### Install
 
-Add a `<div id="game-container"></div>` to your page, then create a game
-and render a sprite to it:
+Forge is published to GitHub Packages, so npm needs a GitHub token before it
+can install it:
+
+1. [Create a classic personal access token](https://github.com/settings/tokens/new)
+   with the `read:packages` scope.
+2. Log in to the GitHub npm registry for the `@forge-game-engine` scope.
+   Enter your GitHub username, and the token as the password:
+
+   ```sh
+   npm login --scope=@forge-game-engine --registry=https://npm.pkg.github.com
+   ```
+
+3. Install the package:
+
+   ```sh
+   npm install @forge-game-engine/forge
+   ```
+
+### Draw a sprite
+
+Add a `<div id="game-container"></div>` to your page, then create a game, a
+camera and an entity with a sprite, and register the systems that draw it:
 
 ```ts
 import { createGame } from '@forge-game-engine/forge/utilities';
 import {
   addSpriteComponent,
+  createCamera,
   createImageSprite,
+  createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
-import { addPositionComponent } from '@forge-game-engine/forge/common';
+import {
+  addPositionComponent,
+  createTransformEcsSystem,
+} from '@forge-game-engine/forge/common';
 
 const { game, world, renderContext } = createGame('game-container');
+
+createCamera(world);
 
 const texture = await renderContext.textureCache.getOrLoad('sprite.png');
 const sprite = createImageSprite(texture);
@@ -38,30 +68,23 @@ const entity = world.createEntity();
 addPositionComponent(world, entity);
 addSpriteComponent(world, entity, sprite);
 
+world.addSystem(createTransformEcsSystem());
+world.addSystem(createRenderEcsSystem(renderContext));
+
 game.run();
 ```
 
-See the [Getting Started guide](https://forge-game-engine.github.io/Forge/docs/intro)
-for a walkthrough of the above, and the
-[ECS demo](https://forge-game-engine.github.io/Forge/demos/ecs) for a
-complete runnable example.
+The [Getting Started guide](https://forge-game-engine.github.io/Forge/docs/intro)
+walks through setup in more detail, and the
+[demos](https://forge-game-engine.github.io/Forge/demos) are complete,
+runnable examples of each feature.
 
-Want to contribute? See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup,
-verification steps, and commit/changelog conventions.
+## Contributing
 
-## What the engine is
-
-The engine is where all the code is stored that is usable for most types of games. For example: the renderer, audio systems, animations, mouse pointer, etc.
-
-## What the engine is not
-
-The engine is not a place to store code that is hyper-specific to a game. For example: a system for collecting coins.
-
-## What if my system is specific to a particular genre?
-
-You can make a separate folder or package outside of the engine.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, verification steps, and
+commit and changelog conventions.
 
 ## Acknowledgements
 
-- [Vite](https://vite.dev/)
-- [Kenny](https://www.kenney.nl/)
+Forge's demos and website use art, audio and fonts by many creators. See
+[Credits and attributions](https://forge-game-engine.github.io/Forge/docs/credits).
