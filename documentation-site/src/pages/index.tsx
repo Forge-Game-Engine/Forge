@@ -199,9 +199,6 @@ const Hero = (): ReactNode => {
               <source src={webmUrl} type="video/webm" />
               <source src={mp4Url} type="video/mp4" />
             </video>
-          </div>
-          <figcaption className={styles.heroCaption}>
-            <span>Galactic Journey | Forge</span>
             <Link
               to={galacticJourneyUrl}
               className={styles.heroPlayLink}
@@ -216,6 +213,9 @@ const Hero = (): ReactNode => {
                 <path d="M4.5 2.5v11L13.5 8z" />
               </svg>
             </Link>
+          </div>
+          <figcaption className={styles.heroCaption}>
+            Galactic Journey | Forge
           </figcaption>
         </figure>
       </div>
