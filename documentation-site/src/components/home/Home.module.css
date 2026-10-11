@@ -16,8 +16,9 @@
      first seven columns, the video the last eight. */
   grid-template-columns: repeat(12, minmax(0, 1fr));
   align-items: center;
-  /* The same column as the sections below. */
-  max-width: calc(1200px - 3rem);
+  /* 10rem wider on each side than the sections below, so the video has room
+     and the gaps either side of the hero match. */
+  max-width: calc(1200px - 3rem + 20rem);
   margin: 0 auto;
 }
 
@@ -107,13 +108,11 @@
   grid-column: 1 / 8;
 }
 
-/* The gameplay video, framed like a screen. On wide screens it reaches up
-   to 10rem past the column, stopping 1.5rem from the edge of the page. */
+/* The gameplay video, framed like a screen. */
 .heroMedia {
   grid-row: 1;
   grid-column: 5 / 13;
   margin: 0;
-  margin-right: calc(-1 * max(0px, min(10rem, (100vw - 1200px) / 2)));
 }
 
 .heroScreen {
@@ -437,10 +436,6 @@
   .heroMedia {
     grid-row: auto;
     grid-column: auto;
-  }
-
-  .heroMedia {
-    margin-right: 0;
   }
 
   .heroScreen::after {
