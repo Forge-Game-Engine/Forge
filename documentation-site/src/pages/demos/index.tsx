@@ -25,6 +25,7 @@ export default function Demos(): JSX.Element {
     <Layout
       title="Demos"
       description="Interactive demos of the Forge Game Engine's features, sorted by category."
+      wrapperClassName="display-font"
     >
       <div className={styles.container}>
         <p className="eyebrow">See it running</p>

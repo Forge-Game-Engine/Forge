@@ -56,8 +56,9 @@ const config: Config = {
           onUntruncatedBlogPosts: 'warn',
         },
         theme: {
-          // Self-hosted fonts: Orbitron for headings, Inter for body text and
-          // JetBrains Mono for code and small eyebrow labels.
+          // Self-hosted fonts: Orbitron for the logo and the home and demo
+          // pages' headings, Inter for everything else and JetBrains Mono for
+          // code and small eyebrow labels.
           customCss: [
             require.resolve('@fontsource/orbitron/600.css'),
             require.resolve('@fontsource/orbitron/700.css'),

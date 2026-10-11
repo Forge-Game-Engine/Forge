@@ -268,6 +268,7 @@ export default function Home(): ReactNode {
     <Layout
       title="Browser game engine"
       description="Forge is a TypeScript game engine for the browser: built on an ECS core and rendered with WebGL2."
+      wrapperClassName="display-font"
     >
       <Hero />
       <main>
