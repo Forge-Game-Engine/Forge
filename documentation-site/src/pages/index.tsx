@@ -155,6 +155,11 @@ const Hero = (): ReactNode => {
 
   return (
     <header className={styles.hero}>
+      <div className={styles.heroBackground} aria-hidden="true">
+        <div className={clsx(styles.heroOrb, styles.heroOrbAmber)} />
+        <div className={clsx(styles.heroOrb, styles.heroOrbTeal)} />
+        <div className={clsx(styles.heroOrb, styles.heroOrbViolet)} />
+      </div>
       <div className={styles.heroInner}>
         <div className={styles.heroText}>
           <h1 className={styles.heroTitle}>Forge</h1>
