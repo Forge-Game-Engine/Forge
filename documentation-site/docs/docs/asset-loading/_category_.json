@@ -4,5 +4,8 @@
   "link": {
     "type": "doc",
     "id": "docs/asset-loading/index"
+  },
+  "customProps": {
+    "icon": "assetLoading"
   }
 }

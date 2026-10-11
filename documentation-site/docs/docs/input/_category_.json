@@ -4,5 +4,8 @@
   "link": {
     "type": "doc",
     "id": "docs/input/index"
+  },
+  "customProps": {
+    "icon": "input"
   }
 }

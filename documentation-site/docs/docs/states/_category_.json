@@ -4,5 +4,8 @@
   "link": {
     "type": "doc",
     "id": "docs/states/index"
+  },
+  "customProps": {
+    "icon": "states"
   }
 }
