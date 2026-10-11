@@ -127,9 +127,6 @@
     0 0 0 1px rgba(79, 196, 196, 0.15),
     0 24px 60px rgba(0, 0, 0, 0.45),
     0 0 80px rgba(79, 196, 196, 0.12);
-  /* Turned slightly towards the text, so its right edge is the nearer and
-     longer one. */
-  transform: perspective(1600px) rotateY(-6deg);
 }
 
 /* Darkens the video's left edge, where the text overlaps it. */
@@ -339,10 +336,6 @@
 
   .heroMedia {
     margin-right: 0;
-  }
-
-  .heroScreen {
-    transform: none;
   }
 
   .heroScreen::after {
