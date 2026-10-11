@@ -8,6 +8,7 @@ import { ModuleIcon, ModuleIconName } from '@site/src/components/ModuleIcon';
 import styles from '@site/src/components/home/Home.module.css';
 import { InstallCommand } from '@site/src/components/home/InstallCommand';
 import { demos } from '@site/src/data/demos';
+import recentPosts from '@generated/docusaurus-plugin-content-blog/default/recent-posts.js';
 
 interface EngineModule {
   title: string;
@@ -276,6 +277,45 @@ const FeaturedDemos = (): ReactNode => {
   );
 };
 
+const newsDateFormat = new Intl.DateTimeFormat('en', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+const News = (): ReactNode => (
+  <section className={styles.section}>
+    <h2 className={styles.sectionTitle}>News</h2>
+    <p className={styles.sectionIntro}>
+      Release roundups and what's next for Forge.
+    </p>
+    <div className={styles.newsGrid}>
+      {recentPosts.map((post) => (
+        <Link
+          key={post.permalink}
+          to={post.permalink}
+          className={styles.newsPost}
+        >
+          {post.image && (
+            <img className={styles.newsImage} src={post.image} alt="" />
+          )}
+          <div className={styles.newsBody}>
+            <time className={styles.newsDate} dateTime={post.date}>
+              {newsDateFormat.format(new Date(post.date))}
+            </time>
+            <h3 className={styles.newsTitle}>{post.title}</h3>
+            <p className={styles.newsDescription}>{post.description}</p>
+          </div>
+        </Link>
+      ))}
+    </div>
+    <p className={styles.sectionFooter}>
+      <Link to="/blog">All posts →</Link>
+    </p>
+  </section>
+);
+
 export default function Home(): ReactNode {
   return (
     <Layout
@@ -287,6 +327,7 @@ export default function Home(): ReactNode {
       <main>
         <Modules />
         <FeaturedDemos />
+        <News />
       </main>
     </Layout>
   );
