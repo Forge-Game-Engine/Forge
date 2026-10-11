@@ -326,8 +326,8 @@ export default function Home(): ReactNode {
       <Hero />
       <main>
         <Modules />
-        <FeaturedDemos />
         <News />
+        <FeaturedDemos />
       </main>
     </Layout>
   );
