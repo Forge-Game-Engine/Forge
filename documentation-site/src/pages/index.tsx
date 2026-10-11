@@ -316,7 +316,6 @@ const News = (): ReactNode => (
 export default function Home(): ReactNode {
   return (
     <Layout
-      title="Browser game engine"
       description="Forge is a TypeScript game engine for the browser: built on an ECS core and rendered with WebGL2."
       wrapperClassName="display-font"
     >
