@@ -152,6 +152,29 @@
   text-align: right;
 }
 
+.heroPlayLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  vertical-align: bottom;
+}
+
+/* A play button: an outlined circle around a filled triangle. */
+.heroPlayIcon {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.heroPlayIcon circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+}
+
+.heroPlayIcon path {
+  fill: currentColor;
+}
+
 .heroVideo {
   display: block;
   width: 100%;

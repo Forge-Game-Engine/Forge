@@ -202,7 +202,17 @@ const Hero = (): ReactNode => {
           </div>
           <figcaption className={styles.heroCaption}>
             Galactic Journey | Forge ·{' '}
-            <Link to={galacticJourneyUrl}>Play it</Link>
+            <Link to={galacticJourneyUrl} className={styles.heroPlayLink}>
+              <svg
+                className={styles.heroPlayIcon}
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+              >
+                <circle cx="8" cy="8" r="7.25" />
+                <path d="M6.5 5.2v5.6L11 8z" />
+              </svg>
+              Play it
+            </Link>
           </figcaption>
         </figure>
       </div>
