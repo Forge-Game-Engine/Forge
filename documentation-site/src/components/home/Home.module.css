@@ -144,34 +144,44 @@
 }
 
 .heroCaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
   margin-top: 0.75rem;
   color: #9aa4c4;
   font-family: var(--ifm-font-family-monospace);
   font-size: 0.78rem;
   letter-spacing: 0.05em;
-  text-align: right;
 }
 
+/* A small outlined amber button, so it reads as clickable beside the
+   caption text. */
 .heroPlayLink {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  vertical-align: bottom;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--forge-amber);
+  border-radius: 999px;
+  color: var(--forge-amber);
+  font-weight: 500;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
 }
 
-/* A play button: an outlined circle around a filled triangle. */
+.heroPlayLink:hover,
+.heroPlayLink:focus-visible {
+  background: var(--forge-amber);
+  color: var(--forge-navy);
+  text-decoration: none;
+}
+
 .heroPlayIcon {
-  width: 1.1em;
-  height: 1.1em;
-}
-
-.heroPlayIcon circle {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.2;
-}
-
-.heroPlayIcon path {
+  width: 0.8em;
+  height: 0.8em;
   fill: currentColor;
 }
 
