@@ -156,17 +156,17 @@
   letter-spacing: 0.05em;
 }
 
-/* A small outlined amber button, so it reads as clickable beside the
+/* A small round amber play button, so it reads as clickable beside the
    caption text. */
 .heroPlayLink {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0.75rem;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
   border: 1px solid var(--forge-amber);
-  border-radius: 999px;
+  border-radius: 50%;
   color: var(--forge-amber);
-  font-weight: 500;
   transition:
     background-color 0.15s,
     color 0.15s;
@@ -180,8 +180,8 @@
 }
 
 .heroPlayIcon {
-  width: 0.8em;
-  height: 0.8em;
+  width: 0.85rem;
+  height: 0.85rem;
   fill: currentColor;
 }
 

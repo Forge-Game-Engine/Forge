@@ -202,15 +202,19 @@ const Hero = (): ReactNode => {
           </div>
           <figcaption className={styles.heroCaption}>
             <span>Galactic Journey | Forge</span>
-            <Link to={galacticJourneyUrl} className={styles.heroPlayLink}>
+            <Link
+              to={galacticJourneyUrl}
+              className={styles.heroPlayLink}
+              aria-label="Play Galactic Journey"
+              title="Play Galactic Journey"
+            >
               <svg
                 className={styles.heroPlayIcon}
                 viewBox="0 0 16 16"
                 aria-hidden="true"
               >
-                <path d="M4 2.5v11L13 8z" />
+                <path d="M4.5 2.5v11L13.5 8z" />
               </svg>
-              Play it
             </Link>
           </figcaption>
         </figure>
