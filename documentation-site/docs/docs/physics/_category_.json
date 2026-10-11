@@ -4,5 +4,8 @@
   "link": {
     "type": "doc",
     "id": "docs/physics/index"
+  },
+  "customProps": {
+    "icon": "physics"
   }
 }

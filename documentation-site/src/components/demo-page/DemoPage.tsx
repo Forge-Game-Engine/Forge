@@ -92,7 +92,11 @@ export const DemoPage: FC<DemoPageProps> = ({
   };
 
   return (
-    <Layout title={`${demo.title} Demo`} description={demo.description}>
+    <Layout
+      title={`${demo.title} Demo`}
+      description={demo.description}
+      wrapperClassName="display-font"
+    >
       <main className={styles.page}>
         <DemoHeader
           title={demo.title}

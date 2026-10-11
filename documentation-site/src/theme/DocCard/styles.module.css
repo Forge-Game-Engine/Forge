@@ -1,0 +1,6 @@
+/* Sized to match the emoji the card shows otherwise (1.6rem). */
+.moduleIcon {
+  width: 1.6rem;
+  height: 1.6rem;
+  vertical-align: -0.3rem;
+}

@@ -4,5 +4,8 @@
   "link": {
     "type": "doc",
     "id": "docs/lifecycle/index"
+  },
+  "customProps": {
+    "icon": "lifetimes"
   }
 }

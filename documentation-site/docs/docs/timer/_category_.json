@@ -4,5 +4,8 @@
   "link": {
     "type": "doc",
     "id": "docs/timer/index"
+  },
+  "customProps": {
+    "icon": "timers"
   }
 }

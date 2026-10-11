@@ -4,5 +4,8 @@
   "link": {
     "type": "doc",
     "id": "docs/ecs/index"
+  },
+  "customProps": {
+    "icon": "ecs"
   }
 }

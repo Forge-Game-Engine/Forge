@@ -29,6 +29,7 @@ export const CategoryDemosPage: FC<CategoryDemosPageProps> = ({
     <Layout
       title={`${category.title} Demos`}
       description={category.description}
+      wrapperClassName="display-font"
     >
       <div className={styles.container}>
         <Link to="/demos" className={styles.back}>

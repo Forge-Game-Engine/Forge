@@ -4,5 +4,8 @@
   "link": {
     "type": "doc",
     "id": "docs/ui/index"
+  },
+  "customProps": {
+    "icon": "ui"
   }
 }

@@ -3,8 +3,8 @@ import clsx from 'clsx';
 import styles from './_ModuleIcon.module.css';
 
 /**
- * Line icons for the engine's modules, used on the homepage and the demo
- * categories: teal strokes (`currentColor`) with
+ * Line icons for the engine's modules, used on the homepage, the demo
+ * categories and the docs overview: teal strokes (`currentColor`) with
  * one amber accent each, drawn on a 24x24 grid.
  */
 const icons = {
@@ -128,6 +128,12 @@ const icons = {
       <path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3" />
     </>
   ),
+  utilities: (
+    <>
+      <path d="M14.5 4.5a4.5 4.5 0 0 0-5.6 5.6L3.5 15.5a2.1 2.1 0 0 0 3 3l5.4-5.4a4.5 4.5 0 0 0 5.6-5.6l-2.8 2.8-2.6-.4-.4-2.6Z" />
+      <circle cx="5.5" cy="16.5" r="0.6" className={styles.accent} />
+    </>
+  ),
   math: (
     <>
       <path d="M4 3v17h17M7 16c3-9 6 2 11-9" />
@@ -137,6 +143,13 @@ const icons = {
 } satisfies Record<string, ReactNode>;
 
 export type ModuleIconName = keyof typeof icons;
+
+/**
+ * Checks whether a value names one of the module icons, e.g. a docs
+ * category's `customProps.icon`.
+ */
+export const isModuleIconName = (value: unknown): value is ModuleIconName =>
+  typeof value === 'string' && Object.hasOwn(icons, value);
 
 interface ModuleIconProps {
   name: ModuleIconName;

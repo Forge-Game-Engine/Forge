@@ -4,5 +4,8 @@
   "link": {
     "type": "doc",
     "id": "docs/storage/index"
+  },
+  "customProps": {
+    "icon": "storage"
   }
 }

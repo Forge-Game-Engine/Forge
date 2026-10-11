@@ -12,8 +12,9 @@
 .heroInner {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-  gap: 3.5rem;
+  /* The text and the video share a row and overlap: the text spans the
+     first seven columns, the video the last eight. */
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   align-items: center;
   /* The same column as the sections below. */
   max-width: calc(1200px - 3rem);
@@ -98,12 +99,25 @@
   }
 }
 
-/* The gameplay video, framed like a screen. */
+/* Above the video where they overlap. */
+.heroText {
+  position: relative;
+  z-index: 1;
+  grid-row: 1;
+  grid-column: 1 / 8;
+}
+
+/* The gameplay video, framed like a screen. On wide screens it reaches up
+   to 10rem past the column, stopping 1.5rem from the edge of the page. */
 .heroMedia {
+  grid-row: 1;
+  grid-column: 5 / 13;
   margin: 0;
+  margin-right: calc(-1 * max(0px, min(10rem, (100vw - 1200px) / 2)));
 }
 
 .heroScreen {
+  position: relative;
   overflow: hidden;
   aspect-ratio: 16 / 9;
   border: 1px solid rgba(207, 214, 234, 0.18);
@@ -115,6 +129,20 @@
     0 0 80px rgba(79, 196, 196, 0.12);
 }
 
+/* Darkens the video's left edge, where the text overlaps it. */
+.heroScreen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(11, 19, 43, 0.85),
+    rgba(11, 19, 43, 0.4) 25%,
+    transparent 45%
+  );
+  pointer-events: none;
+}
+
 .heroCaption {
   margin-top: 0.75rem;
   color: #9aa4c4;
@@ -122,6 +150,29 @@
   font-size: 0.78rem;
   letter-spacing: 0.05em;
   text-align: right;
+}
+
+.heroPlayLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  vertical-align: bottom;
+}
+
+/* A play button: an outlined circle around a filled triangle. */
+.heroPlayIcon {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.heroPlayIcon circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+}
+
+.heroPlayIcon path {
+  fill: currentColor;
 }
 
 .heroVideo {
@@ -134,15 +185,15 @@
 .heroTitle {
   margin: 0 0 1rem;
   color: #ffffff;
-  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-size: clamp(2rem, 4vw, 5.5rem);
   line-height: 1;
 }
 
 .heroIntro {
-  max-width: 40rem;
+  max-width: 30rem;
   margin: 0 0 2rem;
   color: #c3cbe0;
-  font-size: clamp(1.1rem, 2vw, 1.35rem);
+  font-size: clamp(1.1rem, 1vw, 1.35rem);
   line-height: 1.5;
 }
 
@@ -158,6 +209,12 @@
   color: #e6eaf5;
 }
 
+/* Opaque, since it can sit over the video. */
+.heroSecondary,
+.heroSecondary:hover {
+  background: var(--forge-navy);
+}
+
 .install {
   display: inline-flex;
   align-items: center;
@@ -166,7 +223,7 @@
   padding: 0.35rem 0.35rem 0.35rem 1rem;
   border: 1px solid rgba(207, 214, 234, 0.18);
   border-radius: 8px;
-  background: rgba(11, 19, 43, 0.6);
+  background: var(--forge-navy);
 }
 
 .installCommand {
@@ -292,6 +349,20 @@
   .heroInner {
     grid-template-columns: minmax(0, 1fr);
     gap: 2.5rem;
+  }
+
+  .heroText,
+  .heroMedia {
+    grid-row: auto;
+    grid-column: auto;
+  }
+
+  .heroMedia {
+    margin-right: 0;
+  }
+
+  .heroScreen::after {
+    content: none;
   }
 }
 

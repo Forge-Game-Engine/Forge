@@ -19,7 +19,10 @@
 
   --ifm-font-family-base:
     'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --ifm-heading-font-family:
+  --ifm-heading-font-family: var(--ifm-font-family-base);
+  /* Orbitron, for the logo and for headings and buttons on the home and
+   * demo pages (see .display-font). The documentation itself keeps Inter. */
+  --forge-display-font-family:
     'Orbitron', 'Inter Variable', system-ui, -apple-system, sans-serif;
   --ifm-font-family-monospace:
     'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -102,6 +105,12 @@ h3 {
   letter-spacing: 0.01em;
 }
 
+/* Set as a Layout's wrapperClassName on the home and demo pages, so their
+ * headings and buttons use the display face. */
+.display-font {
+  --ifm-heading-font-family: var(--forge-display-font-family);
+}
+
 /* A small, letter-spaced monospace label above a heading. */
 .eyebrow {
   margin-bottom: 0.5rem;
@@ -137,7 +146,7 @@ h3 {
 }
 
 .navbar .navbar__title {
-  font-family: var(--ifm-heading-font-family);
+  font-family: var(--forge-display-font-family);
   font-size: 1.3rem;
   font-weight: 700;
   letter-spacing: 0.02em;
