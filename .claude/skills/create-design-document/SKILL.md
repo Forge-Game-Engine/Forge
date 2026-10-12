@@ -8,6 +8,8 @@ description: Use this skill when designing or planning for a new feature or majo
 The `design` folder holds design documents and specifications for new features, major re-writes and refactors to the engine.
 Consult the `AGENTS.md` for information on how the engine is structured and works before starting planning.
 
+To design the GitHub issue the current branch is working on, run the `design-author` agent (`.claude/agents/design-author.md`): it finds the issue from the branch, does the research and writes the document this skill describes.
+
 ## 1. Document Structure
 
 Every design document should be a markdown file in the `design` folder. The file name should be descriptive of the feature being designed, and should be in kebab-case (e.g. `new-feature.md`).

@@ -50,6 +50,15 @@ start the task:
 | Adding a Playwright test for rendering, input or game loop     | `write-e2e-test`         |
 | Designing or planning a new feature or large change            | `create-design-document` |
 
+## Agents
+
+Project agents live in `.claude/agents/`:
+
+| Agent               | Use it to                                                                    |
+| ------------------- | ---------------------------------------------------------------------------- |
+| `solution-reviewer` | Review a fix or feature plan before writing code (see "Before implementing") |
+| `design-author`     | Write a `/design` document for the issue the current branch is working on    |
+
 ## Before implementing
 
 For any fix or feature that's more than a one-line change, run the
