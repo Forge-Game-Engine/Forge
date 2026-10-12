@@ -1,0 +1,66 @@
+name: Claude PR review
+
+# Opening a pull request (or marking a draft ready for review) starts a
+# Claude Code run that reviews it with the `pr-reviewer` agent
+# (.claude/agents/pr-reviewer.md) and posts the checklist as a comment, with
+# inline comments on the lines it flags. It runs once per pull request, never
+# pushes, approves or blocks merging. To review again after new commits,
+# mention `@claude` on the pull request and ask for a review (see claude.yml).
+#
+# Requires the Claude GitHub App (https://github.com/apps/claude) installed on
+# the repository and a `CLAUDE_CODE_OAUTH_TOKEN` secret (`claude setup-token`).
+
+on:
+  pull_request:
+    branches:
+      - dev
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: claude-pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # Pull requests from forks don't get the repository's secrets, so the run
+    # couldn't authenticate.
+    if: >-
+      !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      # Exchanged for the Claude GitHub App's token.
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          # The reviewer diffs against origin/<base>.
+          fetch-depth: 0
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Pull requests the `claude` label opens (claude.yml) are reviewed
+          # too.
+          allowed_bots: 'claude[bot]'
+          prompt: |
+            Review pull request #${{ github.event.pull_request.number }} in ${{ github.repository }}.
+            Its title is "${{ github.event.pull_request.title }}" and its base branch is "${{ github.event.pull_request.base.ref }}".
+
+            Run the pr-reviewer agent (.claude/agents/pr-reviewer.md) on it, passing the number, title and base branch.
+            Then write its report, unchanged, to /tmp/forge-review.md and post it as one comment with `gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/forge-review.md`.
+            For each finding that points at a line in the diff, also add an inline comment on that line with mcp__github_inline_comment__create_inline_comment.
+            Don't edit repository files, push, approve or request changes.
+          claude_args: |
+            --model claude-opus-5-5
+            --effort high
+            --allowedTools "Agent,Task,Read,Grep,Glob,Write,mcp__github_inline_comment__create_inline_comment,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*)"

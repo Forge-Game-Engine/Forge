@@ -91,6 +91,12 @@ run the `solution-reviewer` agent (`.claude/agents/solution-reviewer.md`)
 on your plan. It checks the plan against these rules and against how other
 engines solve the same problem.
 
+Once the change is done, the `pr-reviewer` agent
+(`.claude/agents/pr-reviewer.md`) reviews it against the same rules plus
+the changelog, documentation and demo requirements. It runs on every pull
+request when it opens (`.github/workflows/claude-pr-review.yml`); run it
+locally before opening one to catch the same findings first.
+
 The `fix-defect` skill (`.claude/skills/fix-defect/SKILL.md`) walks through
 this step by step for bug fixes.
 
