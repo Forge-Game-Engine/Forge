@@ -40,15 +40,23 @@ section has the reasoning.
 Project skills live in `.claude/skills/`. Use the matching one before you
 start the task:
 
-| Task                                                           | Skill                    |
-| -------------------------------------------------------------- | ------------------------ |
-| Fixing a bug, defect, regression or wrong behavior             | `fix-defect`             |
-| Adding an ECS component                                        | `create-component`       |
-| Adding an ECS system                                           | `create-system`          |
-| Adding a major feature (needs a docs-site demo)                | `add-feature-demo`       |
-| Writing or updating documentation in `documentation-site/docs` | `document-feature`       |
-| Adding a Playwright test for rendering, input or game loop     | `write-e2e-test`         |
-| Designing or planning a new feature or large change            | `create-design-document` |
+| Task                                                           | Skill              |
+| -------------------------------------------------------------- | ------------------ |
+| Fixing a bug, defect, regression or wrong behavior             | `fix-defect`       |
+| Adding an ECS component                                        | `create-component` |
+| Adding an ECS system                                           | `create-system`    |
+| Adding a major feature (needs a docs-site demo)                | `add-feature-demo` |
+| Writing or updating documentation in `documentation-site/docs` | `document-feature` |
+| Adding a Playwright test for rendering, input or game loop     | `write-e2e-test`   |
+
+## Agents
+
+Project agents live in `.claude/agents/`:
+
+| Agent               | Use it to                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `solution-reviewer` | Review a fix or feature plan before writing code (see "Before implementing")                                       |
+| `design-author`     | Design or plan a new feature or large change in `/design` (by default, the issue the current branch is working on) |
 
 ## Before implementing
 
