@@ -217,8 +217,13 @@ Notes:
 
   ```bash
   gh issue create --title "<title>" --body-file <file> \
-    --milestone "<milestone title>" --label enhancement
+    --milestone "<milestone title>" --label <label>
   ```
+
+  Pick the label from the title's type: `enhancement` for `feat` and
+  `perf`, `bug` for `fix`, `refactor` for `refactor`, and `documentation`
+  for `docs`. Add the module's label too where one exists (`ecs`,
+  `physics`, `rendering`, `audio`).
 
 - Reference issues in other milestones by number (`#766`), not by
   milestone or feature name.
