@@ -118,12 +118,20 @@ historical record and are produced by the release process.
 ## Handing an issue to Claude
 
 Maintainers can add the `claude` label to an issue to have Claude Code work
-on it (`.github/workflows/claude-issue.yml`). The run branches off `dev`,
+on it (`.github/workflows/claude.yml`). The run branches off `dev`,
 follows `CLAUDE.md` and `AGENTS.md`, runs the verification steps, and opens a
 pull request that closes the issue. It reports progress, or the question
 that stopped it, in a comment on the issue. The label is removed when the
 run ends, so adding it again starts a fresh attempt. Each labeled issue gets
 its own run, so label only as many issues as you want to review at once.
+
+To ask for changes, mention `@claude` in a comment, a review or an inline
+review comment on the pull request. Claude pushes the changes to that pull
+request's branch. Only one run works on a pull request at a time, so put all
+your feedback in one review rather than several separate comments: while a
+run is busy, GitHub keeps only the newest waiting request. Mentioning
+`@claude` on an issue, for example to answer a question Claude asked there,
+starts a run the same way the label does.
 
 See [AGENTS.md](./AGENTS.md) for full details on architecture, coding
 conventions, module organization, and testing patterns.
