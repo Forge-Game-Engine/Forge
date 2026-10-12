@@ -1,6 +1,6 @@
 ---
 name: plan-milestone
-description: Turn a GitHub milestone into a set of actionable, correctly cross-referenced issues, each sized for one pull request and grounded in the current code, plus a milestone description (goal, approach, "Done when" checklist) for the maintainer to paste. Use whenever asked to "create issues for milestone N", plan, break down or split a milestone, epic or large feature into issues, write the issues for a milestone, or write or refresh a milestone's description.
+description: Turn a GitHub milestone into a set of actionable, correctly cross-referenced issues, each sized for one pull request and grounded in the current code and created on the milestone (never labeled `claude`), plus a milestone description (goal, approach, "Done when" checklist) for the maintainer to paste. Use whenever asked to "create issues for milestone N", plan, break down or split a milestone, epic or large feature into issues, write the issues for a milestone, or write or refresh a milestone's description.
 ---
 
 # Plan a Milestone into Issues
@@ -117,9 +117,13 @@ Order the issues so each one builds on what's merged before it:
    reasonable designs, or decisions the maintainer should make first). Its
    task is to run the `design-author` agent
    (`.claude/agents/design-author.md`) on the issue, which writes a
-   document in `/design`. Later issues may link to that document, but their
-   tasks never ask for code comments that cite it, a decision-log entry or
-   a phase number (AGENTS.md, "Repository Structure").
+   document in `/design`. Every later issue that implements the design
+   links that document (or, until it merges, the design issue) in its
+   `## Goal`: the `claude` label run (`.github/workflows/claude.yml`)
+   writes a fresh design for a feature issue that doesn't link one. Their
+   tasks never ask for code comments that cite the document, a
+   decision-log entry or a phase number (AGENTS.md, "Repository
+   Structure").
 2. **Engine groundwork**: new modules, shared utilities, interfaces and
    breaking changes to existing APIs the feature needs.
 3. **The feature**, in as many issues as it takes to keep each one a single
@@ -225,6 +229,10 @@ Notes:
   for `docs`. Add the module's label too where one exists (`ecs`,
   `physics`, `rendering`, `audio`).
 
+  Never add the `claude` label. It starts an unattended run that
+  implements the issue (`.github/workflows/claude.yml`), and choosing which
+  issues to hand over, and when, is the maintainer's step.
+
 - Reference issues in other milestones by number (`#766`), not by
   milestone or feature name.
 
@@ -286,5 +294,6 @@ Finish with:
       its own change
 - [ ] Every issue has a Conventional Commits title, `## Goal`/`## Problem`,
       `## Tasks`, one `## Done when` outcome and the footer
-- [ ] Created in dependency order; every `#N` re-read and correct
+- [ ] Created on the milestone in dependency order, without the `claude`
+      label; every `#N` re-read and correct
 - [ ] Milestone description and report given to the maintainer

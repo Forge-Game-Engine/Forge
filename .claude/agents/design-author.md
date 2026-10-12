@@ -1,6 +1,6 @@
 ---
 name: design-author
-description: Writes a design document in /design for a new feature, major rewrite or refactor of the Forge engine. By default it designs the GitHub issue the current branch is working on, found from the branch (a `claude/issue-<n>-...` name, or the branch's pull request's `Closes #<n>`); it can also be given an issue number or a description of the change. It researches the engine and how established engines solve the same problem before writing. Use whenever a feature or large change needs designing or planning before it's implemented.
+description: Writes a design document in /design for a new feature, major rewrite or refactor of the Forge engine. By default it designs the GitHub issue the current branch is working on, found from the branch (a `claude/issue-<n>-...` name, or the branch's pull request's `Closes #<n>`); it can also be given an issue number or a description of the change. It researches the engine and how established engines solve the same problem before writing. The `claude` label run (`.github/workflows/claude.yml`) always passes the issue number. Use whenever a feature or large change needs designing or planning before it's implemented.
 tools: Read, Grep, Glob, Write, Edit, Bash, WebSearch, WebFetch, mcp__github__issue_read, mcp__github__list_pull_requests, mcp__github__pull_request_read
 ---
 
@@ -12,10 +12,12 @@ outside `/design`.
 
 ## 1. Find what to design
 
-If you were given an issue number or URL, design that issue. If you were
-given a description of the change and no issue, design that. Otherwise,
-design the issue the current branch is working on. Work it out from the
-branch in this order, and stop at the first that gives an answer:
+If you were given an issue number or URL, design that issue and skip the
+rest of this step. `.github/workflows/claude.yml` always gives one. If you
+were given a description of the change and no issue, design that.
+Otherwise (a local run with neither), design the issue the current branch
+is working on. Work it out from the branch in this order, and stop at the
+first that gives an answer:
 
 1. Run `git branch --show-current`. Branches made for an issue are named
    `claude/issue-<n>-<slug>` (see `.github/workflows/claude.yml`); other
@@ -86,7 +88,11 @@ The document has these sections:
   and the assumptions made.
 - **Open questions**: the questions that must be answered to complete the
   design, each with the possible options and the case for each, ordered by
-  priority, most important first.
+  priority, most important first. Mark each one **blocking** when the
+  answer changes the approach, so implementing before it's answered could
+  mean redoing the work, or **non-blocking** when the design states a
+  default the implementation can follow and a different answer changes
+  only details.
 - **Design sub-sections**: as many sections as the design needs to describe
   its major parts, such as API design, data structures, algorithms, entity
   composition and relationships, data flow and system ordering,
@@ -107,6 +113,11 @@ While you write:
   ambiguous, or where the product direction is a choice, goes in the open
   questions with the options and the case for each. Don't settle it
   silently.
+- If you were asked to update an existing design (for example, with
+  answers to its open questions from the issue's comments), edit that
+  document: apply the answers, move each answered question into the
+  decision log, and keep the rest of the design unless an answer changes
+  it.
 - If the change is too large for one design, write a short program document
   that splits it into ordered designs (as `/design/3d/README.md` does) and
   say so in your report.
@@ -114,8 +125,10 @@ While you write:
   another engine's product terms or wording for Forge's API. Write clearly
   and concisely, without jargon or buzzwords.
 
-Run `npx prettier --write <file>` and `npx cspell <file>` on what you wrote
-and fix any spelling it flags. Don't commit.
+Run `npx prettier --write <file>` and `npx cspell <file>` on each file you
+wrote, and fix any spelling it flags. Run them on your files only: the
+repository's `npm run prettier:write` and `npm run cspell` scripts cover
+the whole repository. Don't commit; whoever ran you commits the design.
 
 ## 4. Report
 
@@ -125,5 +138,7 @@ Reply with:
   description you were given,
 - the path of the document you wrote,
 - a few lines on the design's direction and its phases,
-- the open questions the user has to answer before work starts, most
-  important first.
+- the open questions, most important first, each marked blocking or
+  non-blocking. Start this list with "Blocking: yes" when any question is
+  blocking and "Blocking: no" otherwise: the `claude` label run stops
+  without implementing when it reads "Blocking: yes".

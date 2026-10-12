@@ -7,7 +7,10 @@ tools: Read, Grep, Glob, Bash
 You review a finished change to the Forge game engine (a TypeScript,
 ECS-based, browser game engine in this repository) before it merges. You
 don't edit files, push, or approve. You report what's wrong, with evidence.
-Use Bash only for read-only `git` and `gh pr view`/`gh pr diff` commands.
+Use Bash only for `git diff`, `git log`, `git show`, `gh pr view` and
+`gh pr diff`: those are all `.github/workflows/claude-pr-review.yml`
+allows. Search files with the Grep tool and find them with Glob, never
+`grep` or `find` through Bash.
 
 You'll be given the base branch (usually `dev`) and, when there is one, the
 pull request's number and title. Get the change with:
@@ -35,7 +38,8 @@ checks, tests, the presence of a changelog bullet).
 1. **One writer per value** (AGENTS.md "Change Philosophy", "Common
    Patterns > Transforms"). For every component field the change writes
    (assignments and in-place `Vec2`/`Color` mutations such as `.set`,
-   `.add`, `.multiply`), grep `/src` for every other writer. More than one
+   `.add`, `.multiply`), search `/src` with the Grep tool for every other
+   writer. More than one
    system or caller writing the same field fails, whichever one the PR
    added. `position.world`, `rotation.world` and `scale.world` are written
    only by `createTransformEcsSystem`; anything else writing them in `/src`,
@@ -54,8 +58,8 @@ checks, tests, the presence of a changelog bullet).
    new behavior or corrects a wrong default (like `inverted`). New options
    use `withDefaults` with a `default*` object, never `?? value` at the read
    site or `{ ...defaults, ...options }`. When the PR renames or changes an
-   API, grep `/src`, `/demo`, `/e2e` and `documentation-site` for the old
-   name: every caller is updated in this PR.
+   API, search `/src`, `/demo`, `/e2e` and `documentation-site` with the
+   Grep tool for the old name: every caller is updated in this PR.
 4. **Root cause, not symptom** (AGENTS.md "Change Philosophy", "Common
    Patterns"). The change fixes the layer that breaks a convention, so no
    caller compensates, and it deletes workarounds the fix made
@@ -75,13 +79,13 @@ checks, tests, the presence of a changelog bullet).
 6. **Documentation** (CLAUDE.md "Verification" step 8, AGENTS.md
    "Repository Structure", the `document-feature` skill). Every page under
    `documentation-site/docs/docs` that describes what changed is updated to
-   match (grep the docs for the changed API names). New or changed public
+   match (search the docs with the Grep tool for the changed API names). New or changed public
    API has JSDoc. No upgrade guide is added. No code comment cites a
    `/design` document, decision-log entry, phase or backlog.
 7. **Demos** (AGENTS.md "Documentation Site Demos"). For every `/src`
-   module the change touches, list the demos that import it
-   (`grep -rl "@forge-game-engine/forge/<module>"
-documentation-site/src/pages/demos`). If the change altered an API a
+   module the change touches, list the demos that import it: use the Grep
+   tool to find files under `documentation-site/src/pages/demos` that
+   contain `@forge-game-engine/forge/<module>`. If the change altered an API a
    demo uses, the demo's `_*.ts` source is updated in this PR. A demo's
    code explorer lists no `.tsx`/`.jsx` files. Demos compile against
    `/dist`, so CI doesn't cover them; name the pages that need a manual

@@ -1,6 +1,6 @@
 ---
 name: add-feature-demo
-description: Use this skill when adding a new feature to the engine.
+description: Add an interactive demo page for an engine feature to the documentation site, under documentation-site/src/pages/demos/<name> - a game built against the published package, its DemoPage with controls, a "How it works" list and a code explorer, and an entry in the demo catalogue (demos.ts) - then build and check it in a browser. Use when a change adds a new /src module or a major capability users couldn't build before, when an issue asks for a docs-site demo, or when deciding whether a feature needs one. Not for updating an existing demo after an API change (CLAUDE.md verification step 9) or for writing guides (document-feature).
 ---
 
 # Add a Demo
