@@ -157,7 +157,7 @@ describe('createTerrainMesh', () => {
       createOptions({ curvePoints }),
     );
 
-    expect(mesh.vertexCount).toBe((curvePoints.length - 1) * 6);
+    expect(mesh.geometry.vertexCount).toBe((curvePoints.length - 1) * 6);
   });
 
   it('extends the mesh below its surface, toward -y, by depth below the lowest point', () => {

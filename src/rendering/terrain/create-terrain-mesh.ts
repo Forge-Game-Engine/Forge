@@ -94,14 +94,12 @@ const defaultCreateTerrainMeshOptions: CreateTerrainMeshDefaultedOptions = {
 export interface TerrainMesh {
   readonly geometry: Geometry;
   readonly material: Material;
-  readonly vertexCount: number;
 }
 
 interface TerrainMeshData {
   positions: Float32Array;
   distances: Float32Array;
   depths: Float32Array;
-  vertexCount: number;
 }
 
 function buildTerrainMeshData(
@@ -158,7 +156,6 @@ function buildTerrainMeshData(
     positions: new Float32Array(positions),
     distances: new Float32Array(distances),
     depths: new Float32Array(depths),
-    vertexCount: positions.length / 2,
   };
 }
 
@@ -166,11 +163,13 @@ function createTerrainGeometry(
   renderContext: RenderContext,
   meshData: TerrainMeshData,
 ): Geometry {
-  return new Geometry(renderContext, [
-    { name: 'a_position', data: meshData.positions, size: 2 },
-    { name: 'a_distance', data: meshData.distances, size: 1 },
-    { name: 'a_depth', data: meshData.depths, size: 1 },
-  ]);
+  return new Geometry(renderContext, {
+    attributes: [
+      { name: 'a_position', data: meshData.positions, size: 2 },
+      { name: 'a_distance', data: meshData.distances, size: 1 },
+      { name: 'a_depth', data: meshData.depths, size: 1 },
+    ],
+  });
 }
 
 function assertRepeatingTexture(layer: string, texture: Texture): void {
@@ -230,5 +229,5 @@ export function createTerrainMesh(
   material.setUniform('u_borderWidth', borderWidth);
   material.setUniform('u_borderBlend', borderBlend);
 
-  return { geometry, material, vertexCount: meshData.vertexCount };
+  return { geometry, material };
 }
