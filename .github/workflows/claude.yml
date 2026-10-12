@@ -13,9 +13,7 @@ name: Claude
 #
 # A comment or review that mentions `@claude` starts a run too. On a pull
 # request, Claude pushes to that pull request's branch; on an issue, it works
-# the way a labeled issue does. A pull request comment containing
-# `@claude review` is the exception: claude-pr-review.yml handles it and this
-# workflow skips it.
+# the way a labeled issue does.
 #
 # Requires the Claude GitHub App (https://github.com/apps/claude) installed on
 # the repository and a `CLAUDE_CODE_OAUTH_TOKEN` secret (`claude setup-token`).
@@ -42,13 +40,11 @@ concurrency:
 jobs:
   claude:
     # Skips bots (including Claude's own comments), so a run can't start
-    # another one, and `@claude review` comments on pull requests, which
-    # claude-pr-review.yml runs instead.
+    # another one.
     if: >-
       github.event.sender.type != 'Bot' && (
         (github.event_name == 'issues' && github.event.label.name == 'claude') ||
-        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude') &&
-          !(github.event.issue.pull_request && contains(github.event.comment.body, '@claude review'))) ||
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
         (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
         (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude'))
       )

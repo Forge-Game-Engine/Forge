@@ -119,13 +119,11 @@ When a pull request opens (or a draft is marked ready for review), Claude
 Code reviews it with the `pr-reviewer` agent
 (`.github/workflows/claude-pr-review.yml`) and posts a checklist comment:
 one writer per value, fixed system queries, no compatibility shims, the
-changelog entry, and updated docs and demos. It doesn't push, approve or
-block merging. New commits don't start another review: comment
-`@claude review` on the pull request to ask for one (as the repository's
-owner, a member or a collaborator; pull requests from forks aren't
-reviewed).
-(`.github/workflows/claude.yml` skips those comments, so they never start
-an implementing run.)
+changelog entry, and updated docs and demos. It runs once per pull request
+and doesn't push, approve or block merging. New commits aren't reviewed
+again automatically: run the `pr-reviewer` agent locally (in Claude Code)
+to review them. Mentioning `@claude` on the pull request asks Claude to
+change it, not to review it.
 
 ## Handing an issue to Claude
 

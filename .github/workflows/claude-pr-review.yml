@@ -3,10 +3,10 @@ name: Claude PR review
 # Opening a pull request (or marking a draft ready for review) starts a
 # Claude Code run that reviews it with the `pr-reviewer` agent
 # (.claude/agents/pr-reviewer.md) and posts the checklist as a comment, with
-# inline comments on the lines it flags. It never pushes, approves or blocks
-# merging. New commits don't start another review: to review again, comment
-# `@claude review` on the pull request. claude.yml skips those comments, so
-# only this workflow runs for them.
+# inline comments on the lines it flags. It runs once per pull request, never
+# pushes, approves or blocks merging. Nothing reviews a pull request again
+# automatically: to review new commits, run the `pr-reviewer` agent locally.
+# (An `@claude` mention starts claude.yml's implementing run, not a review.)
 #
 # Requires the Claude GitHub App (https://github.com/apps/claude) installed on
 # the repository and a `CLAUDE_CODE_OAUTH_TOKEN` secret (`claude setup-token`).
@@ -16,33 +16,21 @@ on:
     branches:
       - dev
     types: [opened, reopened, ready_for_review]
-  issue_comment:
-    types: [created]
 
 permissions:
   contents: read
 
 concurrency:
-  group: claude-pr-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  group: claude-pr-review-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   review:
-    # Pull requests from forks don't get the repository's secrets when they
-    # open, so the run couldn't authenticate. A `@claude review` comment runs
-    # with the secrets, so it's only accepted from the repository's owner,
-    # members and collaborators, and the first step skips the review for a
-    # pull request from a fork. Bot comments (including this review's own)
-    # never start a run.
+    # Pull requests from forks don't get the repository's secrets, so the run
+    # couldn't authenticate.
     if: >-
-      (github.event_name == 'pull_request' &&
-        !github.event.pull_request.draft &&
-        github.event.pull_request.head.repo.full_name == github.repository) ||
-      (github.event_name == 'issue_comment' &&
-        github.event.issue.pull_request &&
-        github.event.sender.type != 'Bot' &&
-        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) &&
-        contains(github.event.comment.body, '@claude review'))
+      !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -51,37 +39,14 @@ jobs:
       # Exchanged for the Claude GitHub App's token.
       id-token: write
     steps:
-      # A comment's payload doesn't say where the pull request's branch lives
-      # or which commit it's on, so ask. Pull request events already skip
-      # forks in the job's `if`. The checkout below uses the commit read here,
-      # not the branch, so a push after this check can't change what's
-      # reviewed.
-      - name: Check the pull request's head repository and commit
-        id: head
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
-          PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          read -r head_repo head_sha < <(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRepository,headRepositoryOwner,headRefOid --jq '.headRepositoryOwner.login + "/" + .headRepository.name + " " + .headRefOid')
-          echo "sha=${PULL_REQUEST_HEAD_SHA:-$head_sha}" >> "$GITHUB_OUTPUT"
-          if [ "${head_repo,,}" = "${GITHUB_REPOSITORY,,}" ]; then
-            echo "same-repo=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Skipping: pull request #$PR_NUMBER comes from $head_repo."
-            echo "same-repo=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Checkout code
-        if: steps.head.outputs.same-repo == 'true'
         uses: actions/checkout@v7
         with:
-          ref: ${{ steps.head.outputs.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
           # The reviewer diffs against origin/<base>.
           fetch-depth: 0
 
       - name: Run Claude Code
-        if: steps.head.outputs.same-repo == 'true'
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -89,11 +54,11 @@ jobs:
           # too.
           allowed_bots: 'claude[bot]'
           prompt: |
-            Review pull request #${{ github.event.pull_request.number || github.event.issue.number }} in ${{ github.repository }}.
-            Read its title and base branch with `gh pr view ${{ github.event.pull_request.number || github.event.issue.number }} --json title,baseRefName`.
+            Review pull request #${{ github.event.pull_request.number }} in ${{ github.repository }}.
+            Its title is "${{ github.event.pull_request.title }}" and its base branch is "${{ github.event.pull_request.base.ref }}".
 
             Run the pr-reviewer agent (.claude/agents/pr-reviewer.md) on it, passing the number, title and base branch.
-            Then write its report, unchanged, to /tmp/forge-review.md and post it as one comment with `gh pr comment ${{ github.event.pull_request.number || github.event.issue.number }} --body-file /tmp/forge-review.md`.
+            Then write its report, unchanged, to /tmp/forge-review.md and post it as one comment with `gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/forge-review.md`.
             For each finding that points at a line in the diff, also add an inline comment on that line with mcp__github_inline_comment__create_inline_comment.
             Don't edit repository files, push, approve or request changes.
           claude_args: |
