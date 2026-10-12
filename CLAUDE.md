@@ -31,6 +31,9 @@ section has the reasoning.
   one owning system (e.g. only `createTransformEcsSystem` writes
   `position.world`; everything else writes `local`). A system's `query`
   and `tags` are never configurable.
+- **Systems are stateless.** A system reads its dependencies (e.g. `Time`)
+  and changes only component data. Anything it needs to remember between
+  ticks goes in a component.
 
 ## Skills
 
@@ -41,6 +44,7 @@ start the task:
 | -------------------------------------------------------------- | ------------------------ |
 | Fixing a bug, defect, regression or wrong behavior             | `fix-defect`             |
 | Adding an ECS component                                        | `create-component`       |
+| Adding an ECS system                                           | `create-system`          |
 | Adding a major feature (needs a docs-site demo)                | `add-feature-demo`       |
 | Writing or updating documentation in `documentation-site/docs` | `document-feature`       |
 | Adding a Playwright test for rendering, input or game loop     | `write-e2e-test`         |
