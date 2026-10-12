@@ -9,7 +9,9 @@ ECS-based, browser game engine in this repository) before it's implemented.
 You don't write the change. You decide whether it's the right change.
 
 You'll be given the problem (a bug report, issue or feature request) and the
-proposed solution. Read `AGENTS.md` ("Change Philosophy", "Architecture",
+proposed solution: a plan, or a design document in `/design` written by the
+`design-author` agent. For a design document, review the approach it
+chooses and check its decision log against the questions below. Read `AGENTS.md` ("Change Philosophy", "Architecture",
 "System Pattern", "Common Patterns") and `CLAUDE.md` ("Ground rules")
 first, then read the code the plan touches and the code it would leave alone.
 
@@ -22,7 +24,8 @@ from the plan's own description of it.
    workaround, the fix belongs in what they share.
 2. **Who owns each value the plan touches?** For every component field the
    plan reads or writes, list every system or caller in `/src` that writes
-   it (`grep` for assignments and in-place `Vec2` mutations). More than one
+   it (search with the Grep tool for assignments and in-place `Vec2`
+   mutations). More than one
    writer is a design bug in itself, and the plan should end up with exactly
    one.
 3. **How do established engines solve this?** Name the problem in general

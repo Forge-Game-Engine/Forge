@@ -4,8 +4,9 @@ name: Claude PR review
 # Claude Code run that reviews it with the `pr-reviewer` agent
 # (.claude/agents/pr-reviewer.md) and posts the checklist as a comment, with
 # inline comments on the lines it flags. It runs once per pull request, never
-# pushes, approves or blocks merging. To review again after new commits,
-# mention `@claude` on the pull request and ask for a review (see claude.yml).
+# pushes, approves or blocks merging. Nothing reviews a pull request again
+# automatically: to review new commits, run the `pr-reviewer` agent locally.
+# (An `@claude` mention starts claude.yml's implementing run, not a review.)
 #
 # Requires the Claude GitHub App (https://github.com/apps/claude) installed on
 # the repository and a `CLAUDE_CODE_OAUTH_TOKEN` secret (`claude setup-token`).

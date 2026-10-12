@@ -54,10 +54,15 @@ start the task:
 
 Project agents live in `.claude/agents/`:
 
-| Agent               | Use it to                                                                                                          |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `solution-reviewer` | Review a fix or feature plan before writing code (see "Before implementing")                                       |
-| `design-author`     | Design or plan a new feature or large change in `/design` (by default, the issue the current branch is working on) |
+| Agent               | Use it to                                                                                                      |
+| ------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `solution-reviewer` | Review a fix or feature plan before writing code (see "Before implementing")                                   |
+| `design-author`     | Design or plan a new feature or large change in `/design` (the issue it's given, or else the current branch's) |
+| `pr-reviewer`       | Review a finished change against Forge's checklist before opening a pull request                               |
+
+AGENTS.md's "Agentic Workflow" section says where each agent and skill
+fits between planning a milestone and merging, and which steps the GitHub
+workflows run unattended.
 
 ## Before implementing
 
