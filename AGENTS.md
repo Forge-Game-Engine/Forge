@@ -100,6 +100,12 @@ locally before opening one to catch the same findings first.
 The `fix-defect` skill (`.claude/skills/fix-defect/SKILL.md`) walks through
 this step by step for bug fixes.
 
+For a change big enough to need a design first, the `design-author` agent
+(`.claude/agents/design-author.md`) writes its design document in
+`/design`. By default it designs the issue the current branch is working
+on (from a `claude/issue-<n>-...` branch name or the branch's pull
+request).
+
 ## Repository Structure
 
 ```
