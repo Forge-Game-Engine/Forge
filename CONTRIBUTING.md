@@ -115,5 +115,15 @@ historical record and are produced by the release process.
   and changelog checkbox.
 - Link any related issue(s).
 
+## Handing an issue to Claude
+
+Maintainers can add the `claude` label to an issue to have Claude Code work
+on it (`.github/workflows/claude-issue.yml`). The run branches off `dev`,
+follows `CLAUDE.md` and `AGENTS.md`, runs the verification steps, and opens a
+pull request that closes the issue. It reports progress, or the question
+that stopped it, in a comment on the issue. The label is removed when the
+run ends, so adding it again starts a fresh attempt. Each labeled issue gets
+its own run, so label only as many issues as you want to review at once.
+
 See [AGENTS.md](./AGENTS.md) for full details on architecture, coding
 conventions, module organization, and testing patterns.
