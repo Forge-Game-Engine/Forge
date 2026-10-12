@@ -51,15 +51,20 @@ jobs:
       # Exchanged for the Claude GitHub App's token.
       id-token: write
     steps:
-      # A comment's payload doesn't say where the pull request's branch lives,
-      # so ask. Pull request events already skip forks in the job's `if`.
-      - name: Check the pull request's head repository
+      # A comment's payload doesn't say where the pull request's branch lives
+      # or which commit it's on, so ask. Pull request events already skip
+      # forks in the job's `if`. The checkout below uses the commit read here,
+      # not the branch, so a push after this check can't change what's
+      # reviewed.
+      - name: Check the pull request's head repository and commit
         id: head
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+          PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          head_repo=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRepository,headRepositoryOwner --jq '.headRepositoryOwner.login + "/" + .headRepository.name')
+          read -r head_repo head_sha < <(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRepository,headRepositoryOwner,headRefOid --jq '.headRepositoryOwner.login + "/" + .headRepository.name + " " + .headRefOid')
+          echo "sha=${PULL_REQUEST_HEAD_SHA:-$head_sha}" >> "$GITHUB_OUTPUT"
           if [ "${head_repo,,}" = "${GITHUB_REPOSITORY,,}" ]; then
             echo "same-repo=true" >> "$GITHUB_OUTPUT"
           else
@@ -71,7 +76,7 @@ jobs:
         if: steps.head.outputs.same-repo == 'true'
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.sha || format('refs/pull/{0}/head', github.event.issue.number) }}
+          ref: ${{ steps.head.outputs.sha }}
           # The reviewer diffs against origin/<base>.
           fetch-depth: 0
 
