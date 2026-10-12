@@ -95,5 +95,5 @@ Before marking any task complete, run these in order:
     bullet says what consumers need to change. AGENTS.md's "Changelog"
     section covers the format, what CI enforces, and what never to edit by
     hand.
-11. Keep `/AGENTS.md` and the skills in `.claude/skills/` up to date when
-    the conventions they describe change.
+11. Keep `/AGENTS.md`, the skills in `.claude/skills/` and the agents in
+    `.claude/agents/` up to date when the conventions they describe change.

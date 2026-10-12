@@ -115,6 +115,14 @@ historical record and are produced by the release process.
   and changelog checkbox.
 - Link any related issue(s).
 
+When a pull request opens (or a draft is marked ready for review), Claude
+Code reviews it with the `pr-reviewer` agent
+(`.github/workflows/claude-pr-review.yml`) and posts a checklist comment:
+one writer per value, fixed system queries, no compatibility shims, the
+changelog entry, and updated docs and demos. It runs once per pull request
+and doesn't push, approve or block merging; mention `@claude` to ask for
+another review after new commits.
+
 ## Handing an issue to Claude
 
 Maintainers can add the `claude` label to an issue to have Claude Code work
