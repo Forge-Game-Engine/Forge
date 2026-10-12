@@ -30,9 +30,10 @@ jobs:
   review:
     # Pull requests from forks don't get the repository's secrets when they
     # open, so the run couldn't authenticate. A `@claude review` comment runs
-    # with them, and claude-code-action only accepts it from a commenter with
-    # write access. Bot comments (including this review's own) never start a
-    # run.
+    # with the secrets, so it's only accepted from the repository's owner,
+    # members and collaborators, and the first step skips the review for a
+    # pull request from a fork. Bot comments (including this review's own)
+    # never start a run.
     if: >-
       (github.event_name == 'pull_request' &&
         !github.event.pull_request.draft &&
@@ -40,6 +41,7 @@ jobs:
       (github.event_name == 'issue_comment' &&
         github.event.issue.pull_request &&
         github.event.sender.type != 'Bot' &&
+        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) &&
         contains(github.event.comment.body, '@claude review'))
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -49,7 +51,24 @@ jobs:
       # Exchanged for the Claude GitHub App's token.
       id-token: write
     steps:
+      # A comment's payload doesn't say where the pull request's branch lives,
+      # so ask. Pull request events already skip forks in the job's `if`.
+      - name: Check the pull request's head repository
+        id: head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+        run: |
+          head_repo=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRepository,headRepositoryOwner --jq '.headRepositoryOwner.login + "/" + .headRepository.name')
+          if [ "${head_repo,,}" = "${GITHUB_REPOSITORY,,}" ]; then
+            echo "same-repo=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Skipping: pull request #$PR_NUMBER comes from $head_repo."
+            echo "same-repo=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout code
+        if: steps.head.outputs.same-repo == 'true'
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || format('refs/pull/{0}/head', github.event.issue.number) }}
@@ -57,6 +76,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Claude Code
+        if: steps.head.outputs.same-repo == 'true'
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

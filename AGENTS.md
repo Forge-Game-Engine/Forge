@@ -145,7 +145,10 @@ unattended:
   runs `npm run test:e2e` for anything touching rendering, input or the
   game loop, and names the docs-site demo pages a human needs to check.
 - **Step 9 runs when the pull request opens.** New commits don't start
-  another review; a pull request comment containing `@claude review` does.
+  another review; a pull request comment containing `@claude review`, from
+  the repository's owner, a member or a collaborator, does (never for a
+  pull request from a fork, since a comment run has the repository's
+  secrets).
   Any other `@claude` mention on a pull request starts an implementing run
   (`claude.yml`) that pushes to its branch.
 - **Each agent asks only for what its workflow allows.** `design-author`,

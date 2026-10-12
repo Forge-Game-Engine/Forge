@@ -121,7 +121,9 @@ Code reviews it with the `pr-reviewer` agent
 one writer per value, fixed system queries, no compatibility shims, the
 changelog entry, and updated docs and demos. It doesn't push, approve or
 block merging. New commits don't start another review: comment
-`@claude review` on the pull request to ask for one.
+`@claude review` on the pull request to ask for one (as the repository's
+owner, a member or a collaborator; pull requests from forks aren't
+reviewed).
 (`.github/workflows/claude.yml` skips those comments, so they never start
 an implementing run.)
 
