@@ -364,6 +364,15 @@ a component mean the same thing everywhere. If a system matches entities it
 shouldn't touch, the entities' components are wrong, or another system is
 writing a value this one owns. Fix that instead.
 
+A system holds no state. Its factory takes dependencies (`Time`,
+`RenderContext`, resolved tuning options) that it only reads, and the only
+state `update` changes is component data. Nothing declared outside `update`
+(a counter, a `Map` of per-entity bookkeeping, a snapshot from last tick)
+is changed inside it; that information goes in a component instead. See the
+`create-system` skill (`.claude/skills/create-system/SKILL.md`) for where
+each kind of state belongs. A few existing systems still keep closure state;
+don't copy them.
+
 ### Index Files
 
 Each module's `index.ts` should export everything from its submodules:
