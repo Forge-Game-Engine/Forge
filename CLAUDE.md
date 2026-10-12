@@ -48,6 +48,7 @@ start the task:
 | Adding a major feature (needs a docs-site demo)                | `add-feature-demo` |
 | Writing or updating documentation in `documentation-site/docs` | `document-feature` |
 | Adding a Playwright test for rendering, input or game loop     | `write-e2e-test`   |
+| Planning a milestone into issues                               | `plan-milestone`   |
 
 ## Agents
 
