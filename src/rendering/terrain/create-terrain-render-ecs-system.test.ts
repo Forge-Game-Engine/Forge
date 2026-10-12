@@ -39,7 +39,6 @@ describe('createTerrainRenderEcsSystem', () => {
       viewport: vi.fn(),
       clearColor: vi.fn(),
       clear: vi.fn(),
-      drawArrays: vi.fn(),
       createBuffer: vi.fn().mockReturnValue({}),
       getExtension: vi.fn(() => null),
       isContextLost: vi.fn(() => false),
@@ -61,9 +60,10 @@ describe('createTerrainRenderEcsSystem', () => {
 
     geometry = {
       bind: vi.fn(),
+      draw: vi.fn(),
     } as unknown as Geometry;
 
-    terrainMesh = { geometry, material, vertexCount: 42 };
+    terrainMesh = { geometry, material };
 
     world = new EcsWorld();
     world.addSystem(createTerrainRenderEcsSystem(renderContext));
@@ -92,7 +92,7 @@ describe('createTerrainRenderEcsSystem', () => {
 
     world.update();
 
-    expect(mockGl.drawArrays).not.toHaveBeenCalled();
+    expect(geometry.draw).not.toHaveBeenCalled();
   });
 
   it('does not draw anything when there is no terrain mesh entity', () => {
@@ -100,7 +100,7 @@ describe('createTerrainRenderEcsSystem', () => {
 
     world.update();
 
-    expect(mockGl.drawArrays).not.toHaveBeenCalled();
+    expect(geometry.draw).not.toHaveBeenCalled();
   });
 
   it('clears and draws the terrain mesh once per camera', () => {
@@ -112,7 +112,7 @@ describe('createTerrainRenderEcsSystem', () => {
     expect(mockGl.clear).toHaveBeenCalledWith('COLOR_BUFFER_BIT');
     expect(material.bind).toHaveBeenCalledWith(mockGl);
     expect(geometry.bind).toHaveBeenCalledWith(material);
-    expect(mockGl.drawArrays).toHaveBeenCalledWith('TRIANGLES', 0, 42);
+    expect(geometry.draw).toHaveBeenCalledTimes(1);
   });
 
   it('draws nothing while the WebGL context is lost', () => {
@@ -123,7 +123,7 @@ describe('createTerrainRenderEcsSystem', () => {
     world.update();
 
     expect(material.bind).not.toHaveBeenCalled();
-    expect(mockGl.drawArrays).not.toHaveBeenCalled();
+    expect(geometry.draw).not.toHaveBeenCalled();
   });
 
   it("clears to the camera's clear color, premultiplied by its alpha", () => {
@@ -194,7 +194,7 @@ describe('createTerrainRenderEcsSystem', () => {
 
     world.update();
 
-    expect(mockGl.drawArrays).toHaveBeenCalledTimes(2);
+    expect(geometry.draw).toHaveBeenCalledTimes(2);
   });
 
   it('draws once per terrain mesh entity when multiple are present', () => {
@@ -204,7 +204,7 @@ describe('createTerrainRenderEcsSystem', () => {
 
     world.update();
 
-    expect(mockGl.drawArrays).toHaveBeenCalledTimes(2);
+    expect(geometry.draw).toHaveBeenCalledTimes(2);
   });
 
   it('skips a terrain mesh whose category does not match the camera cullingMask', () => {
@@ -213,7 +213,7 @@ describe('createTerrainRenderEcsSystem', () => {
 
     world.update();
 
-    expect(mockGl.drawArrays).not.toHaveBeenCalled();
+    expect(geometry.draw).not.toHaveBeenCalled();
   });
 
   it('sets clearStrategy to none once a terrain mesh exists', () => {

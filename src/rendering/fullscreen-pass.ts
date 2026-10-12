@@ -68,10 +68,9 @@ export function drawFullscreenQuad(
     return;
   }
 
-  const { gl } = renderContext;
+  const { quadGeometry } = renderContext;
 
-  material.bind(gl);
-  renderContext.quadGeometry.bind(material);
-
-  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  material.bind(renderContext.gl);
+  quadGeometry.bind(material);
+  quadGeometry.draw();
 }

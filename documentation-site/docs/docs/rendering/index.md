@@ -26,6 +26,8 @@ matches the camera's `cullingMask`, in [draw order](./draw-order.md).
   part of them from an edge or around a center.
 - [Materials](./material-uniforms.md): shader programs and the uniform
   values they draw with.
+- [Geometry](./geometry.md): vertex data drawn with a material, which can
+  change every frame.
 - [Render targets](./multipass-rendering.md): drawing a camera into an
   off-screen texture, and the post-processing effects that process it
   ([Gaussian blur](./gaussian-blur.md), [bloom](./bloom.md) and

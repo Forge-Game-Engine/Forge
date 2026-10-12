@@ -50,20 +50,19 @@ function drawTerrainMeshesForCamera(
       continue;
     }
 
-    const { geometry, material, vertexCount } = terrainMeshComponent.mesh;
+    const { geometry, material } = terrainMeshComponent.mesh;
 
     material.setUniform('u_projection', projectionMatrix);
     material.bind(gl);
     geometry.bind(material);
-
-    gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
+    geometry.draw();
   }
 }
 
 /**
  * Creates an ECS system that draws every entity with a
  * `TerrainMeshEcsComponent` (see `addTerrainMeshComponent`) - one
- * non-instanced `gl.drawArrays` call per mesh, against its own geometry and
+ * non-instanced draw call per mesh, against its own geometry and
  * material - rather than going through the sprite pipeline
  * `createRenderEcsSystem` batches (which only knows how to draw quads).
  * Register it *before* `createRenderEcsSystem` so terrain draws underneath

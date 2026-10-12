@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **rendering:** `Geometry.update({ vertexCount, attributes, indices })` replaces a geometry's vertex data, as often as every frame, for meshes that change shape, such as trails, ropes and debug lines. It writes into the existing buffers and grows a buffer to the next power of two bytes only when the data doesn't fit, so it creates no GPU objects, and a restored WebGL context gets the latest data. A geometry can also have `indices` (`Uint16Array` or `Uint32Array`) and a `topology` (`'triangles'`, `'triangleStrip'`, `'lines'`, `'lineStrip'` or `'points'`), and draws itself with `draw()` or `drawInstanced(instanceCount)` after `bind(material)`. `vertexCount` is the number of vertices drawn
+
+#### Changed
+
+- **rendering:** `new Geometry(renderContext, attributes)` is now `new Geometry(renderContext, { attributes })`, and throws if the attributes hold different numbers of vertices. `TerrainMesh.vertexCount` is removed: read `mesh.geometry.vertexCount` instead
+
 ## [0.26.2] - 2026-10-12
 
 _No user-facing changes._
