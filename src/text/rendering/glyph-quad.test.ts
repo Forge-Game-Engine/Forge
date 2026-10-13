@@ -4,7 +4,7 @@ import {
   RotationEcsComponent,
 } from '../../common/index.js';
 import { Color } from '../../rendering/color.js';
-import { RenderCommand } from '../../rendering/render-command.js';
+import { QuadRenderCommand } from '../../rendering/render-command.js';
 import { Renderable } from '../../rendering/renderable.js';
 import type { Texture } from '../../rendering/texture.js';
 import type { TextRenderables } from './create-text-renderables.js';
@@ -64,7 +64,7 @@ const glyph: GlyphQuad = {
 
 describe('pushTextRenderCommands', () => {
   it('pushes one command per glyph', () => {
-    const commands: RenderCommand[] = [];
+    const commands: QuadRenderCommand[] = [];
 
     pushTextRenderCommands(
       commands,
@@ -83,7 +83,7 @@ describe('pushTextRenderCommands', () => {
   });
 
   it("positions a glyph at the entity's world position plus the glyph's offset", () => {
-    const commands: RenderCommand[] = [];
+    const commands: QuadRenderCommand[] = [];
     const entityPosition: PositionEcsComponent = {
       local: { x: 1, y: 1 },
       world: { x: 10, y: 20 },
@@ -103,7 +103,7 @@ describe('pushTextRenderCommands', () => {
   });
 
   it('builds a synthetic sprite centered on the glyph, tinted by the text color', () => {
-    const commands: RenderCommand[] = [];
+    const commands: QuadRenderCommand[] = [];
     const color = new Color(1, 0, 0, 1);
 
     pushTextRenderCommands(
@@ -132,7 +132,7 @@ describe('pushTextRenderCommands', () => {
   });
 
   it("tints a glyph with its own rich text color in place of the text's color", () => {
-    const commands: RenderCommand[] = [];
+    const commands: QuadRenderCommand[] = [];
     const glyphColor = new Color(0, 1, 0, 0.5);
 
     pushTextRenderCommands(
@@ -153,7 +153,7 @@ describe('pushTextRenderCommands', () => {
   });
 
   it("passes each glyph's embolden to both its effects and fill commands", () => {
-    const commands: RenderCommand[] = [];
+    const commands: QuadRenderCommand[] = [];
 
     pushTextRenderCommands(
       commands,
@@ -174,7 +174,7 @@ describe('pushTextRenderCommands', () => {
   });
 
   it("builds textEffects from the text component's outline/shadow fields", () => {
-    const commands: RenderCommand[] = [];
+    const commands: QuadRenderCommand[] = [];
     const outlineColor = new Color(0, 1, 0, 1);
     const shadowColor = new Color(0, 0, 1, 1);
 
@@ -207,7 +207,7 @@ describe('pushTextRenderCommands', () => {
   });
 
   it('scales outline/shadow sizes by the pixel ratio, so they keep the same physical size on a HiDPI display', () => {
-    const commands: RenderCommand[] = [];
+    const commands: QuadRenderCommand[] = [];
     const shadowOffset = { x: 1, y: -1 };
 
     pushTextRenderCommands(
@@ -239,7 +239,7 @@ describe('pushTextRenderCommands', () => {
   });
 
   it('shares the same textEffects object across every glyph in the entity', () => {
-    const commands: RenderCommand[] = [];
+    const commands: QuadRenderCommand[] = [];
 
     pushTextRenderCommands(
       commands,
@@ -263,7 +263,7 @@ describe('pushTextRenderCommands', () => {
   });
 
   it("pushes every glyph's effects command before any glyph's fill command, using effectsRenderable/fillRenderable respectively", () => {
-    const commands: RenderCommand[] = [];
+    const commands: QuadRenderCommand[] = [];
 
     pushTextRenderCommands(
       commands,
@@ -296,7 +296,7 @@ describe('pushTextRenderCommands', () => {
   });
 
   it('skips the effects pass entirely when there is no outline and no shadow, pushing only fill commands', () => {
-    const commands: RenderCommand[] = [];
+    const commands: QuadRenderCommand[] = [];
 
     pushTextRenderCommands(
       commands,
@@ -318,7 +318,7 @@ describe('pushTextRenderCommands', () => {
   });
 
   it('still pushes the effects pass for a shadow-only text component (outlineWidth 0, opaque shadowColor)', () => {
-    const commands: RenderCommand[] = [];
+    const commands: QuadRenderCommand[] = [];
 
     pushTextRenderCommands(
       commands,
@@ -342,7 +342,7 @@ describe('pushTextRenderCommands', () => {
   });
 
   it("draws every glyph from its font atlas's texture, naming the atlas for the batch", () => {
-    const commands: RenderCommand[] = [];
+    const commands: QuadRenderCommand[] = [];
     const textComponent = buildTextComponent({ outlineWidth: 1 });
 
     pushTextRenderCommands(
@@ -367,7 +367,7 @@ describe('pushTextRenderCommands', () => {
   });
 
   it('passes rotation and scale components through unchanged, and flip as null', () => {
-    const commands: RenderCommand[] = [];
+    const commands: QuadRenderCommand[] = [];
     const rotation: RotationEcsComponent = { local: 0, world: 1.5 };
 
     pushTextRenderCommands(
@@ -389,7 +389,7 @@ describe('pushTextRenderCommands', () => {
   });
 
   it('pushes nothing for a mesh with no glyphs', () => {
-    const commands: RenderCommand[] = [];
+    const commands: QuadRenderCommand[] = [];
 
     pushTextRenderCommands(
       commands,

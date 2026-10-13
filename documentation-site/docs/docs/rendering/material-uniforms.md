@@ -41,7 +41,7 @@ renderContext.shaderCache.addShader(new ForgeShaderSource(tintShader));
 ```
 
 `#pragma forge include(<name>)` inserts one of the engine's shader
-includes, such as `spriteMask`, into the source. The shader cache already
+includes, such as `mask`, into the source. The shader cache already
 holds the engine's own shaders, such as `sprite.vert` and
 `passthrough.vert`.
 

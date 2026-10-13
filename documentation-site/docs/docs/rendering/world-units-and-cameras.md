@@ -218,15 +218,16 @@ The result is correct for any position and zoom of either camera.
 
 ## Culling sprites outside the view
 
-The render system doesn't draw a sprite, nine-slice region or text glyph
-whose quad is entirely outside a camera's view, and uploads nothing to the
+The render system doesn't draw a sprite, nine-slice region, text glyph or
+mesh that's entirely outside a camera's view, and uploads nothing to the
 GPU for it. Sprites outside the view don't need to be disabled.
 
 The test uses the quad the sprite vertex shader draws: the sprite's
 `width` and `height` around its `pivot`, scaled, flipped and rotated by the
 entity's world transform. Text outlines and shadows are drawn inside their
-glyph quads, so they're culled with their glyphs. Terrain meshes are always
-drawn.
+glyph quads, so they're culled with their glyphs. A
+[mesh](./meshes.md) is tested with its geometry's `bounds`, placed by the
+entity's world transform.
 
 ## High-DPI displays
 

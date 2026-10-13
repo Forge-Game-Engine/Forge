@@ -15,10 +15,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Added
 
 - **rendering:** `Geometry.update({ vertexCount, attributes, indices })` replaces a geometry's vertex data, as often as every frame, for meshes that change shape, such as trails, ropes and debug lines. It writes into the existing buffers and grows a buffer to the next power of two bytes only when the data doesn't fit, so it creates no GPU objects, and a restored WebGL context gets the latest data. A geometry can also have `indices` (`Uint16Array` or `Uint32Array`) and a `topology` (`'triangles'`, `'triangleStrip'`, `'lines'`, `'lineStrip'` or `'points'`), and draws itself with `draw()` or `drawInstanced(instanceCount)` after `bind(material)`. `vertexCount` is the number of vertices drawn
+- **rendering:** Meshes draw in the same draw order as sprites and text. `addMeshComponent(world, entity, { geometry, material, layer, category })` adds a `MeshEcsComponent`, and `createRenderEcsSystem` draws its geometry through the entity's world position, rotation and scale, sorted with sprites and text by `layer`, world order, Y (for a `ySort` camera) and hierarchy order, so a mesh can draw behind one sprite and in front of another. An entity's mesh draws behind its own sprite and text. Meshes follow the camera's `cullingMask`, visibility, masks and view culling (from the new `Geometry.bounds`) like sprites. Draw them with a `MeshMaterial` from `createMeshMaterial(renderContext, vertexShaderName, fragmentShaderName)`: the vertex shader includes `meshVertex` (`meshWorldPosition`, `meshClipPosition`, `forwardMeshMask`) and the fragment shader includes `mask`. See the new Meshes guide and demo
 
 #### Changed
 
 - **rendering:** `new Geometry(renderContext, attributes)` is now `new Geometry(renderContext, { attributes })`, and throws if the attributes hold different numbers of vertices. `TerrainMesh.vertexCount` is removed: read `mesh.geometry.vertexCount` instead
+- **rendering:** The `spriteMask` shader include is now `mask`, and its `spriteMaskCoverage()` is now `maskCoverage()`, since meshes use it too. In custom sprite fragment shaders, replace `#pragma forge include(spriteMask)` with `#pragma forge include(mask)` and `spriteMaskCoverage()` with `maskCoverage()`. The `spriteMaskShaderInclude` export is now `maskShaderInclude`; `spriteMaskVertex`, `forwardSpriteMask` and `spriteMaskVertexShaderInclude` keep their names
+- **rendering:** Terrain is a mesh. `createTerrainMesh` returns `{ geometry, material }` (a `MeshMaterial`) built from the curve points in the terrain entity's local space, so add it with `addMeshComponent(world, terrainEntity, mesh)` instead of `addTerrainMeshComponent(world, terrainEntity, { mesh })`, and remove `createTerrainRenderEcsSystem` from your systems. Terrain now follows its entity's transform, sorts with sprites (create the terrain entity before the sprites that go in front of it, or give it a lower `layer`), blends like a sprite, can be masked, and defaults to category `1` instead of every category. Adding terrain no longer sets `renderContext.clearStrategy` to `CLEAR_STRATEGY.none`
+
+#### Removed
+
+- **rendering:** `createTerrainRenderEcsSystem`, `TerrainMeshEcsComponent`, `addTerrainMeshComponent`, `terrainMeshId`, the `TerrainMesh` type and `createTerrainMesh`'s `position` and `angle` options. Use `addMeshComponent` (see above); the mesh takes its position and rotation from its entity
 
 ## [0.26.2] - 2026-10-12
 

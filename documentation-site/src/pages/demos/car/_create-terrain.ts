@@ -9,7 +9,7 @@ import {
   TerrainCollider,
 } from '@forge-game-engine/forge/physics';
 import {
-  addTerrainMeshComponent,
+  addMeshComponent,
   Color,
   createTerrainMesh,
   RenderContext,
@@ -109,14 +109,10 @@ export async function createTerrain(
   const surfacePoints = buildSurfacePoints(random);
   const terrainCollider = new TerrainCollider(surfacePoints, terrainDepth);
 
-  const position = Vec2.zero;
-  const angle = 0;
-
+  // Created before the car, so the ground draws behind it.
   const terrainEntity = world.createEntity();
 
-  addPositionComponent(world, terrainEntity, {
-    local: Vec2.clone(position),
-  });
+  addPositionComponent(world, terrainEntity);
   addRotationComponent(world, terrainEntity);
   addColliderComponent(world, terrainEntity, {
     collider: terrainCollider,
@@ -131,8 +127,6 @@ export async function createTerrain(
   const mesh = createTerrainMesh(renderContext, {
     curvePoints: toCurvePoints(surfacePoints),
     depth: terrainDepth,
-    position,
-    angle,
     border: {
       texture: groundTexture,
       tileSize: { x: 64, y: 64 },
@@ -146,7 +140,7 @@ export async function createTerrain(
     borderWidth: 40,
   });
 
-  addTerrainMeshComponent(world, terrainEntity, { mesh });
+  addMeshComponent(world, terrainEntity, mesh);
 
   const carSpawnX = 150;
 

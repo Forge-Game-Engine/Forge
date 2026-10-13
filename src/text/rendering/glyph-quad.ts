@@ -118,6 +118,7 @@ function pushTextEffectsRenderCommands(
     };
 
     commands.push({
+      kind: 'quad',
       renderable: effectsRenderable,
       texture: fontAtlas.texture,
       emissiveTexture: null,
@@ -175,6 +176,7 @@ function pushTextFillRenderCommands(
     };
 
     commands.push({
+      kind: 'quad',
       renderable: fillRenderable,
       texture: fontAtlas.texture,
       emissiveTexture: null,

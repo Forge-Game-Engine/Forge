@@ -7,7 +7,7 @@ import {
   ShaderCache,
   spriteFragmentShader,
 } from '../../rendering/index.js';
-import type { RenderCommand } from '../../rendering/render-command.js';
+import type { QuadRenderCommand } from '../../rendering/render-command.js';
 import { Texture } from '../../rendering/texture.js';
 import type { FontAtlas } from '../font-atlas/font-atlas.js';
 import { createTextRenderables } from './create-text-renderables.js';
@@ -148,11 +148,11 @@ describe('createTextRenderables', () => {
     };
   });
 
-  const bindBatchFor = (fontAtlasToBind: FontAtlas): RenderCommand =>
+  const bindBatchFor = (fontAtlasToBind: FontAtlas): QuadRenderCommand =>
     ({
       texture: fontAtlasToBind.texture,
       fontAtlas: fontAtlasToBind,
-    }) as RenderCommand;
+    }) as QuadRenderCommand;
 
   it('does not throw when its shaders are already registered', () => {
     expect(() => createTextRenderables(renderContext)).not.toThrow();
@@ -206,9 +206,9 @@ describe('createTextRenderables', () => {
   it('throws for a command that names no font atlas', () => {
     const { fillRenderable } = createTextRenderables(renderContext);
 
-    expect(() => fillRenderable.bindBatch(mockGl, {} as RenderCommand)).toThrow(
-      'must name the font atlas',
-    );
+    expect(() =>
+      fillRenderable.bindBatch(mockGl, {} as QuadRenderCommand),
+    ).toThrow('must name the font atlas');
   });
 
   it('assigns the sprite + embolden + mask instance data layout to fillRenderable and the sprite + embolden + text-effects + mask layout to effectsRenderable', () => {

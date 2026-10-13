@@ -78,7 +78,12 @@ draws its first `vertexCount` vertices in order.
 
 ## Drawing a geometry
 
-Bind the material, then the geometry, then call `draw`:
+To draw a geometry on an entity, in the same draw order as sprites and
+text, add it as a [mesh](./meshes.md). The render system then draws it
+every frame.
+
+To draw it yourself, bind the material, then the geometry, then call
+`draw`:
 
 ```ts
 material.bind(renderContext.gl);

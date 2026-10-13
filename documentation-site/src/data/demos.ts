@@ -166,6 +166,13 @@ export const demos: Demo[] = [
     categories: ['rendering'],
   },
   {
+    slug: 'meshes',
+    title: 'Meshes',
+    description:
+      "A ship's exhaust drawn as a mesh, sorted among the sprites around it by its layer and draw order.",
+    categories: ['rendering'],
+  },
+  {
     slug: 'masks',
     title: 'Masks',
     description:

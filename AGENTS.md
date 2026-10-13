@@ -587,8 +587,11 @@ describe('MyClass', () => {
   are typed from it. Sampler values are `Texture`s
   (`new Texture(renderContext)`), and `bindTexture` receives
   `texture.glTexture`. A `SpriteMaterial`'s fragment shader must include
-  `spriteMask` (`createSpriteMaterial` throws otherwise), so a test's sprite
-  fragment shader includes it too
+  `mask` (`createSpriteMaterial` throws otherwise), so a test's sprite
+  fragment shader includes it too. A `MeshMaterial` also needs `meshVertex`
+  in its vertex shader, and stores the uniforms it declares when it's
+  created, so build its shader cache with a `ResolveIncludesPreProcessor`
+  holding both includes (see `mesh-material.test.ts`)
 - A mocked WebGL context behind a real `RenderContext` needs
   `getExtension` (the render context requests `EXT_color_buffer_float` when
   it's created) and `isContextLost` (returning `false`; GPU resources check
@@ -879,7 +882,7 @@ gl.ONE_MINUS_SRC_ALPHA)` (see `render-system.ts`). Never plain
   another destination uses `gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)`
   (see `present-system.ts`).
 - Clear colors are straight-alpha `Color`s and get premultiplied when
-  written (`RenderContext.clear`, `createTerrainRenderEcsSystem`).
+  written (`RenderContext.clear`).
 - Light that should only brighten what's beneath it (bloom's glow) is
   added to the color and leaves alpha untouched (see
   `bloom-composite.frag.glsl`). Giving it alpha of its own makes it cover,
@@ -977,8 +980,8 @@ unregisters in `dispose`.
   records what to create and touches no GL, and checks that read GL state
   (compile/link status, framebuffer completeness) are skipped, since a lost
   context fails all of them.
-- Engine draw functions (the render system's batches, `drawFullscreenQuad`,
-  the terrain render system) return early while the context is lost, so
+- Engine draw functions (the render system's batches and meshes,
+  `drawFullscreenQuad`) return early while the context is lost, so
   game systems that draw through them need no guard of their own.
 
 `e2e/specs/webgl-context-loss.spec.ts` loses and restores a real context

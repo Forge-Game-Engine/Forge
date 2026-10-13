@@ -23,8 +23,8 @@ its resources after the browser restores it.
 
 While it's `true`:
 
-- Systems keep running, so the game keeps simulating. The render system,
-  the post-processing systems and the terrain render system draw nothing.
+- Systems keep running, so the game keeps simulating. The render system
+  and the post-processing systems draw nothing.
 - Creating a material, texture, render target or geometry, and resizing a
   render target or the canvas, work as usual. They record what to create,
   and the engine creates it when the context is restored.

@@ -9,7 +9,7 @@ import {
   TerrainCollider,
 } from '@forge-game-engine/forge/physics';
 import {
-  addTerrainMeshComponent,
+  addMeshComponent,
   buildTerrainCurve,
   Color,
   createTerrainMesh,
@@ -133,9 +133,9 @@ function buildControlPoints(totalWidth: number): Vector2[] {
  * triangulated mesh to render it (see `createTerrainMesh`), textured with a
  * tileable border layer near the surface blending into a tileable fill
  * layer below (see `CreateTerrainOptions`). The mesh is attached to the
- * terrain entity via `addTerrainMeshComponent`, so
- * `createTerrainRenderEcsSystem` draws it automatically - the caller
- * doesn't need to wire it up itself.
+ * terrain entity via `addMeshComponent`, so the render system draws it in
+ * the draw order with the sprites - the caller doesn't need to wire it up
+ * itself. Create the terrain before the sprites that go in front of it.
  * @param world - The ECS world to add the terrain entity to.
  * @param renderContext - The render context used to load the terrain's textures and build its mesh.
  * @param options - Sizing and texturing options for the terrain.
@@ -153,7 +153,6 @@ export async function createTerrain(
 
   const terrainCollider = new TerrainCollider(points, terrainDepth);
 
-  const angle = 0;
   const position = Vec2.zero;
 
   const terrainEntity = world.createEntity();
@@ -177,8 +176,6 @@ export async function createTerrain(
   const mesh = createTerrainMesh(renderContext, {
     curvePoints,
     depth: terrainDepth,
-    position,
-    angle,
     border: {
       texture: borderTexture,
       tileSize: border.tileSize,
@@ -193,7 +190,7 @@ export async function createTerrain(
     borderBlend,
   });
 
-  addTerrainMeshComponent(world, terrainEntity, { mesh });
+  addMeshComponent(world, terrainEntity, mesh);
 
   const spawnX = position.x;
 

@@ -145,6 +145,128 @@ describe('Geometry', () => {
     });
   });
 
+  describe('bounds', () => {
+    const createTriangle = (positions: number[], size = 2): Geometry =>
+      new Geometry(renderContext, {
+        attributes: [
+          { name: 'a_position', data: new Float32Array(positions), size },
+        ],
+      });
+
+    it("surrounds the x and y of every vertex's a_position", () => {
+      const geometry = createTriangle([-1, 2, 3, -4, 0.5, 1]);
+
+      expect(geometry.bounds).toEqual({
+        min: { x: -1, y: -4 },
+        max: { x: 3, y: 2 },
+      });
+    });
+
+    it('ignores z when a_position has three components', () => {
+      const geometry = createTriangle([1, 1, 99, 2, 3, -99], 3);
+
+      expect(geometry.bounds).toEqual({
+        min: { x: 1, y: 1 },
+        max: { x: 2, y: 3 },
+      });
+    });
+
+    it('surrounds every vertex of an indexed geometry', () => {
+      const geometry = new Geometry(renderContext, {
+        attributes: [
+          {
+            name: 'a_position',
+            data: new Float32Array([0, 0, 4, 0, 4, 2, 0, 2]),
+            size: 2,
+          },
+        ],
+        indices: new Uint16Array([0, 1, 2, 0, 2, 3]),
+      });
+
+      expect(geometry.bounds).toEqual({
+        min: { x: 0, y: 0 },
+        max: { x: 4, y: 2 },
+      });
+    });
+
+    it('is a zero-size rect at the origin for no vertices', () => {
+      expect(createTriangle([]).bounds).toEqual({
+        min: { x: 0, y: 0 },
+        max: { x: 0, y: 0 },
+      });
+    });
+
+    it('is computed again after update changes a_position', () => {
+      const geometry = createTriangle([0, 0, 1, 1, 2, 0]);
+
+      expect(geometry.bounds.max.x).toBe(2);
+
+      geometry.update({
+        vertexCount: 3,
+        attributes: { a_position: new Float32Array([0, 0, 5, 5, 10, 0]) },
+      });
+
+      expect(geometry.bounds).toEqual({
+        min: { x: 0, y: 0 },
+        max: { x: 10, y: 5 },
+      });
+    });
+
+    it('only counts the vertices drawn after update lowers vertexCount', () => {
+      const geometry = createTriangle([0, 0, 1, 1, 9, 9]);
+
+      geometry.update({ vertexCount: 2 });
+
+      expect(geometry.bounds).toEqual({
+        min: { x: 0, y: 0 },
+        max: { x: 1, y: 1 },
+      });
+    });
+
+    it('keeps its bounds when update only changes other attributes', () => {
+      const geometry = createGeometry({
+        attributes: [
+          {
+            name: 'a_position',
+            data: new Float32Array([0, 0, 1, 1, 2, 0]),
+            size: 2,
+          },
+          { name: 'a_alpha', data: new Float32Array(3), size: 1 },
+        ],
+      });
+      const { bounds } = geometry;
+
+      geometry.update({
+        vertexCount: 3,
+        attributes: { a_alpha: new Float32Array(3) },
+      });
+
+      expect(geometry.bounds).toBe(bounds);
+    });
+
+    it('throws without an a_position attribute', () => {
+      const geometry = new Geometry(renderContext, {
+        attributes: [{ name: 'a_alpha', data: new Float32Array(3), size: 1 }],
+      });
+
+      expect(() => geometry.bounds).toThrow('"a_position" attribute');
+    });
+
+    it('throws when a_position has one component', () => {
+      expect(() => createTriangle([0, 1, 2], 1).bounds).toThrow('but it has 1');
+    });
+  });
+
+  describe('getAttributeSize', () => {
+    it("reads an attribute's size, or null for an attribute it doesn't have", () => {
+      const geometry = createGeometry();
+
+      expect(geometry.getAttributeSize('a_position')).toBe(2);
+      expect(geometry.getAttributeSize('a_alpha')).toBe(1);
+      expect(geometry.getAttributeSize('a_missing')).toBeNull();
+    });
+  });
+
   describe('bind', () => {
     it('binds the index buffer into the vertex array', () => {
       const geometry = createGeometry({ indices: new Uint16Array(3) });

@@ -18,6 +18,8 @@ in float v_depth;
 
 out vec4 fragColor;
 
+#pragma forge include(mask)
+
 void main() {
   vec2 fillUv = vec2(v_distance / u_fillTileSize.x, v_depth / u_fillTileSize.y);
   vec2 borderUv =
@@ -35,5 +37,8 @@ void main() {
     v_depth
   );
 
-  fragColor = mix(borderColor, fillColor, t);
+  vec4 color = mix(borderColor, fillColor, t);
+
+  // Straight alpha, like every sprite and mesh shader.
+  fragColor = vec4(color.rgb, color.a * maskCoverage());
 }
