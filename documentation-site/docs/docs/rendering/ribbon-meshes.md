@@ -175,13 +175,17 @@ void main() {
 ```
 
 ```ts
+import { addPositionComponent } from '@forge-game-engine/forge/common';
 import { addMeshComponent } from '@forge-game-engine/forge/rendering';
 
+const entity = world.createEntity();
+
+addPositionComponent(world, entity, { local: { x: 0, y: 0 } });
 addMeshComponent(world, entity, { geometry, material });
 ```
 
 The points are in the entity's local space, so the ribbon moves with the
-entity. For a ribbon along points in world space, put it on an entity
-with no position, rotation or scale of its own. The fragment shader
-multiplies its texture by `v_color` and outputs straight alpha, like any
-mesh shader.
+entity. For a ribbon along points in world space, put it on an entity at
+the origin, with no rotation and a scale of `1`, as above. The fragment
+shader multiplies its texture by `v_color` and outputs straight alpha,
+like any mesh shader.

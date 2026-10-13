@@ -9,7 +9,7 @@ export interface RibbonPoint {
   /**
    * The point's position. Y-up, in the space of the mesh that draws the
    * ribbon: its entity's local space, which is world space when the entity
-   * has no position, rotation or scale of its own.
+   * is at the origin, with no rotation and a scale of `1`.
    */
   position: Vector2;
 
