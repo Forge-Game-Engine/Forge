@@ -139,40 +139,42 @@ A system can implement two optional hooks:
   (which [`Game.stop()`](game.md#stopping-the-game) calls).
 
 Use them for resources the system acquires itself, outside of any
-component, such as DOM elements or GPU render targets. `cleanup` doesn't
-receive a query result, so a system that acquires a resource per entity
-keeps track of what it acquired:
+component, such as a shared GPU render target. A stateless system usually
+has neither, and `cleanup` never changes entity components.
+
+A resource acquired for one entity, such as a DOM element or a geometry,
+belongs to that entity's component: the system stores it in the component,
+and the component's
+[remove hook](component.md#releasing-what-a-component-holds) releases it
+when the component or its entity is removed:
 
 ```ts
-import { EcsSystem } from '@forge-game-engine/forge/ecs';
+import { createComponentId, EcsSystem } from '@forge-game-engine/forge/ecs';
+
+interface LabelEcsComponent {
+  text: string;
+  element: HTMLElement | null; // Written by the label system.
+}
+
+const labelId = createComponentId<LabelEcsComponent>('label', {
+  onRemove: (_world, _entity, label) => {
+    label.element?.remove();
+  },
+});
 
 const createLabelEcsSystem = (
   container: HTMLElement,
-): EcsSystem<[LabelEcsComponent]> => {
-  const elements = new Map<number, HTMLElement>();
-
-  return {
-    query: [labelId],
-    update(_world, { entities, components: [labels] }) {
-      for (let i = 0; i < entities.length; i++) {
-        let element = elements.get(entities[i]);
-
-        if (!element) {
-          element = document.createElement('div');
-          container.appendChild(element);
-          elements.set(entities[i], element);
-        }
-
-        element.textContent = labels[i].text;
-      }
-    },
-    cleanup() {
-      for (const element of elements.values()) {
-        element.remove();
+): EcsSystem<[LabelEcsComponent]> => ({
+  query: [labelId],
+  update(_world, { components: [labels] }) {
+    for (const label of labels) {
+      if (!label.element) {
+        label.element = document.createElement('div');
+        container.appendChild(label.element);
       }
 
-      elements.clear();
-    },
-  };
-};
+      label.element.textContent = label.text;
+    }
+  },
+});
 ```

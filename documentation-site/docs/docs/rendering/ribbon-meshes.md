@@ -27,8 +27,8 @@ const points: RibbonPoint[] = [
 ];
 ```
 
-- `position` is Y-up, in the space of the mesh that draws the ribbon (see
-  [Drawing a ribbon](#drawing-a-ribbon)).
+- `position` is in the engine's Y-down world, in the space of the mesh
+  that draws the ribbon (see [Drawing a ribbon](#drawing-a-ribbon)).
 - `width` is the ribbon's full width at the point, in the same units. The
   edges run in straight lines between points, so the ribbon tapers between
   points of different widths.
@@ -120,9 +120,9 @@ The first and last points end the ribbon straight across their segment.
 
 ## Texture coordinates
 
-V is `0` on the left edge, looking along the line, and `1` on the right.
-On a ribbon running toward `+X`, a texture's top row is along the `+Y`
-edge, the same way up as on a sprite.
+V is `0` on the edge to the left of the line's direction on screen and `1`
+on the edge to its right. On a ribbon running toward `+X`, a texture's top
+row is along the upper (`−Y`) edge, the same way up as on a sprite.
 
 U runs along the ribbon, by the `textureMode` option:
 
@@ -189,3 +189,6 @@ entity. For a ribbon along points in world space, put it on an entity at
 the origin, with no rotation and a scale of `1`, as above. The fragment
 shader multiplies its texture by `v_color` and outputs straight alpha,
 like any mesh shader.
+
+[Trails](./trails.md) are ribbons built this way every frame from where an
+entity has been.

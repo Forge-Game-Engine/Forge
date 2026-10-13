@@ -7,9 +7,10 @@ import type { Color } from '../color.js';
  */
 export interface RibbonPoint {
   /**
-   * The point's position. Y-up, in the space of the mesh that draws the
-   * ribbon: its entity's local space, which is world space when the entity
-   * is at the origin, with no rotation and a scale of `1`.
+   * The point's position, in the engine's Y-down world, in the space of the
+   * mesh that draws the ribbon: its entity's local space, which is world
+   * space when the entity is at the origin, with no rotation and a scale of
+   * `1`.
    */
   position: Vector2;
 
@@ -82,13 +83,16 @@ export type RibbonMeshOptions =
  * them from this object after every call.
  */
 export interface RibbonMeshBuffers {
-  /** `x, y` per vertex, Y-up, in the same space as the points. */
+  /** `x, y` per vertex, in the same space as the points. */
   positions: Float32Array;
 
   /**
    * `u, v` per vertex. U runs along the ribbon (see
-   * {@link RibbonTextureMode}); V is `0` on the left edge (looking along
-   * the line) and `1` on the right.
+   * {@link RibbonTextureMode}). V is `0` on the ribbon's `−n` edge and `1`
+   * on its `+n` edge, where `+n` is the line's direction turned `+90°`:
+   * in the Y-down world, `−n` is to the left of travel on screen and `+n`
+   * to the right, so a ribbon drawn towards `+X` shows its texture the same
+   * way up as a sprite.
    */
   uvs: Float32Array;
 
@@ -245,9 +249,9 @@ function getNextKeptIndex(
 }
 
 /**
- * Writes one vertex. Every point writes its vertices in left-right pairs
- * starting at an even index, so a vertex's V (`0` on the left edge, `1` on
- * the right) is its index's parity.
+ * Writes one vertex. Every point writes its vertices in pairs starting at
+ * an even index, its `+n` vertex first, so a vertex's V (`1` on the `+n`
+ * edge, `0` on the `−n` edge) is `1` minus its index's parity.
  * @param out - The buffers to write into.
  * @param vertexIndex - The vertex's index.
  * @param x - The vertex's x position.
@@ -266,7 +270,7 @@ function writeVertex(
   out.positions[vertexIndex * 2] = x;
   out.positions[vertexIndex * 2 + 1] = y;
   out.uvs[vertexIndex * 2] = u;
-  out.uvs[vertexIndex * 2 + 1] = vertexIndex % 2;
+  out.uvs[vertexIndex * 2 + 1] = 1 - (vertexIndex % 2);
   out.colors[vertexIndex * 4] = color.r;
   out.colors[vertexIndex * 4 + 1] = color.g;
   out.colors[vertexIndex * 4 + 2] = color.b;
@@ -275,10 +279,10 @@ function writeVertex(
 
 /**
  * Writes an end point's pair of vertices, offset along the normal of the
- * segment from `from` to `to` (the segment's direction turned +90°, so it
- * points left of travel).
+ * segment from `from` to `to` (the segment's direction turned +90°, the
+ * `+n` side, which is to the right of travel on screen).
  * @param out - The buffers to write into.
- * @param vertexIndex - The index of the pair's left vertex.
+ * @param vertexIndex - The index of the pair's `+n` vertex.
  * @param point - The end point.
  * @param from - The segment's start.
  * @param to - The segment's end.
@@ -343,7 +347,7 @@ function getInnerOffset(
  * times the width. Both bevel pairs share the inner vertex, so the strip
  * gets the bevel's wedge and one zero-area triangle.
  * @param out - The buffers to write into.
- * @param vertexIndex - The index of the first pair's left vertex.
+ * @param vertexIndex - The index of the first pair's `+n` vertex.
  * @param previous - The previous kept point.
  * @param point - The point.
  * @param next - The next kept point.
@@ -395,9 +399,9 @@ function writeJoin(
   let sinHalfTurn =
     Math.sqrt(differenceX * differenceX + differenceY * differenceY) / 2;
 
-  // A left turn (positive cross product) puts the inner corner on the
-  // left; a right turn on the right. A straight line or an exact reversal
-  // has no turn and uses the left.
+  // A positive cross product (a clockwise turn on screen) puts the inner
+  // corner on the `+n` side; a negative one on the `−n` side. A straight
+  // line or an exact reversal has no turn and uses the `+n` side.
   const turn = d0x * d1y - d0y * d1x;
   const innerSign = turn < 0 ? -1 : 1;
   const outerSign = -innerSign;
@@ -430,9 +434,9 @@ function writeJoin(
   const innerX = x + miterX * innerOffset;
   const innerY = y + miterY * innerOffset;
 
-  // The inner vertex goes in the pair's left slot (index parity 0) for a
-  // left turn and its right slot for a right turn; the outer vertex takes
-  // the other one.
+  // The inner vertex goes in the pair's `+n` slot (index parity 0) for a
+  // positive turn and its `−n` slot for a negative one; the outer vertex
+  // takes the other one.
   const innerSlot = innerSign > 0 ? 0 : 1;
   const outerSlot = 1 - innerSlot;
 

@@ -236,7 +236,14 @@ factory functions, not classes:
 1. **Components**: Plain data interfaces, not classes. Each one gets a
    `createComponentId` key (a symbol) and an `add<Name>Component` factory
    that attaches it to a caller-supplied entity (see "Component Pattern"
-   below). Components carry no logic.
+   below). Components carry no logic. A component that holds something to
+   release (a GPU geometry, a DOM element, a playing sound) gets a remove
+   hook on its key, `createComponentId(name, { onRemove })`: a
+   module-level function of its `(world, entity, component)` arguments
+   that every world calls when the value is removed (`removeComponent`,
+   `removeEntity`, descendants included) or replaced by `addComponent`.
+   Release per-entity resources there, never from a system's `cleanup` or
+   a closure map the system sweeps (see `trail-component.ts`).
 
 2. **Systems** (`EcsSystem<TQuery>`): Plain objects, produced by
    `create<Name>EcsSystem` factory functions, not classes. A system declares
