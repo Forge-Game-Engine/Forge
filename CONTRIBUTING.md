@@ -115,15 +115,46 @@ historical record and are produced by the release process.
   and changelog checkbox.
 - Link any related issue(s).
 
+When a pull request opens (or a draft is marked ready for review), Claude
+Code reviews it with the `pr-reviewer` agent
+(`.github/workflows/claude-pr-review.yml`) and posts a checklist comment:
+one writer per value, fixed system queries, no compatibility shims, the
+changelog entry, and updated docs and demos. It runs once per pull request
+and doesn't push, approve or block merging. New commits aren't reviewed
+again automatically: run the `pr-reviewer` agent locally (in Claude Code)
+to review them. Mentioning `@claude` on the pull request asks Claude to
+change it, not to review it.
+
 ## Handing an issue to Claude
 
 Maintainers can add the `claude` label to an issue to have Claude Code work
-on it (`.github/workflows/claude-issue.yml`). The run branches off `dev`,
-follows `CLAUDE.md` and `AGENTS.md`, runs the verification steps, and opens a
-pull request that closes the issue. It reports progress, or the question
-that stopped it, in a comment on the issue. The label is removed when the
+on it (`.github/workflows/claude.yml`). The run branches off `dev` and
+follows `CLAUDE.md` and `AGENTS.md`. For a new feature, large change or
+refactor whose issue doesn't link a design, it first has the
+`design-author` agent write one in `/design` and the `solution-reviewer`
+agent review it. It then implements the issue with unit tests, and with
+e2e tests (`npm run test:e2e`) for anything touching rendering, input or
+the game loop, runs the verification steps, and opens a pull request that
+closes the issue, carries the design, and names the docs-site demo pages
+you need to check in a browser. It reports progress in a comment on the
+issue.
+
+If the design has blocking open questions, or the review rejects it, the
+run commits the design on its branch, posts the questions or the verdict
+in that comment and stops without opening a pull request. Answer on the
+issue and mention `@claude`: the next run picks up that design, updates it
+with your answers and carries on. See AGENTS.md's
+[Agentic Workflow](./AGENTS.md#agentic-workflow) for every step. The label is removed when the
 run ends, so adding it again starts a fresh attempt. Each labeled issue gets
 its own run, so label only as many issues as you want to review at once.
+
+To ask for changes, mention `@claude` in a comment, a review or an inline
+review comment on the pull request. Claude pushes the changes to that pull
+request's branch. Only one run works on a pull request at a time, so put all
+your feedback in one review rather than several separate comments: while a
+run is busy, GitHub keeps only the newest waiting request. Mentioning
+`@claude` on an issue, for example to answer a question Claude asked there,
+starts a run the same way the label does.
 
 See [AGENTS.md](./AGENTS.md) for full details on architecture, coding
 conventions, module organization, and testing patterns.

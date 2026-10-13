@@ -10,7 +10,6 @@ function fakeMesh(): TerrainMesh {
   return {
     geometry: {} as TerrainMesh['geometry'],
     material: {} as TerrainMesh['material'],
-    vertexCount: 6,
   };
 }
 

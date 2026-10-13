@@ -10,16 +10,18 @@ import { Geometry } from './geometry.js';
  * @returns The quad geometry. The caller owns it.
  */
 export function createQuadGeometry(renderContext: RenderContext): Geometry {
-  return new Geometry(renderContext, [
-    {
-      name: 'a_position',
-      data: new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
-      size: 2,
-    },
-    {
-      name: 'a_texCoord',
-      data: new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]),
-      size: 2,
-    },
-  ]);
+  return new Geometry(renderContext, {
+    attributes: [
+      {
+        name: 'a_position',
+        data: new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
+        size: 2,
+      },
+      {
+        name: 'a_texCoord',
+        data: new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]),
+        size: 2,
+      },
+    ],
+  });
 }

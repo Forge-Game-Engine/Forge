@@ -8,6 +8,7 @@ Human contributors: see [CONTRIBUTING.md](./CONTRIBUTING.md) for a shorter, huma
 
 - [Project Overview](#project-overview)
 - [Change Philosophy](#change-philosophy)
+- [Agentic Workflow](#agentic-workflow)
 - [Repository Structure](#repository-structure)
 - [Architecture](#architecture)
 - [Coding Conventions](#coding-conventions)
@@ -91,8 +92,66 @@ run the `solution-reviewer` agent (`.claude/agents/solution-reviewer.md`)
 on your plan. It checks the plan against these rules and against how other
 engines solve the same problem.
 
+Once the change is done, the `pr-reviewer` agent
+(`.claude/agents/pr-reviewer.md`) reviews it against the same rules plus
+the changelog, documentation and demo requirements. It runs on every pull
+request when it opens (`.github/workflows/claude-pr-review.yml`); run it
+locally before opening one to catch the same findings first.
+
 The `fix-defect` skill (`.claude/skills/fix-defect/SKILL.md`) walks through
 this step by step for bug fixes.
+
+For a change big enough to need a design first, the `design-author` agent
+(`.claude/agents/design-author.md`) writes its design document in
+`/design`. It designs the issue it's given (the `claude` label run always
+passes the number); run locally without one, it designs the issue the
+current branch is working on (from a `claude/issue-<n>-...` branch name or
+the branch's pull request).
+
+## Agentic Workflow
+
+A milestone goes from plan to merged code in these steps. The agents and
+workflows in this table are configured so that steps 3, 5-7 and 9 run
+unattended:
+
+| #   | Step                                          | Who                                                                    |
+| --- | --------------------------------------------- | ---------------------------------------------------------------------- |
+| 1   | Plan a milestone                              | Human                                                                  |
+| 2   | Research it                                   | Human                                                                  |
+| 3   | Turn the milestone into issues                | Agent, with the `plan-milestone` skill                                 |
+| 4   | Label an issue `claude`                       | Human                                                                  |
+| 5   | Write a design document                       | `design-author`, inside the label run (`.github/workflows/claude.yml`) |
+| 6   | Review the design                             | `solution-reviewer`, inside the label run                              |
+| 7   | Implement, with unit and e2e tests            | The label run, which opens the pull request                            |
+| 8   | Review the pull request, test the demos       | Human                                                                  |
+| 9   | Review the pull request against Forge's rules | `pr-reviewer` (`.github/workflows/claude-pr-review.yml`)               |
+| 10  | Merge                                         | Human                                                                  |
+
+- **Steps 5 and 6 only run when they're needed.** The label run designs a
+  new feature, large change or refactor whose issue doesn't link a design
+  in `/design` already. A one-line or clearly scoped fix skips the design
+  and goes straight to `solution-reviewer` on the plan (for anything
+  beyond one line).
+- **The run stops rather than guess.** If `design-author` reports a
+  blocking open question, or `solution-reviewer` rejects or escalates the
+  design (or rejects it again after one revision), the run commits the
+  design on its branch, posts the questions or verdict in its tracking
+  comment on the issue and stops without a pull request. Answer on the
+  issue and mention `@claude`: the next run fetches that branch, has
+  `design-author` update the design with the answers, and carries on.
+  Otherwise the design is committed in the same pull request as the
+  implementation.
+- **Testing is part of step 7.** The run installs Playwright's Chromium,
+  runs `npm run test:e2e` for anything touching rendering, input or the
+  game loop, and names the docs-site demo pages a human needs to check.
+- **Step 9 runs once, when the pull request opens.** Nothing reviews it
+  again automatically: run `pr-reviewer` locally to review new commits. An
+  `@claude` mention on a pull request starts an implementing run
+  (`claude.yml`) that pushes to its branch, not a review.
+- **Each agent asks only for what its workflow allows.** `design-author`,
+  `solution-reviewer` and `pr-reviewer` run inside the workflows above, so
+  every command they tell themselves to run must be in that workflow's
+  `--allowedTools`. When you change one, check the other.
 
 ## Repository Structure
 
@@ -363,6 +422,15 @@ system processes every entity that has its components, which is what makes
 a component mean the same thing everywhere. If a system matches entities it
 shouldn't touch, the entities' components are wrong, or another system is
 writing a value this one owns. Fix that instead.
+
+A system holds no state. Its factory takes dependencies (`Time`,
+`RenderContext`, resolved tuning options) that it only reads, and the only
+state `update` changes is component data. Nothing declared outside `update`
+(a counter, a `Map` of per-entity bookkeeping, a snapshot from last tick)
+is changed inside it; that information goes in a component instead. See the
+`create-system` skill (`.claude/skills/create-system/SKILL.md`) for where
+each kind of state belongs. A few existing systems still keep closure state;
+don't copy them.
 
 ### Index Files
 

@@ -148,7 +148,7 @@ function setupInstanceAttributesAndDraw(
     gl.ONE,
     gl.ONE_MINUS_SRC_ALPHA,
   );
-  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, batchLength);
+  renderContext.quadGeometry.drawInstanced(batchLength);
 }
 
 let instanceDataBuffer = new Float32Array(0);
