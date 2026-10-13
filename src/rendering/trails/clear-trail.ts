@@ -3,8 +3,8 @@ import { trailId } from './components/trail-component.js';
 
 /**
  * Empties an entity's trail, so it starts again from where the entity is.
- * Call it when teleporting or respawning an entity, so its trail isn't
- * drawn across the jump. The trail system clears the points the next time
+ * Call it when the entity teleports or respawns, so its trail isn't drawn
+ * across the jump. The trail system clears the points the next time
  * it runs, which is the same frame when this is called from game logic
  * that runs before it.
  * @param world - The ECS world `entity` belongs to.

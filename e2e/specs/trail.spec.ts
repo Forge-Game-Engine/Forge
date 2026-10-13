@@ -114,8 +114,7 @@ const measureMovingTrail = async (
   // From the sprite's left edge back to where the entity was a lifetime
   // ago.
   const expectedLength =
-    (trailSpeed * trailLifetimeSeconds - trailSpriteWidth / 2) *
-    pixelsPerUnit;
+    (trailSpeed * trailLifetimeSeconds - trailSpriteWidth / 2) * pixelsPerUnit;
 
   expect(Math.abs(width(red) - expectedLength)).toBeLessThanOrEqual(
     edgeTolerance,
@@ -128,11 +127,9 @@ test('a moving entity leaves a trail as long as its path over the lifetime, the 
   page,
 }) => {
   const at60 = await test.step('move at 60 frames a second', () =>
-    measureMovingTrail(page, 16.6666),
-  );
+    measureMovingTrail(page, 16.6666));
   const at144 = await test.step('move again at about 144 frames a second', () =>
-    measureMovingTrail(page, 7),
-  );
+    measureMovingTrail(page, 7));
 
   expect(Math.abs(at60 - at144)).toBeLessThanOrEqual(edgeTolerance);
 });
@@ -147,8 +144,7 @@ test('a trail that stops emitting fades out after its lifetime', async ({
   required(moving.red, 'red');
 
   const halfway = await test.step('stop emitting, half a lifetime', () =>
-    runAndMeasure(page, trailLifetimeSeconds / 2, 16.6666, 'stopEmitting'),
-  );
+    runAndMeasure(page, trailLifetimeSeconds / 2, 16.6666, 'stopEmitting'));
 
   // The tail has shortened while the entity moved on without it.
   expect(width(required(halfway.red, 'red'))).toBeLessThan(
@@ -156,8 +152,7 @@ test('a trail that stops emitting fades out after its lifetime', async ({
   );
 
   const faded = await test.step('a lifetime later', () =>
-    runAndMeasure(page, trailLifetimeSeconds, 16.6666),
-  );
+    runAndMeasure(page, trailLifetimeSeconds, 16.6666));
 
   expect(faded.red).toBeNull();
   required(faded.blue, 'blue');
