@@ -10,7 +10,11 @@ import {
   SpeedEcsComponent,
   speedId,
 } from '../common/index.js';
-import { createComponentId, createTagId } from './ecs-component.js';
+import {
+  ComponentKey,
+  createComponentId,
+  createTagId,
+} from './ecs-component.js';
 import { entityGeneration, entityIndex, formatEntity } from './entity.js';
 import { Vec2 } from '../math/index.js';
 
@@ -1404,6 +1408,333 @@ describe('EcsWorld', () => {
           world.getComponent(entity, rotationId),
         );
       }
+    });
+  });
+
+  describe('remove hooks', () => {
+    interface Resource {
+      name: string;
+    }
+
+    const createHookedKey = (
+      onRemove: (world: EcsWorld, entity: number, value: Resource) => void,
+    ): ComponentKey<Resource> =>
+      createComponentId<Resource>('Resource', { onRemove });
+
+    it('runs once from removeComponent with the world, the entity and the removed value, no longer stored', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const value = { name: 'a' };
+      const stored: (Resource | null)[] = [];
+      const onRemove = vi.fn(
+        (hookWorld: EcsWorld, hookEntity: number): void => {
+          stored.push(hookWorld.getComponent(hookEntity, key));
+        },
+      );
+      const key = createHookedKey(onRemove);
+
+      world.addComponent(entity, key, value);
+      world.removeComponent(entity, key);
+      world.removeComponent(entity, key);
+
+      expect(onRemove).toHaveBeenCalledTimes(1);
+      expect(onRemove).toHaveBeenCalledWith(world, entity, value);
+      expect(stored).toEqual([null]);
+    });
+
+    it('runs nothing when removing a component the entity does not have', () => {
+      const world = new EcsWorld();
+      const onRemove = vi.fn();
+      const key = createHookedKey(onRemove);
+      const withComponent = world.createEntity();
+      const without = world.createEntity();
+
+      world.addComponent(withComponent, key, { name: 'a' });
+      world.removeComponent(without, key);
+
+      expect(onRemove).not.toHaveBeenCalled();
+    });
+
+    it('runs with the old value when addComponent replaces it, with the new value already stored', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const oldValue = { name: 'old' };
+      const newValue = { name: 'new' };
+      const stored: (Resource | null)[] = [];
+      const onRemove = vi.fn(
+        (hookWorld: EcsWorld, hookEntity: number): void => {
+          stored.push(hookWorld.getComponent(hookEntity, key));
+        },
+      );
+      const key = createHookedKey(onRemove);
+
+      world.addComponent(entity, key, oldValue);
+
+      expect(onRemove).not.toHaveBeenCalled();
+
+      world.addComponent(entity, key, newValue);
+
+      expect(onRemove).toHaveBeenCalledTimes(1);
+      expect(onRemove).toHaveBeenCalledWith(world, entity, oldValue);
+      expect(stored).toEqual([newValue]);
+    });
+
+    it('runs nothing when addComponent stores the same value again', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const value = { name: 'a' };
+      const onRemove = vi.fn();
+      const key = createHookedKey(onRemove);
+
+      world.addComponent(entity, key, value);
+      world.addComponent(entity, key, value);
+
+      expect(onRemove).not.toHaveBeenCalled();
+    });
+
+    it('runs with a stored null value, since presence is what matters', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const onRemove = vi.fn();
+      const key = createComponentId<Resource | null>('Nullable', {
+        onRemove,
+      });
+
+      world.addComponent(entity, key, null);
+      world.removeComponent(entity, key);
+
+      expect(onRemove).toHaveBeenCalledTimes(1);
+      expect(onRemove).toHaveBeenCalledWith(world, entity, null);
+    });
+
+    it('runs every hook of a removed entity once, while its other components are readable, before onEntityRemoved', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const calls: string[] = [];
+      const plain = createComponentId<Resource>('Plain');
+      const first = createHookedKey((hookWorld, hookEntity, value) => {
+        calls.push(
+          `${value.name}:${hookWorld.isAlive(hookEntity)}:${hookWorld.getComponent(hookEntity, plain)?.name}`,
+        );
+      });
+      const second = createHookedKey((hookWorld, hookEntity, value) => {
+        calls.push(
+          `${value.name}:${hookWorld.isAlive(hookEntity)}:${hookWorld.getComponent(hookEntity, plain)?.name}`,
+        );
+      });
+
+      world.addComponent(entity, plain, { name: 'plain' });
+      world.addComponent(entity, first, { name: 'first' });
+      world.addComponent(entity, second, { name: 'second' });
+      world.onEntityRemoved.registerListener(() => {
+        calls.push(`removed:${world.getComponent(entity, plain)?.name}`);
+      });
+
+      world.removeEntity(entity);
+      world.removeEntity(entity);
+
+      // Hooks run in no particular order; the event comes after them.
+      expect(calls).toHaveLength(3);
+      expect(calls.slice(0, 2)).toEqual(
+        expect.arrayContaining(['first:false:plain', 'second:false:plain']),
+      );
+      expect(calls[2]).toBe('removed:undefined');
+    });
+
+    it('runs a child’s hooks before its parent’s, with the parent’s components readable', () => {
+      const world = new EcsWorld();
+      const parent = world.createEntity();
+      const child = world.createEntity();
+      const calls: string[] = [];
+      const key = createHookedKey((hookWorld, hookEntity, value) => {
+        const parentValue =
+          hookEntity === child ? hookWorld.getComponent(parent, key) : null;
+
+        calls.push(`${value.name}:${parentValue?.name ?? '-'}`);
+      });
+
+      world.setParent(child, parent);
+      world.addComponent(parent, key, { name: 'parent' });
+      world.addComponent(child, key, { name: 'child' });
+
+      world.removeEntity(parent);
+
+      expect(calls).toEqual(['child:parent', 'parent:-']);
+    });
+
+    it('runs the hook of a component another hook removes once', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const removedB = vi.fn();
+      const b = createHookedKey(removedB);
+      const a = createHookedKey((hookWorld, hookEntity) => {
+        hookWorld.removeComponent(hookEntity, b);
+      });
+
+      world.addComponent(entity, a, { name: 'a' });
+      world.addComponent(entity, b, { name: 'b' });
+
+      world.removeEntity(entity);
+
+      expect(removedB).toHaveBeenCalledTimes(1);
+    });
+
+    it('does nothing when a hook removes its own key again', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const onRemove = vi.fn((hookWorld: EcsWorld, hookEntity: number) => {
+        hookWorld.removeComponent(hookEntity, key);
+      });
+      const key = createHookedKey(onRemove);
+
+      world.addComponent(entity, key, { name: 'a' });
+      world.removeComponent(entity, key);
+
+      expect(onRemove).toHaveBeenCalledTimes(1);
+    });
+
+    it('runs the hooks of entities a hook removes', () => {
+      const world = new EcsWorld();
+      const owner = world.createEntity();
+      const other = world.createEntity();
+      const calls: string[] = [];
+      const key = createHookedKey((hookWorld, _hookEntity, value) => {
+        calls.push(value.name);
+
+        if (value.name === 'owner') {
+          hookWorld.removeEntity(other);
+        }
+      });
+
+      world.addComponent(owner, key, { name: 'owner' });
+      world.addComponent(other, key, { name: 'other' });
+
+      world.removeComponent(owner, key);
+
+      expect(calls).toEqual(['owner', 'other']);
+      expect(world.isAlive(other)).toBe(false);
+    });
+
+    it('still removes the entity when a hook adds a component to it, and rethrows the error', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const plain = createComponentId<Resource>('Plain');
+      const key = createHookedKey((hookWorld, hookEntity) => {
+        hookWorld.addComponent(hookEntity, plain, { name: 'late' });
+      });
+
+      world.addComponent(entity, key, { name: 'a' });
+
+      expect(() => world.removeEntity(entity)).toThrow("it isn't alive");
+      expect(world.isAlive(entity)).toBe(false);
+      expect(world.query([plain]).entities).toEqual([]);
+      expect(world.query([key]).entities).toEqual([]);
+    });
+
+    it('propagates a throwing hook from removeComponent, with the component removed', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const key = createHookedKey(() => {
+        throw new Error('hook failed');
+      });
+
+      world.addComponent(entity, key, { name: 'a' });
+
+      expect(() => world.removeComponent(entity, key)).toThrow('hook failed');
+      expect(world.getComponent(entity, key)).toBeNull();
+    });
+
+    it('finishes removing an entity when a hook throws, running every other hook', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const other = vi.fn();
+      const throwing = createHookedKey(() => {
+        throw new Error('hook failed');
+      });
+      const otherKey = createHookedKey(other);
+
+      world.addComponent(entity, throwing, { name: 'a' });
+      world.addComponent(entity, otherKey, { name: 'b' });
+
+      expect(() => world.removeEntity(entity)).toThrow('hook failed');
+      expect(other).toHaveBeenCalledTimes(1);
+      expect(world.isAlive(entity)).toBe(false);
+      expect(world.query([throwing]).entities).toEqual([]);
+      expect(entityIndex(world.createEntity())).toBe(entityIndex(entity));
+    });
+
+    it('throws an AggregateError holding every error when several hooks throw', () => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+      const firstError = new Error('first');
+      const secondError = new Error('second');
+      const first = createHookedKey(() => {
+        throw firstError;
+      });
+      const second = createHookedKey(() => {
+        throw secondError;
+      });
+
+      world.addComponent(entity, first, { name: 'a' });
+      world.addComponent(entity, second, { name: 'b' });
+
+      let thrown: unknown = null;
+
+      try {
+        world.removeEntity(entity);
+      } catch (error) {
+        thrown = error;
+      }
+
+      expect(thrown).toBeInstanceOf(AggregateError);
+      expect((thrown as AggregateError).errors).toEqual([
+        firstError,
+        secondError,
+      ]);
+    });
+
+    it('runs no hooks for tags, setParent, removeParent, stop or removeSystem', () => {
+      const world = new EcsWorld();
+      const onRemove = vi.fn();
+      const key = createHookedKey(onRemove);
+      const tag = createTagId('Tag');
+      const parent = world.createEntity();
+      const child = world.createEntity();
+      const system: EcsSystem<[Resource]> = {
+        query: [key],
+        update: () => undefined,
+      };
+
+      world.addComponent(child, key, { name: 'a' });
+      world.addTag(child, tag);
+      world.removeComponent(child, tag);
+      world.setParent(child, parent);
+      world.removeParent(child);
+      world.addSystem(system);
+      world.update();
+      world.stop();
+      world.removeSystem(system);
+
+      expect(onRemove).not.toHaveBeenCalled();
+      expect(world.getComponent(child, key)).toEqual({ name: 'a' });
+    });
+
+    it('runs one key’s hook in every world, with that world', () => {
+      const first = new EcsWorld();
+      const second = new EcsWorld();
+      const worlds: EcsWorld[] = [];
+      const key = createHookedKey((hookWorld) => {
+        worlds.push(hookWorld);
+      });
+      const a = first.createEntity();
+      const b = second.createEntity();
+
+      first.addComponent(a, key, { name: 'a' });
+      second.addComponent(b, key, { name: 'b' });
+      first.removeEntity(a);
+      second.removeComponent(b, key);
+
+      expect(worlds).toEqual([first, second]);
     });
   });
 });

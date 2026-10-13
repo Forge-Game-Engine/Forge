@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createComponentId } from './ecs-component.js';
 import { EcsWorld } from './ecs-world.js';
+import { entityIndex } from './entity.js';
 import { parentId } from './hierarchy.js';
 
 describe('EcsWorld hierarchy', () => {
@@ -190,6 +191,65 @@ describe('EcsWorld hierarchy', () => {
       expect(seen).toEqual([7, 0]);
       expect(world.getComponent(root, marker)).toBeNull();
     });
+
+    it.each(['listener', 'hook'] as const)(
+      'finishes removing the parent and every child when a %s throws for the first child',
+      (thrower) => {
+        const error = new Error(`${thrower} failed`);
+        const hooked: number[] = [];
+        const removed: number[] = [];
+        const parent = world.createEntity();
+        const children = [
+          world.createEntity(),
+          world.createEntity(),
+          world.createEntity(),
+        ];
+        const [first] = children;
+        const marker = createComponentId<{ entity: number }>('Marker', {
+          onRemove: (_world, entity): void => {
+            hooked.push(entity);
+
+            if (thrower === 'hook' && entity === first) {
+              throw error;
+            }
+          },
+        });
+
+        for (const entity of [parent, ...children]) {
+          world.addComponent(entity, marker, { entity });
+        }
+
+        for (const child of children) {
+          world.setParent(child, parent);
+        }
+
+        world.onEntityRemoved.registerListener((entity) => {
+          removed.push(entity);
+
+          if (thrower === 'listener' && entity === first) {
+            throw error;
+          }
+        });
+
+        expect(() => world.removeEntity(parent)).toThrow(error);
+
+        expect(hooked).toEqual([...children, parent]);
+        expect(removed).toEqual([...children, parent]);
+
+        for (const entity of [parent, ...children]) {
+          expect(world.isAlive(entity)).toBe(false);
+        }
+
+        expect(world.query([marker]).entities).toEqual([]);
+        expect(world.query([parentId]).entities).toEqual([]);
+
+        const byIndex = (a: number, b: number): number => a - b;
+        const slots = [parent, ...children].map(entityIndex).sort(byIndex);
+        const reused = slots.map(() => entityIndex(world.createEntity()));
+
+        expect(reused.sort(byIndex)).toEqual(slots);
+      },
+    );
 
     it('keeps a child that was unparented first', () => {
       const parent = world.createEntity();
