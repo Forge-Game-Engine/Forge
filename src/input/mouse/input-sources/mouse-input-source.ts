@@ -78,8 +78,8 @@ export class MouseInputSource
   }
 
   /**
-   * The pointer's current position in CSS pixels: Y-down, origin at the
-   * container's top-left corner. On a high-DPI display this is smaller than
+   * The pointer's current position in CSS pixels: Y-down like the world,
+   * origin at the container's top-left corner. On a high-DPI display this is smaller than
    * the canvas's drawing-buffer coordinates by `RenderContext.pixelRatio`,
    * so convert it to world space against `RenderContext.cssWidth`/
    * `cssHeight`, not `width`/`height`. Recomputed from a fresh

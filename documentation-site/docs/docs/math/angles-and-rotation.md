@@ -13,8 +13,8 @@ angles to and from degrees and direction vectors.
 ## The angle convention
 
 Angle `0` points along `+X`, and a positive angle turns `+X` towards `+Y`.
-The world is Y-up, so a positive angle turns counter-clockwise on screen,
-and `Math.PI / 2` points up.
+The world is Y-down, like the screen, so a positive angle turns clockwise on
+screen: `Math.PI / 2` points down and `-Math.PI / 2` points up.
 
 ## Converting between degrees and radians
 
@@ -33,7 +33,7 @@ rotation.local = degreesToRadians(45);
 
 [`radiansToVector(angle)`](/Forge/docs/api/functions/radiansToVector)
 returns the unit vector `(cos angle, sin angle)`, so `radiansToVector(0)` is
-`(1, 0)` and `radiansToVector(Math.PI / 2)` is `(0, 1)`.
+`(1, 0)` and `radiansToVector(-Math.PI / 2)` is `(0, -1)`, straight up.
 [`vectorToRadians(vector)`](/Forge/docs/api/functions/vectorToRadians)
 returns the angle of a vector, `Math.atan2(vector.y, vector.x)`, from `-π`
 to `π`. Each is the inverse of the other:
@@ -63,7 +63,7 @@ the world's:
 ```ts
 import { Vec2 } from '@forge-game-engine/forge/math';
 
-const offset = Vec2.rotate({ x: 0, y: 20 }, rotation.world);
+const offset = Vec2.rotate({ x: 0, y: -20 }, rotation.world);
 const pointInWorld = Vec2.add(Vec2.clone(position.world), offset);
 ```
 
@@ -79,8 +79,8 @@ direction, and the entity's forward direction is
 rotation.local = vectorToRadians(direction);
 ```
 
-For an image that faces up, subtract a quarter turn:
+For an image that faces up, add a quarter turn:
 
 ```ts
-rotation.local = vectorToRadians(direction) - Math.PI / 2;
+rotation.local = vectorToRadians(direction) + Math.PI / 2;
 ```

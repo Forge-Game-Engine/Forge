@@ -97,15 +97,15 @@ const hinge = addRevoluteJointComponent(world, joint, {
   entityB: door,
   localAnchorB: { x: -60, y: 0 },
   enableLimit: true,
-  lowerAngle: 0,
-  upperAngle: Math.PI / 2,
+  lowerAngle: -Math.PI / 2,
+  upperAngle: 0,
 });
 ```
 
 The limits are fields of the component, and can be changed at any time:
 
 ```ts
-hinge.upperAngle = Math.PI;
+hinge.lowerAngle = -Math.PI;
 ```
 
 :::caution

@@ -172,7 +172,7 @@ export const createScene: CreateScene = async (
   const button = createPanel(world, uiCanvas, {
     sprite: sprite(new Color(0.3, 0.5, 0.9, 1)),
     anchor: UiAnchor.center({ x: 200, y: 60 }),
-    anchoredPosition: { x: 0, y: 300 - buttonCenter.y },
+    anchoredPosition: { x: 0, y: buttonCenter.y - 300 },
   });
   const buttonInteractable = addUiInteractableComponent(world, button);
 

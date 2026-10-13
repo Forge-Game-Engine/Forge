@@ -74,11 +74,8 @@ The `cursorValueType` option
 reports CSS pixels instead, and `cursorOrigin` moves the point the position
 is measured from.
 
-:::caution
-The cursor position is in screen coordinates: `y` increases downward, so
-the cursor above the origin reads a negative `y`. Negate `y` to use the
-value in the Y-up world.
-:::
+The cursor position is in screen coordinates: `y` increases downward, like
+the world's `y`, so the cursor above the origin reads a negative `y`.
 
 The source reads the container's bounds on every `mousemove`, so positions
 stay correct after the container is resized, moved or scrolled.

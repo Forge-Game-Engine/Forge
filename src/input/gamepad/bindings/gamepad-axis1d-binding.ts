@@ -4,7 +4,7 @@ import { InputBinding } from '../../input-binding.js';
 
 /** Drives an axis from a single analog gamepad axis, such as a thumbstick. */
 export interface GamepadStickAxis1dBindingArgs {
-  /** The index of the gamepad axis to read. A stick's Y axis reads up as positive. */
+  /** The index of the gamepad axis to read. A stick's Y axis reads up as negative. */
   axisIndex: GamepadAxisIndex;
 }
 

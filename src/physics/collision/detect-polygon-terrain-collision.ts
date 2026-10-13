@@ -150,11 +150,11 @@ function isWithinEdgeNormalRange(
   // far side of the fan it opens up.
   const previousLimit =
     previous !== null && Vec2.cross(previous.normal, edge.normal) > 0
-      ? edge.normal
+      ? previous.normal
       : edge.normal;
   const nextLimit =
     next !== null && Vec2.cross(edge.normal, next.normal) > 0
-      ? edge.normal
+      ? next.normal
       : edge.normal;
 
   return (

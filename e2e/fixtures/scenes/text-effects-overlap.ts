@@ -53,8 +53,9 @@ const glyphBounds = {
 const syntheticCapHeightEm = 0.5 + inkHalfFraction;
 
 // World Y of every glyph's center under `verticalAlign: 'middle'`, which
-// centers the band from the baseline to `syntheticCapHeightEm` on y = 0.
-const glyphCenterWorldY = (0.5 - syntheticCapHeightEm / 2) * SIZE;
+// centers the band from the baseline to `syntheticCapHeightEm` on y = 0, so
+// the baseline sits below y = 0 (+Y is down) and the glyph's center above it.
+const glyphCenterWorldY = -(0.5 - syntheticCapHeightEm / 2) * SIZE;
 
 // The advance (in em) between the two glyphs is chosen so that their
 // *padded quads* (ink + the atlas's own baked-in padding on each side)
@@ -383,10 +384,10 @@ export const createScene: CreateScene = async (
       context2d.drawImage(canvas, 0, 0);
 
       // Camera is static at world (0, 0), zoom 1, 1 world unit = 1 screen
-      // pixel: canvas center is world (0, 0), X matches world X directly,
-      // Y is flipped (world is Y-up, the canvas/readback is Y-down).
+      // pixel: canvas center is world (0, 0), and both world axes match the
+      // canvas readback's (X right, Y down).
       const canvasX = Math.round(canvas.width / 2 + worldX);
-      const canvasY = Math.round(canvas.height / 2 - worldY);
+      const canvasY = Math.round(canvas.height / 2 + worldY);
       const { data } = context2d.getImageData(canvasX, canvasY, 1, 1);
 
       return { r: data[0], g: data[1], b: data[2], a: data[3] };

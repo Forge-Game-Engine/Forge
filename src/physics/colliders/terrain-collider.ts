@@ -261,11 +261,7 @@ function silhouetteVertices(
 
   // A positive signed area, like a `PolygonCollider`'s: along the surface
   // left to right, then back along the bottom right to left.
-  return [
-    ...points,
-    { x: last.x, y: bottomY },
-    { x: first.x, y: bottomY },
-  ];
+  return [...points, { x: last.x, y: bottomY }, { x: first.x, y: bottomY }];
 }
 
 function buildSurface(points: readonly Vector2[]): TerrainSurfaceEdge[] {

@@ -152,9 +152,10 @@ export const createScene: CreateScene = async (
 
   // Three glyphs at 1 em each, centered on the canvas. The synthetic
   // glyph's ink is centered half an em above its baseline, so anchoring the
-  // baseline half an em below y = 0 centers the ink on the scanned row.
+  // baseline half an em below y = 0 (+Y is down) centers the ink on the
+  // scanned row.
   addPositionComponent(world, textEntity, {
-    local: { x: -1.5 * SIZE, y: -0.5 * SIZE },
+    local: { x: -1.5 * SIZE, y: 0.5 * SIZE },
   });
 
   const textComponent = addTextComponent(world, textEntity, {
