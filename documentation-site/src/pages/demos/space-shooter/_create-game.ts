@@ -302,8 +302,8 @@ export const createSpaceShooterGame = async (
   // The bullets' trails follow the `world` poses the transform pass just
   // wrote, and are drawn by the render system below.
   world.addSystem(createTrailEcsSystem(time, renderContext));
-  // Rendering runs right after the transform pass, so it draws this frame's
-  // poses. Explosions spawned and the player reset by the collision and
+  // Rendering runs right after the transform and trail passes, so it draws
+  // this frame's poses. Explosions spawned and the player reset by the collision and
   // game-over systems below show up on the next frame.
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createBloomEcsSystem(renderContext));
