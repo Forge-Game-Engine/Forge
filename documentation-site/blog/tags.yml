@@ -20,3 +20,6 @@ editor:
   label: Editor
   description: The Forge visual editor
 
+workflow:
+  label: Workflow
+  description: How Forge is built - the agentic workflow, agents and skills behind it
