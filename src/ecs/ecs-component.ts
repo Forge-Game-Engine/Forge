@@ -71,10 +71,7 @@ export function createComponentId<T>(
   if (hooks.onRemove) {
     // The world stores every component as `unknown`, and only ever passes
     // this hook values stored under this key, which are `T`s.
-    setComponentRemoveHook(
-      key,
-      hooks.onRemove as UntypedComponentRemoveHook,
-    );
+    setComponentRemoveHook(key, hooks.onRemove as UntypedComponentRemoveHook);
   }
 
   return key;

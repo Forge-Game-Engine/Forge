@@ -247,7 +247,9 @@ describe('EcsWorld hierarchy', () => {
         const slots = [parent, ...children].map(entityIndex).sort(byIndex);
         const reused = slots.map(() => entityIndex(world.createEntity()));
 
-        expect(reused.sort(byIndex)).toEqual(slots);
+        reused.sort(byIndex);
+
+        expect(reused).toEqual(slots);
       },
     );
 
