@@ -157,16 +157,16 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
       addColliderComponent(world, ground, {
         collider: new TerrainCollider(
           [
-            { x: -10, y: 10 },
+            { x: -10, y: -10 },
             { x: 0, y: 0 },
-            { x: 10, y: 10 },
+            { x: 10, y: -10 },
           ],
           5,
         ),
       });
 
       // Sits in the valley, touching both of its edges.
-      const { contacts } = addCircle({ x: 0, y: 1 }, { contacts: true });
+      const { contacts } = addCircle({ x: 0, y: -1 }, { contacts: true });
 
       world.update();
 

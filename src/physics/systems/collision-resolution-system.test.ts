@@ -152,22 +152,22 @@ describe('createCollisionResolutionEcsSystem', () => {
     addSystem();
 
     const { entity: ball, rigidBody } = addCircleEntity(
-      { x: 0, y: 1 },
+      { x: 0, y: -1 },
       1,
       true,
       { restitution: 1 },
     );
-    const { entity: ground } = addCircleEntity({ x: 0, y: -100 }, 100, false, {
+    const { entity: ground } = addCircleEntity({ x: 0, y: 100 }, 100, false, {
       restitution: 1,
     });
 
-    rigidBody!.velocity = { x: 0, y: -5 };
+    rigidBody!.velocity = { x: 0, y: 5 };
 
-    pushManifold(ground, ball, { x: 0, y: 1 }, 0.01, { x: 0, y: 0.99 });
+    pushManifold(ground, ball, { x: 0, y: -1 }, 0.01, { x: 0, y: -0.99 });
 
     world.update();
 
-    expect(rigidBody!.velocity.y).toBeGreaterThan(4);
+    expect(rigidBody!.velocity.y).toBeLessThan(-4);
   });
 
   it("should take lever arms from the body's center of mass, not its origin", () => {
@@ -178,27 +178,27 @@ describe('createCollisionResolutionEcsSystem', () => {
     // through the center of mass, so the body mustn't start spinning.
     const entity = world.createEntity();
 
-    addPositionComponent(world, entity, { local: { x: 0, y: 1 } });
+    addPositionComponent(world, entity, { local: { x: 0, y: -1 } });
     addColliderComponent(world, entity, {
       collider: new CircleCollider(1, 1, { x: 5, y: 0 }),
       restitution: 0,
       friction: 0,
     });
     const rigidBody = addRigidBodyComponent(world, entity, {
-      velocity: { x: 0, y: -5 },
+      velocity: { x: 0, y: 5 },
     });
-    const { entity: ground } = addCircleEntity({ x: 5, y: -100 }, 100, false, {
+    const { entity: ground } = addCircleEntity({ x: 5, y: 100 }, 100, false, {
       restitution: 0,
       friction: 0,
     });
 
-    pushManifold(ground, entity, { x: 0, y: 1 }, 0.01, { x: 5, y: 0 });
+    pushManifold(ground, entity, { x: 0, y: -1 }, 0.01, { x: 5, y: 0 });
 
     world.update();
 
     // Most of the fall is stopped (the soft contact leaves a little), and
     // none of it was turned into spin.
-    expect(rigidBody.velocity.y).toBeGreaterThan(-0.5);
+    expect(rigidBody.velocity.y).toBeLessThan(0.5);
     expect(rigidBody.angularVelocity).toBeCloseTo(0);
   });
 
@@ -206,29 +206,29 @@ describe('createCollisionResolutionEcsSystem', () => {
     addSystem();
 
     const { entity: ball, rigidBody } = addCircleEntity(
-      { x: 0, y: 1 },
+      { x: 0, y: -1 },
       1,
       true,
       { restitution: 1 },
     );
-    const { entity: ground } = addCircleEntity({ x: 0, y: -100 }, 100, false, {
+    const { entity: ground } = addCircleEntity({ x: 0, y: 100 }, 100, false, {
       restitution: 1,
     });
 
-    rigidBody!.velocity = { x: 0, y: -5 };
-    pushManifold(ground, ball, { x: 0, y: 1 }, 0.01, { x: 0, y: 0.99 });
+    rigidBody!.velocity = { x: 0, y: 5 };
+    pushManifold(ground, ball, { x: 0, y: -1 }, 0.01, { x: 0, y: -0.99 });
     world.update();
 
-    expect(rigidBody!.velocity.y).toBeGreaterThan(4);
+    expect(rigidBody!.velocity.y).toBeLessThan(-4);
     expect(contactConstraints[0].isReused).toBe(false);
 
     collisionManifolds.length = 0;
-    rigidBody!.velocity = { x: 0, y: -5 };
-    pushManifold(ground, ball, { x: 0, y: 1 }, 0.01, { x: 0, y: 0.99 });
+    rigidBody!.velocity = { x: 0, y: 5 };
+    pushManifold(ground, ball, { x: 0, y: -1 }, 0.01, { x: 0, y: -0.99 });
     world.update();
 
     expect(contactConstraints[0].isReused).toBe(true);
-    expect(rigidBody!.velocity.y).toBeLessThan(3.5);
+    expect(rigidBody!.velocity.y).toBeGreaterThan(-3.5);
   });
 
   it('should warm-start by carrying accumulated impulse across ticks for a matching feature id', () => {
@@ -262,17 +262,17 @@ describe('createCollisionResolutionEcsSystem', () => {
     addSystem();
 
     const { entity: ball, rigidBody } = addCircleEntity(
-      { x: 0, y: 1 },
+      { x: 0, y: -1 },
       1,
       true,
       { friction: 1 },
     );
-    const { entity: ground } = addCircleEntity({ x: 0, y: -100 }, 100, false, {
+    const { entity: ground } = addCircleEntity({ x: 0, y: 100 }, 100, false, {
       friction: 1,
     });
 
     rigidBody!.velocity = { x: 2, y: 0 };
-    pushManifold(ground, ball, { x: 0, y: 1 }, 0.1, { x: 0, y: 0.9 });
+    pushManifold(ground, ball, { x: 0, y: -1 }, 0.1, { x: 0, y: -0.9 });
 
     world.update();
 
