@@ -1,7 +1,7 @@
 ---
 slug: agentic-workflow
 title: 'How Forge gets built: an agentic workflow'
-description: 'How a Forge feature goes from a milestone to merged code: I plan and decide, and Claude Code agents write the issues, design, review, implement and test the change in between.'
+description: 'How a Forge feature goes from a milestone to merged code: we plan and decide, and Claude Code agents write the issues, design, review, implement and test the change in between.'
 authors: [stormmuller]
 tags: [workflow]
 image: ./banner.png
@@ -10,17 +10,18 @@ image: ./banner.png
 ![Feature Image](./banner.png)
 
 Most of the pull requests that went into Forge this year were written by
-Claude Code. Not as autocomplete, but as
-one continuous workflow that takes a feature from a milestone to merged code.
-I decide what gets built, answer the questions that need a person, test the
-result and merge it. Agents do the work in between: writing the issues,
+agents. Not as autocomplete, but as one continuous workflow that takes a
+feature from a milestone to a usable, shipped feature.
+
+{/* truncate */}
+
+A human decides what gets built, answers the questions that need a person,
+tests the result and merges it. Agents do the work in between: writing the issues,
 designing the change, reviewing the design, implementing it with tests, and
 reviewing the pull request.
 
-This post walks through that workflow, the agents and skills behind it, and
-why it's shaped the way it is.
-
-{/* truncate */}
+This post walks through that workflow, the agents and skills behind it, the
+problems we solved along the way, and the ones we haven't solved yet.
 
 ## The workflow at a glance
 
@@ -28,16 +29,16 @@ why it's shaped the way it is.
 
 | #   | Step                                          | Who                                    |
 | --- | --------------------------------------------- | -------------------------------------- |
-| 1   | Plan a milestone                              | Me                                     |
-| 2   | Research it                                   | Me                                     |
+| 1   | Plan a milestone                              | Human                                  |
+| 2   | Research it                                   | Human                                  |
 | 3   | Turn the milestone into issues                | Agent, with the `plan-milestone` skill |
-| 4   | Label the issues `claude`                     | Me                                     |
+| 4   | Label the issues `claude`                     | Human                                  |
 | 5   | Write a design document                       | `design-author` agent                  |
 | 6   | Review the design                             | `solution-reviewer` agent              |
 | 7   | Implement, with unit and e2e tests            | Agent                                  |
 | 8   | Review the pull request against Forge's rules | `pr-reviewer` agent                    |
-| 9   | Review the pull request, test the demos       | Me                                     |
-| 10  | Merge                                         | Me                                     |
+| 9   | Review the pull request, test the demos       | Human                                  |
+| 10  | Merge                                         | Human                                  |
 
 Steps 5 to 8 run unattended in GitHub Actions, through the
 [Claude GitHub app](https://github.com/apps/claude). Everything the agents
@@ -51,13 +52,13 @@ and the skills in
 
 ## Plan and research
 
-Every feature starts as a GitHub milestone, such as text rendering, the UI
-module or trail rendering. Before anything is written, I research it: I ask
-Claude, and read other engines' documentation, technical write-ups and
-tutorials until I know what to ask for. Game engines are full of
+Every feature starts as a GitHub milestone, such as text rendering or trail
+rendering. Before anything is written, we research it: we ask Claude, and
+read other engines' documentation, technical write-ups and tutorials until
+we know what to ask for. Game engines are full of
 well-understood problems (transform hierarchies, broad and narrow phase
-collision, multi-pass rendering), and the research is how I make sure Forge
-solves them the established way rather than inventing its own.
+collision, multi-pass rendering), and the research is how we make sure Forge
+solves them the established way rather than reinventing the wheel.
 
 ## From milestone to issues
 
@@ -68,20 +69,17 @@ finished. Issues that must merge first are listed on `Depends on #N` lines.
 The skill also writes the milestone's description: its goal, its approach,
 and a checklist for when it's done.
 
-The skill never labels an issue `claude`. That label starts an unattended
-run, so deciding what's ready to build stays with me.
-
-## Label it, and let the dependencies wait
+## Assigning work to an agent
 
 Adding the `claude` label to an issue starts a run of
 [`claude.yml`](https://github.com/Forge-Game-Engine/Forge/blob/dev/.github/workflows/claude.yml).
-I can label every issue in a milestone at once. Before a run starts, a small
+We can label every issue in a milestone at once. Before a run starts, a small
 gate job reads the issue's `Depends on #N` lines. While any of those issues
 is still open, it swaps `claude` for `claude-waiting`, comments which issues
 it's waiting on, and stops. When an issue closes, a second workflow gives
 `claude` back to every waiting issue whose dependencies have all closed,
 which starts its run. So a milestone builds itself in dependency order, and
-the only thing I wait on is review.
+the only thing we wait on is review.
 
 ## Design before code
 
@@ -91,22 +89,25 @@ and Bevy solve the same problem, then writes a design document in `/design`,
 with a decision log that says why it chose its approach.
 
 The `solution-reviewer` agent then reviews that design before any code
-exists. It answers five questions, each with evidence from the code:
+exists. It answers three questions, each with evidence from the code:
 
-1. Does it fix the root cause, or a symptom?
-2. Who writes each value it touches? (Forge allows one writer per component
-   field.)
-3. How do established engines solve this, and does the design match?
-4. Does it fit ECS and Forge's rules: fixed system queries, stateless
+1. **Does it fix the root cause, or a symptom?** Agents tend to fix the
+   immediate problem with as little change to the rest of the engine as
+   possible. That keeps one session low-risk, but every large problem that
+   gets worked around instead of fixed adds tech debt.
+2. **How do established engines solve this, and does the design match?**
+   This isn't copying for its own sake. If Forge takes a different approach,
+   it needs a reason; without one, the difference usually points at a
+   problem we haven't addressed.
+3. **Does it fit ECS and Forge's rules?** Fixed system queries, stateless
    systems, no compatibility shims, no options that switch between old and
-   new behavior?
-5. What does the right change cost?
+   new behavior.
 
 It ends with one verdict: approve, revise, reject or escalate. A design gets
 one revision. If the design still isn't approved, or the design itself has
 blocking open questions, the run commits the design, posts the questions on
 the issue and stops without a pull request. **It stops rather than guess.**
-I answer on the issue, mention `@claude`, and the next run picks up the
+We answer on the issue, mention `@claude`, and the next run picks up the
 design where it left off.
 
 A small, clearly scoped fix skips the design document, but its plan still
@@ -139,44 +140,15 @@ It reviews the change against Forge's checklist (one writer per value, fixed
 queries and stateless systems, no shims or option bloat, root cause rather
 than symptom, the changelog, docs, demos, exports and tests) and posts a
 table of results with inline comments. It never approves, pushes or blocks a
-merge; it's there so my review starts from a list of what to look at.
+merge; it's there so our review starts from a list of what to look at.
 
-Then it's my turn. I review the pull request, load the demo pages it lists,
-and merge.
+Then it's a human's turn. We review the pull request, load the demo pages it
+lists, and merge.
 
-## A real example: meshes in the draw order
+## Solved and unsolved problems
 
-Trail rendering is one of the milestones on Forge's roadmap. A ship's exhaust
-trail has to draw behind the ship and in front of the background, but
-Forge's render system could only sort sprites and text. Issue
-[#783](https://github.com/Forge-Game-Engine/Forge/issues/783) asked for the
-render system to draw meshes in the same draw order as sprites.
-
-I labelled it, and 47 minutes later the run had:
-
-- written a design,
-  [`meshes-in-the-draw-order.md`](https://github.com/Forge-Game-Engine/Forge/blob/dev/design/meshes-in-the-draw-order.md),
-  that follows how Unity, Godot and Bevy share one 2D sort order;
-- had it approved by `solution-reviewer`, with a few bookkeeping fixes folded
-  in;
-- implemented it, including moving terrain onto the same mesh path and
-  deleting its separate draw system;
-- added unit tests and an e2e test that draws a mesh between two sprites and
-  checks the result on a real canvas;
-- updated the documentation and added a new
-  [meshes demo](/Forge/demos/meshes);
-- opened pull request
-  [#862](https://github.com/Forge-Game-Engine/Forge/pull/862).
-
-`pr-reviewer` flagged two documentation pages that didn't mention meshes yet
-(the run's own local review had already caught and fixed them), a comment
-nit, and a design question for a follow-up. I loaded the demos it listed and
-merged it the same day.
-
-## Why it's shaped this way
-
-The workflow grew out of the problems I hit working with agents, and each
-fix is now part of the repository, so it applies to every run after it:
+The workflow grew out of the problems we hit working with agents, and each
+fix is now part of the repository, so it applies to every run:
 
 - **Agents keep things backwards compatible by default.** They added
   deprecated aliases and options that switch between old and new behavior,
@@ -184,18 +156,19 @@ fix is now part of the repository, so it applies to every run after it:
   rule in `CLAUDE.md` now says to change behavior outright and update every
   caller in the same change.
 - **Agents build on a bad design rather than question it.** Whether the
-  design was mine or another agent's, they'd keep building on it and never
+  design was ours or another agent's, they'd keep building on it and never
   suggest a refactor. That's why `design-author` writes the design first and
-  `solution-reviewer` challenges it before any code exists.
+  `solution-reviewer` challenges it before any code gets written.
 - **Agents drift from conventions.** For example, they'd keep state in
   systems. Stricter types, the `create-system` skill, the rules in
   `CLAUDE.md` and `pr-reviewer` keep changes in line.
 
-The other lesson is about where people fit. Agents are good at the work
-between decisions. The decisions themselves stay with me: what to build,
-which questions block a design, whether a demo looks right, and what gets
-merged.
+Some problems aren't solved yet:
 
-If you want to set up something similar, everything above is in the
-[Forge repository](https://github.com/Forge-Game-Engine/Forge): the workflows
-in `.github/workflows`, and the agents and skills in `.claude`.
+- **Starting a run means labeling an issue.** That's not a good developer
+  experience, and we'll look for a better way to hand work to an agent.
+- **There's no progress feedback.** An agent can work for hours with no sign
+  of how far it's got.
+- **Review agents don't know when a change is good enough.** They always
+  find something to say, whether it's justified or not, and that burns
+  tokens.
