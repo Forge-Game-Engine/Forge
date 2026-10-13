@@ -956,7 +956,9 @@ towards `+Y` from its curve. Keyboard and gamepad axes read "up"/north as
 negative Y, and `CameraView` converts between the world and the canvas's
 CSS pixels without flipping. Font atlas metrics (`planeBounds`, `ascender`,
 `descender`) are the exception: they keep the typographic Y-up convention
-of the tools that generate them, and `shapeText` converts them.
+of the tools that generate them, and code that reads them (`shapeText`,
+the text input's caret placement) converts them. `Vec3` is 3D and stays
+Y-up.
 
 Every angle follows one convention: **radians, angle `0` points along `+X`,
 and a positive angle turns `+X` towards `+Y`** (clockwise on screen).

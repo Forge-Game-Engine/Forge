@@ -115,7 +115,7 @@ describe('createLabel', () => {
     expect(world.getComponent(label, layoutElementId)).toBeNull();
   });
 
-  it("keeps verticalAlign's own default ('top') with sizeToText, since a layout-arranged child is pivoted at its top-left", () => {
+  it("keeps verticalAlign's own default ('top') with sizeToText", () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 

@@ -38,16 +38,17 @@ export class Vec3 {
   }
 
   /**
-   * A unit vector pointing upward (0, 1, 0). A fresh vector is created on
-   * every access, so it's always safe to mutate.
+   * A unit vector pointing upward (0, 1, 0). Unlike the Y-down 2D world
+   * (`Vec2.up` is `(0, -1)`), 3D space is Y-up, as in every 3D engine. A
+   * fresh vector is created on every access, so it's always safe to mutate.
    */
   static get up(): Vector3 {
     return { x: 0, y: 1, z: 0 };
   }
 
   /**
-   * A unit vector pointing downward (0, -1, 0). A fresh vector is created on
-   * every access, so it's always safe to mutate.
+   * A unit vector pointing downward (0, -1, 0), since 3D space is Y-up. A
+   * fresh vector is created on every access, so it's always safe to mutate.
    */
   static get down(): Vector3 {
     return { x: 0, y: -1, z: 0 };
