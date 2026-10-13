@@ -63,13 +63,13 @@ export const createTorqueGame = async (): Promise<Game> => {
     world,
     renderContext,
     renderLayers.foreground,
-    { x: -columnWidth / 2, y: height * 0.1 },
+    { x: -columnWidth / 2, y: -height * 0.1 },
     thrustInput,
   );
 
   await createMotorScenario(world, renderContext, renderLayers.foreground, {
     x: columnWidth / 2,
-    y: height * 0.1,
+    y: -height * 0.1,
   });
 
   // `createThrusterEcsSystem` and `createGustEcsSystem` change

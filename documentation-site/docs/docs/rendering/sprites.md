@@ -18,7 +18,7 @@ A `SpriteEcsComponent` holds:
 - `width` and `height`: the sprite's size in
   [world units](./world-units-and-cameras.md).
 - `pivot`: the point of the sprite placed at the entity's position, from
-  `(0, 0)` (bottom-left) to `(1, 1)` (top-right). The sprite rotates and
+  `(0, 0)` (top-left) to `(1, 1)` (bottom-right). The sprite rotates and
   scales around it.
 - `uvOffset` and `uvScale`: the region of the texture the sprite draws.
 - `tintColor`: the color the texture is multiplied by.

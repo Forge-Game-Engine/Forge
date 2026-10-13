@@ -16,7 +16,8 @@ export interface EmitParticleBurstOptions {
   count?: number;
 
   /**
-   * The world rotation, in radians, counter-clockwise, of the frame the
+   * The world rotation, in radians (positive turns `+X` towards `+Y`,
+   * clockwise on screen), of the frame the
    * burst emits in: the emitter's spawn shape and `directionRange` turn by
    * it, the same as they turn with the entity an emitter is on.
    * @default 0

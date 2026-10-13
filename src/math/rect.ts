@@ -1,8 +1,8 @@
 import { Vector2 } from './vector2.js';
 
 /**
- * A plain axis-aligned rectangle defined by its lower-left (`min`) and
- * upper-right (`max`) corners.
+ * A plain axis-aligned rectangle defined by its top-left (`min`) and
+ * bottom-right (`max`) corners, since the world is Y-down.
  */
 export interface Rect {
   min: Vector2;

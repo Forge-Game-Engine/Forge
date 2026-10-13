@@ -34,9 +34,8 @@ const launchAngleRangeInDegrees = 35;
  * bricks with some left/right variance, so repeated launches don't always
  * retrace the same path.
  *
- * Positive Y is towards the top of the play area (where the bricks are),
- * matching the world-space convention used by `PositionEcsComponent`, which
- * is the opposite of `Vector2.up`'s screen-space convention.
+ * The world is Y-down, so the bricks at the top of the play area are towards
+ * negative Y.
  * @param rigidBody - The ball's rigid body component.
  * @param speed - The launch speed, in pixels per second.
  * @param random - The random source used to vary the launch angle.
@@ -51,7 +50,7 @@ export function launchBall(
   );
 
   rigidBody.velocity = Vec2.multiply(
-    { x: Math.sin(angle), y: Math.cos(angle) },
+    { x: Math.sin(angle), y: -Math.cos(angle) },
     speed,
   );
 }

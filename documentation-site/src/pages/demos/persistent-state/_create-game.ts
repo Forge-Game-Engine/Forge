@@ -130,7 +130,7 @@ export const createPersistentStateGame = async (): Promise<Game> => {
   addRotationComponent(world, square);
   addScaleComponent(world, square);
   addSpriteComponent(world, square, squareSprite);
-  world.addComponent(square, spinnerId, { ...settings.values, speed: 1.5 });
+  world.addComponent(square, spinnerId, { ...settings.values, speed: -1.5 });
 
   settings.onChange.registerListener((values) => {
     Object.assign(world.getComponentRequired(square, spinnerId), values);
@@ -179,7 +179,7 @@ export const createPersistentStateGame = async (): Promise<Game> => {
     return sprite;
   };
 
-  caption('Size', -80);
+  caption('Size', 80);
 
   const sizeSlider = createSlider(world, canvas, {
     trackSprite: uiSprite(controlColor),
@@ -187,7 +187,7 @@ export const createPersistentStateGame = async (): Promise<Game> => {
     handleSize: { x: 40, y: 40 },
     fillSprite: uiSprite(accentColor),
     anchor: UiAnchor.topLeft({ x: 400, y: 24 }),
-    anchoredPosition: { x: 60, y: -130 },
+    anchoredPosition: { x: 60, y: 130 },
     minValue: minSize,
     maxValue: maxSize,
     value: settings.values.size,
@@ -198,14 +198,14 @@ export const createPersistentStateGame = async (): Promise<Game> => {
     void settings.set({ size });
   });
 
-  caption('Spin', -220);
+  caption('Spin', 220);
 
   const spinToggle = createToggle(world, canvas, {
     sprite: uiSprite(controlColor),
     checkmarkSprite: uiSprite(accentColor),
     isOn: settings.values.spin,
     anchor: UiAnchor.topLeft({ x: 40, y: 40 }),
-    anchoredPosition: { x: 160, y: -200 },
+    anchoredPosition: { x: 160, y: 200 },
     transition: controlTransition,
   });
 
@@ -215,7 +215,7 @@ export const createPersistentStateGame = async (): Promise<Game> => {
 
   const resetButton = createButton(world, canvas, {
     anchor: UiAnchor.topLeft({ x: 260, y: 64 }),
-    anchoredPosition: { x: 60, y: -290 },
+    anchoredPosition: { x: 60, y: 290 },
     sprite: uiSprite(Color.white),
     label: 'Reset',
     fontAtlas,
@@ -247,7 +247,7 @@ export const createPersistentStateGame = async (): Promise<Game> => {
     isStored
       ? 'Reload the page: the settings are kept.'
       : 'Storage is unavailable: the settings last for this visit.',
-    -420,
+    420,
     24,
   );
 

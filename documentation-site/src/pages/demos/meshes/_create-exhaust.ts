@@ -33,7 +33,7 @@ export interface Exhaust {
  * Builds a tapering, wavy band as a triangle strip: two vertices (left and
  * right edge) per step down its length, each with a position and a color.
  * The vertices are in the entity's local space, starting at its origin and
- * running down -Y.
+ * running down +Y.
  */
 function buildExhaustGeometry(renderContext: RenderContext): Geometry {
   const vertexCount = (segmentCount + 1) * 2;
@@ -44,7 +44,7 @@ function buildExhaustGeometry(renderContext: RenderContext): Geometry {
     const t = i / segmentCount;
     const halfWidth = lerp(startHalfWidth, endHalfWidth, t);
     const centerX = Math.sin(t * Math.PI * 3) * waveAmplitude * t;
-    const y = -t * length;
+    const y = t * length;
     const color = startColor.map((start, c) => lerp(start, endColor[c], t));
 
     positions.set([centerX - halfWidth, y, centerX + halfWidth, y], i * 4);

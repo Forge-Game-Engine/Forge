@@ -30,7 +30,7 @@ const defaultStepDeltaMilliseconds = 16.6666;
 // world/atlas-pixel/screen-pixel numbers below all directly comparable.
 const SIZE = SYNTHETIC_GLYPH_TILE_SIZE;
 
-// Both glyphs' `planeBounds`/`atlasBounds`: the ink square (see
+// Every glyph's `atlasBounds`/`planeBounds`: the ink square (see
 // `create-synthetic-msdf-glyph-image.ts`) padded by exactly
 // `distanceRange / 2` atlas pixels on every side - the same convention a
 // real `msdf-bmfont-xml`-generated atlas uses (see the correction posted to
@@ -41,20 +41,31 @@ const inkHalfFraction =
 const paddingFraction =
   SYNTHETIC_GLYPH_DISTANCE_RANGE / 2 / SYNTHETIC_GLYPH_TILE_SIZE;
 const glyphHalfWidthEm = inkHalfFraction + paddingFraction;
-const glyphBounds = {
+
+// The padded ink square in the atlas tile, which fills the whole atlas.
+const glyphAtlasBounds = {
   left: 0.5 - glyphHalfWidthEm,
   right: 0.5 + glyphHalfWidthEm,
-  bottom: 0.5 - glyphHalfWidthEm,
-  top: 0.5 + glyphHalfWidthEm,
+  top: 0.5 - glyphHalfWidthEm,
+  bottom: 0.5 + glyphHalfWidthEm,
 };
 
-// The synthetic glyph's ink top, in em above its baseline: its quad (and
-// ink) is centered half an em above the baseline.
-const syntheticCapHeightEm = 0.5 + inkHalfFraction;
+// The same square on the glyph's plane, centered half an em above (-y) the
+// baseline.
+const glyphPlaneBounds = {
+  left: 0.5 - glyphHalfWidthEm,
+  right: 0.5 + glyphHalfWidthEm,
+  top: -0.5 - glyphHalfWidthEm,
+  bottom: -0.5 + glyphHalfWidthEm,
+};
+
+// The synthetic glyph's ink top, relative to its baseline.
+const syntheticCapLineEm = -0.5 - inkHalfFraction;
 
 // World Y of every glyph's center under `verticalAlign: 'middle'`, which
-// centers the band from the baseline to `syntheticCapHeightEm` on y = 0.
-const glyphCenterWorldY = (0.5 - syntheticCapHeightEm / 2) * SIZE;
+// centers the band from the baseline to `syntheticCapLineEm` on y = 0, so
+// the baseline sits below y = 0 (+Y is down) and the glyph's center above it.
+const glyphCenterWorldY = -(0.5 + syntheticCapLineEm / 2) * SIZE;
 
 // The advance (in em) between the two glyphs is chosen so that their
 // *padded quads* (ink + the atlas's own baked-in padding on each side)
@@ -80,12 +91,12 @@ const ATLAS_B_CODE_POINT = 66;
 const ATLAS_C_CODE_POINT = 67;
 
 /**
- * World X of glyph "A"'s own *padded quad* right edge (`glyphBounds.right *
- * SIZE`) - not its ink edge (that's `glyphAInkRightWorldX` below). Exists
- * only to derive the ink edge from, via the same padding this scene's own
- * `atlasBounds`/`planeBounds` bake in.
+ * World X of glyph "A"'s own *padded quad* right edge
+ * (`glyphPlaneBounds.right * SIZE`) - not its ink edge (that's
+ * `glyphAInkRightWorldX` below). Exists only to derive the ink edge from,
+ * via the same padding this scene's own `atlasBounds`/`planeBounds` bake in.
  */
-const glyphAPaddedRightEdgeWorldX = glyphBounds.right * SIZE;
+const glyphAPaddedRightEdgeWorldX = glyphPlaneBounds.right * SIZE;
 
 /**
  * World X of glyph "A"'s own true ink right edge - the padded quad edge
@@ -113,7 +124,8 @@ const contestedWorldX = glyphAInkRightWorldX - 2;
  * same-word neighbor at all (A is the word's first glyph), mirroring
  * `glyphAInkRightWorldX` on the opposite side.
  */
-const glyphAInkLeftWorldX = glyphBounds.left * SIZE + paddingFraction * SIZE;
+const glyphAInkLeftWorldX =
+  glyphPlaneBounds.left * SIZE + paddingFraction * SIZE;
 
 /**
  * World X a few screen px outside "A"'s own uncontested left ink edge -
@@ -256,15 +268,15 @@ export const createScene: CreateScene = async (
         height: SYNTHETIC_GLYPH_TILE_SIZE,
       },
       distanceRange: SYNTHETIC_GLYPH_DISTANCE_RANGE,
-      // `capHeight` is the synthetic glyph's ink top, the way a real
+      // `capLine` is the synthetic glyph's ink top, the way a real
       // atlas measures it on "H". `verticalAlign: 'middle'` centers the
       // band from the baseline to it, which puts the glyph's center at
       // `glyphCenterWorldY`.
       metrics: {
         lineHeight: 1,
-        ascender: glyphBounds.top,
-        descender: glyphBounds.bottom,
-        capHeight: syntheticCapHeightEm,
+        ascentLine: glyphPlaneBounds.top,
+        descentLine: glyphPlaneBounds.bottom,
+        capLine: syntheticCapLineEm,
       },
       glyphs: new Map([
         [
@@ -272,8 +284,8 @@ export const createScene: CreateScene = async (
           {
             codePoint: ATLAS_A_CODE_POINT,
             advance: tightAdvanceEm,
-            planeBounds: glyphBounds,
-            atlasBounds: glyphBounds,
+            planeBounds: glyphPlaneBounds,
+            atlasBounds: glyphAtlasBounds,
           },
         ],
         [
@@ -281,8 +293,8 @@ export const createScene: CreateScene = async (
           {
             codePoint: ATLAS_B_CODE_POINT,
             advance: wideAdvanceEm,
-            planeBounds: glyphBounds,
-            atlasBounds: glyphBounds,
+            planeBounds: glyphPlaneBounds,
+            atlasBounds: glyphAtlasBounds,
           },
         ],
         [
@@ -292,8 +304,8 @@ export const createScene: CreateScene = async (
             // Unused - "C" is always the last glyph shaped, so nothing
             // reads its advance.
             advance: 0.5,
-            planeBounds: glyphBounds,
-            atlasBounds: glyphBounds,
+            planeBounds: glyphPlaneBounds,
+            atlasBounds: glyphAtlasBounds,
           },
         ],
       ]),
@@ -383,10 +395,10 @@ export const createScene: CreateScene = async (
       context2d.drawImage(canvas, 0, 0);
 
       // Camera is static at world (0, 0), zoom 1, 1 world unit = 1 screen
-      // pixel: canvas center is world (0, 0), X matches world X directly,
-      // Y is flipped (world is Y-up, the canvas/readback is Y-down).
+      // pixel: canvas center is world (0, 0), and both world axes match the
+      // canvas readback's (X right, Y down).
       const canvasX = Math.round(canvas.width / 2 + worldX);
-      const canvasY = Math.round(canvas.height / 2 - worldY);
+      const canvasY = Math.round(canvas.height / 2 + worldY);
       const { data } = context2d.getImageData(canvasX, canvasY, 1, 1);
 
       return { r: data[0], g: data[1], b: data[2], a: data[3] };

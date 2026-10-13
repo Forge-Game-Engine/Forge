@@ -163,9 +163,10 @@ export interface TextDefaultedOptions {
 
   /**
    * Offset of the soft shadow/glow from the glyph, in screen-pixel-range
-   * units (see `outlineWidth`). Bounded the same way `outlineWidth` is - by
-   * the atlas's own encoded `distanceRange` budget - rather than by
-   * anything to do with neighboring glyphs.
+   * units (see `outlineWidth`): `+x` moves it right and `+y` down. Bounded
+   * the same way `outlineWidth` is - by the atlas's own encoded
+   * `distanceRange` budget - rather than by anything to do with neighboring
+   * glyphs.
    */
   shadowOffset: Vector2;
 

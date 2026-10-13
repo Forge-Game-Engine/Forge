@@ -36,9 +36,9 @@ const narrowSlices: NineSliceOptions = {
   nativeHeight: 64,
 };
 
-const thrusterTorque = 60_000_000;
+const thrusterTorque = -60_000_000;
 const thrusterAngularDrag = 1.2;
-const motorTargetVelocity = 8;
+const motorTargetVelocity = -8;
 const motorMaxTorque = 20_000_000;
 const gustStrength = 4;
 const gustIntervalSeconds = 3;

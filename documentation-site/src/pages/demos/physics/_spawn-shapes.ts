@@ -26,7 +26,7 @@ import { wallThickness } from './_create-boundaries';
 const shapeCount = 300;
 const minSize = 30;
 const maxSize = 60;
-const gravity = { x: 0, y: -300 };
+const gravity = { x: 0, y: 300 };
 
 function rectangleVertices(width: number, height: number): Vector2[] {
   const halfWidth = width / 2;
@@ -54,9 +54,9 @@ function createTriangleCollider(width: number, height: number): Collider {
   const halfHeight = height / 2;
 
   return new PolygonCollider([
-    { x: -halfWidth, y: halfHeight },
     { x: -halfWidth, y: -halfHeight },
-    { x: halfWidth, y: -halfHeight },
+    { x: -halfWidth, y: halfHeight },
+    { x: halfWidth, y: halfHeight },
   ]);
 }
 
@@ -179,7 +179,7 @@ export async function spawnShapes(
         -halfWidth + wallThickness + halfSize,
         halfWidth - wallThickness - halfSize,
       ),
-      y: random.randomFloat(0, halfHeight * 4 - halfSize),
+      y: -random.randomFloat(0, halfHeight * 4 - halfSize),
     };
 
     const spawner =

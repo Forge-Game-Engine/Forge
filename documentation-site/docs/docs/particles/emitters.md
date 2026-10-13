@@ -30,10 +30,11 @@ const emitter = new ParticleEmitter(sprite, {
 `directionRange` is the direction a particle starts moving in, in radians,
 following the engine's
 [angle convention](../math/angles-and-rotation.md#the-angle-convention): `0`
-points along `+X` and angles increase counter-clockwise (`Math.PI / 2` is
+points along `+X` and a positive angle turns towards `+Y`, clockwise on
+screen since the world is Y-down (`Math.PI / 2` is down, `-Math.PI / 2` is
 up, `Math.PI` is left). A range spanning a full turn, such as the default
 `{ min: 0, max: 2 * Math.PI }`, sends particles in every direction. This
-range sends them downwards, in a cone a quarter turn wide:
+range sends them upwards, in a cone a quarter turn wide:
 
 ```ts
 const emitter = new ParticleEmitter(sprite, {
@@ -44,7 +45,7 @@ const emitter = new ParticleEmitter(sprite, {
 });
 ```
 
-`rotationRange` (in radians, counter-clockwise) and `rotationSpeedRange` (in
+`rotationRange` (in radians, clockwise on screen) and `rotationSpeedRange` (in
 radians per second) turn the particle's sprite. They don't change the
 direction the particle moves in.
 
@@ -56,7 +57,7 @@ stores a `velocity`, from `speedRange` and the direction it spawns with.
 `createParticlePositionEcsSystem` changes it every frame:
 
 - `acceleration`, in world units per second squared, is added to the
-  velocity, for example `{ x: 0, y: -400 }` for gravity.
+  velocity, for example `{ x: 0, y: 400 }` for gravity.
 - `drag` is the share of the velocity a particle keeps after one second,
   from `0` to `1`. `1` is no drag, and `0.1` keeps a tenth of the velocity
   after one second.

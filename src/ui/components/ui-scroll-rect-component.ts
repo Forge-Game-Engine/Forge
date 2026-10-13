@@ -53,9 +53,8 @@ export interface UiScrollRectRequiredOptions {
   /**
    * The entity that scrolls: a direct child of the scroll rect whose
    * `RectTransformEcsComponent` is anchored and pivoted at its top-left
-   * corner (`x` a point axis at `0` with pivot `0`, or a stretch axis from
-   * `0` with pivot `0`; `y` a point axis at `1` with pivot `1`, or a stretch
-   * axis up to `1` with pivot `1`), so `offset` `(0, 0)` lines its top-left
+   * corner (on each axis, a point axis at `0` with pivot `0`, or a stretch
+   * axis from `0` with pivot `0`), so `offset` `(0, 0)` lines its top-left
    * corner up with the scroll rect's. Give it a layout group and a
    * `ContentSizeFitterEcsComponent` to size it to its children.
    * `createUiScrollRectEcsSystem` owns its `anchoredPosition`.
@@ -98,10 +97,10 @@ export interface UiScrollRectDefaultedOptions {
 
   /**
    * How far the content has moved from its rest position, in reference
-   * pixels, Y-up. At `(0, 0)` the content's top-left corner is at the
-   * scroll rect's top-left corner. Scrolling down a list moves the content
-   * up, so `y` grows from `0` to the content's hidden height; scrolling
-   * right moves it left, so `x` falls from `0` to minus its hidden width.
+   * pixels. At `(0, 0)` the content's top-left corner is at the scroll
+   * rect's top-left corner. Scrolling down a list moves the content up, so
+   * `y` falls from `0` to minus the content's hidden height; scrolling right
+   * moves it left, so `x` falls from `0` to minus its hidden width.
    * An elastic drag takes it past those bounds until it springs back.
    * Written by dragging, the mouse wheel, the scrollbars and focus moving
    * to a control inside the content; game code may also write it, e.g.
@@ -240,9 +239,9 @@ export function computeUiScrollRange(viewport: Rect, content: Rect): Vector2 {
 
 /**
  * Converts a scroll rect's `offset` to a `0`-`1` position on each axis:
- * `x` `0` at the left edge and `1` at the right, `y` `1` at the top and `0`
- * at the bottom (Y-up). Outside `0`-`1` while elastic content is pulled
- * past an edge. On an axis the content fits, `x` is `0` and `y` is `1`.
+ * `0` at the left/top edge and `1` at the right/bottom. Outside `0`-`1` while
+ * elastic content is pulled past an edge. On an axis the content fits, the
+ * position is `0`.
  * @param offset - The scroll rect's `offset`.
  * @param range - The scroll range, from {@link computeUiScrollRange}.
  * @returns The normalized position.
@@ -253,7 +252,7 @@ export function normalizeUiScrollOffset(
 ): Vector2 {
   return {
     x: range.x > 0 ? (0 - offset.x) / range.x : 0,
-    y: range.y > 0 ? 1 - offset.y / range.y : 1,
+    y: range.y > 0 ? (0 - offset.y) / range.y : 0,
   };
 }
 
@@ -270,6 +269,6 @@ export function denormalizeUiScrollOffset(
 ): Vector2 {
   return {
     x: 0 - normalizedPosition.x * range.x,
-    y: (1 - normalizedPosition.y) * range.y,
+    y: 0 - normalizedPosition.y * range.y,
   };
 }

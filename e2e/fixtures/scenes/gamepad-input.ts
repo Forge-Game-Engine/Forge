@@ -129,7 +129,7 @@ export interface GamepadInputSceneHandle extends SceneHandle {
   readonly stickPosition: { x: number; y: number };
   /** The `'menu'`-group stick square's local position. */
   readonly menuStickPosition: { x: number; y: number };
-  /** The up-is-positive vertical square's local position. */
+  /** The vertical square's local position (up is `-y`). */
   readonly verticalPosition: { x: number; y: number };
   /** Whether the `shoot` hold action is currently held. */
   readonly isShooting: boolean;
@@ -169,8 +169,9 @@ export interface GamepadInputSceneHandle extends SceneHandle {
  * and a second stick binding on a `'menu'`-group action, to prove `InputManager`'s
  * active-group gating applies to a polled source the same way it does to
  * event-driven keyboard/mouse sources. It also exercises button-driven
- * hold and trigger bindings, a stick Y axis sharing an
- * up-is-positive action with the D-pad, and releasing everything the
+ * hold and trigger bindings, a stick Y axis sharing a vertical
+ * (up-is-negative, matching the Y-down world) action with the D-pad, and
+ * releasing everything the
  * gamepad was driving once it's unplugged.
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
@@ -190,8 +191,8 @@ export const createScene: CreateScene = (
   const stickAction = new Axis1dAction('stick', 'game');
   const menuStickAction = new Axis1dAction('menuStick', 'menu');
 
-  // Up is positive, the same convention as
-  // `KeyboardAxis1dBinding(action, keyCodes.w, keyCodes.s)`.
+  // Up is negative, matching the Y-down world and the W3C stick axis, the
+  // same convention as `KeyboardAxis1dBinding(action, keyCodes.s, keyCodes.w)`.
   const verticalAction = new Axis1dAction('vertical', 'game');
   const shootAction = new HoldAction('shoot', 'game');
   const restartAction = new TriggerAction('restart', 'game');
@@ -221,8 +222,8 @@ export const createScene: CreateScene = (
   );
   gamepadInputSource.axis1dBindings.add(
     new GamepadAxis1dBinding(verticalAction, {
-      positiveButtonIndex: gamepadButtons.dpadUp,
-      negativeButtonIndex: gamepadButtons.dpadDown,
+      positiveButtonIndex: gamepadButtons.dpadDown,
+      negativeButtonIndex: gamepadButtons.dpadUp,
     }),
   );
   gamepadInputSource.holdBindings.add(
@@ -266,8 +267,8 @@ export const createScene: CreateScene = (
     return { position, sprite };
   }
 
-  const stickBase = { x: 0, y: -200 };
-  const menuStickBase = { x: 0, y: 200 };
+  const stickBase = { x: 0, y: 200 };
+  const menuStickBase = { x: 0, y: -200 };
 
   const stick = createSquare(
     stickBase.x,
@@ -288,10 +289,10 @@ export const createScene: CreateScene = (
     verticalBase.y,
     toColor(inputSceneColors.green),
   );
-  const holdSquare = createSquare(-300, 100, toColor(inputSceneColors.orange));
+  const holdSquare = createSquare(-300, -100, toColor(inputSceneColors.orange));
   const triggerSquare = createSquare(
     -300,
-    -100,
+    100,
     toColor(inputSceneColors.magenta),
   );
 

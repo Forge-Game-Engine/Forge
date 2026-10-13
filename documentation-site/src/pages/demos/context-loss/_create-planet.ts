@@ -34,5 +34,5 @@ export async function createPlanet(
   addPositionComponent(world, entity);
   addRotationComponent(world, entity);
   addScaleComponent(world, entity, { local: { x: 4.5, y: 4.5 } });
-  world.addComponent(entity, spinId, { radiansPerSecond: 0.5 });
+  world.addComponent(entity, spinId, { radiansPerSecond: -0.5 });
 }

@@ -11,7 +11,7 @@ the layout system resolves the elements of each canvas top-down, parents
 before children, and writes:
 
 - the element's `rect`, the resolved rectangle in its canvas's
-  coordinates (reference pixels, Y-up);
+  coordinates (reference pixels, with `y` growing down the screen);
 - the entity's `position.local`, the offset of its pivot from its parent's
   pivot;
 - the width, height and pivot of the element's sprite and mask, if it has
@@ -23,8 +23,8 @@ A rect transform's `x` and `y` are each a
 [`UiAxis`](/Forge/docs/api/type-aliases/UiAxis), of one of two kinds:
 
 - A **point axis** anchors to one position in the parent's rectangle on
-  that axis: `0` is the parent's left or bottom edge and `1` its right or
-  top edge. It has a `size`, and keeps that size whatever the parent's
+  that axis: `0` is the parent's left or top edge and `1` its right or
+  bottom edge. It has a `size`, and keeps that size whatever the parent's
   size.
 - A **stretch axis** anchors to a span of the parent's rectangle, from
   `anchorMin` to `anchorMax`. Its size is the span's size plus its
@@ -42,7 +42,7 @@ A rect transform's `x` and `y` are each a
 <rect x="20" y="30" width="260" height="170" fill="none" stroke="var(--ifm-color-emphasis-500)" strokeWidth="1.5" strokeDasharray="6 4" />
 <rect x="170" y="30" width="110" height="60" fill="var(--ifm-color-primary)" fillOpacity="0.12" stroke="var(--ifm-color-primary)" strokeWidth="2" />
 <circle cx="280" cy="30" r="4" fill="var(--ifm-color-primary)" />
-<text x="276" y="20" textAnchor="end" fontSize="13" fill="var(--ifm-font-color-base)">anchor (1, 1)</text>
+<text x="276" y="20" textAnchor="end" fontSize="13" fill="var(--ifm-font-color-base)">anchor (1, 0)</text>
 <text x="225" y="64" textAnchor="middle" fontSize="13" fill="var(--ifm-font-color-base)">size</text>
 <text x="150" y="215" textAnchor="middle" fontSize="13" fill="var(--ifm-color-emphasis-700)">Point axis</text>
 
@@ -57,7 +57,7 @@ A rect transform's `x` and `y` are each a
 <text x="490" y="215" textAnchor="middle" fontSize="13" fill="var(--ifm-color-emphasis-700)">Stretch axis</text>
 </svg>
 
-_A point axis (left) keeps its size at one anchor point, here `(1, 1)`,
+_A point axis (left) keeps its size at one anchor point, here `(1, 0)`,
 the parent's top-right corner (`UiAnchor.topRight`). A stretch axis (right)
 spans part of the parent's rectangle, here its full width
 (`UiAnchor.stretchTop`), with `margin` added to the span._
@@ -127,7 +127,7 @@ import { UiAxis } from '@forge-game-engine/forge/ui';
 
 const lowerThird = {
   x: UiAxis.stretch({ min: 0, max: 1 }, { margin: -40 }),
-  y: UiAxis.stretch({ min: 0, max: 1 / 3 }),
+  y: UiAxis.stretch({ min: 2 / 3, max: 1 }),
 };
 ```
 

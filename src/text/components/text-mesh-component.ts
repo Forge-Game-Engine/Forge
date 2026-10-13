@@ -11,7 +11,7 @@ import type { Color } from '../../rendering/color.js';
 export interface GlyphQuad {
   /**
    * This glyph's center, as an offset from the text block's anchor point, in
-   * world units, Y-up.
+   * world units (Y-down, like the world: later lines have a larger `y`).
    */
   offset: Vector2;
 

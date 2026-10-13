@@ -111,7 +111,7 @@ function createFountainSpawnEcsSystem(
 
     const velocity = {
       x: Math.cos(angle) * speed * horizontalDirection,
-      y: Math.sin(angle) * speed,
+      y: -Math.sin(angle) * speed,
     };
     const angularVelocity = random.randomFloat(
       -template.angularVelocitySpread,
@@ -163,13 +163,13 @@ function createFountainSpawnEcsSystem(
  */
 function createDespawnFallenShapesEcsSystem(
   spritesByEntity: Map<number, SpriteEcsComponent>,
-  minY: number,
+  maxY: number,
 ): EcsSystem<[PositionEcsComponent, RigidBodyEcsComponent]> {
   return {
     query: [positionId, rigidBodyId],
     update: (world, { entities, components: [positions] }) => {
       for (let i = 0; i < entities.length; i++) {
-        if (positions[i].local.y < minY) {
+        if (positions[i].local.y > maxY) {
           world.removeEntity(entities[i]);
           spritesByEntity.delete(entities[i]);
         }
@@ -217,9 +217,9 @@ function createTriangleCollider(): PolygonCollider {
   const half = shapeSize / 2;
 
   return new PolygonCollider([
-    { x: -half, y: half },
     { x: -half, y: -half },
-    { x: half, y: -half },
+    { x: -half, y: half },
+    { x: half, y: half },
   ]);
 }
 
@@ -283,10 +283,10 @@ const halfHeight = visibleHeight / 2;
 const spritesByEntity = new Map<number, SpriteEcsComponent>();
 
 const groundEntity = world.createEntity();
-const groundPosition = { x: 0, y: -halfHeight + groundThickness / 2 };
+const groundPosition = { x: 0, y: halfHeight - groundThickness / 2 };
 const groundHalfWidth = halfWidth;
 const groundHalfHeight = groundThickness / 2;
-const groundTopY = groundPosition.y + groundHalfHeight;
+const groundTopY = groundPosition.y - groundHalfHeight;
 
 addPositionComponent(world, groundEntity, { local: groundPosition });
 addRotationComponent(world, groundEntity, { local: 0 });
@@ -307,7 +307,7 @@ addColliderComponent(world, groundEntity, {
 const random = new Random();
 const fountainLeftX = -halfWidth + fountainMarginFromEdge;
 const fountainRightX = halfWidth - fountainMarginFromEdge;
-const fountainY = groundTopY + shapeSize / 2;
+const fountainY = groundTopY - shapeSize / 2;
 
 const collisionPairs: CollisionPair[] = [];
 const collisionManifolds: CollisionManifold[] = [];
@@ -340,7 +340,7 @@ world.addSystem(createContinuousCollisionEcsSystem());
 world.addSystem(
   createDespawnFallenShapesEcsSystem(
     spritesByEntity,
-    -halfHeight - despawnMarginBelowGround,
+    halfHeight + despawnMarginBelowGround,
   ),
 );
 world.addSystem(createCollisionTintEcsSystem());

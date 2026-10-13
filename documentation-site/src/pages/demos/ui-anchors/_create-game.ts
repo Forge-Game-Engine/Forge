@@ -191,23 +191,23 @@ export const createAnchorsGame = async (
   labeledPanel(
     'stretchTop',
     UiAnchor.stretchTop({ height: 96, horizontalMargin: -40 }),
-    { x: 0, y: -20 },
+    { x: 0, y: 20 },
   );
   labeledPanel('topLeft', UiAnchor.topLeft({ x: 260, y: 96 }), {
     x: 20,
-    y: -140,
+    y: 140,
   });
   labeledPanel('topRight', UiAnchor.topRight({ x: 260, y: 96 }), {
     x: -20,
-    y: -140,
+    y: 140,
   });
   labeledPanel('bottomLeft', UiAnchor.bottomLeft({ x: 260, y: 96 }), {
     x: 20,
-    y: 20,
+    y: -20,
   });
   labeledPanel('bottomRight', UiAnchor.bottomRight({ x: 260, y: 96 }), {
     x: -20,
-    y: 20,
+    y: -20,
   });
 
   const playground = labeledPanel(

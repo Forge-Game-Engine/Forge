@@ -67,9 +67,9 @@ A trigger binding fires its action when its key goes down
 repeated `keydown` events for a held key are ignored, so a held key reports
 once when it goes down and once when it comes up.
 
-An axis binding reports `+1` for each held positive key (north and east on
-an `Axis2dAction`) and `-1` for each held negative key (south and west).
-North is `+y`, matching the engine's Y-up world.
+An axis binding reports `+1` for each held positive key (south and east on
+an `Axis2dAction`) and `-1` for each held negative key (north and west).
+North is `-y`, matching the engine's Y-down world.
 
 ### Binding several keys to one action
 

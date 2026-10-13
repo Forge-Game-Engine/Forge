@@ -107,8 +107,8 @@ function buildTerrainMeshData(
 
     const bottomLeft = { x: left.position.x, y: bottomY };
     const bottomRight = { x: right.position.x, y: bottomY };
-    const depthLeft = left.position.y - bottomY;
-    const depthRight = right.position.y - bottomY;
+    const depthLeft = bottomY - left.position.y;
+    const depthRight = bottomY - right.position.y;
 
     pushVertex(left.position, left.distance, 0);
     pushVertex(right.position, right.distance, 0);
@@ -174,8 +174,10 @@ export function createTerrainMesh(
   assertRepeatingTexture('fill', fill.texture);
   assertRepeatingTexture('border', border.texture);
 
+  // The world is Y-down, so the lowest curve point has the largest Y and
+  // the solid slab extends towards +Y from it.
   const bottomY =
-    Math.min(...curvePoints.map((curvePoint) => curvePoint.position.y)) - depth;
+    Math.max(...curvePoints.map((curvePoint) => curvePoint.position.y)) + depth;
 
   const meshData = buildTerrainMeshData(curvePoints, bottomY);
   const geometry = createTerrainGeometry(renderContext, meshData);

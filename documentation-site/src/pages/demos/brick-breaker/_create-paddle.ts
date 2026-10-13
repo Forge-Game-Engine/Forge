@@ -68,7 +68,7 @@ export async function createPaddle(
     (playAreaWidth * paddleHeightFraction) / paddleSprite.width;
   const paddleHeight = paddleSprite.height * paddleScaleY;
 
-  const position = { x: 0, y: playArea.bottomY + paddleHeightAboveBottom };
+  const position = { x: 0, y: playArea.bottomY - paddleHeightAboveBottom };
 
   const entity = world.createEntity();
 

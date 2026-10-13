@@ -14,7 +14,7 @@ by four keys. Each key only orders items the keys before it leave equal:
    [`DrawOrderEcsComponent`](/Forge/docs/api/interfaces/DrawOrderEcsComponent)
    `order`, added to its parent's world order. A lower world order draws
    first.
-3. **Y**, only for a camera with `ySort`: a higher root Y draws first.
+3. **Y**, only for a camera with `ySort`: a lower root Y draws first.
 4. **Hierarchy order**: root entities in the order they were created,
    each followed by its children, parents before children and siblings in
    the order they were parented. A child with `behindParent` comes just
@@ -113,8 +113,8 @@ is lower on screen is drawn in front:
 const camera = createCamera(world, { ySort: true });
 ```
 
-The camera then sorts by Y after layer and world order: a higher Y draws
-first. Every entity sorts by the Y of its root entity (its topmost
+The camera then sorts by Y after layer and world order: a lower Y (higher
+on screen) draws first. Every entity sorts by the Y of its root entity (its topmost
 ancestor), so an entity's children sort with it rather than by their own Y.
 Entities under one shared root all sort by that root's Y, so they aren't
 Y-sorted against each other. A root without a position sorts as Y `0`.

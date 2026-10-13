@@ -244,8 +244,8 @@ export class KeyboardInputSource
           this._readKey(binding.eastKeyCode) -
           this._readKey(binding.westKeyCode);
         y +=
-          this._readKey(binding.northKeyCode) -
-          this._readKey(binding.southKeyCode);
+          this._readKey(binding.southKeyCode) -
+          this._readKey(binding.northKeyCode);
       }
     }
 

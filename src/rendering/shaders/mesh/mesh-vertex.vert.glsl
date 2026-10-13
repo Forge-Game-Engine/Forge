@@ -1,8 +1,7 @@
 #pragma forge name(meshVertex)
 
 // Set by the render system for each mesh it draws (see `MeshMaterial`); a
-// mesh material can't set them. Unlike the sprite pipeline's instance data,
-// everything here is in the engine's Y-up world.
+// mesh material can't set them.
 uniform mat3 u_model;          // Local -> world: the entity's world position, rotation and scale
 uniform mat3 u_viewProjection; // World -> clip space, for the camera being drawn
 uniform vec4 u_maskClip;       // The masks' clip rect: min.xy, max.xy

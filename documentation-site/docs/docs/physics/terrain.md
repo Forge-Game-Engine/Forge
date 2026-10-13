@@ -29,11 +29,11 @@ addPositionComponent(world, ground);
 addColliderComponent(world, ground, {
   collider: new TerrainCollider(
     [
-      { x: -400, y: 40 },
-      { x: -200, y: -20 },
+      { x: -400, y: -40 },
+      { x: -200, y: 20 },
       { x: 0, y: 0 },
-      { x: 200, y: -60 },
-      { x: 400, y: 20 },
+      { x: 200, y: 60 },
+      { x: 400, y: -20 },
     ],
     200,
   ),
@@ -41,10 +41,12 @@ addColliderComponent(world, ground, {
 ```
 
 The points are in the entity's local space. With the entity at the origin
-and unrotated, they are world positions, and the ground is below them. The
+and unrotated, they are world positions, and the ground is below them, toward
+`+Y`. The
 constructor throws for fewer than 2 points, points not ordered by strictly
 increasing `x`, or a `depth` that isn't positive. `depth` is the distance
-from the lowest point to the slab's bottom edge.
+from the lowest point (the one with the greatest `y`) to the slab's bottom
+edge.
 
 A terrain is static: its entity has no `RigidBodyEcsComponent` (see
 [Body types](./rigid-bodies.md#body-types)).
@@ -102,11 +104,11 @@ import { buildTerrainCurve } from '@forge-game-engine/forge/rendering';
 
 const curvePoints = buildTerrainCurve(
   [
-    { x: -400, y: 40 },
-    { x: -200, y: -20 },
+    { x: -400, y: -40 },
+    { x: -200, y: 20 },
     { x: 0, y: 0 },
-    { x: 200, y: -60 },
-    { x: 400, y: 20 },
+    { x: 200, y: 60 },
+    { x: 400, y: -20 },
   ],
   20,
 );

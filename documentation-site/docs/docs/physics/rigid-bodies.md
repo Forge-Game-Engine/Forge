@@ -63,7 +63,7 @@ import {
 
 const ball = world.createEntity();
 
-addPositionComponent(world, ball, { local: { x: 0, y: 100 } });
+addPositionComponent(world, ball, { local: { x: 0, y: -100 } });
 addRotationComponent(world, ball);
 addColliderComponent(world, ball, { collider: new CircleCollider(16) });
 addRigidBodyComponent(world, ball);
@@ -97,9 +97,9 @@ import {
 
 // A right triangle around its entity's origin.
 const triangle = new PolygonCollider([
-  { x: -16, y: 16 },
   { x: -16, y: -16 },
-  { x: 16, y: -16 },
+  { x: -16, y: 16 },
+  { x: 16, y: 16 },
 ]);
 
 // A circle of radius 8, centered 20 units along the entity's local +X.

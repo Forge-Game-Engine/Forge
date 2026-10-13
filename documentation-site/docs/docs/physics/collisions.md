@@ -94,7 +94,7 @@ import {
 
 const zone = world.createEntity();
 
-addPositionComponent(world, zone, { local: { x: 0, y: -200 } });
+addPositionComponent(world, zone, { local: { x: 0, y: 200 } });
 addColliderComponent(world, zone, {
   collider: new PolygonCollider([
     { x: -200, y: -40 },
