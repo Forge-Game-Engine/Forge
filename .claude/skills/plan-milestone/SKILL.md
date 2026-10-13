@@ -206,7 +206,11 @@ Notes:
 - Leave out the changelog task only for types CI doesn't require it for
   (`chore`, `style`, `refactor`, `test`, `ci`, `docs`, `build`).
 - Put each dependency on its own `Depends on #N.` line under the goal, and
-  only list issues that must merge first.
+  only list issues that must merge first. The `claude` label run reads
+  these lines (`.github/scripts/claude-dependencies.sh`): it won't start
+  while any `#N` on a line beginning "Depends on" is open, so every number
+  on such a line must be an issue in this repository that has to close
+  first. Mention related issues that aren't dependencies elsewhere.
 - End with the attribution footer above whenever an agent writes the issue.
 
 ## 6. Create the issues in dependency order

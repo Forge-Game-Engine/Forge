@@ -145,8 +145,15 @@ in that comment and stops without opening a pull request. Answer on the
 issue and mention `@claude`: the next run picks up that design, updates it
 with your answers and carries on. See AGENTS.md's
 [Agentic Workflow](./AGENTS.md#agentic-workflow) for every step. The label is removed when the
-run ends, so adding it again starts a fresh attempt. Each labeled issue gets
-its own run, so label only as many issues as you want to review at once.
+run ends, so adding it again starts a fresh attempt.
+
+You can label every issue in a milestone at once. A run doesn't start
+while an issue on the labeled issue's `Depends on #N` lines is still open:
+the issue is relabeled `claude-waiting` with a comment saying what it waits
+for, and gets `claude` back, starting its run, once those issues have closed
+(`.github/workflows/claude-unblock.yml`). Each labeled issue gets its own
+run, and merging an issue starts a run for every issue it unblocks, so
+expect that many pull requests to review.
 
 To ask for changes, mention `@claude` in a comment, a review or an inline
 review comment on the pull request. Claude pushes the changes to that pull

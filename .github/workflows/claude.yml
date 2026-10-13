@@ -11,12 +11,21 @@ name: Claude
 # request for human review that also carries the design. The label is removed
 # when the run ends, so adding it again starts a fresh attempt.
 #
+# Issues can be labeled in any order. The `gate` job reads the issue's
+# `Depends on #N` lines first: while any of those issues is still open, it
+# swaps `claude` for `claude-waiting`, comments which issues it's waiting on
+# and skips the run. When the last one closes, claude-unblock.yml adds
+# `claude` back, which runs this workflow again.
+#
 # A comment or review that mentions `@claude` starts a run too. On a pull
 # request, Claude pushes to that pull request's branch; on an issue, it works
 # the way a labeled issue does.
 #
 # Requires the Claude GitHub App (https://github.com/apps/claude) installed on
 # the repository and a `CLAUDE_CODE_OAUTH_TOKEN` secret (`claude setup-token`).
+# The `CLAUDE_LABELER_APP_SLUG` variable names the GitHub App that
+# claude-unblock.yml labels issues with; its labels are the only ones from a
+# bot that start a run.
 
 on:
   issues:
@@ -38,15 +47,51 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  gate:
+    # Only a label run waits for dependencies. An `@claude` mention is a
+    # person asking for a run now, so it skips this job.
+    if: >-
+      github.event_name == 'issues' && github.event.label.name == 'claude' && (
+        github.event.sender.type != 'Bot' ||
+        github.event.sender.login == format('{0}[bot]', vars.CLAUDE_LABELER_APP_SLUG)
+      )
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      blocked: ${{ steps.dependencies.outputs.blocked }}
+    steps:
+      - name: Checkout the dependency script
+        uses: actions/checkout@v7
+        with:
+          ref: dev
+          fetch-depth: 1
+          sparse-checkout: .github/scripts
+
+      - name: Wait for open dependencies
+        id: dependencies
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: .github/scripts/claude-dependencies.sh gate "$ISSUE"
+
   claude:
     # Skips bots (including Claude's own comments), so a run can't start
-    # another one.
+    # another one. The one exception is a `claude` label added by the
+    # labeler App, which is how claude-unblock.yml starts a run. A label run
+    # starts only once the gate has found every dependency closed.
+    needs: gate
     if: >-
-      github.event.sender.type != 'Bot' && (
-        (github.event_name == 'issues' && github.event.label.name == 'claude') ||
-        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude'))
+      always() && (
+        (github.event_name == 'issues' && needs.gate.result == 'success' && needs.gate.outputs.blocked == 'false') ||
+        (github.event.sender.type != 'Bot' && (
+          (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+          (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+          (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude'))
+        ))
       )
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -90,6 +135,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           label_trigger: claude
+          allowed_bots: ${{ format('{0}[bot]', vars.CLAUDE_LABELER_APP_SLUG) }}
           base_branch: dev
           additional_permissions: |
             actions: read
