@@ -43,9 +43,23 @@ new handle, so the removed entity's handle never refers to the new one.
 Removing an entity also removes its children, their children, and so on (see
 [Parenting entities](#parenting-entities)). They're removed first, depth first,
 so `onEntityRemoved` is raised for every descendant before the entity itself.
-While the descendants' events are raised, the entity is already not alive but
-still has its components, so a listener for a descendant can read its
+While the descendants are removed, the entity is already not alive but still
+has its components, so a remove hook or listener for a descendant can read its
 ancestors' components.
+
+For each entity, in that order:
+
+1. Its descendants are removed.
+2. The [remove hook](component.md#releasing-what-a-component-holds) of each of
+   its components runs, in no particular order, while its other components can
+   still be read.
+3. Its remaining components and tags are removed.
+4. `onEntityRemoved` is raised.
+
+A hook or listener that throws doesn't stop the removal. The entity and all of
+its descendants are still removed, and every other hook and listener runs.
+Then `removeEntity` rethrows the error, or throws an `AggregateError` holding
+every error if more than one threw.
 
 A system's query result is taken before the system runs, so removing an entity
 can remove other entities later in the same result: its descendants. A loop
@@ -100,7 +114,9 @@ removing it with `removeComponent` throws.
 
 Components are identified by component keys (symbols) created with `createComponentId`.
 Use `addComponent(entity, componentKey, data)` to attach component data to an entity.
-Adding a component (or tag) to an entity that's been removed throws.
+Adding a component (or tag) to an entity that's been removed throws. Adding a
+component the entity already has replaces it, and runs the key's remove hook
+with the old value.
 
 ```ts
 import { createComponentId } from '@forge-game-engine/forge/ecs';
@@ -114,8 +130,9 @@ See the [Component docs](component.md) for details on creating and typing compon
 
 ## Removing a component from the entity
 
-Remove a component with `removeComponent(entity, componentKey)`. The entity stays
-alive even if it has no components left; call `removeEntity` to remove it.
+Remove a component with `removeComponent(entity, componentKey)`, which then runs
+the key's remove hook, if it has one. The entity stays alive even if it has no
+components left; call `removeEntity` to remove it.
 
 ```ts
 world.removeComponent(entity, Position);

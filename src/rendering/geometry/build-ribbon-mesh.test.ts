@@ -146,7 +146,8 @@ describe('buildRibbonMesh', () => {
       expectPosition(vertices[1], 0, -1);
       expectPosition(vertices[2], 10, 1);
       expectPosition(vertices[3], 10, -1);
-      expect(vertices.map((vertex) => vertex.v)).toEqual([0, 1, 0, 1]);
+      // V 1 on the +n edge (+Y, below the line on screen), 0 on the −n edge.
+      expect(vertices.map((vertex) => vertex.v)).toEqual([1, 0, 1, 0]);
     });
 
     it('should give a straight interior point a pair at the half width', () => {
@@ -191,7 +192,7 @@ describe('buildRibbonMesh', () => {
   });
 
   describe('miter joins', () => {
-    it('should keep the width around a 90° left turn', () => {
+    it('should keep the width around a 90° clockwise turn', () => {
       const points = polyline([
         [0, 0],
         [10, 0],
@@ -200,7 +201,7 @@ describe('buildRibbonMesh', () => {
       const { count, vertices } = build(points);
 
       expect(count).toBe(6);
-      // The inner (left) vertex, then the outer (right) one, √2·h from the
+      // The inner (+n) vertex, then the outer (−n) one, √2·h from the
       // corner.
       expectPosition(vertices[2], 9, 1);
       expectPosition(vertices[3], 11, -1);
@@ -218,7 +219,7 @@ describe('buildRibbonMesh', () => {
       }
     });
 
-    it('should keep the width around a 90° right turn', () => {
+    it('should keep the width around a 90° counter-clockwise turn', () => {
       const points = polyline([
         [0, 0],
         [10, 0],
@@ -227,7 +228,7 @@ describe('buildRibbonMesh', () => {
       const { count, vertices } = build(points);
 
       expect(count).toBe(6);
-      // The outer (left) vertex, then the inner (right) one.
+      // The outer (+n) vertex, then the inner (−n) one.
       expectPosition(vertices[2], 11, 1);
       expectPosition(vertices[3], 9, -1);
 
@@ -259,7 +260,7 @@ describe('buildRibbonMesh', () => {
       });
 
       expect(count).toBe(8);
-      // A left turn: the outer side is the right, at q − a·h, then q − b·h.
+      // A clockwise turn: the outer side is −n, at q − a·h, then q − b·h.
       expectPosition(vertices[3], 0, -1);
       expectPosition(vertices[5], Math.sin(turn), -Math.cos(turn));
       // Both pairs share the inner vertex.
@@ -269,8 +270,8 @@ describe('buildRibbonMesh', () => {
 
   describe('hairpin turns', () => {
     it.each([
-      ['left', 1],
-      ['right', -1],
+      ['clockwise', 1],
+      ['counter-clockwise', -1],
     ])('should bevel a near-180° %s turn without a spike', (_, side) => {
       const turn = side * ((179 * Math.PI) / 180);
       const { count, vertices } = build(turnAtOrigin(turn));
@@ -301,7 +302,7 @@ describe('buildRibbonMesh', () => {
         expect(Number.isNaN(vertex.x) || Number.isNaN(vertex.y)).toBe(false);
       }
 
-      // The inner vertex is in the left slot, half the shorter segment back
+      // The inner vertex is in the +n slot, half the shorter segment back
       // along the incoming segment.
       expectPosition(vertices[2], 7.5, 0);
       expectPosition(vertices[4], 7.5, 0);
@@ -311,10 +312,10 @@ describe('buildRibbonMesh', () => {
     });
 
     it.each([
-      ['left', 1e-6, 1],
-      ['left', 1e-12, 1],
-      ['right', 1e-6, -1],
-      ['right', 1e-12, -1],
+      ['clockwise', 1e-6, 1],
+      ['clockwise', 1e-12, 1],
+      ['counter-clockwise', 1e-6, -1],
+      ['counter-clockwise', 1e-12, -1],
     ])(
       'should bevel a %s turn %f radians short of 180° on the same side as at 179°',
       (_, shortBy, side) => {
@@ -547,10 +548,11 @@ describe('buildRibbonMesh', () => {
       ]);
     });
 
-    it('should give V 0 on the left edge and 1 on the right', () => {
+    it('should give V 1 on the +n edge and 0 on the −n edge', () => {
       const { vertices } = build(line);
 
-      expect(vertices.map((vertex) => vertex.v)).toEqual([0, 1, 0, 1, 0, 1]);
+      // Vertices alternate +n, −n.
+      expect(vertices.map((vertex) => vertex.v)).toEqual([1, 0, 1, 0, 1, 0]);
     });
   });
 

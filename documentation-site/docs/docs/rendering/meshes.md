@@ -179,4 +179,7 @@ geometry.dispose();
 ```
 
 Whoever creates a geometry owns it. Removing the component or the entity
-doesn't dispose the geometry.
+doesn't dispose the geometry. A component that creates its own geometry
+disposes it from its
+[remove hook](../ecs/component.md#releasing-what-a-component-holds), as
+[trails](./trails.md) do.
