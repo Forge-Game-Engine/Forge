@@ -233,14 +233,14 @@ in vec4 v_tint;
 in vec3 v_emissive;
 out vec4 fragColor;
 
-#pragma forge include(spriteMask)
+#pragma forge include(mask)
 
 void main() {
   vec4 color = texture(u_texture, v_texCoord) * v_tint;
 
   fragColor = vec4(
     color.rgb,
-    color.a * (1.0 - u_fade) * spriteMaskCoverage()
+    color.a * (1.0 - u_fade) * maskCoverage()
   );
 }
 `;
@@ -265,8 +265,8 @@ The fragment shader receives three inputs from the sprite vertex shader:
 - `v_emissive`: the RGB of the sprite's emissive color (black without an
   emissive map).
 
-Every sprite fragment shader must include `spriteMask` and multiply its
-output alpha by `spriteMaskCoverage()`, which is how much of the fragment
+Every sprite fragment shader must include `mask` and multiply its
+output alpha by `maskCoverage()`, which is how much of the fragment
 the sprite's [masks](./masks.md) let through (`1` for an unmasked sprite).
 `createSpriteMaterial` throws for a shader that doesn't include it.
 

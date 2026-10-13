@@ -2,7 +2,6 @@ import {
   Color,
   createCamera,
   createRenderEcsSystem,
-  createTerrainRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
@@ -136,7 +135,6 @@ export const createRollingBallGame = async (): Promise<Game> => {
     ),
   );
   world.addSystem(createCameraFollowEcsSystem(playerPosition, time));
-  world.addSystem(createTerrainRenderEcsSystem(renderContext));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));
   world.addSystem(createContinuousCollisionEcsSystem());

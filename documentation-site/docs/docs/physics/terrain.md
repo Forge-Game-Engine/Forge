@@ -131,7 +131,6 @@ from the surface down to `borderWidth`, blending into a `fill` texture
 below it.
 
 ```ts
-import { Vec2 } from '@forge-game-engine/forge/math';
 import { Color, createTerrainMesh } from '@forge-game-engine/forge/rendering';
 
 const [borderTexture, fillTexture] = await Promise.all([
@@ -142,8 +141,6 @@ const [borderTexture, fillTexture] = await Promise.all([
 const mesh = createTerrainMesh(renderContext, {
   curvePoints,
   depth: 200,
-  position: Vec2.zero,
-  angle: 0,
   border: {
     texture: borderTexture,
     tileSize: { x: 160, y: 70 },
@@ -158,9 +155,9 @@ const mesh = createTerrainMesh(renderContext, {
 });
 ```
 
-`depth` is the `TerrainCollider`'s depth, and `position` and `angle` are
-the terrain entity's world position and rotation. The mesh's vertices are
-in world space, so the mesh doesn't move when the entity does.
+`depth` is the `TerrainCollider`'s depth. The mesh's vertices are the curve
+points in the terrain entity's local space, the same space as the
+collider's points.
 
 `createTerrainMesh` tiles both textures across the terrain, and throws for
 a texture without `wrap: 'repeat'` (see
@@ -169,29 +166,23 @@ dispose of them when no mesh uses them.
 
 ### Drawing the mesh
 
-Add a [`TerrainMeshEcsComponent`](/Forge/docs/api/interfaces/TerrainMeshEcsComponent)
-with [`addTerrainMeshComponent`](/Forge/docs/api/functions/addTerrainMeshComponent),
-and register
-[`createTerrainRenderEcsSystem`](/Forge/docs/api/functions/createTerrainRenderEcsSystem)
-before `createRenderEcsSystem`, so sprites are drawn over the terrain:
+`createTerrainMesh` returns a geometry and a mesh material. Add them to the
+terrain entity with
+[`addMeshComponent`](/Forge/docs/api/functions/addMeshComponent):
 
 ```ts
-import {
-  addTerrainMeshComponent,
-  createRenderEcsSystem,
-  createTerrainRenderEcsSystem,
-} from '@forge-game-engine/forge/rendering';
+import { addMeshComponent } from '@forge-game-engine/forge/rendering';
 
-addTerrainMeshComponent(world, ground, { mesh });
-
-world.addSystem(createTerrainRenderEcsSystem(renderContext));
-world.addSystem(createRenderEcsSystem(renderContext));
+addMeshComponent(world, ground, mesh);
 ```
 
-The system draws every entity with a `TerrainMeshEcsComponent` for each
-camera whose `cullingMask` matches the component's `category`, as for a
-sprite (see [Sprites](../rendering/sprites.md)). While at least one
-`TerrainMeshEcsComponent` exists, the system clears each camera's
-destination itself and sets `renderContext.clearStrategy` to
-`CLEAR_STRATEGY.none`, so `createRenderEcsSystem` doesn't clear the
-terrain it drew.
+`createRenderEcsSystem` draws the terrain as a [mesh](../rendering/meshes.md):
+through the entity's world position, rotation and scale, so it follows the
+entity and its collider, and in the same
+[draw order](../rendering/draw-order.md) as sprites. Create the terrain
+entity before the sprites that go in front of it, or give the mesh a lower
+`layer`:
+
+```ts
+addMeshComponent(world, ground, { ...mesh, layer: -1 });
+```

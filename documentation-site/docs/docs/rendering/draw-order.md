@@ -4,12 +4,12 @@ sidebar_position: 2.5
 
 # Draw Order
 
-Where sprites and text overlap, the one drawn last is on top. A camera
-draws its sprites and text in one order, sorted by four keys. Each key
-only orders items the keys before it leave equal:
+Where sprites, text and [meshes](./meshes.md) overlap, the one drawn last
+is on top. A camera draws its sprites, text and meshes in one order, sorted
+by four keys. Each key only orders items the keys before it leave equal:
 
-1. **Layer**: the sprite's or text's own `layer`. A lower layer draws
-   first.
+1. **Layer**: the sprite's, text's or mesh's own `layer`. A lower layer
+   draws first.
 2. **World order**: the entity's
    [`DrawOrderEcsComponent`](/Forge/docs/api/interfaces/DrawOrderEcsComponent)
    `order`, added to its parent's world order. A lower world order draws
@@ -22,8 +22,8 @@ only orders items the keys before it leave equal:
    [Drawing a child just behind its parent](#drawing-a-child-just-behind-its-parent)).
 
 Every entity has its own place in hierarchy order, so the order is the same
-every frame until one of these four keys changes. An entity's sprite draws
-before its text.
+every frame until one of these four keys changes. An entity's mesh draws
+before its sprite, and its sprite before its text.
 
 Draw order applies within one camera. Which camera's output is drawn over
 another's is set by the cameras' own `layer` (see
@@ -50,9 +50,9 @@ A root entity keeps its place in creation order when entities created
 before it are removed. An entity unparented with `removeParent` returns to
 its own place in creation order among the roots.
 
-## Putting sprites and text on a layer
+## Putting sprites, text and meshes on a layer
 
-Sprites and text that stay behind or in front of everything else,
+Sprites, text and meshes that stay behind or in front of everything else,
 whatever order their entities were created in, go on their own layer. Give
 them a lower or higher `layer`:
 
@@ -62,10 +62,11 @@ addSpriteComponent(world, backgroundEntity, {
   layer: -1,
 });
 addTextComponent(world, labelEntity, { ...labelText, layer: 1 });
+addMeshComponent(world, groundEntity, { ...groundMesh, layer: -1 });
 ```
 
-A layer is a field of the sprite or text component, so children don't
-inherit it.
+A layer is a field of the sprite, text or mesh component, so children
+don't inherit it.
 
 ## Ordering relative to the parent
 
@@ -84,8 +85,8 @@ addDrawOrderComponent(world, background, { order: -1 });
 `order` is an integer from `-4096` to `4096`, and it's relative: an
 entity's world order is its own `order` plus its parent's world order. The
 child at `-1` draws behind every entity at its parent's world order, not
-only behind its own parent. An order on an entity without a sprite or text
-moves its whole subtree.
+only behind its own parent. An order on an entity without a sprite, text or
+mesh moves its whole subtree.
 
 ## Drawing a child just behind its parent
 
