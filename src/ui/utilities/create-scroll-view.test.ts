@@ -7,6 +7,7 @@ import { uiAxisLayoutGroupId } from '../components/layout-group-component.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { uiInteractableId } from '../components/ui-interactable-component.js';
 import { uiScrollRectId } from '../components/ui-scroll-rect-component.js';
+import { resolveRect } from './resolve-rect.js';
 
 const buildSprite = () => ({
   width: 1,
@@ -49,6 +50,31 @@ describe('createScrollView', () => {
       world.getComponent(scrollView.content, contentSizeFitterId)?.verticalFit,
     ).toBe('preferredSize');
     expect(scrollView.verticalScrollbar).toBeUndefined();
+  });
+
+  it("anchors the content at the viewport's top-left corner, so it hangs down from the top edge", () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+    const scrollView = createScrollView(world, parent);
+    const content = world.getComponent(scrollView.content, rectTransformId)!;
+
+    expect(content.x).toMatchObject({
+      kind: 'stretch',
+      anchorMin: 0,
+      pivot: 0,
+    });
+    expect(content.y).toMatchObject({ kind: 'point', anchor: 0, pivot: 0 });
+
+    if (content.y.kind === 'point') {
+      content.y.size = 500;
+    }
+
+    expect(
+      resolveRect(
+        { min: { x: -200, y: -150 }, max: { x: 200, y: 150 } },
+        content,
+      ),
+    ).toEqual({ min: { x: -200, y: -150 }, max: { x: 200, y: 350 } });
   });
 
   it('creates a vertical scrollbar beside a narrowed list when both scrollbar sprites are given', () => {

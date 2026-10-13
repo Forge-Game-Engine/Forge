@@ -33,8 +33,8 @@ glyphs.
 ## Adding a shadow or glow
 
 `shadowColor`, `shadowOffset` and `shadowSoftness` draw a copy of each
-glyph's shape behind it, moved by `shadowOffset` and faded out over
-`shadowSoftness` from its edge. A `shadowColor` with an alpha of `0` (the
+glyph's shape behind it, moved by `shadowOffset` (`+x` right, `+y` down)
+and faded out over `shadowSoftness` from its edge. A `shadowColor` with an alpha of `0` (the
 default) draws no shadow. An offset of `{ x: 0, y: 0 }` with a softness
 above `0` draws a glow.
 
@@ -44,7 +44,7 @@ addTextComponent(world, label, {
   fontAtlas,
   size: 48,
   shadowColor: new Color(0, 0, 0, 0.6),
-  shadowOffset: { x: 1.5, y: -1.5 },
+  shadowOffset: { x: 1.5, y: 1.5 },
   shadowSoftness: 2,
 });
 ```

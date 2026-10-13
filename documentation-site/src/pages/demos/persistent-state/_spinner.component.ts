@@ -7,7 +7,7 @@ import { createComponentId } from '@forge-game-engine/forge/ecs';
 export interface SpinnerEcsComponent {
   size: number;
   spin: boolean;
-  /** Radians per second while `spin` is on. */
+  /** Radians per second while `spin` is on; negative turns counter-clockwise. */
   speed: number;
 }
 

@@ -8,7 +8,7 @@ import type { Vector2 } from '../math/index.js';
 import type { SpriteEcsComponent } from './components/index.js';
 import type { Color } from './color.js';
 import type { Material } from './materials/material.js';
-import type { RenderCommand } from './render-command.js';
+import type { QuadRenderCommand } from './render-command.js';
 import type { InstanceMask } from './utilities/resolve-instance-mask.js';
 
 /**
@@ -122,7 +122,7 @@ export type SetupInstanceAttributesCallback = (
  */
 export type BindBatchCallback = (
   gl: WebGL2RenderingContext,
-  command: RenderCommand,
+  command: QuadRenderCommand,
 ) => void;
 
 /**

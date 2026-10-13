@@ -1,5 +1,5 @@
 import { Material } from '../../rendering/materials/material.js';
-import type { RenderCommand } from '../../rendering/render-command.js';
+import type { QuadRenderCommand } from '../../rendering/render-command.js';
 import type { RenderContext } from '../../rendering/render-context.js';
 import { Renderable } from '../../rendering/renderable.js';
 import { combineInstanceDataSegments } from '../../rendering/utilities/instance-data-segment.js';
@@ -40,7 +40,7 @@ export interface TextRenderables {
 const bindFontAtlas = (
   material: Material,
   gl: WebGL2RenderingContext,
-  command: RenderCommand,
+  command: QuadRenderCommand,
 ): void => {
   const { fontAtlas } = command;
 

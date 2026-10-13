@@ -5,9 +5,13 @@ import { EcsWorld } from '../../ecs/index.js';
 import { Color, Texture, visibilityId } from '../../rendering/index.js';
 import { textId } from '../../text/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
-import { addRectTransformComponent } from '../components/rect-transform-component.js';
+import {
+  addRectTransformComponent,
+  rectTransformId,
+} from '../components/rect-transform-component.js';
 import { tooltipId } from '../components/tooltip-component.js';
 import { addUiInteractableComponent } from '../components/ui-interactable-component.js';
+import { resolveRect } from './resolve-rect.js';
 
 const fontAtlas = {} as FontAtlas;
 
@@ -56,6 +60,31 @@ describe('createTooltip', () => {
 
     expect(tooltipComponent.panel).toBe(tooltip.panel);
     expect(tooltipComponent.showDelayMilliseconds).toBe(400);
+  });
+
+  it('floats the panel just above the source, horizontally centered over it', () => {
+    const world = new EcsWorld();
+    const source = createSource(world);
+    const sourceRect = { min: { x: 0, y: 100 }, max: { x: 200, y: 150 } };
+
+    const tooltip = createTooltip(world, source, {
+      text: 'Mutes all sound effects',
+      fontAtlas,
+      textSize: 16,
+      sprite: buildSprite(),
+    });
+
+    const panelRect = resolveRect(
+      sourceRect,
+      world.getComponent(tooltip.panel, rectTransformId)!,
+    );
+
+    // y grows down: the default 160x40 panel ends 8 above the source's top
+    // edge (y 100).
+    expect(panelRect).toEqual({
+      min: { x: 20, y: 52 },
+      max: { x: 180, y: 92 },
+    });
   });
 
   it('forwards a supplied category to the label', () => {

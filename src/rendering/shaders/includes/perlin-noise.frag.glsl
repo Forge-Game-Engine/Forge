@@ -11,11 +11,11 @@ uniform vec2 u_resolution;
 out vec4 fragColor;
 
 void main() {
-  // part 0 - basic shader setup
-  vec2 uv = gl_FragCoord.xy / u_resolution;
-
-  // make sure the grid is square
-  uv = gl_FragCoord.xy / u_resolution.y;
+  // gl_FragCoord's origin is the bottom-left of the destination; flip it so
+  // uv's origin is the top-left, like every other 2D coordinate in the
+  // engine. Dividing both axes by the height keeps the grid square.
+  vec2 fragCoord = vec2(gl_FragCoord.x, u_resolution.y - gl_FragCoord.y);
+  vec2 uv = fragCoord / u_resolution.y;
 
   uv = uv + vec2(u_time * 0.05, 0.0);
 

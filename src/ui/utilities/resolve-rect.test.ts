@@ -31,8 +31,8 @@ describe('resolveRect', () => {
     );
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
-      min: { x: -100, y: 30 },
-      max: { x: -60, y: 50 },
+      min: { x: -100, y: -50 },
+      max: { x: -60, y: -30 },
     });
   });
 
@@ -42,8 +42,8 @@ describe('resolveRect', () => {
     );
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
-      min: { x: 60, y: 30 },
-      max: { x: 100, y: 50 },
+      min: { x: 60, y: -50 },
+      max: { x: 100, y: -30 },
     });
   });
 
@@ -53,8 +53,8 @@ describe('resolveRect', () => {
     );
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
-      min: { x: -100, y: -50 },
-      max: { x: -60, y: -30 },
+      min: { x: -100, y: 30 },
+      max: { x: -60, y: 50 },
     });
   });
 
@@ -64,8 +64,8 @@ describe('resolveRect', () => {
     );
 
     expect(resolveRect(parentRect, rectTransform)).toEqual({
-      min: { x: 60, y: -50 },
-      max: { x: 100, y: -30 },
+      min: { x: 60, y: 30 },
+      max: { x: 100, y: 50 },
     });
   });
 
@@ -126,9 +126,9 @@ describe('resolveRect', () => {
     // level1 = parentRect inset by 10 on every side: (-90,-40) to (90,40)
     expect(level1).toEqual({ min: { x: -90, y: -40 }, max: { x: 90, y: 40 } });
     // level2 = top-right 30x20 box of level1
-    expect(level2).toEqual({ min: { x: 60, y: 20 }, max: { x: 90, y: 40 } });
+    expect(level2).toEqual({ min: { x: 60, y: -40 }, max: { x: 90, y: -20 } });
     // level3 = centered 10x10 box of level2
-    expect(level3).toEqual({ min: { x: 70, y: 25 }, max: { x: 80, y: 35 } });
+    expect(level3).toEqual({ min: { x: 70, y: -35 }, max: { x: 80, y: -25 } });
   });
 
   it('resolves against a zero-size parent rect to a rect at the parent origin', () => {

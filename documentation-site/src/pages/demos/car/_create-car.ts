@@ -34,7 +34,7 @@ import {
 } from './_ground-contact.component';
 import { addWheelDriveComponent } from './_wheel-drive.component';
 
-const gravity = { x: 0, y: -600 };
+const gravity = { x: 0, y: 600 };
 
 // The chassis is the heaviest body in the car, so it has enough rotational
 // inertia to absorb the wheels' drive torque instead of flipping forward.
@@ -53,13 +53,13 @@ const uprightRadius = 8;
 const uprightDensity = 80;
 
 // Suspension anchors, in the chassis's local space.
-const frontAnchor = { x: chassisWidth / 2 - 115, y: -chassisHeight / 2 };
-const rearAnchor = { x: -(chassisWidth / 2 - 115), y: -chassisHeight / 2 };
+const frontAnchor = { x: chassisWidth / 2 - 115, y: chassisHeight / 2 };
+const rearAnchor = { x: -(chassisWidth / 2 - 115), y: chassisHeight / 2 };
 
 // The suspension axes splay outwards like a monster truck's, so a head-on
 // impact is partly absorbed by the spring instead of the rigid joint.
-const frontSuspensionAxis = Vec2.rotate(Vec2.up, degreesToRadians(35));
-const rearSuspensionAxis = Vec2.rotate(Vec2.up, degreesToRadians(-35));
+const frontSuspensionAxis = Vec2.rotate(Vec2.up, degreesToRadians(-35));
+const rearSuspensionAxis = Vec2.rotate(Vec2.up, degreesToRadians(35));
 
 // How far below its anchor a wheel starts. This becomes the springs' rest
 // length.
@@ -288,7 +288,7 @@ export async function createCar(
   const wheelSpawnDrop = wheelDropHeight - 8;
   const chassisPosition = Vec2.add(Vec2.clone(groundPosition), {
     x: 0,
-    y: wheelRadius + wheelDropHeight + chassisHeight / 2 + 100,
+    y: -(wheelRadius + wheelDropHeight + chassisHeight / 2 + 100),
   });
 
   const chassisEntity = world.createEntity();
@@ -324,14 +324,14 @@ export async function createCar(
       Vec2.add(Vec2.clone(chassisPosition), frontAnchor),
       Vec2.multiply(Vec2.clone(frontSuspensionAxis), -wheelSpawnDrop),
     ),
-    { x: 0, y: -wheelRadius },
+    { x: 0, y: wheelRadius },
   );
   const rearWheelPosition = Vec2.add(
     Vec2.add(
       Vec2.add(Vec2.clone(chassisPosition), rearAnchor),
       Vec2.multiply(Vec2.clone(rearSuspensionAxis), -wheelSpawnDrop),
     ),
-    { x: 0, y: -wheelRadius },
+    { x: 0, y: wheelRadius },
   );
 
   // Rear-wheel biased: the front wheel gets half the torque.

@@ -162,8 +162,8 @@ export const createScene: CreateScene = (
     return { position, sprite };
   }
 
-  const mover = createSquare(-300, -200, toColor(inputSceneColors.blue));
-  const marker = createSquare(-300, 200, toColor(inputSceneColors.red));
+  const mover = createSquare(-300, 200, toColor(inputSceneColors.blue));
+  const marker = createSquare(-300, -200, toColor(inputSceneColors.red));
   const holdSquare = createSquare(300, 0, toColor(inputSceneColors.orange));
 
   holdSquare.sprite.width = holdSmallSize;

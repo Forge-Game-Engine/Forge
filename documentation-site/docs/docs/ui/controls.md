@@ -153,7 +153,8 @@ const cooldownRing = createProgressBar(world, canvas, {
   anchor: UiAnchor.center({ x: 64, y: 64 }),
   trackSprite: ringTrackSprite,
   fillSprite: ringFillSprite,
-  fillShape: { kind: 'radial', startAngle: Math.PI / 2, sweep: -2 * Math.PI },
+  // Starts at the top (-π/2, since y grows down) and sweeps clockwise.
+  fillShape: { kind: 'radial', startAngle: -Math.PI / 2, sweep: 2 * Math.PI },
 });
 ```
 

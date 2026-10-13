@@ -15,8 +15,8 @@ import { WheelDriveEcsComponent, wheelDriveId } from './_wheel-drive.component';
 /**
  * Sets each wheel motor's target speed and torque from the throttle.
  *
- * - The sign is flipped: in a Y-up world a wheel rolling right spins
- *   clockwise, which is a negative angle.
+ * - A wheel rolling right spins clockwise, which in the Y-down world is a
+ *   positive angle, so the throttle maps straight onto the target.
  * - On the ground the target is used as is; friction limits the grip.
  * - In the air the target stays close to the wheel's rolling speed.
  * - With no throttle the torque drops to zero, so the car coasts.
@@ -43,14 +43,14 @@ export const createWheelDriveEcsSystem = (): EcsSystem<
         maxTorque,
       } = wheelDrive;
 
-      const desiredAngularVelocity = -throttleInput.value * maxWheelSpeed;
+      const desiredAngularVelocity = throttleInput.value * maxWheelSpeed;
 
       if (isGrounded(groundContact)) {
         motor.targetVelocity = desiredAngularVelocity;
       } else {
         const chassisRigidBody = world.getComponent(chassisEntity, rigidBodyId);
         const chassisVelocityX = chassisRigidBody?.velocity.x ?? 0;
-        const rollingAngularVelocity = -chassisVelocityX / wheelRadius;
+        const rollingAngularVelocity = chassisVelocityX / wheelRadius;
 
         motor.targetVelocity = clamp(
           desiredAngularVelocity,

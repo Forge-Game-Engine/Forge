@@ -27,7 +27,7 @@ describe('createGravityEcsSystem', () => {
     const rigidBody = addRigidBodyComponent(world, entity, {
       type,
     });
-    addGravityComponent(world, entity, { amount: { x: 0, y: -10 } });
+    addGravityComponent(world, entity, { amount: { x: 0, y: 10 } });
 
     return rigidBody;
   }
@@ -37,7 +37,7 @@ describe('createGravityEcsSystem', () => {
 
     world.update();
 
-    expect(rigidBody.velocity.y).toBeLessThan(0);
+    expect(rigidBody.velocity.y).toBeGreaterThan(0);
   });
 
   it.each(['static', 'kinematic'] as const)(

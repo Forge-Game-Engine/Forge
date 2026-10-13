@@ -19,7 +19,8 @@ function randomInRange(range: Range, random: Random): number {
 
 /**
  * Picks the direction a particle starts moving in, in radians, in the
- * emitter's frame: counter-clockwise from the frame's `+X`.
+ * emitter's frame: from the frame's `+X`, a positive angle turning towards
+ * its `+Y` (clockwise on screen).
  */
 function pickLocalDirection(
   particleEmitter: ParticleEmitter,
@@ -57,8 +58,8 @@ export function pickParticleCount(
  * @param particleEmitter - The emitter describing the particle.
  * @param origin - The world position the emitter's spawn shape is centered
  * on.
- * @param rotation - The emitter frame's world rotation, in radians,
- * counter-clockwise.
+ * @param rotation - The emitter frame's world rotation, in radians; a
+ * positive angle turns `+X` towards `+Y` (clockwise on screen).
  * @param random - The random instance used to pick values from the emitter's
  * ranges.
  * @returns The particle entity.

@@ -533,10 +533,10 @@ interface PlaceChildOptions {
 
 /**
  * Writes one arranged child's final anchor/pivot, size, and position. Every
- * arranged child is forced to a bottom-left point anchor/pivot (`anchorMin =
+ * arranged child is forced to a top-left point anchor/pivot (`anchorMin =
  * anchorMax = pivot = {0, 0}`) regardless of its previous anchoring, since
- * the group positions it via `anchoredPosition` measured from its own
- * content box's bottom-left corner.
+ * the group positions it via `anchoredPosition` measured from its parent's
+ * top-left corner.
  */
 function placeChild(options: PlaceChildOptions): void {
   const {
@@ -570,8 +570,8 @@ function placeChild(options: PlaceChildOptions): void {
   childRect.y = UiAxis.point(0, { pivot: 0, size: height });
 
   childRect.anchoredPosition = isHorizontal
-    ? { x: blockStart + cursor, y: padding.bottom + crossOffset }
-    : { x: padding.left + crossOffset, y: blockStart - cursor - mainSize };
+    ? { x: blockStart + cursor, y: padding.top + crossOffset }
+    : { x: padding.left + crossOffset, y: blockStart + cursor };
 }
 
 /**
@@ -656,9 +656,8 @@ function arrangeAxisGroup(
   const mainAlignment = isHorizontal ? childAlignment.x : childAlignment.y;
   const crossAlignment = isHorizontal ? childAlignment.y : childAlignment.x;
 
-  const blockStart = isHorizontal
-    ? padding.left + leftoverMain * mainAlignment
-    : padding.bottom + leftoverMain * mainAlignment + contentMain;
+  const blockStart =
+    (isHorizontal ? padding.left : padding.top) + leftoverMain * mainAlignment;
 
   let cursor = 0;
 
@@ -734,7 +733,7 @@ function arrangeGrid(
   const leftoverY = Math.max(0, innerHeight - gridContentHeight);
 
   const contentLeft = padding.left + leftoverX * childAlignment.x;
-  const contentBottom = padding.bottom + leftoverY * childAlignment.y;
+  const contentTop = padding.top + leftoverY * childAlignment.y;
 
   const flipColumn =
     grid.startCorner === 'upperRight' || grid.startCorner === 'lowerRight';
@@ -786,14 +785,9 @@ function arrangeGrid(
     const offsetY = (rowHeight - cellHeight) * cellAlignment.y;
 
     const cellLeft = contentLeft + columnOffsets[actualColumn] + offsetX;
-    const cellBottom =
-      contentBottom +
-      gridContentHeight -
-      rowOffsets[actualRow] -
-      rowHeight +
-      offsetY;
+    const cellTop = contentTop + rowOffsets[actualRow] + offsetY;
 
-    childRect.anchoredPosition = { x: cellLeft, y: cellBottom };
+    childRect.anchoredPosition = { x: cellLeft, y: cellTop };
   }
 }
 

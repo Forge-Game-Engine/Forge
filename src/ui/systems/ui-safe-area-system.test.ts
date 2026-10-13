@@ -70,7 +70,7 @@ describe('createUiSafeAreaEcsSystem', () => {
       margin: -60,
       marginUnit: 'referencePixels',
     });
-    expect(rectTransform.anchoredPosition).toEqual({ x: 5, y: 20 });
+    expect(rectTransform.anchoredPosition).toEqual({ x: 5, y: 40 });
   });
 
   it("converts CSS-pixel insets against the canvas's CSS height, not its drawing-buffer height, on a HiDPI display", () => {
@@ -103,7 +103,7 @@ describe('createUiSafeAreaEcsSystem', () => {
 
     expect(
       world.getComponent(entity, rectTransformId)!.anchoredPosition,
-    ).toEqual({ x: 0, y: 20 });
+    ).toEqual({ x: 0, y: 40 });
   });
 
   it('ignores a disabled edge, leaving it flush with the parent', () => {
@@ -116,7 +116,7 @@ describe('createUiSafeAreaEcsSystem', () => {
     addPositionComponent(world, entity);
     world.setParent(entity, canvas);
     addRectTransformComponent(world, entity);
-    addUiSafeAreaComponent(world, entity, { bottom: false });
+    addUiSafeAreaComponent(world, entity, { top: false });
 
     world.addSystem(
       createUiSafeAreaEcsSystem(renderContext, () => ({
@@ -135,7 +135,7 @@ describe('createUiSafeAreaEcsSystem', () => {
       anchorMin: 0,
       anchorMax: 1,
       pivot: 0,
-      margin: -40,
+      margin: -20,
       marginUnit: 'referencePixels',
     });
     expect(rectTransform.anchoredPosition).toEqual({ x: 0, y: 0 });

@@ -13,12 +13,12 @@ export interface RectMaskShape {
 }
 
 /** The edge of the mask's rect a linear mask reveals from. */
-export type LinearMaskOrigin = 'left' | 'right' | 'bottom' | 'top';
+export type LinearMaskOrigin = 'left' | 'right' | 'top' | 'bottom';
 
 /**
  * Reveals part of the mask's rect, starting from one edge: `amount` of the
- * rect's width (from `'left'` or `'right'`) or height (from `'bottom'` or
- * `'top'`). A filling bar.
+ * rect's width (from `'left'` or `'right'`) or height (from `'top'` or
+ * `'bottom'`). A filling bar.
  */
 export interface LinearMaskShape {
   kind: 'linear';
@@ -40,15 +40,15 @@ export interface RadialMaskShape {
 
   /**
    * Where the sector starts, in radians in the mask entity's own frame: `0`
-   * points along `+X` and a positive angle turns towards `+Y`
-   * (counter-clockwise).
+   * points along `+X` and a positive angle turns towards `+Y` (clockwise on
+   * screen, since the world is Y-down).
    */
   startAngle: number;
 
   /**
    * The sector's full extent at `amount: 1`, in radians: positive turns
-   * counter-clockwise from `startAngle`, negative clockwise. A full turn is
-   * `2 * Math.PI`; less gives an arc gauge.
+   * clockwise on screen from `startAngle`, negative counter-clockwise. A
+   * full turn is `2 * Math.PI`; less gives an arc gauge.
    */
   sweep: number;
 
@@ -78,8 +78,8 @@ export interface MaskRequiredOptions {
 export interface MaskDefaultedOptions {
   /**
    * The point of the rect placed at the entity's position, normalized to
-   * the rect's size, Y-up: `(0, 0)` is the bottom-left corner and
-   * `(0.5, 0.5)` (the default) the center, as for a sprite's `pivot`.
+   * the rect's size: `(0, 0)` is the top-left corner and `(0.5, 0.5)` (the
+   * default) the center, as for a sprite's `pivot`.
    */
   pivot: Vector2;
 

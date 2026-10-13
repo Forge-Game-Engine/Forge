@@ -8,8 +8,9 @@ import { withDefaults } from '../../utilities/with-defaults.js';
 export interface RotationOptions {
   /**
    * The entity's rotation in radians relative to its parent, or to the
-   * world when it has no parent. This is the value to write when rotating
-   * the entity.
+   * world when it has no parent. A positive angle turns `+X` towards `+Y`,
+   * which is clockwise on screen since the world is Y-down. This is the value
+   * to write when rotating the entity.
    */
   local: number;
 }

@@ -1,3 +1,4 @@
+import { Rect, Rects } from '../../math/index.js';
 import { withDefaults } from '../../utilities/with-defaults.js';
 import {
   registerGpuResource,
@@ -95,6 +96,9 @@ const defaultGeometryUpdate: {
 } = {
   attributes: {},
 };
+
+/** The attribute {@link Geometry.bounds} reads vertex positions from. */
+const positionAttributeName = 'a_position';
 
 const glTopologyNames: Record<
   GeometryTopology,
@@ -208,6 +212,7 @@ export class Geometry {
     new Map();
   private readonly _rebuild: () => void;
   private _vertexCount: number;
+  private _bounds: Rect | null = null;
 
   /**
    * Creates a geometry from vertex data, uploading each attribute, and the
@@ -266,6 +271,35 @@ export class Geometry {
    */
   get vertexCount(): number {
     return this._vertexCount;
+  }
+
+  /**
+   * The axis-aligned rectangle around the x and y of the first
+   * {@link Geometry.vertexCount} vertices of the `a_position` attribute, in
+   * the space the vertices are in. Computed when first read after the
+   * geometry is created or {@link Geometry.update} changes `a_position` or
+   * `vertexCount`, and kept until then. A zero-size rectangle at the origin
+   * when there are no vertices.
+   *
+   * The render system culls a mesh (see `MeshEcsComponent`) whose bounds,
+   * placed by its entity's transform, are outside the camera's view.
+   * @throws An error if the geometry has no `a_position` attribute, or its
+   * `a_position` has fewer than 2 components.
+   */
+  get bounds(): Rect {
+    this._bounds ??= this._computeBounds();
+
+    return this._bounds;
+  }
+
+  /**
+   * Reads how many components per vertex an attribute has.
+   * @param name - The attribute's name.
+   * @returns The attribute's `size`, or `null` if the geometry has no
+   * attribute called `name`.
+   */
+  public getAttributeSize(name: string): number | null {
+    return this._findAttribute(name)?.size ?? null;
   }
 
   /**
@@ -379,6 +413,13 @@ export class Geometry {
       Object.hasOwn(attributes, name),
     );
 
+    if (
+      vertexCount !== this._vertexCount ||
+      Object.hasOwn(attributes, positionAttributeName)
+    ) {
+      this._bounds = null;
+    }
+
     this._vertexCount = vertexCount;
 
     for (const attribute of updatedAttributes) {
@@ -467,6 +508,48 @@ export class Geometry {
         'Unable to update geometry: it was created without indices, so it cannot be given them.',
       );
     }
+  }
+
+  private _findAttribute(name: string): AttributeState | undefined {
+    return this._attributes.find((attribute) => attribute.name === name);
+  }
+
+  private _computeBounds(): Rect {
+    const position = this._findAttribute(positionAttributeName);
+
+    if (!position) {
+      throw new Error(
+        `Unable to compute the geometry's bounds: it has no "${positionAttributeName}" attribute.`,
+      );
+    }
+
+    if (position.size < 2) {
+      throw new Error(
+        `Unable to compute the geometry's bounds: its "${positionAttributeName}" attribute needs at least 2 components (x and y), but it has ${position.size}.`,
+      );
+    }
+
+    if (this._vertexCount === 0) {
+      return Rects.zero;
+    }
+
+    const { data, size } = position;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    for (let i = 0; i < this._vertexCount * size; i += size) {
+      const x = data[i];
+      const y = data[i + 1];
+
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+
+    return { min: { x: minX, y: minY }, max: { x: maxX, y: maxY } };
   }
 
   private _getBufferStates(): BufferState<Float32Array | GeometryIndices>[] {

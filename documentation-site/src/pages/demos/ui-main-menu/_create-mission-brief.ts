@@ -93,13 +93,13 @@ export function createMissionBrief(
     // pixels past a 1320-wide root: `692 + 942 - 1320`) as an offset from
     // the right edge instead of the left.
     anchor: UiAnchor.topRight({ x: 942, y: 942 }),
-    anchoredPosition: { x: 314, y: 309 },
+    anchoredPosition: { x: 314, y: -309 },
     sprite: circleSprite,
   });
 
   createPanel(world, root, {
     anchor: UiAnchor.topLeft({ x: 222, y: 28 }),
-    anchoredPosition: { x: 86, y: -90 },
+    anchoredPosition: { x: 86, y: 90 },
     sprite: tagSprite,
   });
 
@@ -112,7 +112,7 @@ export function createMissionBrief(
     size: 14,
     letterSpacing: 0.06,
     anchor: UiAnchor.topLeft({ x: 222, y: 28 }),
-    anchoredPosition: { x: 86, y: -90 - 28 / 2 },
+    anchoredPosition: { x: 86, y: 90 + 28 / 2 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     maxWidth: 222,
@@ -125,7 +125,7 @@ export function createMissionBrief(
     fontAtlas,
     size: 64,
     anchor: UiAnchor.topLeft({ x: 700, y: 81 }),
-    anchoredPosition: { x: 88, y: -162 },
+    anchoredPosition: { x: 88, y: 162 },
     verticalAlign: textVerticalAlignments.capline,
     color: fleetCommandPalette.ink,
     category: uiCategory,
@@ -136,7 +136,7 @@ export function createMissionBrief(
     fontAtlas,
     size: 64,
     anchor: UiAnchor.topLeft({ x: 700, y: 81 }),
-    anchoredPosition: { x: 88, y: -243 },
+    anchoredPosition: { x: 88, y: 243 },
     verticalAlign: textVerticalAlignments.capline,
     color: fleetCommandPalette.ink,
     category: uiCategory,
@@ -144,7 +144,7 @@ export function createMissionBrief(
 
   createPanel(world, root, {
     anchor: UiAnchor.topLeft({ x: 178, y: 6 }),
-    anchoredPosition: { x: 88, y: -378 },
+    anchoredPosition: { x: 88, y: 378 },
     sprite: underlineSprite,
   });
 
@@ -153,7 +153,7 @@ export function createMissionBrief(
     fontAtlas,
     size: 20,
     anchor: UiAnchor.topLeft({ x: 590, y: 64 }),
-    anchoredPosition: { x: 88, y: -430 },
+    anchoredPosition: { x: 88, y: 430 },
     maxWidth: 590,
     verticalAlign: textVerticalAlignments.top,
     color: mutedInk,

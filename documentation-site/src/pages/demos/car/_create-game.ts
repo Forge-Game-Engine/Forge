@@ -3,7 +3,6 @@ import {
   createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
-  createTerrainRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
@@ -69,7 +68,7 @@ export const createCarGame = async (): Promise<Game> => {
 
   addCameraFollowComponent(world, cameraEntity, {
     targetEntity: chassisEntity,
-    offset: { x: 140, y: 70 },
+    offset: { x: 140, y: -70 },
     smoothTime: 0.25,
     maxSpeed: 3000,
   });
@@ -121,7 +120,6 @@ export const createCarGame = async (): Promise<Game> => {
   world.addSystem(createAirControlEcsSystem(time));
   world.addSystem(createCameraFollowEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
-  world.addSystem(createTerrainRenderEcsSystem(renderContext));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));
   world.addSystem(createContinuousCollisionEcsSystem());

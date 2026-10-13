@@ -6,14 +6,14 @@ sidebar_position: 2.75
 
 [`VisibilityEcsComponent`](/Forge/docs/api/interfaces/VisibilityEcsComponent)
 shows or hides an entity and every entity parented under it, at any depth.
-It works the same on world sprites, text, particle emitters and UI
+It works the same on world sprites, text, meshes, particle emitters and UI
 elements.
 
 An entity hidden in the hierarchy (its own `visible` is `false`, or an
 ancestor's is):
 
-- draws nothing: the render system skips its sprite and its text, for every
-  camera;
+- draws nothing: the render system skips its sprite, its text and its mesh,
+  for every camera;
 - spawns no particles from its emitters (see
   [Hiding an emitter](#hiding-an-emitter));
 - takes no space in a UI layout group or content size fitter, can't be hit

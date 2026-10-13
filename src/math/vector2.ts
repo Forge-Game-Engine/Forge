@@ -38,19 +38,20 @@ export class Vec2 {
   }
 
   /**
-   * A unit vector pointing upward (0, 1), since the world is Y-up. A fresh
-   * vector is created on every access, so it's always safe to mutate.
+   * A unit vector pointing up the screen (0, -1), since the world is Y-down.
+   * A fresh vector is created on every access, so it's always safe to mutate.
    */
   static get up(): Vector2 {
-    return { x: 0, y: 1 };
+    return { x: 0, y: -1 };
   }
 
   /**
-   * A unit vector pointing downward (0, -1), since the world is Y-up. A
-   * fresh vector is created on every access, so it's always safe to mutate.
+   * A unit vector pointing down the screen (0, 1), since the world is
+   * Y-down. A fresh vector is created on every access, so it's always safe to
+   * mutate.
    */
   static get down(): Vector2 {
-    return { x: 0, y: -1 };
+    return { x: 0, y: 1 };
   }
 
   /**
@@ -229,7 +230,9 @@ export class Vec2 {
   }
 
   /**
-   * Rotates `target` by a given angle in radians, mutating it in place.
+   * Rotates `target` by a given angle in radians, mutating it in place. A
+   * positive angle turns `+X` towards `+Y` (clockwise on screen, since the
+   * world is Y-down).
    * @param target - The vector to mutate.
    * @param angleInRadians - The angle in radians to rotate the vector.
    * @returns `target`, for chaining.

@@ -31,9 +31,9 @@ export const createShowMenuEcsSystem = (
   query: [],
   update: (world) => {
     const labels = [
-      createLabel(world, fontAtlas, 'STAR CATCHER', 60, 64, accent),
-      createLabel(world, fontAtlas, 'Press Space to play', -20, 24),
-      createLabel(world, fontAtlas, 'Arrow keys or A/D move', -60, 18, muted),
+      createLabel(world, fontAtlas, 'STAR CATCHER', -60, 64, accent),
+      createLabel(world, fontAtlas, 'Press Space to play', 20, 24),
+      createLabel(world, fontAtlas, 'Arrow keys or A/D move', 60, 18, muted),
     ];
 
     for (const label of labels) {
@@ -69,7 +69,7 @@ export const createStartRoundEcsSystem = (
     const basket = world.createEntity();
 
     addPositionComponent(world, basket, {
-      local: { x: 0, y: -playArea.halfHeight + 50 },
+      local: { x: 0, y: playArea.halfHeight - 50 },
     });
     addSpriteComponent(world, basket, basketSprite);
     world.addComponent(basket, playerId, {
@@ -79,7 +79,13 @@ export const createStartRoundEcsSystem = (
       maxX: playArea.halfWidth - basketHalfWidth,
     });
 
-    const hud = createLabel(world, fontAtlas, '', playArea.halfHeight - 30, 22);
+    const hud = createLabel(
+      world,
+      fontAtlas,
+      '',
+      -playArea.halfHeight + 30,
+      22,
+    );
 
     world.addTag(hud, hudId);
 
@@ -105,7 +111,7 @@ export const createShowGameOverEcsSystem = (
   query: [],
   update: (world) => {
     const labels = [
-      createLabel(world, fontAtlas, 'GAME OVER', 60, 56, accent),
+      createLabel(world, fontAtlas, 'GAME OVER', -60, 56, accent),
       createLabel(
         world,
         fontAtlas,
@@ -117,7 +123,7 @@ export const createShowGameOverEcsSystem = (
         world,
         fontAtlas,
         'Space plays again, Escape goes to the menu',
-        -40,
+        40,
         18,
         muted,
       ),

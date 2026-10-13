@@ -27,11 +27,10 @@ export const createRollEcsSystem = (
   query: [angularVelocityMotorId],
   update: (_world, { components: [motorComponents] }) => {
     for (const motorComponent of motorComponents) {
-      // A positive angular velocity here spins the ball counter-clockwise on
-      // screen, which rolls it to the left - the opposite of a positive
-      // `rollInput.value` (the D / right-arrow side of the binding), so the
-      // sign is flipped to make D/right-arrow roll right.
-      motorComponent.targetVelocity = -rollInput.value * maxRollSpeed;
+      // A positive angular velocity spins the ball clockwise on screen,
+      // which rolls it to the right, the same way as a positive
+      // `rollInput.value` (the D / right-arrow side of the binding).
+      motorComponent.targetVelocity = rollInput.value * maxRollSpeed;
     }
   },
 });

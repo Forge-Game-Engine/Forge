@@ -35,11 +35,19 @@ const SIZE = SYNTHETIC_GLYPH_TILE_SIZE;
 const glyphHalfWidthEm =
   (SYNTHETIC_GLYPH_INK_HALF_SIZE + SYNTHETIC_GLYPH_DISTANCE_RANGE / 2) /
   SYNTHETIC_GLYPH_TILE_SIZE;
-const glyphBounds = {
+// The square fills the atlas tile around its center, and sits on the
+// glyph's plane centered half an em above (-y) the baseline.
+const glyphAtlasBounds = {
   left: 0.5 - glyphHalfWidthEm,
   right: 0.5 + glyphHalfWidthEm,
-  bottom: 0.5 - glyphHalfWidthEm,
-  top: 0.5 + glyphHalfWidthEm,
+  top: 0.5 - glyphHalfWidthEm,
+  bottom: 0.5 + glyphHalfWidthEm,
+};
+const glyphPlaneBounds = {
+  left: 0.5 - glyphHalfWidthEm,
+  right: 0.5 + glyphHalfWidthEm,
+  top: -0.5 - glyphHalfWidthEm,
+  bottom: -0.5 + glyphHalfWidthEm,
 };
 
 const ATLAS_A_CODE_POINT = 65;
@@ -128,9 +136,9 @@ export const createScene: CreateScene = async (
       distanceRange: SYNTHETIC_GLYPH_DISTANCE_RANGE,
       metrics: {
         lineHeight: 1,
-        ascender: 0.5,
-        descender: 0.5,
-        capHeight: 0.5,
+        ascentLine: -0.5,
+        descentLine: -0.5,
+        capLine: -0.5,
       },
       glyphs: new Map([
         [
@@ -138,8 +146,8 @@ export const createScene: CreateScene = async (
           {
             codePoint: ATLAS_A_CODE_POINT,
             advance: 1,
-            planeBounds: glyphBounds,
-            atlasBounds: glyphBounds,
+            planeBounds: glyphPlaneBounds,
+            atlasBounds: glyphAtlasBounds,
           },
         ],
       ]),
@@ -152,9 +160,10 @@ export const createScene: CreateScene = async (
 
   // Three glyphs at 1 em each, centered on the canvas. The synthetic
   // glyph's ink is centered half an em above its baseline, so anchoring the
-  // baseline half an em below y = 0 centers the ink on the scanned row.
+  // baseline half an em below y = 0 (+Y is down) centers the ink on the
+  // scanned row.
   addPositionComponent(world, textEntity, {
-    local: { x: -1.5 * SIZE, y: -0.5 * SIZE },
+    local: { x: -1.5 * SIZE, y: 0.5 * SIZE },
   });
 
   const textComponent = addTextComponent(world, textEntity, {

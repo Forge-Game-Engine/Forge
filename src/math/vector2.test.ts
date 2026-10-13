@@ -4,11 +4,11 @@ import { Vec2, Vector2 } from './vector2';
 describe('Vector2', () => {
   describe('constants', () => {
     it('should return correct up vector', () => {
-      expect(Vec2.equals(Vec2.up, { x: 0, y: 1 })).toBe(true);
+      expect(Vec2.equals(Vec2.up, { x: 0, y: -1 })).toBe(true);
     });
 
     it('should return correct down vector', () => {
-      expect(Vec2.equals(Vec2.down, { x: 0, y: -1 })).toBe(true);
+      expect(Vec2.equals(Vec2.down, { x: 0, y: 1 })).toBe(true);
     });
 
     it('should return correct left vector', () => {
@@ -165,7 +165,7 @@ describe('Vector2', () => {
       expect(rotated).toBe(vector);
     });
 
-    it('should rotate vector by PI/2 radians (90 degrees counterclockwise)', () => {
+    it('should rotate vector by PI/2 radians (90 degrees, +X towards +Y)', () => {
       const vector = { x: 1, y: 0 };
       const rotated = Vec2.rotate(vector, Math.PI / 2);
       expect(rotated.x).toBeCloseTo(0);
@@ -179,14 +179,14 @@ describe('Vector2', () => {
       expect(rotated.y).toBeCloseTo(0);
     });
 
-    it('should rotate vector by 3*PI/2 radians (270 degrees counterclockwise)', () => {
+    it('should rotate vector by 3*PI/2 radians (270 degrees, +X towards +Y)', () => {
       const vector = { x: 1, y: 0 };
       const rotated = Vec2.rotate(vector, (3 * Math.PI) / 2);
       expect(rotated.x).toBeCloseTo(0);
       expect(rotated.y).toBeCloseTo(-1);
     });
 
-    it('should rotate vector by negative angle (clockwise)', () => {
+    it('should rotate vector by negative angle (+X towards -Y)', () => {
       const vector = { x: 0, y: 1 };
       const rotated = Vec2.rotate(vector, -Math.PI / 2);
       expect(rotated.x).toBeCloseTo(1);

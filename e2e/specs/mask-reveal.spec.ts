@@ -88,7 +88,7 @@ test.describe('Masks', () => {
     const full = await captureFrame(page, { ringAmount: 1 });
     const quarter = await captureFrame(page, {
       ringAmount: 0.25,
-      ringRotation: Math.PI / 2,
+      ringRotation: -Math.PI / 2,
     });
     const fullCount = ringTotal(full.measurement);
     const { ringQuadrants } = quarter.measurement;

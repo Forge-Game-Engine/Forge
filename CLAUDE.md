@@ -16,7 +16,7 @@ section has the reasoning.
   Only add an option when different games really need different values,
   and ask first if you're unsure.
 - **Fix root causes.** Correct the layer that breaks the engine's
-  conventions (Y-up, CSS vs. device pixels, premultiplied alpha, ...), so
+  conventions (Y-down, CSS vs. device pixels, premultiplied alpha, ...), so
   callers don't have to compensate.
 - **Prefer deleting.** A fix that makes a workaround unnecessary also
   removes the workaround.

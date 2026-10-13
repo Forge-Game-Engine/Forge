@@ -9,7 +9,7 @@ import {
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { AsteroidEcsComponent, asteroidId } from './_asteroid.component';
 
-const despawnY = -(DEMO_VERTICAL_WORLD_UNITS / 2 + 100);
+const despawnY = DEMO_VERTICAL_WORLD_UNITS / 2 + 100;
 
 export const createAsteroidEcsSystem = (
   time: Time,
@@ -30,13 +30,13 @@ export const createAsteroidEcsSystem = (
       const positionComponent = positionComponents[i];
       const rotationComponent = rotationComponents[i];
 
-      positionComponent.local.y -=
+      positionComponent.local.y +=
         asteroidComponent.speed * time.deltaTimeInSeconds;
 
       rotationComponent.local +=
         asteroidComponent.rotationSpeed * time.deltaTimeInSeconds;
 
-      if (positionComponent.local.y < despawnY) {
+      if (positionComponent.local.y > despawnY) {
         world.removeEntity(entity);
       }
     }

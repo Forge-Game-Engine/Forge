@@ -144,11 +144,11 @@ const log = createScrollView(world, canvas, {
 ## Reading and setting the scroll position
 
 `UiScrollRectEcsComponent.offset` is how far the content has moved from its
-rest position, in reference pixels, Y-up. At `(0, 0)` the content's top-left
-corner is at the viewport's top-left corner. Scrolling down moves the
-content up, so `offset.y` grows from `0` to the content's height minus the
-viewport's height. Scrolling right moves it left, so `offset.x` falls from
-`0`. The system writes it while the player scrolls, and game code can write
+rest position, in reference pixels, with `y` growing down the screen. At
+`(0, 0)` the content's top-left corner is at the viewport's top-left corner.
+Scrolling down moves the content up, so `offset.y` falls from `0` to minus
+the content's height less the viewport's height. Scrolling right moves it
+left, so `offset.x` falls from `0` the same way. The system writes it while the player scrolls, and game code can write
 it to scroll:
 
 ```ts
@@ -159,7 +159,7 @@ levels.scrollRect.offset.y = 0; // back to the top
 
 ```ts
 levels.scrollRect.onValueChanged.registerListener((offset) => {
-  showMoreIndicator.visible = offset.y < maxOffsetY;
+  showMoreIndicator.visible = offset.y > -maxOffsetY;
 });
 ```
 
@@ -168,8 +168,8 @@ returns how far the content can scroll on each axis, and
 [`normalizeUiScrollOffset`](/Forge/docs/api/functions/normalizeUiScrollOffset)
 and
 [`denormalizeUiScrollOffset`](/Forge/docs/api/functions/denormalizeUiScrollOffset)
-convert between an offset and a `0` to `1` position (`y` is `1` at the top
-and `0` at the bottom):
+convert between an offset and a `0` to `1` position (`0` at the left or
+top, `1` at the right or bottom):
 
 ```ts
 import {
@@ -183,7 +183,7 @@ const range = computeUiScrollRange(
   world.getComponent(levels.content, rectTransformId)!.rect,
 );
 
-levels.scrollRect.offset = denormalizeUiScrollOffset({ x: 0, y: 0 }, range); // the bottom
+levels.scrollRect.offset = denormalizeUiScrollOffset({ x: 0, y: 1 }, range); // the bottom
 ```
 
 :::note

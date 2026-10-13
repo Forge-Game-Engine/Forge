@@ -17,8 +17,8 @@ precision mediump float;
 uniform float u_time;
 in vec4 v_tint;
 out vec4 fragColor;
-#pragma forge include(spriteMask)
-void main() { fragColor = v_tint * u_time * spriteMaskCoverage(); }`;
+#pragma forge include(mask)
+void main() { fragColor = v_tint * u_time * maskCoverage(); }`;
 
 const unmaskedFragmentShader = `#version 300 es
 #pragma forge name(unmasked.frag)
@@ -85,9 +85,9 @@ describe('SpriteMaterial', () => {
     renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);
   });
 
-  it("throws for a fragment shader that doesn't include spriteMask", () => {
+  it("throws for a fragment shader that doesn't include mask", () => {
     expect(() => createSpriteMaterial(renderContext, 'unmasked.frag')).toThrow(
-      'must include "spriteMask"',
+      'must include "mask"',
     );
   });
 

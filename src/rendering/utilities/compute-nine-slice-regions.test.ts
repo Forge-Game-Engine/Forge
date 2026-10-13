@@ -56,27 +56,25 @@ describe('computeNineSliceRegions', () => {
     expect(topLeft).toBeDefined();
     expect(bottomRight).toBeDefined();
 
-    // Top-left corner center offset from the sprite's own center anchor.
-    // Y is negated relative to X: sprite-space Y grows downward (top band
-    // first), but world space is Y-up, so a top-left corner ends up with a
-    // positive Y offset (up) alongside its negative X offset (left).
+    // Top-left corner center offset from the sprite's own center anchor:
+    // up (-Y) and left (-X).
     expect(topLeft!.offset.x).toBeCloseTo(-200 / 2 + 8 / 2, 5);
-    expect(topLeft!.offset.y).toBeCloseTo(120 / 2 - 4 / 2, 5);
+    expect(topLeft!.offset.y).toBeCloseTo(-120 / 2 + 4 / 2, 5);
 
-    // Bottom-right corner center offset.
+    // Bottom-right corner center offset: down (+Y) and right (+X).
     expect(bottomRight!.offset.x).toBeCloseTo(200 / 2 - 12 / 2, 5);
-    expect(bottomRight!.offset.y).toBeCloseTo(-120 / 2 + 6 / 2, 5);
+    expect(bottomRight!.offset.y).toBeCloseTo(120 / 2 - 6 / 2, 5);
   });
 
-  // Pivot is Y-up (matching SpriteEcsComponent.pivot): (0, 0) is bottom-left
-  // and (1, 1) is top-right. Each case anchors at one corner of the sprite,
+  // Pivot matches SpriteEcsComponent.pivot: (0, 0) is top-left and (1, 1)
+  // is bottom-right. Each case anchors at one corner of the sprite,
   // so the near corner region's own center lands a half-region-size offset
   // away from the anchor, signed toward the sprite's interior.
   it.each([
-    { pivot: { x: 0, y: 0 }, name: 'bottom-left', offset: { x: 5, y: 5 } },
-    { pivot: { x: 1, y: 0 }, name: 'bottom-right', offset: { x: -5, y: 5 } },
-    { pivot: { x: 0, y: 1 }, name: 'top-left', offset: { x: 5, y: -5 } },
-    { pivot: { x: 1, y: 1 }, name: 'top-right', offset: { x: -5, y: -5 } },
+    { pivot: { x: 0, y: 0 }, name: 'top-left', offset: { x: 5, y: 5 } },
+    { pivot: { x: 1, y: 0 }, name: 'top-right', offset: { x: -5, y: 5 } },
+    { pivot: { x: 0, y: 1 }, name: 'bottom-left', offset: { x: 5, y: -5 } },
+    { pivot: { x: 1, y: 1 }, name: 'bottom-right', offset: { x: -5, y: -5 } },
   ])(
     'places the $name corner exactly at the anchor when the pivot is ($pivot.x, $pivot.y)',
     ({ pivot, offset }) => {

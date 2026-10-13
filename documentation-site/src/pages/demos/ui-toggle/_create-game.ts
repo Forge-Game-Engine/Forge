@@ -155,11 +155,11 @@ export const createToggleGame = async (): Promise<Game> => {
   // height on the rect's pivot line - its `anchoredPosition.y` itself, not the middle
   // of its (otherwise-unused, for a caption) rect. So to land a
   // caption's vertical center on a same-row toggle's center, its y must be
-  // offset down by half the toggle's height, not simply match the toggle's
-  // own (top-edge) anchoredPosition.y.
+  // offset down (a larger y) by half the toggle's height, not simply match
+  // the toggle's own (top-edge) anchoredPosition.y.
   const toggleSize = 32;
   const rowCenterY = (toggleTopY: number): number =>
-    toggleTopY - toggleSize / 2;
+    toggleTopY + toggleSize / 2;
 
   const caption = (
     text: string,
@@ -177,7 +177,7 @@ export const createToggleGame = async (): Promise<Game> => {
     });
   };
 
-  const muteToggleY = -80;
+  const muteToggleY = 80;
 
   caption('Mute', { x: 60, y: rowCenterY(muteToggleY) });
 
@@ -189,7 +189,7 @@ export const createToggleGame = async (): Promise<Game> => {
     transition: boxTransition,
   });
 
-  const difficultyToggleY = -220;
+  const difficultyToggleY = 220;
 
   caption('Difficulty', { x: 60, y: rowCenterY(difficultyToggleY) });
 
@@ -215,7 +215,7 @@ export const createToggleGame = async (): Promise<Game> => {
       fontAtlas,
       size: 20,
       anchor: UiAnchor.topLeft({ x: 60, y: 30 }),
-      anchoredPosition: { x: 236 + i * 90, y: -262 },
+      anchoredPosition: { x: 236 + i * 90, y: 262 },
       horizontalAlign: textHorizontalAlignments.center,
       color: Color.white,
       category: renderLayers.ui,

@@ -125,10 +125,10 @@ export async function createEasingRows(
   const rowCount = easingRowConfigs.length;
   const usableHeight = height - verticalMarginPixels * 2;
   const rowSpacing = rowCount > 1 ? usableHeight / (rowCount - 1) : 0;
-  const topY = usableHeight / 2;
+  const topY = -usableHeight / 2;
 
   easingRowConfigs.forEach(({ easingFunction, color }, index) => {
-    const y = topY - index * rowSpacing;
+    const y = topY + index * rowSpacing;
 
     const laneSprite: SpriteEcsComponent = {
       ...spriteTemplate,

@@ -198,6 +198,29 @@ describe('createUiLayoutGroupEcsSystem', () => {
       expect(ignoredRectAfter.x).toEqual(ignoredRectBefore.x);
     });
 
+    it('aligns children on the cross axis from padding.top, downwards', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 300, 100);
+
+      addHorizontalLayoutGroupComponent(world, group, {
+        padding: { left: 0, right: 0, top: 10, bottom: 30 },
+        childForceExpandHeight: false,
+        childControlHeight: false,
+        childAlignment: uiAlignments.middleLeft,
+      });
+
+      const a = createChild(world, group, { x: 50, y: 20 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      // Content box is y 10-70 (60 tall); the 20-tall child centered in it
+      // has its top at 10 + (60 - 20) * 0.5 = 30.
+      expect(
+        world.getComponent(a, rectTransformId)!.anchoredPosition.y,
+      ).toBeCloseTo(30);
+    });
+
     it("distributes leftover main-axis space by each child's own flexible weight", () => {
       const world = new EcsWorld();
       const group = createGroupEntity(world, 300, 100);
@@ -248,13 +271,13 @@ describe('createUiLayoutGroupEcsSystem', () => {
       const rectC = world.getComponent(c, rectTransformId)!;
 
       // `c` sits directly under `a`, where `hidden` would have been.
-      expect(rectA.anchoredPosition.y).toBeCloseTo(40);
+      expect(rectA.anchoredPosition.y).toBeCloseTo(0);
       expect(rectC.anchoredPosition.y).toBeCloseTo(20);
 
       visibility.visible = true;
       world.update();
 
-      expect(rectC.anchoredPosition.y).toBeCloseTo(0);
+      expect(rectC.anchoredPosition.y).toBeCloseTo(40);
     });
 
     it("gives a horizontal group's space to its visible children only", () => {
@@ -293,10 +316,10 @@ describe('createUiLayoutGroupEcsSystem', () => {
 
       expect(
         world.getComponent(cells[1], rectTransformId)!.anchoredPosition,
-      ).toEqual({ x: 0, y: 50 });
+      ).toEqual({ x: 0, y: 0 });
       expect(
         world.getComponent(cells[2], rectTransformId)!.anchoredPosition,
-      ).toEqual({ x: 50, y: 50 });
+      ).toEqual({ x: 50, y: 0 });
     });
 
     it('shrinks a content size fitter to its visible children', () => {
@@ -343,9 +366,9 @@ describe('createUiLayoutGroupEcsSystem', () => {
       // Preferred total = 60, box = 60, no leftover: heights stay 20/40,
       // `a` (first child) at the top.
       expect(uiAxisValue(rectA.y)).toBeCloseTo(20);
-      expect(rectA.anchoredPosition.y).toBeCloseTo(40);
+      expect(rectA.anchoredPosition.y).toBeCloseTo(0);
       expect(uiAxisValue(rectB.y)).toBeCloseTo(40);
-      expect(rectB.anchoredPosition.y).toBeCloseTo(0);
+      expect(rectB.anchoredPosition.y).toBeCloseTo(20);
 
       // Cross axis (width) force-expands to the full box width by default.
       expect(uiAxisValue(rectA.x)).toBeCloseTo(100);
@@ -369,9 +392,34 @@ describe('createUiLayoutGroupEcsSystem', () => {
 
       const rectA = world.getComponent(a, rectTransformId)!;
 
-      // Bottom-aligned: leftover (80) all goes below, so the single 20-tall
-      // child's bottom edge sits at the box's own bottom (y = 0).
-      expect(rectA.anchoredPosition.y).toBeCloseTo(0);
+      // Bottom-aligned: leftover (80) all goes above, so the single 20-tall
+      // child's bottom edge sits at the box's own bottom (its top at y = 80).
+      expect(rectA.anchoredPosition.y).toBeCloseTo(80);
+    });
+
+    it('starts the first child at padding.top', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 100, 100);
+
+      addVerticalLayoutGroupComponent(world, group, {
+        padding: { left: 0, right: 0, top: 15, bottom: 5 },
+        spacing: 10,
+        childControlHeight: false,
+        childForceExpandHeight: false,
+      });
+
+      const a = createChild(world, group, { x: 40, y: 20 });
+      const b = createChild(world, group, { x: 40, y: 20 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      expect(
+        world.getComponent(a, rectTransformId)!.anchoredPosition.y,
+      ).toBeCloseTo(15);
+      expect(
+        world.getComponent(b, rectTransformId)!.anchoredPosition.y,
+      ).toBeCloseTo(45);
     });
 
     it('is a no-op with no children', () => {
@@ -444,9 +492,9 @@ describe('createUiLayoutGroupEcsSystem', () => {
         (cell) => world.getComponent(cell, rectTransformId)!.anchoredPosition,
       );
 
-      expect(positions[0]).toEqual({ x: 0, y: 50 });
-      expect(positions[1]).toEqual({ x: 50, y: 50 });
-      expect(positions[2]).toEqual({ x: 0, y: 0 });
+      expect(positions[0]).toEqual({ x: 0, y: 0 });
+      expect(positions[1]).toEqual({ x: 50, y: 0 });
+      expect(positions[2]).toEqual({ x: 0, y: 50 });
 
       for (const cell of cells) {
         expect(sizeOf(world.getComponent(cell, rectTransformId)!)).toEqual({
@@ -479,9 +527,9 @@ describe('createUiLayoutGroupEcsSystem', () => {
 
       // rows: 2 (fixed) -> columns: ceil(3 / 2) = 2, same layout as the
       // fixedColumnCount test above (columns also happens to be 2 there).
-      expect(positions[0]).toEqual({ x: 0, y: 50 });
-      expect(positions[1]).toEqual({ x: 50, y: 50 });
-      expect(positions[2]).toEqual({ x: 0, y: 0 });
+      expect(positions[0]).toEqual({ x: 0, y: 0 });
+      expect(positions[1]).toEqual({ x: 50, y: 0 });
+      expect(positions[2]).toEqual({ x: 0, y: 50 });
     });
 
     it('fills columns first, then wraps to a new row, for startAxis: vertical', () => {
@@ -508,9 +556,9 @@ describe('createUiLayoutGroupEcsSystem', () => {
 
       // 2 columns, so 2 rows needed for 3 cells; startAxis: 'vertical' fills
       // the first column top-to-bottom before wrapping to the next column.
-      expect(positions[0]).toEqual({ x: 0, y: 50 });
-      expect(positions[1]).toEqual({ x: 0, y: 0 });
-      expect(positions[2]).toEqual({ x: 50, y: 50 });
+      expect(positions[0]).toEqual({ x: 0, y: 0 });
+      expect(positions[1]).toEqual({ x: 0, y: 50 });
+      expect(positions[2]).toEqual({ x: 50, y: 0 });
     });
 
     it('flips both column and row placement, for startCorner: lowerRight', () => {
@@ -535,9 +583,9 @@ describe('createUiLayoutGroupEcsSystem', () => {
         (cell) => world.getComponent(cell, rectTransformId)!.anchoredPosition,
       );
 
-      expect(positions[0]).toEqual({ x: 50, y: 0 });
-      expect(positions[1]).toEqual({ x: 0, y: 0 });
-      expect(positions[2]).toEqual({ x: 50, y: 50 });
+      expect(positions[0]).toEqual({ x: 50, y: 50 });
+      expect(positions[1]).toEqual({ x: 0, y: 50 });
+      expect(positions[2]).toEqual({ x: 50, y: 0 });
     });
 
     it('is a no-op with no children', () => {
@@ -762,8 +810,8 @@ describe('createUiLayoutGroupEcsSystem', () => {
         [
           [0, 100],
           [30, 100],
-          [0, 0],
-          [30, 0],
+          [0, 200],
+          [30, 200],
         ],
       ],
       [
@@ -772,16 +820,16 @@ describe('createUiLayoutGroupEcsSystem', () => {
         [
           [40, 100],
           [0, 100],
-          [40, 0],
-          [0, 0],
+          [40, 200],
+          [0, 200],
         ],
       ],
       [
         'lowerLeft',
         'horizontal',
         [
-          [0, 0],
-          [30, 0],
+          [0, 200],
+          [30, 200],
           [0, 100],
           [30, 100],
         ],
@@ -790,8 +838,8 @@ describe('createUiLayoutGroupEcsSystem', () => {
         'lowerRight',
         'horizontal',
         [
-          [40, 0],
-          [0, 0],
+          [40, 200],
+          [0, 200],
           [40, 100],
           [0, 100],
         ],
@@ -801,9 +849,9 @@ describe('createUiLayoutGroupEcsSystem', () => {
         'vertical',
         [
           [0, 100],
-          [0, 0],
+          [0, 200],
           [20, 100],
-          [20, 0],
+          [20, 200],
         ],
       ],
       [
@@ -811,18 +859,18 @@ describe('createUiLayoutGroupEcsSystem', () => {
         'vertical',
         [
           [40, 100],
-          [40, 0],
+          [40, 200],
           [0, 100],
-          [0, 0],
+          [0, 200],
         ],
       ],
       [
         'lowerLeft',
         'vertical',
         [
-          [0, 0],
+          [0, 200],
           [0, 100],
-          [20, 0],
+          [20, 200],
           [20, 100],
         ],
       ],
@@ -830,9 +878,9 @@ describe('createUiLayoutGroupEcsSystem', () => {
         'lowerRight',
         'vertical',
         [
-          [40, 0],
+          [40, 200],
           [40, 100],
-          [0, 0],
+          [0, 200],
           [0, 100],
         ],
       ],

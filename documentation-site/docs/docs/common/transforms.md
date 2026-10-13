@@ -42,8 +42,8 @@ import {
 
 const entity = world.createEntity();
 
-addPositionComponent(world, entity, { local: { x: 100, y: 50 } });
-addRotationComponent(world, entity, { local: Math.PI / 4 });
+addPositionComponent(world, entity, { local: { x: 100, y: -50 } });
+addRotationComponent(world, entity, { local: -Math.PI / 4 });
 addScaleComponent(world, entity, { local: { x: 2, y: 2 } });
 ```
 
@@ -98,9 +98,9 @@ const parent = world.createEntity();
 const child = world.createEntity();
 
 addPositionComponent(world, parent, { local: { x: 100, y: 0 } });
-addPositionComponent(world, child, { local: { x: 0, y: 12 } });
+addPositionComponent(world, child, { local: { x: 0, y: -12 } });
 world.setParent(child, parent);
-// After the transform system updates, the child's world position is (100, 12).
+// After the transform system updates, the child's world position is (100, -12).
 ```
 
 Moving the parent's `local` moves the child with it. Setting or removing a
@@ -133,7 +133,7 @@ that, as long as every parent in its chain is also static:
 
 ```ts
 addPositionComponent(world, entity, {
-  local: { x: 0, y: -200 },
+  local: { x: 0, y: 200 },
   isStatic: true,
 });
 ```

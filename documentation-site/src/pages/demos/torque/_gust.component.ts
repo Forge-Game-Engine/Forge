@@ -31,7 +31,7 @@ export function addGustComponent(
   const component: GustEcsComponent = {
     ...options,
     elapsedSeconds: 0,
-    nextSign: 1,
+    nextSign: -1,
   };
 
   return world.addComponent(entity, gustId, component);

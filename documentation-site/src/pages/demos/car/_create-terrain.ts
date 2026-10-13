@@ -9,7 +9,7 @@ import {
   TerrainCollider,
 } from '@forge-game-engine/forge/physics';
 import {
-  addTerrainMeshComponent,
+  addMeshComponent,
   Color,
   createTerrainMesh,
   RenderContext,
@@ -39,7 +39,8 @@ const runoffLength = 500;
 const hillRampLength = 400;
 
 /**
- * The ground height at `x`: flat for the launch pad, then two sine waves
+ * The ground height at `x` (positive is up, so it's negated to get the
+ * Y-down world position): flat for the launch pad, then two sine waves
  * (rolling hills), a slow climb and a little noise.
  */
 function heightAt(x: number, random: Random): number {
@@ -72,7 +73,7 @@ function buildSurfacePoints(random: Random): Vector2[] {
     x <= courseLength;
     x += pointSpacing
   ) {
-    points.push({ x, y: heightAt(x, random) });
+    points.push({ x, y: -heightAt(x, random) });
   }
 
   return points;
@@ -109,14 +110,10 @@ export async function createTerrain(
   const surfacePoints = buildSurfacePoints(random);
   const terrainCollider = new TerrainCollider(surfacePoints, terrainDepth);
 
-  const position = Vec2.zero;
-  const angle = 0;
-
+  // Created before the car, so the ground draws behind it.
   const terrainEntity = world.createEntity();
 
-  addPositionComponent(world, terrainEntity, {
-    local: Vec2.clone(position),
-  });
+  addPositionComponent(world, terrainEntity);
   addRotationComponent(world, terrainEntity);
   addColliderComponent(world, terrainEntity, {
     collider: terrainCollider,
@@ -131,8 +128,6 @@ export async function createTerrain(
   const mesh = createTerrainMesh(renderContext, {
     curvePoints: toCurvePoints(surfacePoints),
     depth: terrainDepth,
-    position,
-    angle,
     border: {
       texture: groundTexture,
       tileSize: { x: 64, y: 64 },
@@ -146,11 +141,11 @@ export async function createTerrain(
     borderWidth: 40,
   });
 
-  addTerrainMeshComponent(world, terrainEntity, { mesh });
+  addMeshComponent(world, terrainEntity, mesh);
 
   const carSpawnX = 150;
 
   return {
-    groundPosition: { x: carSpawnX, y: heightAt(carSpawnX, random) },
+    groundPosition: { x: carSpawnX, y: -heightAt(carSpawnX, random) },
   };
 }

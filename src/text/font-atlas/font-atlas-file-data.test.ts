@@ -13,13 +13,18 @@ const buildFileData = (): FontAtlasFileData => ({
   type: 'msdf',
   atlasSize: { width: 512, height: 512 },
   distanceRange: 4,
-  metrics: { lineHeight: 1.2, ascender: 0.9, descender: -0.2, capHeight: 0.7 },
+  metrics: {
+    lineHeight: 1.2,
+    ascentLine: -0.9,
+    descentLine: 0.2,
+    capLine: -0.7,
+  },
   glyphs: [
     {
       codePoint: 65,
       advance: 0.6,
-      planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: 0.7 },
-      atlasBounds: { left: 0.1, bottom: 0.2, right: 0.2, top: 0.3 },
+      planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: -0.7 },
+      atlasBounds: { left: 0.1, bottom: 0.3, right: 0.2, top: 0.2 },
     },
     {
       codePoint: 32,
@@ -43,9 +48,9 @@ describe('toFontAtlasData', () => {
     expect(result.distanceRange).toBe(4);
     expect(result.metrics).toEqual({
       lineHeight: 1.2,
-      ascender: 0.9,
-      descender: -0.2,
-      capHeight: 0.7,
+      ascentLine: -0.9,
+      descentLine: 0.2,
+      capLine: -0.7,
     });
   });
 
@@ -56,8 +61,8 @@ describe('toFontAtlasData', () => {
     expect(result.glyphs.get(65)).toEqual({
       codePoint: 65,
       advance: 0.6,
-      planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: 0.7 },
-      atlasBounds: { left: 0.1, bottom: 0.2, right: 0.2, top: 0.3 },
+      planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: -0.7 },
+      atlasBounds: { left: 0.1, bottom: 0.3, right: 0.2, top: 0.2 },
     });
     expect(result.glyphs.get(32)?.planeBounds).toBeNull();
   });

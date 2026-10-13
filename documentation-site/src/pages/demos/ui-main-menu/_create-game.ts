@@ -270,9 +270,9 @@ export const createUiMainMenuGame = async (): Promise<Game> => {
     // whole label on-screen.
     anchor: {
       x: UiAxis.point(0.5, { pivot: 0, size: statusLabelWidth }),
-      y: UiAxis.point(0, { size: 36 }),
+      y: UiAxis.point(1, { size: 36 }),
     },
-    anchoredPosition: { x: -statusLabelWidth / 2, y: 36 },
+    anchoredPosition: { x: -statusLabelWidth / 2, y: -36 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     maxWidth: statusLabelWidth,

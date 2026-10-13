@@ -105,7 +105,7 @@ const panelSprite = {
 
 const panel = createPanel(world, canvas, {
   anchor: UiAnchor.topLeft({ x: 240, y: 96 }),
-  anchoredPosition: { x: 20, y: -20 },
+  anchoredPosition: { x: 20, y: 20 },
   sprite: panelSprite,
 });
 ```
@@ -136,7 +136,7 @@ const healthBarCanvas = createUiCanvas(world, renderContext, {
   renderMode: 'worldSpace',
   camera: worldCamera,
   anchor: UiAnchor.center({ x: 80, y: 10 }),
-  anchoredPosition: { x: 0, y: 40 },
+  anchoredPosition: { x: 0, y: -40 }, // 40 above the target: y grows down
 });
 
 world.setParent(healthBarCanvas, target);
@@ -182,7 +182,7 @@ const followTargetSystem: EcsSystem<[]> = {
 
     // target has no parent, so its local position is its world position.
     canvasRect.anchoredPosition.x = targetPosition.local.x;
-    canvasRect.anchoredPosition.y = targetPosition.local.y + 40;
+    canvasRect.anchoredPosition.y = targetPosition.local.y - 40;
   },
 };
 ```

@@ -122,23 +122,23 @@ export async function createScene(
     solid,
   );
   addBox(
-    { x: -halfWidth * 0.35, y: halfHeight * 0.35 },
+    { x: -halfWidth * 0.35, y: -halfHeight * 0.35 },
     { x: width * 0.45, y: 16 },
-    -0.3,
+    0.3,
     solid,
   );
   addBox(
-    { x: halfWidth * 0.35, y: -halfHeight * 0.05 },
+    { x: halfWidth * 0.35, y: halfHeight * 0.05 },
     { x: width * 0.45, y: 16 },
-    0.3,
+    -0.3,
     solid,
   );
 
   // Two sensor trigger zones: detected, never resolved, so balls fall
   // straight through while the zone system tints them.
   const zones = [
-    { y: -halfHeight * 0.35, color: new Color(1, 0.75, 0.2) },
-    { y: -halfHeight * 0.7, color: new Color(0.3, 0.9, 0.5) },
+    { y: halfHeight * 0.35, color: new Color(1, 0.75, 0.2) },
+    { y: halfHeight * 0.7, color: new Color(0.3, 0.9, 0.5) },
   ];
 
   for (const zone of zones) {
@@ -156,7 +156,7 @@ export async function createScene(
 
   // A sensor drain just below the bottom edge removes every ball it touches.
   const drain = addBox(
-    { x: 0, y: -halfHeight - 60 },
+    { x: 0, y: halfHeight + 60 },
     { x: width * 2, y: 40 },
     0,
     null,

@@ -183,7 +183,7 @@ describe('KeyboardInputSource', () => {
     );
 
     window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.w }));
-    expect(axis2dAction.value.y).toBe(1);
+    expect(axis2dAction.value.y).toBe(-1);
 
     window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.d }));
     expect(axis2dAction.value.x).toBe(1);
@@ -195,7 +195,7 @@ describe('KeyboardInputSource', () => {
     expect(axis2dAction.value.x).toBe(0);
 
     window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.s }));
-    expect(axis2dAction.value.y).toBe(-1);
+    expect(axis2dAction.value.y).toBe(1);
 
     window.dispatchEvent(new KeyboardEvent('keydown', { code: keyCodes.a }));
     expect(axis2dAction.value.x).toBe(-1);
@@ -300,10 +300,10 @@ describe('KeyboardInputSource', () => {
     window.dispatchEvent(
       new KeyboardEvent('keydown', { code: keyCodes.arrowUp }),
     );
-    expect(axis2dAction.value.y).toBe(1);
+    expect(axis2dAction.value.y).toBe(-1);
 
     window.dispatchEvent(new KeyboardEvent('keyup', { code: keyCodes.w }));
-    expect(axis2dAction.value.y).toBe(1);
+    expect(axis2dAction.value.y).toBe(-1);
 
     window.dispatchEvent(
       new KeyboardEvent('keyup', { code: keyCodes.arrowUp }),

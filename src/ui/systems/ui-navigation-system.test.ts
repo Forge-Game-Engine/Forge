@@ -169,6 +169,53 @@ describe('createUiNavigationEcsSystem', () => {
     expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(right);
   });
 
+  it('moves focus up to a smaller y and down to a larger y, with up reading as negative y input', () => {
+    const world = new EcsWorld();
+    const navigateInput = new Axis2dAction('navigate');
+    const canvas = createTestCanvas(world, { navigateInput });
+    const top = createButtonAt(world, canvas, { x: 0, y: -200 });
+    const middle = createButtonAt(world, canvas, { x: 0, y: 0 });
+    const bottom = createButtonAt(world, canvas, { x: 0, y: 200 });
+    const canvasComponent = world.getComponent(canvas, canvasId)!;
+
+    world.addSystem(createUiNavigationEcsSystem());
+    canvasComponent.focusedEntity = middle;
+
+    navigate(navigateInput, 0, -1);
+    navigate(navigateInput, 0, 0);
+    tick(world);
+
+    expect(canvasComponent.focusedEntity).toBe(top);
+
+    navigate(navigateInput, 0, 1);
+    navigate(navigateInput, 0, 0);
+    navigate(navigateInput, 0, 1);
+    navigate(navigateInput, 0, 0);
+    tick(world);
+
+    expect(canvasComponent.focusedEntity).toBe(bottom);
+  });
+
+  it('follows an explicit UiFocusEcsComponent up override for negative y input', () => {
+    const world = new EcsWorld();
+    const navigateInput = new Axis2dAction('navigate');
+    const canvas = createTestCanvas(world, { navigateInput });
+    const upTarget = createButtonAt(world, canvas, { x: 900, y: 0 });
+    const downTarget = createButtonAt(world, canvas, { x: -900, y: 0 });
+    const start = createButtonAt(world, canvas, { x: 0, y: 0 });
+    const canvasComponent = world.getComponent(canvas, canvasId)!;
+
+    addUiFocusComponent(world, start, { up: upTarget, down: downTarget });
+    world.addSystem(createUiNavigationEcsSystem());
+    canvasComponent.focusedEntity = start;
+
+    navigate(navigateInput, 0, -1);
+    navigate(navigateInput, 0, 0);
+    tick(world);
+
+    expect(canvasComponent.focusedEntity).toBe(upTarget);
+  });
+
   it('moves focus for a press released before the next tick', () => {
     const world = new EcsWorld();
     const navigateInput = new Axis2dAction('navigate');

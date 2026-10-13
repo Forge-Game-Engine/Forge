@@ -254,8 +254,8 @@ export function createTextInput(
 
   addUiColorTransitionComponent(world, entity, transitionOptions);
 
-  const { ascender, descender } = fontAtlas.data.metrics;
-  const lineHeight = (ascender - descender) * size;
+  const { ascentLine, descentLine } = fontAtlas.data.metrics;
+  const lineHeight = (descentLine - ascentLine) * size;
 
   const origin = world.createEntity();
 
@@ -264,7 +264,13 @@ export function createTextInput(
   addRectTransformComponent(world, origin, {
     x: UiAxis.point(0, { pivot: 0, size: 0 }),
     y: UiAxis.point(0.5, { size: 0 }),
-    anchoredPosition: { x: padding, y: (-(ascender + descender) / 2) * size },
+    // The origin is the text's baseline, placed so the line's
+    // ascent-to-descent box, measured from the baseline, is centered in
+    // the field.
+    anchoredPosition: {
+      x: padding,
+      y: (-(ascentLine + descentLine) / 2) * size,
+    },
   });
 
   const createFill = (

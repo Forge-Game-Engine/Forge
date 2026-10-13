@@ -5,7 +5,8 @@ sidebar_position: 5
 # Masks
 
 A [`MaskEcsComponent`](/Forge/docs/api/interfaces/MaskEcsComponent) clips
-the sprites and text of its entity and of every descendant to a rect. Its
+the sprites, text and [meshes](./meshes.md) of its entity and of every
+descendant to a rect. Its
 shape shows the whole rect, part of it from one edge, or a sector around
 its center, so a mask can crop a scrolling list, fill a bar or drain a
 ring without resizing the art it clips.
@@ -16,13 +17,13 @@ A mask's `shape` is one of three kinds:
 
 - `'rect'` shows everything inside the rect.
 - `'linear'` shows `amount` (`0` to `1`) of the rect, measured from the
-  `origin` edge: `'left'`, `'right'`, `'bottom'` or `'top'`.
+  `origin` edge: `'left'`, `'right'`, `'top'` or `'bottom'`.
 - `'radial'` shows the sector from `startAngle` through
   `startAngle + sweep * amount` around the rect's center. Angles are in
-  radians, `0` points along `+X` and a positive angle turns
-  counter-clockwise (see [angles](../math/angles-and-rotation.md)). A
-  negative `sweep` turns clockwise, and a `sweep` less than a full turn
-  (`2 * Math.PI`) gives an arc.
+  radians, `0` points along `+X` and a positive angle turns towards `+Y`,
+  clockwise on screen (see [angles](../math/angles-and-rotation.md)). A
+  negative `sweep` turns counter-clockwise, and a `sweep` less than a full
+  turn (`2 * Math.PI`) gives an arc.
 
 Edges are anti-aliased.
 
@@ -46,7 +47,7 @@ addMaskComponent(world, viewport, { width: 200, height: 120 });
 world.setParent(listItem, viewport);
 ```
 
-Every sprite and text on `viewport` and its descendants draws only inside
+Every sprite, text and mesh on `viewport` and its descendants draws only inside
 the 200 by 120 rect. The render system throws for a mask whose entity has
 no position.
 
@@ -81,8 +82,8 @@ addMaskComponent(world, cooldownRing, {
   height: ringSprite.height,
   shape: {
     kind: 'radial',
-    startAngle: Math.PI / 2,
-    sweep: -2 * Math.PI,
+    startAngle: -Math.PI / 2,
+    sweep: 2 * Math.PI,
     amount: 0.25,
   },
 });
@@ -105,15 +106,16 @@ clips to the rotated rect.
 
 ## Masks in custom shaders
 
-Masks are applied in the sprite and text fragment shaders. A sprite
+Masks are applied in the sprite, text and mesh fragment shaders. A sprite
 material's own fragment shader (see
 [Drawing sprites with a custom shader](./sprites.md#drawing-sprites-with-a-custom-shader))
-includes `spriteMask` and multiplies its output alpha by
-`spriteMaskCoverage()`; `createSpriteMaterial` throws for one that
-doesn't.
+and a mesh material's fragment shader (see
+[Writing mesh shaders](./meshes.md#writing-mesh-shaders)) include `mask`
+and multiply their output alpha by `maskCoverage()`;
+`createSpriteMaterial` and `createMeshMaterial` throw for one that doesn't.
 
 ## Removing a mask
 
 Remove the `MaskEcsComponent` with `world.removeComponent(entity, maskId)`.
-The sprites and text of the entity and its descendants draw without that
-mask from the next frame.
+The sprites, text and meshes of the entity and its descendants draw without
+that mask from the next frame.

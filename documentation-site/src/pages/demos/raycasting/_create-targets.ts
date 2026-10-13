@@ -42,31 +42,31 @@ function buildTargets(width: number): TargetSpec[] {
 
   return [
     {
-      position: { x: -halfWidth * 0.35, y: 120 },
+      position: { x: -halfWidth * 0.35, y: -120 },
       size: 70,
       rotation: 0,
       shape: 'circle',
     },
     {
-      position: { x: -halfWidth * 0.1, y: -90 },
+      position: { x: -halfWidth * 0.1, y: 90 },
       size: 90,
-      rotation: Math.PI / 6,
+      rotation: -Math.PI / 6,
       shape: 'square',
     },
     {
-      position: { x: halfWidth * 0.2, y: 60 },
+      position: { x: halfWidth * 0.2, y: -60 },
       size: 60,
       rotation: 0,
       shape: 'circle',
     },
     {
-      position: { x: halfWidth * 0.45, y: -140 },
+      position: { x: halfWidth * 0.45, y: 140 },
       size: 100,
-      rotation: -Math.PI / 8,
+      rotation: Math.PI / 8,
       shape: 'square',
     },
     {
-      position: { x: halfWidth * 0.6, y: 160 },
+      position: { x: halfWidth * 0.6, y: -160 },
       size: 80,
       rotation: 0,
       shape: 'circle',
