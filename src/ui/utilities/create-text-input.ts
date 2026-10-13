@@ -264,7 +264,10 @@ export function createTextInput(
   addRectTransformComponent(world, origin, {
     x: UiAxis.point(0, { pivot: 0, size: 0 }),
     y: UiAxis.point(0.5, { size: 0 }),
-    anchoredPosition: { x: padding, y: (-(ascender + descender) / 2) * size },
+    // The origin is the text's baseline, placed so the line's
+    // ascender-to-descender box is centered in the field (`descender` is
+    // negative, below the baseline, as fonts define it).
+    anchoredPosition: { x: padding, y: ((ascender + descender) / 2) * size },
   });
 
   const createFill = (

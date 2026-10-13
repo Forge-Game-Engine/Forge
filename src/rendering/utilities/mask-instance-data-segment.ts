@@ -47,33 +47,20 @@ export const MASK_INSTANCE_DATA_FLOATS_PER_INSTANCE = 14;
 const toShaderCoordinate = (value: number): number =>
   Math.min(Math.max(value, -UNBOUNDED_EDGE), UNBOUNDED_EDGE);
 
-/**
- * The sign of Y in the world a shader receives mask data in: `-1` for the
- * sprite and glyph instance data, which is Y-down (see
- * `bindSpriteInstanceData`), `1` for meshes, which are drawn in the
- * engine's Y-up world. Mask coverage only depends on distances and mask
- * coordinates, which come out the same either way, as long as the mask data
- * and the positions it's tested against share the same Y direction.
- */
-export type MaskDataYSign = 1 | -1;
-
 function bindShapeMask(
   shape: InstanceShapeMask,
   buffer: Float32Array,
   offset: number,
   modeOffset: number,
-  ySign: MaskDataYSign,
 ): void {
   const { origin, axes } = shape;
 
-  // In a Y-down world, the Y input of the axes and the origin's Y are
-  // negated.
   buffer[offset + AXES_XX_OFFSET] = axes.xx;
-  buffer[offset + AXES_XY_OFFSET] = ySign * axes.xy;
+  buffer[offset + AXES_XY_OFFSET] = axes.xy;
   buffer[offset + AXES_YX_OFFSET] = axes.yx;
-  buffer[offset + AXES_YY_OFFSET] = ySign * axes.yy;
+  buffer[offset + AXES_YY_OFFSET] = axes.yy;
   buffer[offset + ORIGIN_X_OFFSET] = origin.x;
-  buffer[offset + ORIGIN_Y_OFFSET] = ySign * origin.y;
+  buffer[offset + ORIGIN_Y_OFFSET] = origin.y;
 
   if (shape.kind === 'linear') {
     buffer[offset + SHAPE_MODE_OFFSET] = SHAPE_MODE_LINEAR + modeOffset;
@@ -113,13 +100,11 @@ unmaskedInstanceData[SHAPE_MODE_OFFSET] = SHAPE_MODE_NONE;
  * @param mask - The masks to write, or `null` for none.
  * @param buffer - The buffer to write into.
  * @param offset - The index of the first float to write.
- * @param ySign - The sign of Y in the world the shader tests positions in.
  */
 export function writeMaskData(
   mask: InstanceMask | null,
   buffer: Float32Array,
   offset: number,
-  ySign: MaskDataYSign,
 ): void {
   if (!mask) {
     buffer.set(unmaskedInstanceData, offset);
@@ -130,17 +115,14 @@ export function writeMaskData(
   const { clip } = mask;
   // Rect masks bound all four edges, so one tells whether there is any.
   const modeOffset = Number.isFinite(clip.min.x) ? CLIPPED_MODE_OFFSET : 0;
-  // In a Y-down world, the clip rect's top edge becomes its minimum.
-  const minY = ySign === 1 ? clip.min.y : -clip.max.y;
-  const maxY = ySign === 1 ? clip.max.y : -clip.min.y;
 
   buffer[offset + CLIP_MIN_X_OFFSET] = toShaderCoordinate(clip.min.x);
-  buffer[offset + CLIP_MIN_Y_OFFSET] = toShaderCoordinate(minY);
+  buffer[offset + CLIP_MIN_Y_OFFSET] = toShaderCoordinate(clip.min.y);
   buffer[offset + CLIP_MAX_X_OFFSET] = toShaderCoordinate(clip.max.x);
-  buffer[offset + CLIP_MAX_Y_OFFSET] = toShaderCoordinate(maxY);
+  buffer[offset + CLIP_MAX_Y_OFFSET] = toShaderCoordinate(clip.max.y);
 
   if (mask.shape) {
-    bindShapeMask(mask.shape, buffer, offset, modeOffset, ySign);
+    bindShapeMask(mask.shape, buffer, offset, modeOffset);
 
     return;
   }
@@ -157,8 +139,7 @@ function bindMaskInstanceData(
   buffer: Float32Array,
   offset: number,
 ): void {
-  // Y-down, like the rest of the instance data.
-  writeMaskData(components.mask, buffer, offset, -1);
+  writeMaskData(components.mask, buffer, offset);
 }
 
 function setupMaskInstanceAttributes(

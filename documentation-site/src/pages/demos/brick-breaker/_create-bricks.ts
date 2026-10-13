@@ -186,7 +186,7 @@ export async function createBrickField(
     for (const [row, sprite] of sprites.entries()) {
       const brickHeight = brickWidth * (sprite.height / sprite.width);
       const rowGap = brickHeight * rowGapFraction;
-      const y = playArea.topY - rowGap - row * (brickHeight + rowGap);
+      const y = playArea.topY + rowGap + row * (brickHeight + rowGap);
 
       for (let column = 0; column < columns; column++) {
         const x = startX + column * (brickWidth + columnGap);

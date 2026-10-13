@@ -73,7 +73,7 @@ export const createMeshesGame = async (
     world,
     renderContext,
     'img/space-shooter/Spaceship_6.png',
-    { x: 0, y: 110 },
+    { x: 0, y: -110 },
     170,
     spriteOrders.ship,
   );
@@ -81,7 +81,7 @@ export const createMeshesGame = async (
     world,
     renderContext,
     'img/space-shooter/Asteroid_2.png',
-    { x: 70, y: -140 },
+    { x: 70, y: 140 },
     120,
     spriteOrders.asteroid,
   );
@@ -91,7 +91,7 @@ export const createMeshesGame = async (
   const exhaust = createExhaust(
     world,
     renderContext,
-    { x: 0, y: 70 },
+    { x: 0, y: -70 },
     renderLayer,
     defaultExhaustSettings.order,
   );

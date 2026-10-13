@@ -22,7 +22,7 @@ export const createScrollEcsSystem = (
       const { speed, wrapHeight } = scrolls[i];
 
       positions[i].local.y =
-        ((time.timeInSeconds * speed) % wrapHeight) - wrapHeight / 2;
+        wrapHeight / 2 - ((time.timeInSeconds * speed) % wrapHeight);
     }
   },
 });

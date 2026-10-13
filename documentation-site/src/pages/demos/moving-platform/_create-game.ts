@@ -41,7 +41,7 @@ export const createMovingPlatformGame = async (): Promise<Game> => {
     camera,
     renderContext,
   ).size;
-  const platformY = -height * 0.15;
+  const platformY = height * 0.15;
   const leftX = -width * 0.25;
   const rightX = width * 0.25;
 
@@ -62,12 +62,12 @@ export const createMovingPlatformGame = async (): Promise<Game> => {
 
   // A small starting stack above the platform's initial (leftmost) position,
   // so it's immediately obvious the platform carries whatever lands on it.
-  const platformSurfaceY = platformY + platformHeight / 2 + crateSize / 2 + 8;
+  const platformSurfaceY = platformY - platformHeight / 2 - crateSize / 2 - 8;
 
   for (let i = 0; i < 3; i++) {
     spawnCrate(world, crateSprite, {
       x: leftX + (i - 1) * (crateSize + 4),
-      y: platformSurfaceY + i * (crateSize + 4),
+      y: platformSurfaceY - i * (crateSize + 4),
     });
   }
 

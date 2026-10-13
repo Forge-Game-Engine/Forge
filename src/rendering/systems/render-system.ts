@@ -438,13 +438,13 @@ function isSameBatch(
 /** Draws one mesh with one draw call, through its entity's transform. */
 function drawMesh(
   renderContext: RenderContext,
-  viewProjectionMatrix: Matrix3x3,
+  projectionMatrix: Matrix3x3,
   command: MeshRenderCommand,
 ): void {
   const { gl } = renderContext;
   const { geometry, material } = command.mesh;
 
-  material.bindMesh(gl, command.model, viewProjectionMatrix, command.mask);
+  material.bindMesh(gl, command.model, projectionMatrix, command.mask);
   geometry.bind(material);
   enableStraightAlphaBlending(gl);
   geometry.draw();
@@ -454,15 +454,12 @@ function drawMesh(
  * Draws a camera's commands in order: each run of quads that batch together
  * as one instanced draw, and each mesh as a draw of its own.
  * @param renderContext - The render context to draw with.
- * @param projectionMatrix - The camera's projection for quads, whose
- * instance data is Y-down.
- * @param viewProjectionMatrix - The camera's Y-up projection for meshes.
+ * @param projectionMatrix - The camera's world to clip space projection.
  * @param commands - The camera's commands, in draw order.
  */
 function drawCommands(
   renderContext: RenderContext,
   projectionMatrix: Matrix3x3,
-  viewProjectionMatrix: Matrix3x3,
   commands: readonly RenderCommand[],
 ): void {
   // Nothing can be drawn until the context is restored, and a material
@@ -477,7 +474,7 @@ function drawCommands(
     const command = commands[i];
 
     if (command.kind === 'mesh') {
-      drawMesh(renderContext, viewProjectionMatrix, command);
+      drawMesh(renderContext, projectionMatrix, command);
       i++;
 
       continue;
@@ -709,9 +706,10 @@ function writeSortKeys(resolver: DrawOrderResolver, count: number): void {
 // Only needed when a camera y-sorts, so only written then.
 function writeRootYSortKeys(resolver: DrawOrderResolver, count: number): void {
   for (let i = 0; i < count; i++) {
-    // Negated, so a higher Y (further up the screen) draws first.
+    // Ascending, so a higher Y (further down the screen) draws later, in
+    // front.
     writeSortableFloat64(
-      -resolver.rootY(drawItems[i].entity),
+      resolver.rootY(drawItems[i].entity),
       rootYHighKeys,
       rootYLowKeys,
       i,
@@ -839,9 +837,9 @@ const drawOrderResolver = createDrawOrderResolver();
  * Meshes, sprites and text hidden in the hierarchy (see
  * `VisibilityEcsComponent`) aren't drawn. The rest draw by `layer`, then by
  * world order (see `DrawOrderEcsComponent`), then, for a camera with
- * `ySort`, by their root entity's Y (higher first), then in hierarchy order:
- * root entities in creation order, each followed by its subtree in
- * pre-order. That's a total order, resolved and sorted once per frame with
+ * `ySort`, by their root entity's Y (lower first, so entities further down
+ * the screen draw in front), then in hierarchy order: root entities in
+ * creation order, each followed by its subtree in pre-order. That's a total order, resolved and sorted once per frame with
  * an exact radix sort. An entity's mesh draws before its sprite, and its
  * sprite before its text.
  *
@@ -923,13 +921,6 @@ export const createRenderEcsSystem = (
           renderContext,
         );
         const projectionMatrix = createProjectionMatrix(view.bounds);
-        // Quads' instance data is Y-down, which `createProjectionMatrix`
-        // flips back; meshes are Y-up, so they get the projection with the
-        // flip undone, and never see the quads' Y-down space.
-        const viewProjectionMatrix = createProjectionMatrix(view.bounds).scale(
-          1,
-          -1,
-        );
 
         if (cameraComponent.ySort && !ySortedOrder) {
           writeRootYSortKeys(drawOrderResolver, itemCount);
@@ -984,12 +975,7 @@ export const createRenderEcsSystem = (
           clearedDestinationsThisFrame.add(target);
         }
 
-        drawCommands(
-          renderContext,
-          projectionMatrix,
-          viewProjectionMatrix,
-          commands,
-        );
+        drawCommands(renderContext, projectionMatrix, commands);
       }
 
       renderContext.gl.disable(renderContext.gl.BLEND);

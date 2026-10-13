@@ -17,13 +17,13 @@ A mask's `shape` is one of three kinds:
 
 - `'rect'` shows everything inside the rect.
 - `'linear'` shows `amount` (`0` to `1`) of the rect, measured from the
-  `origin` edge: `'left'`, `'right'`, `'bottom'` or `'top'`.
+  `origin` edge: `'left'`, `'right'`, `'top'` or `'bottom'`.
 - `'radial'` shows the sector from `startAngle` through
   `startAngle + sweep * amount` around the rect's center. Angles are in
-  radians, `0` points along `+X` and a positive angle turns
-  counter-clockwise (see [angles](../math/angles-and-rotation.md)). A
-  negative `sweep` turns clockwise, and a `sweep` less than a full turn
-  (`2 * Math.PI`) gives an arc.
+  radians, `0` points along `+X` and a positive angle turns towards `+Y`,
+  clockwise on screen (see [angles](../math/angles-and-rotation.md)). A
+  negative `sweep` turns counter-clockwise, and a `sweep` less than a full
+  turn (`2 * Math.PI`) gives an arc.
 
 Edges are anti-aliased.
 
@@ -82,8 +82,8 @@ addMaskComponent(world, cooldownRing, {
   height: ringSprite.height,
   shape: {
     kind: 'radial',
-    startAngle: Math.PI / 2,
-    sweep: -2 * Math.PI,
+    startAngle: -Math.PI / 2,
+    sweep: 2 * Math.PI,
     amount: 0.25,
   },
 });

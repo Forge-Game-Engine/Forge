@@ -108,7 +108,10 @@ const glyph = fontAtlas.data.glyphs.get(0x41); // 'A'
 - `advance`, `planeBounds` and the font-level `fontAtlas.data.metrics`
   (`lineHeight`, `ascender`, `descender`, `capHeight`) are in **em
   units**: multiply them by the text's `size` to get world units.
-  `planeBounds` is Y-up, relative to the glyph's origin on the baseline.
+  `planeBounds` is relative to the glyph's origin on the baseline and
+  measured upwards, as font tools write it (`top` is greater than
+  `bottom`); the shaping system converts it when it places glyphs in the
+  Y-down world.
 - `planeBounds` includes the distance field's padding around the glyph's
   ink (half of `distanceRange`, in atlas pixels), which outlines and
   shadows draw into. `ascender` and `descender` are measured from those

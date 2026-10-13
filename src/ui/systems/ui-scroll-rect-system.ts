@@ -57,9 +57,9 @@ interface ScrollContext {
   renderContext: RenderContext;
 }
 
-/** The `offset` bounds on one axis: content scrolls left (`x` falls) and up (`y` grows). */
+/** The `offset` bounds on one axis: content scrolls left and up, so `offset` falls from `0`. */
 function boundsOf(axis: Axis, range: Vector2): { min: number; max: number } {
-  return axis === 'x' ? { min: -range.x, max: 0 } : { min: 0, max: range.y };
+  return { min: -range[axis], max: 0 };
 }
 
 /**
@@ -106,15 +106,13 @@ function smoothDamp(
  * be written straight into `anchoredPosition`.
  */
 function assertTopLeftAnchored(content: RectTransformEcsComponent): void {
-  const { x, y } = content;
-  const xAtLeft =
-    x.pivot === 0 && (x.kind === 'point' ? x.anchor : x.anchorMin) === 0;
-  const yAtTop =
-    y.pivot === 1 && (y.kind === 'point' ? y.anchor : y.anchorMax) === 1;
+  const isAtStart = (axis: UiAxis): boolean =>
+    axis.pivot === 0 &&
+    (axis.kind === 'point' ? axis.anchor : axis.anchorMin) === 0;
 
-  if (!xAtLeft || !yAtTop) {
+  if (!isAtStart(content.x) || !isAtStart(content.y)) {
     throw new Error(
-      "A scroll rect's content must be anchored and pivoted at its top-left corner (x anchored at 0 with pivot 0, y anchored at 1 with pivot 1), e.g. UiAnchor.stretchTopLeft for a vertical list or UiAnchor.topLeft.",
+      "A scroll rect's content must be anchored and pivoted at its top-left corner (each axis anchored at 0 with pivot 0), e.g. UiAnchor.stretchTopLeft for a vertical list or UiAnchor.topLeft.",
     );
   }
 }

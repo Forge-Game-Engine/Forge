@@ -27,7 +27,7 @@ import { addPumpComponent } from './_pump.component';
 const railDotCount = 15;
 const railDotSize = 10;
 const anchorSize = 14;
-const gravity = { x: 0, y: -600 };
+const gravity = { x: 0, y: 600 };
 
 // `block_square.png` is a 64x64 rounded, bolted panel; these insets keep its
 // rounded corners and bolt-head detail at a fixed size while the center
@@ -49,9 +49,9 @@ export interface SliderScenarioOptions {
   anchorPosition: Vector2;
 
   /**
-   * The (unnormalized) direction the slider is free to move along. World
-   * space here has positive Y pointing up the screen (gravity is negative
-   * Y), matching how the boundaries in the main physics demo are laid out.
+   * The (unnormalized) direction the slider is free to move along. The
+   * world is Y-down, so positive Y points down the screen (gravity is
+   * positive Y).
    */
   axis: Vector2;
 
@@ -311,11 +311,11 @@ export async function createSliders(
     pumpAlternate: true,
   });
 
-  // Elevator: always pumped upward (positive Y); gravity (negative Y) brings
+  // Elevator: always pumped upward (negative Y); gravity (positive Y) brings
   // it back down to the lower limit in between pumps.
   createSliderScenario(world, sprites, {
-    anchorPosition: { x: columnLeft + columnWidth, y: -height * 0.32 },
-    axis: { x: 0, y: 1 },
+    anchorPosition: { x: columnLeft + columnWidth, y: height * 0.32 },
+    axis: { x: 0, y: -1 },
     lowerTranslation: 0,
     upperTranslation: height * 0.55,
     startTranslation: 0,
@@ -323,19 +323,19 @@ export async function createSliders(
     sliderWidth: 32,
     sliderHeight: 32,
     sliderSprite: 'ball',
-    pumpImpulse: { x: 0, y: 950_000 },
+    pumpImpulse: { x: 0, y: -950_000 },
     pumpIntervalSeconds: 2.5,
     pumpAlternate: false,
   });
 
   // Incline: a ball pumped back up a diagonal rail (anchored near the top),
   // then released to roll back down it under gravity.
-  const inclineAxis = Vec2.normalize({ x: 0.5, y: -1 });
+  const inclineAxis = Vec2.normalize({ x: 0.5, y: 1 });
 
   createSliderScenario(world, sprites, {
     anchorPosition: {
       x: columnLeft + columnWidth * 2 - columnWidth * 0.35,
-      y: height * 0.3,
+      y: -height * 0.3,
     },
     axis: inclineAxis,
     lowerTranslation: 0,

@@ -39,7 +39,8 @@ const runoffLength = 500;
 const hillRampLength = 400;
 
 /**
- * The ground height at `x`: flat for the launch pad, then two sine waves
+ * The ground height at `x` (positive is up, so it's negated to get the
+ * Y-down world position): flat for the launch pad, then two sine waves
  * (rolling hills), a slow climb and a little noise.
  */
 function heightAt(x: number, random: Random): number {
@@ -72,7 +73,7 @@ function buildSurfacePoints(random: Random): Vector2[] {
     x <= courseLength;
     x += pointSpacing
   ) {
-    points.push({ x, y: heightAt(x, random) });
+    points.push({ x, y: -heightAt(x, random) });
   }
 
   return points;
@@ -145,6 +146,6 @@ export async function createTerrain(
   const carSpawnX = 150;
 
   return {
-    groundPosition: { x: carSpawnX, y: heightAt(carSpawnX, random) },
+    groundPosition: { x: carSpawnX, y: -heightAt(carSpawnX, random) },
   };
 }

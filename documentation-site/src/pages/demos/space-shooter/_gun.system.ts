@@ -51,11 +51,11 @@ export const createGunEcsSystem = (
 
         createBulletWithOffset(world, gunComponent, positionComponent, {
           x: 20,
-          y: 20,
+          y: -20,
         });
         createBulletWithOffset(world, gunComponent, positionComponent, {
           x: -20,
-          y: 20,
+          y: -20,
         });
 
         // One sound per volley; both bullets fire together.
@@ -87,7 +87,7 @@ function createBulletWithOffset(
   });
 
   addRotationComponent(world, bullet, {
-    local: degreesToRadians(90),
+    local: degreesToRadians(-90),
   });
 
   addScaleComponent(world, bullet, {

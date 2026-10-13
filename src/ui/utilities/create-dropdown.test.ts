@@ -235,6 +235,10 @@ describe('createDropdown', () => {
       optionHeight: 40,
     });
 
+    // Each row hangs from the header's bottom edge by its own top edge.
+    expect(
+      world.getComponent(dropdown.options[0].entity, rectTransformId)!.y,
+    ).toEqual(expect.objectContaining({ kind: 'point', anchor: 1, pivot: 0 }));
     expect(
       world.getComponent(dropdown.options[0].entity, rectTransformId)!
         .anchoredPosition.y,
@@ -242,10 +246,10 @@ describe('createDropdown', () => {
     expect(
       world.getComponent(dropdown.options[1].entity, rectTransformId)!
         .anchoredPosition.y,
-    ).toBe(-40);
+    ).toBe(40);
     expect(
       world.getComponent(dropdown.options[2].entity, rectTransformId)!
         .anchoredPosition.y,
-    ).toBe(-80);
+    ).toBe(80);
   });
 });

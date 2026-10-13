@@ -127,7 +127,7 @@ export function createMainMenu(
 
   createPanel(world, panel, {
     anchor: UiAnchor.topLeft({ x: 48, y: 50 }),
-    anchoredPosition: { x: rowLeftInset, y: -88 },
+    anchoredPosition: { x: rowLeftInset, y: 88 },
     sprite: yellowSprite,
   });
 
@@ -137,7 +137,7 @@ export function createMainMenu(
     size: 42,
     letterSpacing: 0.02,
     anchor: UiAnchor.topLeft({ x: 400, y: 44 }),
-    anchoredPosition: { x: 138, y: -90 },
+    anchoredPosition: { x: 138, y: 90 },
     verticalAlign: textVerticalAlignments.capline,
     color: fleetCommandPalette.ink,
     category: uiCategory,
@@ -149,7 +149,7 @@ export function createMainMenu(
     size: 20,
     letterSpacing: 0.12,
     anchor: UiAnchor.topLeft({ x: 400, y: 24 }),
-    anchoredPosition: { x: 138, y: -128 },
+    anchoredPosition: { x: 138, y: 128 },
     verticalAlign: textVerticalAlignments.capline,
     color: fleetCommandPalette.blue,
     category: uiCategory,
@@ -165,9 +165,9 @@ export function createMainMenu(
   createPanel(world, panel, {
     anchor: {
       x: UiAxis.stretch({ min: 0, max: 1 }, { margin: -2 * rowLeftInset }),
-      y: UiAxis.point(1, { size: 2 }),
+      y: UiAxis.point(0, { size: 2 }),
     },
-    anchoredPosition: { x: 0, y: -202 },
+    anchoredPosition: { x: 0, y: 202 },
     sprite: borderSprite,
   });
 
@@ -177,8 +177,8 @@ export function createMainMenu(
   world.setParent(menuContainer, panel);
   addRectTransformComponent(world, menuContainer, {
     x: UiAxis.stretch({ min: 0, max: 1 }, { margin: -2 * rowLeftInset }),
-    y: UiAxis.point(1, { size: rowHeight }),
-    anchoredPosition: { x: 0, y: -252 },
+    y: UiAxis.point(0, { size: rowHeight }),
+    anchoredPosition: { x: 0, y: 252 },
   });
   addVerticalLayoutGroupComponent(world, menuContainer, {
     spacing: 0,
@@ -250,7 +250,7 @@ export function createMainMenu(
     size: 16,
     letterSpacing: 0.02,
     anchor: UiAnchor.bottomLeft({ x: 500, y: 24 }),
-    anchoredPosition: { x: rowLeftInset, y: 56 },
+    anchoredPosition: { x: rowLeftInset, y: -56 },
     verticalAlign: textVerticalAlignments.bottom,
     color: fleetCommandPalette.ink,
     category: uiCategory,
@@ -262,7 +262,7 @@ export function createMainMenu(
     size: 14,
     letterSpacing: 0.02,
     anchor: UiAnchor.bottomLeft({ x: 400, y: 20 }),
-    anchoredPosition: { x: rowLeftInset, y: 28 },
+    anchoredPosition: { x: rowLeftInset, y: -28 },
     verticalAlign: textVerticalAlignments.bottom,
     color: fleetCommandPalette.blue,
     category: uiCategory,

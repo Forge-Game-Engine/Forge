@@ -21,8 +21,8 @@ export const createDemoEcsSystem = (
       const rotation = rotations[i];
 
       position.local.x = Math.sin(time.timeInSeconds) * 100;
-      position.local.y = Math.cos(time.timeInSeconds) * 100;
-      rotation.local = time.timeInSeconds;
+      position.local.y = -Math.cos(time.timeInSeconds) * 100;
+      rotation.local = -time.timeInSeconds;
     }
   },
 });

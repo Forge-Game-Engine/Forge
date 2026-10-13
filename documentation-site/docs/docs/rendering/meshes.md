@@ -61,7 +61,7 @@ renderContext.shaderCache
   .addShader(new ForgeShaderSource(flatFragmentShader));
 ```
 
-Positions are in the engine's Y-up world: `+Y` is up the screen.
+Positions are in the engine's Y-down world: `+Y` is down the screen.
 
 ## Creating a mesh material
 

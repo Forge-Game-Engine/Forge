@@ -148,7 +148,7 @@ function createControl(
   row: number,
   { caption, isOn, onChange }: Control,
 ): void {
-  const y = -100 - row * 70;
+  const y = 100 + row * 70;
 
   const toggle = createToggle(world, canvas, {
     sprite: sprites.box,
@@ -165,7 +165,7 @@ function createControl(
     fontAtlas,
     size: 26,
     anchor: UiAnchor.topLeft(),
-    anchoredPosition: { x: 140, y: y - 20 },
+    anchoredPosition: { x: 140, y: y + 20 },
     verticalAlign: textVerticalAlignments.middle,
     color: Color.white,
     category: renderLayers.ui,
@@ -248,7 +248,7 @@ export const createVisibilityGame = async (): Promise<Game> => {
     world,
     renderContext,
     renderLayers.world,
-    { x: -60, y: -200 },
+    { x: -60, y: 200 },
   );
 
   const solidUiSprite = {

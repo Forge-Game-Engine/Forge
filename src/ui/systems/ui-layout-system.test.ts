@@ -325,14 +325,14 @@ describe('createUiLayoutEcsSystem', () => {
     world.update();
 
     expect(world.getComponent(panel, rectTransformId)!.rect).toEqual({
-      min: { x: -960, y: 440 },
-      max: { x: -760, y: 540 },
+      min: { x: -960, y: -540 },
+      max: { x: -760, y: -440 },
     });
-    // pivot is (0,1): the panel's own pivot sits at its rect's top-left,
+    // pivot is (0,0): the panel's own pivot sits at its rect's top-left,
     // i.e. exactly the canvas root's top-left corner.
     expect(world.getComponent(panel, positionId)!.local).toEqual({
       x: -960,
-      y: 540,
+      y: -540,
     });
   });
 
@@ -481,8 +481,8 @@ describe('createUiLayoutEcsSystem', () => {
     world.update();
 
     expect(world.getComponent(topBar, rectTransformId)!.rect).toEqual({
-      min: { x: -960, y: 460 },
-      max: { x: 960, y: 540 },
+      min: { x: -960, y: -540 },
+      max: { x: 960, y: -460 },
     });
   });
 
@@ -541,7 +541,7 @@ describe('createUiLayoutEcsSystem', () => {
     addRectTransformComponent(
       world,
       panel,
-      UiAnchor.topLeft({ x: 300, y: 150 }),
+      UiAnchor.bottomLeft({ x: 300, y: 150 }),
     );
     addMaskComponent(world, panel, { width: 1, height: 1 });
 
@@ -689,13 +689,13 @@ describe('createUiLayoutEcsSystem', () => {
     world.addSystem(createTransformEcsSystem());
     world.update();
 
-    // canvas root is 1920x1080 centered at origin -> top-right corner (960, 540)
-    // panel is a 200x100 box pinned to that corner -> spans (760,440)-(960,540)
+    // canvas root is 1920x1080 centered at origin -> top-right corner (960, -540)
+    // panel is a 200x100 box pinned to that corner -> spans (760,-540)-(960,-440)
     // label is a 40x20 box centered in the panel -> its own pivot (center)
-    // sits at the panel's center: (860, 490)
+    // sits at the panel's center: (860, -490)
     expect(world.getComponent(label, positionId)!.world).toEqual({
       x: 860,
-      y: 490,
+      y: -490,
     });
   });
 

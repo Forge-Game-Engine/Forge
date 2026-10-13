@@ -101,6 +101,6 @@ export async function createPanels(
   const clampedMaxSize = Math.min(maxSize, availableSize);
   const clampedMinSize = Math.min(minSize, clampedMaxSize);
 
-  placePanel(world, naiveSprite, 0, spacing, clampedMinSize, clampedMaxSize);
-  placePanel(world, stretchSprite, 0, -spacing, clampedMinSize, clampedMaxSize);
+  placePanel(world, naiveSprite, 0, -spacing, clampedMinSize, clampedMaxSize);
+  placePanel(world, stretchSprite, 0, spacing, clampedMinSize, clampedMaxSize);
 }

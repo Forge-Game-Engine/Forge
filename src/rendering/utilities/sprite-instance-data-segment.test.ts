@@ -96,8 +96,8 @@ describe('computeSpriteInstanceBounds', () => {
 
   /**
    * The bounds of the quad corners `sprite.vert` computes from the instance
-   * data `bindInstanceData` writes, converted back from the shader's Y-down
-   * space - an independent reference for what's actually drawn.
+   * data `bindInstanceData` writes - an independent reference for what's
+   * actually drawn.
    */
   const boundsDrawnByShader = (components: InstanceComponents): Rect => {
     const data = new Float32Array(spriteInstanceDataSegment.floatsPerInstance);
@@ -106,7 +106,7 @@ describe('computeSpriteInstanceBounds', () => {
 
     const [x, y, scaleX, scaleY, rotation, width, height, pivotX, pivotY] =
       data;
-    const pivot = { x: (pivotX - 0.5) * 2, y: -(pivotY - 0.5) * 2 };
+    const pivot = { x: (pivotX - 0.5) * 2, y: (pivotY - 0.5) * 2 };
     const corners = [
       { x: -1, y: -1 },
       { x: 1, y: -1 },
@@ -120,7 +120,7 @@ describe('computeSpriteInstanceBounds', () => {
 
       return {
         x: cos * scaledX - sin * scaledY + x,
-        y: -(sin * scaledX + cos * scaledY + y),
+        y: sin * scaledX + cos * scaledY + y,
       };
     });
 
@@ -155,7 +155,7 @@ describe('computeSpriteInstanceBounds', () => {
     });
   });
 
-  it('extends up and right from a bottom-left pivot (Y-up)', () => {
+  it('extends down and right from a top-left pivot', () => {
     const components = buildComponents(buildSprite({ pivot: { x: 0, y: 0 } }));
 
     expect(computeSpriteInstanceBounds(components, Rects.zero)).toEqual({

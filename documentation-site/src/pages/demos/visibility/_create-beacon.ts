@@ -51,7 +51,7 @@ export async function createBeacon(
 
   const lamp = world.createEntity();
 
-  addPositionComponent(world, lamp, { local: { x: 0, y: 30 } });
+  addPositionComponent(world, lamp, { local: { x: 0, y: -30 } });
   addSpriteComponent(world, lamp, {
     ...solidSprite,
     width: 24,
@@ -74,10 +74,10 @@ export async function createBeacon(
     {
       emissionRate: 30,
       speedRange: { min: 120, max: 200 },
-      // Math.PI / 2 points straight up.
+      // -Math.PI / 2 points straight up (the world is Y-down).
       directionRange: {
-        min: Math.PI / 2 - coneSpread,
-        max: Math.PI / 2 + coneSpread,
+        min: -Math.PI / 2 - coneSpread,
+        max: -Math.PI / 2 + coneSpread,
       },
       drag: 0.5,
       scaleRange: { min: 0.03, max: 0.07 },
@@ -89,7 +89,7 @@ export async function createBeacon(
 
   const sparks = world.createEntity();
 
-  addPositionComponent(world, sparks, { local: { x: 0, y: 50 } });
+  addPositionComponent(world, sparks, { local: { x: 0, y: -50 } });
   addParticleEmitterComponent(world, sparks, {
     emitters: new Map([['sparks', sparkEmitter]]),
   });

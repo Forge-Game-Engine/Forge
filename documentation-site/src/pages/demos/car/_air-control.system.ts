@@ -50,7 +50,9 @@ export const createAirControlEcsSystem = (
         continue;
       }
 
-      const targetAngularVelocity = throttleInput.value * maxAngularSpeed;
+      // Gas lifts the nose of a car facing right, a counter-clockwise turn,
+      // which is a negative angle in the Y-down world.
+      const targetAngularVelocity = -throttleInput.value * maxAngularSpeed;
 
       const desiredTorque =
         (targetAngularVelocity - chassisRigidBody.angularVelocity) /

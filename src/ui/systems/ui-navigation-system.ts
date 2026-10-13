@@ -30,8 +30,8 @@ interface FocusCandidate {
 }
 
 const directionVectors: Record<UiNavigationDirection, Vector2> = {
-  [uiNavigationDirections.up]: { x: 0, y: 1 },
-  [uiNavigationDirections.down]: { x: 0, y: -1 },
+  [uiNavigationDirections.up]: { x: 0, y: -1 },
+  [uiNavigationDirections.down]: { x: 0, y: 1 },
   [uiNavigationDirections.left]: { x: -1, y: 0 },
   [uiNavigationDirections.right]: { x: 1, y: 0 },
 };
@@ -43,7 +43,7 @@ function dominantDirection(value: Vector2): UiNavigationDirection {
       : uiNavigationDirections.left;
   }
 
-  return value.y > 0 ? uiNavigationDirections.up : uiNavigationDirections.down;
+  return value.y > 0 ? uiNavigationDirections.down : uiNavigationDirections.up;
 }
 
 function centerOf(rect: Rect): Vector2 {

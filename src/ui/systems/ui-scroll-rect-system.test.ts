@@ -165,8 +165,9 @@ describe('createUiScrollRectEcsSystem', () => {
     const { world, scrollView } = setUp();
     const content = world.getComponent(scrollView.content, rectTransformId)!;
 
-    expect(content.rect.max.y).toBeCloseTo(150);
-    expect(content.rect.min.y).toBeCloseTo(150 - itemCount * itemHeight);
+    // Anchored at the viewport's top edge (world y -150), growing down.
+    expect(content.rect.min.y).toBeCloseTo(-150);
+    expect(content.rect.max.y).toBeCloseTo(-150 + itemCount * itemHeight);
   });
 
   it('scrolls with a drag that starts on an item, without invoking it', () => {
@@ -178,10 +179,10 @@ describe('createUiScrollRectEcsSystem', () => {
     item.onInvoke.registerListener(() => (invoked = true));
 
     // CSS y 540 is world y 0: the second item. Dragging up 100 CSS pixels
-    // scrolls the list down by 100.
+    // scrolls the list down by 100, moving the content up.
     drag(context, 540, 440);
 
-    expect(scrollView.scrollRect.offset.y).toBeCloseTo(100);
+    expect(scrollView.scrollRect.offset.y).toBeCloseTo(-100);
 
     pointer.buttonsUp.add(mouseButtons.left);
     tick();
@@ -201,8 +202,8 @@ describe('createUiScrollRectEcsSystem', () => {
 
     const offset = scrollView.scrollRect.offset.y;
 
-    expect(offset).toBeLessThan(0);
-    expect(offset).toBeGreaterThan(-100);
+    expect(offset).toBeGreaterThan(0);
+    expect(offset).toBeLessThan(100);
 
     pointer.buttonsUp.add(mouseButtons.left);
     tick(60);
@@ -226,17 +227,17 @@ describe('createUiScrollRectEcsSystem', () => {
 
     const released = scrollView.scrollRect.offset.y;
 
-    expect(scrollView.scrollRect.velocity.y).toBeGreaterThan(0);
+    expect(scrollView.scrollRect.velocity.y).toBeLessThan(0);
 
     pointer.buttonsUp.add(mouseButtons.left);
     tick();
 
-    expect(scrollView.scrollRect.offset.y).toBeGreaterThan(released);
+    expect(scrollView.scrollRect.offset.y).toBeLessThan(released);
 
     tick(600);
 
     expect(scrollView.scrollRect.velocity.y).toBe(0);
-    expect(scrollView.scrollRect.offset.y).toBeLessThanOrEqual(700);
+    expect(scrollView.scrollRect.offset.y).toBeGreaterThanOrEqual(-700);
   });
 
   it('stops right away on release with a deceleration rate of 0', () => {
@@ -261,7 +262,7 @@ describe('createUiScrollRectEcsSystem', () => {
     pointer.scroll = { x: 0, y: 120 };
     tick();
 
-    expect(scrollView.scrollRect.offset.y).toBeCloseTo(120);
+    expect(scrollView.scrollRect.offset.y).toBeCloseTo(-120);
 
     pointer.scroll = { x: 0, y: -500 };
     tick();
@@ -299,7 +300,7 @@ describe('createUiScrollRectEcsSystem', () => {
     setUiFocus(world, canvas, items[itemCount - 1]);
     tick();
 
-    expect(scrollView.scrollRect.offset.y).toBeCloseTo(700);
+    expect(scrollView.scrollRect.offset.y).toBeCloseTo(-700);
 
     setUiFocus(world, canvas, items[0]);
     tick();
@@ -314,21 +315,22 @@ describe('createUiScrollRectEcsSystem', () => {
       world.getComponent(scrollView.verticalScrollbar!.handle, rectTransformId)!
         .y as UiStretchAxis;
 
-    expect(handleAxis().anchorMin).toBeCloseTo(0.7);
-    expect(handleAxis().anchorMax).toBeCloseTo(1);
+    // At the top of the list, the handle sits at the top of the track.
+    expect(handleAxis().anchorMin).toBeCloseTo(0);
+    expect(handleAxis().anchorMax).toBeCloseTo(0.3);
 
-    // The bottom of the track: world (192, -140).
+    // The bottom of the track: world (192, 140).
     pointer.position = { x: 960 + 192, y: 540 + 140 };
     pointer.buttonsDown.add(mouseButtons.left);
     tick();
 
-    expect(scrollView.scrollRect.offset.y).toBeCloseTo(700);
+    expect(scrollView.scrollRect.offset.y).toBeCloseTo(-700);
 
     pointer.buttonsUp.add(mouseButtons.left);
     tick(2);
 
-    expect(handleAxis().anchorMin).toBeCloseTo(0);
-    expect(handleAxis().anchorMax).toBeCloseTo(0.3);
+    expect(handleAxis().anchorMin).toBeCloseTo(0.7);
+    expect(handleAxis().anchorMax).toBeCloseTo(1);
   });
 
   it('raises onValueChanged with the new offset', () => {
@@ -345,17 +347,17 @@ describe('createUiScrollRectEcsSystem', () => {
     tick();
     tick();
 
-    expect(values).toEqual([50]);
+    expect(values).toEqual([-50]);
   });
 
   it('stops coasting clamped content at its edge', () => {
     const { scrollView, tick } = setUp({ movementType: 'clamped' });
 
-    scrollView.scrollRect.offset.y = 690;
-    scrollView.scrollRect.velocity.y = 3000;
+    scrollView.scrollRect.offset.y = -690;
+    scrollView.scrollRect.velocity.y = -3000;
     tick();
 
-    expect(scrollView.scrollRect.offset.y).toBe(700);
+    expect(scrollView.scrollRect.offset.y).toBe(-700);
     expect(scrollView.scrollRect.velocity.y).toBe(0);
   });
 
@@ -405,14 +407,14 @@ describe('createUiScrollRectEcsSystem', () => {
     // The inner scroll view is the eleventh item, so the content is now
     // 1100 tall and the inner view is below the viewport until the list is
     // scrolled to the bottom.
-    scrollView.scrollRect.offset.y = 800;
+    scrollView.scrollRect.offset.y = -800;
     tick(2);
 
     const innerRect = world.getComponent(inner.entity, rectTransformId)!.rect;
 
     pointer.position = {
       x: 960 + (innerRect.min.x + innerRect.max.x) / 2,
-      y: 540 - (innerRect.min.y + innerRect.max.y) / 2,
+      y: 540 + (innerRect.min.y + innerRect.max.y) / 2,
     };
     tick();
 
@@ -421,7 +423,7 @@ describe('createUiScrollRectEcsSystem', () => {
     pointer.scroll = { x: 0, y: -100 };
     tick();
 
-    expect(scrollView.scrollRect.offset.y).toBe(800);
+    expect(scrollView.scrollRect.offset.y).toBe(-800);
   });
 
   it('ignores a scrollbar press while the content fits', () => {
@@ -461,30 +463,45 @@ describe('createUiScrollRectEcsSystem', () => {
 
     expect(() => tick()).toThrow(/top-left corner/);
   });
+
+  it('throws for content anchored at its bottom-left corner', () => {
+    const { world, scrollView, tick } = setUp();
+    const content = world.getComponent(scrollView.content, rectTransformId)!;
+
+    content.y = UiAxis.point(1, { size: 100 });
+
+    expect(() => tick()).toThrow(/top-left corner/);
+  });
 });
 
 describe('scroll offset helpers', () => {
   const range = computeUiScrollRange(
     { min: { x: 0, y: 0 }, max: { x: 100, y: 100 } },
-    { min: { x: 0, y: -300 }, max: { x: 300, y: 100 } },
+    { min: { x: 0, y: 0 }, max: { x: 300, y: 400 } },
   );
 
   it('measures how far content can scroll', () => {
     expect(range).toEqual({ x: 200, y: 300 });
   });
 
-  it('converts between offsets and normalized positions, y-up', () => {
+  it('converts between offsets and normalized positions, 0 at the top-left', () => {
     expect(normalizeUiScrollOffset({ x: 0, y: 0 }, range)).toEqual({
       x: 0,
-      y: 1,
-    });
-    expect(normalizeUiScrollOffset({ x: -200, y: 300 }, range)).toEqual({
-      x: 1,
       y: 0,
+    });
+    expect(normalizeUiScrollOffset({ x: -200, y: -300 }, range)).toEqual({
+      x: 1,
+      y: 1,
     });
     expect(denormalizeUiScrollOffset({ x: 0.5, y: 0.5 }, range)).toEqual({
       x: -100,
-      y: 150,
+      y: -150,
     });
+  });
+
+  it('normalizes an axis the content fits to 0', () => {
+    expect(
+      normalizeUiScrollOffset({ x: 0, y: 0 }, { x: 0, y: 0 }),
+    ).toEqual({ x: 0, y: 0 });
   });
 });

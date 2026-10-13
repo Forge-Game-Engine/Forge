@@ -245,24 +245,24 @@ export const createTextInputGame = async (): Promise<Game> => {
     });
   };
 
-  createFieldLabel('PILOT NAME', 270);
+  createFieldLabel('PILOT NAME', -270);
 
   const nameField = createTextInput(world, canvas, {
     ...fieldOptions,
     anchor: UiAnchor.center({ x: fieldWidth, y: 88 }),
-    anchoredPosition: { x: 0, y: 190 },
+    anchoredPosition: { x: 0, y: -190 },
     placeholder: 'Your name',
     maxLength: 16,
     filter: nameFilter,
     attributes: { ariaLabel: 'Pilot name', autocapitalize: 'words' },
   });
 
-  createFieldLabel('BADGE NUMBER', 100);
+  createFieldLabel('BADGE NUMBER', -100);
 
   const badgeField = createTextInput(world, canvas, {
     ...fieldOptions,
     anchor: UiAnchor.center({ x: fieldWidth, y: 88 }),
-    anchoredPosition: { x: 0, y: 20 },
+    anchoredPosition: { x: 0, y: -20 },
     placeholder: 'AX7Q',
     maxLength: 6,
     filter: badgeFilter,
@@ -275,7 +275,7 @@ export const createTextInputGame = async (): Promise<Game> => {
 
   const logInButton = createButton(world, canvas, {
     anchor: UiAnchor.center({ x: 300, y: 80 }),
-    anchoredPosition: { x: 0, y: -130 },
+    anchoredPosition: { x: 0, y: 130 },
     sprite: panelSprite,
     label: 'Log in',
     fontAtlas,
@@ -295,7 +295,7 @@ export const createTextInputGame = async (): Promise<Game> => {
       x: UiAxis.point(0.5, { pivot: 0, size: 900 }),
       y: UiAxis.point(0.5, { size: 40 }),
     },
-    anchoredPosition: { x: -450, y: -230 },
+    anchoredPosition: { x: -450, y: 230 },
     horizontalAlign: textHorizontalAlignments.center,
     maxWidth: 900,
     color: Color.white,

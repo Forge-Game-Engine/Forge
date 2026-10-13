@@ -52,11 +52,12 @@ follows these rules:
   consumers what to change; that's the whole migration story.
 - **Don't add options to dodge a decision.** An option that switches
   between the old and new behavior, or that only exists to correct a wrong
-  default, is a bug left in place for the user to find. For example,
-  `GamepadAxis1dBinding`'s `inverted` option exists because the W3C
-  gamepad reports stick-up as `-1` while the rest of the engine is Y-up.
-  The input source should translate that at the boundary so up is positive
-  for everyone. Only add an option when different games really need
+  default, is a bug left in place for the user to find. For example, an
+  `inverted` option on a gamepad binding, added because the stick's Y axis
+  disagreed with the engine's world, makes every user discover and set it.
+  The fix is one convention that every layer agrees on (the engine is Y-down
+  like the W3C gamepad, the DOM and the GPU's texture rows), translated at
+  the boundary where a source disagrees. Only add an option when different games really need
   different values (a blur radius, a gravity scale). Don't add one when the
   user could get the variation with one line of their own code.
 - **Fix the layer that owns the behavior.** The engine has conventions (see
@@ -944,13 +945,29 @@ following other entities.
 
 ### Angles and Directions
 
-The world is Y-up, and every angle follows one convention: **radians, angle
-`0` points along `+X`, and a positive angle turns `+X` towards `+Y`**
-(counter-clockwise on screen). `Vec2.up` is `(0, 1)`, `radiansToVector(θ)`
-is `(cos θ, sin θ)` and `vectorToRadians` is its inverse. Particle emitter
-`directionRange`/`rotationRange`, `RotationEcsComponent`, `Vec2.rotate` and
-physics all use it. Don't add an API that measures angles from up, clockwise,
-or in degrees; callers who author degrees use `degreesToRadians`.
+The world is **Y-down**, like Godot's 2D, the DOM, pointer events, the W3C
+gamepad and texture rows: `+X` is right and `+Y` is down the screen.
+`Vec2.up` is `(0, -1)`, gravity defaults to `(0, 9.81)`, a `Rect`'s `min` is
+its top-left corner, and every normalized 2D coordinate (sprite and mask
+pivots, UI anchors, pivots and alignments, UVs, scroll positions) has
+`(0, 0)` at the top-left and `(1, 1)` at the bottom-right. Text lines advance
+towards `+Y`, `ySort` cameras draw lower Y first, and terrain is solid
+towards `+Y` from its curve. Keyboard and gamepad axes read "up"/north as
+negative Y, and `CameraView` converts between the world and the canvas's
+CSS pixels without flipping. Font atlas metrics (`planeBounds`, `ascender`,
+`descender`) are the exception: they keep the typographic Y-up convention
+of the tools that generate them, and `shapeText` converts them.
+
+Every angle follows one convention: **radians, angle `0` points along `+X`,
+and a positive angle turns `+X` towards `+Y`** (clockwise on screen).
+`radiansToVector(θ)` is `(cos θ, sin θ)` and `vectorToRadians` is its
+inverse, so `-Math.PI / 2` points up. Particle emitter
+`directionRange`/`rotationRange`, `RotationEcsComponent`, radial mask
+angles, `Vec2.rotate` and physics (angular velocity, torque, joint limits)
+all use it. Don't add an API that measures angles from up, counter-clockwise,
+or in degrees; callers who author degrees use `degreesToRadians`. Don't add a
+Y flip anywhere in the engine: if a source (a file format, a browser API)
+disagrees, convert at that boundary.
 
 Something that emits or aims relative to an entity (a particle emitter's
 spawn shape and direction) works in that entity's frame, turned by its

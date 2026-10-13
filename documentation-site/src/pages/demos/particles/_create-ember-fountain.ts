@@ -48,10 +48,11 @@ export async function createEmberFountain(
     emissionRate: 40,
     spawnShape: { type: 'box', width: 30, height: 0 },
     speedRange: { min: 160, max: 260 },
-    // Math.PI / 2 points straight up, so this sprays a narrow upward cone.
+    // -Math.PI / 2 points straight up (the world is Y-down), so this sprays
+    // a narrow upward cone.
     directionRange: {
-      min: Math.PI / 2 - coneSpread,
-      max: Math.PI / 2 + coneSpread,
+      min: -Math.PI / 2 - coneSpread,
+      max: -Math.PI / 2 + coneSpread,
     },
     drag: 0.5,
     scaleRange: { min: 0.04, max: 0.1 },

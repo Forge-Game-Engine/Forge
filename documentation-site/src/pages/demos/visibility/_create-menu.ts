@@ -59,7 +59,7 @@ export function createMenu(
 ): Menu {
   const panel = createPanel(world, canvas, {
     anchor: UiAnchor.topRight(),
-    anchoredPosition: { x: -160, y: -120 },
+    anchoredPosition: { x: -160, y: 120 },
     sprite: panelSprite,
   });
 
@@ -78,7 +78,7 @@ export function createMenu(
     fontAtlas,
     size: 28,
     anchor: UiAnchor.stretchTopLeft({ height: 0 }),
-    anchoredPosition: { x: 0, y: -20 },
+    anchoredPosition: { x: 0, y: 20 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     color: textColor,

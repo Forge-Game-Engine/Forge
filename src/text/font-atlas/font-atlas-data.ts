@@ -29,7 +29,8 @@ export interface GlyphMetrics {
 
   /**
    * This glyph's quad, in em units relative to the text baseline origin,
-   * Y-up. Includes the distance field's padding around the glyph's ink
+   * measured upwards as fonts are (`top` > `bottom`), unlike the Y-down
+   * world; `shapeText` converts it when it places glyphs. Includes the distance field's padding around the glyph's ink
    * (half of `FontAtlasData.distanceRange`, in atlas pixels), which
    * outlines and shadows draw into. `null` for glyphs with no visible ink
    * (e.g. space).

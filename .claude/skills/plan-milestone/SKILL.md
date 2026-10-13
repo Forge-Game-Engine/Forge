@@ -94,10 +94,10 @@ Measure the plan against AGENTS.md's "Change Philosophy" and CLAUDE.md's
 - **General-purpose only.** Game- or genre-specific code doesn't go in
   `/src`. If the milestone asks for some, plan it for a separate package or
   the demo, and say so in the report.
-- **The engine's conventions.** Y-up, radians from `+X`, CSS vs. device
+- **The engine's conventions.** Y-down, radians from `+X`, CSS vs. device
   pixels, premultiplied alpha, GPU resources that survive context loss (see
   AGENTS.md's "Common Patterns"). Write the convention into the issue where
-  it's easy to get wrong, as #776 does for Y-up grid rows.
+  it's easy to get wrong, as #776 does for grid rows.
 
 For anything architectural (a new module, a new component or system, a
 change to how systems share data), run the `solution-reviewer` agent

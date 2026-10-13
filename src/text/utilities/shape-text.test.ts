@@ -78,15 +78,15 @@ describe('shapeText', () => {
     expect(glyphs).toHaveLength(1);
     // `verticalAlign` defaults to `'top'`, which anchors the first line's
     // *ascender* (0.9em * size 10 = 9) to y = 0, not its baseline - so the
-    // baseline-relative x/y this glyph would otherwise sit at (3, 3.5) is
-    // shifted down by 9.
-    expect(glyphs[0].offset).toEqual({ x: 3, y: 3.5 - 9 });
+    // baseline-relative x/y this glyph would otherwise sit at (3, -3.5,
+    // above the baseline in the Y-down world) is shifted down by 9.
+    expect(glyphs[0].offset).toEqual({ x: 3, y: -3.5 + 9 });
     expect(glyphs[0].size).toEqual({ x: 5, y: 7 });
 
     // `atlasBounds` is `{ left: 0, bottom: 0, right: 0.1, top: 0.14 }`, a
     // 256-wide/tall atlas (1/256 texel), inset by one texel on each edge to
     // avoid GL_LINEAR sampling across the tile boundary into the next
-    // glyph, then flipped to this engine's Y-down UV convention.
+    // glyph, then flipped so v = 0 is the top of the atlas image.
     const inset = 1 / 256;
     expect(glyphs[0].uvOffset.x).toBeCloseTo(inset);
     expect(glyphs[0].uvOffset.y).toBeCloseTo(1 - (0.14 - inset));
@@ -272,9 +272,9 @@ describe('shapeText', () => {
       // First glyph ("A") of each line, one `actualLineHeight` (12) apart,
       // all shifted down by the default `'top'` alignment's ascender
       // offset (9 - see the single-glyph test above).
-      expect(glyphs[0].offset.y).toBeCloseTo(3.5 - 9);
-      expect(glyphs[2].offset.y).toBeCloseTo(3.5 - 12 - 9);
-      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24 - 9);
+      expect(glyphs[0].offset.y).toBeCloseTo(-3.5 + 9);
+      expect(glyphs[2].offset.y).toBeCloseTo(-3.5 + 12 + 9);
+      expect(glyphs[4].offset.y).toBeCloseTo(-3.5 + 24 + 9);
 
       // Every line is left-aligned by default, starting at x = 0.
       expect(glyphs[0].offset.x).toBeCloseTo(3);
@@ -297,7 +297,7 @@ describe('shapeText', () => {
       expect(glyphs[2].offset.x).toBeCloseTo(3 + 14.2);
       // The lone word on line 2, shifted down by the default `'top'`
       // alignment's ascender offset (9).
-      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 12 - 9);
+      expect(glyphs[4].offset.y).toBeCloseTo(-3.5 + 12 + 9);
     });
 
     it('never splits a single word wider than maxWidth', () => {
@@ -511,18 +511,21 @@ describe('shapeText', () => {
   });
 
   describe('vertical alignment', () => {
-    // Anchored to the font's metrics, not the line-height box: fixture metrics are `ascender: 0.9`, `descender:
-    // -0.2`, so at size 10, `inkTop = 9` and (for a 3-line, `actualLineHeight:
-    // 12` block) `inkBottom = -(3 - 1) * 12 + -0.2 * 10 = -26`.
+    // Anchored to the font's metrics, not the line-height box: fixture
+    // metrics are `ascender: 0.9`, `descender: -0.2` (measured up from the
+    // baseline, as fonts are), so at size 10 and with line 0's baseline at
+    // y = 0, the ink's top is at `inkTop = -9` and (for a 3-line,
+    // `actualLineHeight: 12` block) its bottom at
+    // `inkBottom = (3 - 1) * 12 + 0.2 * 10 = 26`.
 
     it("anchors the block by its top (the first line's ascender) by default", () => {
       const { glyphs } = shapeText('A', buildFixtureFontAtlasData(), {
         size: 10,
       });
 
-      // `inkTop` for a single line is `0.9 * 10 = 9`; shifting the
-      // baseline-relative y (3.5) down by that puts the ascender at y = 0.
-      expect(glyphs[0].offset.y).toBeCloseTo(3.5 - 9);
+      // `inkTop` for a single line is `-0.9 * 10 = -9`; shifting the
+      // baseline-relative y (-3.5) down by 9 puts the ascender at y = 0.
+      expect(glyphs[0].offset.y).toBeCloseTo(-3.5 + 9);
     });
 
     it("anchors the block by its bottom (the last line's descender)", () => {
@@ -532,9 +535,10 @@ describe('shapeText', () => {
         verticalAlign: 'bottom',
       });
 
-      // Shifting by `-inkBottom` (26) puts the last line's descender at y = 0.
-      expect(glyphs[0].offset.y).toBeCloseTo(3.5 + 26);
-      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24 + 26);
+      // Shifting by `-inkBottom` (-26) puts the last line's descender at
+      // y = 0.
+      expect(glyphs[0].offset.y).toBeCloseTo(-3.5 - 26);
+      expect(glyphs[4].offset.y).toBeCloseTo(-3.5 + 24 - 26);
     });
 
     it('centers a single line on the band from its cap height to its baseline', () => {
@@ -543,8 +547,8 @@ describe('shapeText', () => {
         verticalAlign: 'middle',
       });
 
-      // The band spans the baseline (0) to the cap line (0.7 * 10 = 7);
-      // shifting by `-7 / 2` puts its center at y = 0. "A" fills the band
+      // The band spans the cap line (-0.7 * 10 = -7) to the baseline (0);
+      // shifting by `7 / 2` puts its center at y = 0. "A" fills the band
       // exactly, so its own center lands there too.
       expect(glyphs[0].offset.y).toBeCloseTo(0);
     });
@@ -556,11 +560,11 @@ describe('shapeText', () => {
         verticalAlign: 'middle',
       });
 
-      // The band runs from the first line's cap line (7) to the last
-      // line's baseline (-(3 - 1) * 12 = -24); shifting by `-(7 - 24) / 2`
-      // = 8.5 centers it on y = 0.
-      expect(glyphs[0].offset.y).toBeCloseTo(3.5 + 8.5);
-      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24 + 8.5);
+      // The band runs from the first line's cap line (-7) to the last
+      // line's baseline ((3 - 1) * 12 = 24); shifting by `-(-7 + 24) / 2`
+      // = -8.5 centers it on y = 0.
+      expect(glyphs[0].offset.y).toBeCloseTo(-3.5 - 8.5);
+      expect(glyphs[4].offset.y).toBeCloseTo(-3.5 + 24 - 8.5);
     });
 
     it("doesn't move a line when its glyphs reach different heights", () => {
@@ -576,11 +580,11 @@ describe('shapeText', () => {
       // "A" reaches the cap line and "x" only half as high, but both sit
       // on the same baseline, so their quads' bottoms (the baseline, as
       // neither glyph has a descender) line up.
-      const capitalBottom = capital.glyphs[0].offset.y - 3.5;
-      const xHeightBottom = xHeight.glyphs[0].offset.y - 2.5;
+      const capitalBottom = capital.glyphs[0].offset.y + 3.5;
+      const xHeightBottom = xHeight.glyphs[0].offset.y + 2.5;
 
       expect(xHeightBottom).toBeCloseTo(capitalBottom);
-      expect(capitalBottom).toBeCloseTo(-3.5);
+      expect(capitalBottom).toBeCloseTo(3.5);
     });
 
     it('shapes a string with no visible glyphs', () => {
@@ -601,10 +605,10 @@ describe('shapeText', () => {
       });
 
       // Line 0's baseline already sits at y = 0 before any offset - `A`/`V`
-      // are baseline-relative center `3.5` above it - so `'baseline'` adds
-      // no shift at all, regardless of line count or the font's metrics.
-      expect(glyphs[0].offset.y).toBeCloseTo(3.5);
-      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 24);
+      // are centered `3.5` above it, at y = -3.5 - so `'baseline'` adds no
+      // shift at all, regardless of line count or the font's metrics.
+      expect(glyphs[0].offset.y).toBeCloseTo(-3.5);
+      expect(glyphs[4].offset.y).toBeCloseTo(-3.5 + 24);
     });
 
     it("anchors the block by the first line's cap height, not its ascender", () => {
@@ -616,11 +620,11 @@ describe('shapeText', () => {
       // The fixture's `capHeight` (0.7) is shorter than its `ascender`
       // (0.9) - standing in for a real font's cap height (capital letters)
       // being shorter than its true ascender (which also covers taller
-      // ascenders like "b"/"d"/"h"). Shifting by `-(0.7 * 10)` = -7 puts
+      // ascenders like "b"/"d"/"h"). Shifting down by `0.7 * 10` = 7 puts
       // "A"'s own top (which happens to sit exactly at the fixture's
-      // capHeight) at y = 0, not the `-9` a `'top'`-style ascender anchor
+      // capHeight) at y = 0, not the `9` a `'top'`-style ascender anchor
       // would use (see the "anchors the block by its top" test above).
-      expect(glyphs[0].offset.y).toBeCloseTo(3.5 - 7);
+      expect(glyphs[0].offset.y).toBeCloseTo(-3.5 + 7);
     });
   });
 
@@ -644,9 +648,9 @@ describe('shapeText', () => {
       // `actualLineHeight` doubles to 24, but the default `'top'`
       // alignment's ascender offset (9) is independent of `lineHeight` - it
       // only depends on the font's own `ascender` metric and `size`.
-      expect(glyphs[0].offset.y).toBeCloseTo(3.5 - 9);
-      expect(glyphs[2].offset.y).toBeCloseTo(3.5 - 24 - 9);
-      expect(glyphs[4].offset.y).toBeCloseTo(3.5 - 48 - 9);
+      expect(glyphs[0].offset.y).toBeCloseTo(-3.5 + 9);
+      expect(glyphs[2].offset.y).toBeCloseTo(-3.5 + 24 + 9);
+      expect(glyphs[4].offset.y).toBeCloseTo(-3.5 + 48 + 9);
     });
   });
 
@@ -714,7 +718,7 @@ describe('shapeText', () => {
       });
 
       expect(caretStops.map((stop) => stop.x)).toEqual([14, 20]);
-      expect(caretStops[0].y).toBeCloseTo(-9);
+      expect(caretStops[0].y).toBeCloseTo(9);
     });
 
     it('moves the stops of a wrapped word to the next line', () => {
@@ -723,8 +727,8 @@ describe('shapeText', () => {
         maxWidth: 8,
       });
 
-      expect(caretStops[2]).toEqual({ x: 0, y: -12 });
-      expect(caretStops[3]).toEqual({ x: 6, y: -12 });
+      expect(caretStops[2]).toEqual({ x: 0, y: 12 });
+      expect(caretStops[3]).toEqual({ x: 6, y: 12 });
     });
   });
 

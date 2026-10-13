@@ -168,12 +168,12 @@ describe('createInstanceMaskResolver', () => {
   it.each([
     { origin: 'left' as const, start: { x: -2, y: 0 }, end: { x: 2, y: 0 } },
     { origin: 'right' as const, start: { x: 2, y: 0 }, end: { x: -2, y: 0 } },
+    { origin: 'top' as const, start: { x: 0, y: -1 }, end: { x: 0, y: 1 } },
     {
       origin: 'bottom' as const,
-      start: { x: 0, y: -1 },
-      end: { x: 0, y: 1 },
+      start: { x: 0, y: 1 },
+      end: { x: 0, y: -1 },
     },
-    { origin: 'top' as const, start: { x: 0, y: 1 }, end: { x: 0, y: -1 } },
   ])(
     'turns a linear mask from the $origin edge so that edge is x = -1',
     ({ origin, start, end }) => {
@@ -237,8 +237,8 @@ describe('createInstanceMaskResolver', () => {
 
     const shape = requireShape(createInstanceMaskResolver(world)(masked));
 
-    // The rect is 8 wide after scaling, reaching up from the pivot at
-    // (5, 5): its left edge is at the pivot, its center 4 above it.
+    // The rect is 8 wide after scaling, turned to reach down (+Y) from the
+    // pivot at (5, 5): its left edge is at the pivot, its center 4 below it.
     expectVectorCloseTo(shape.origin, { x: 5, y: 9 });
     expectVectorCloseTo(toMaskCoordinates(shape, { x: 5, y: 5 }), {
       x: -1,

@@ -331,17 +331,20 @@ function shapeWord(
       // The quad doesn't grow with the bold ink: plane bounds already
       // include `distanceRange / 2` atlas pixels of padding around the ink,
       // which is where the thickened edge is drawn.
+      //
+      // Plane bounds are typographic, measured up from the baseline, while
+      // the world is Y-down, so the quad's center is negated.
       glyphs.push({
         offset: {
           x: penX + emboldenWidth + (planeBounds.left * size + glyphWidth / 2),
-          y: planeBounds.bottom * size + glyphHeight / 2,
+          y: -(planeBounds.bottom * size + glyphHeight / 2),
         },
         size: { x: glyphWidth, y: glyphHeight },
-        // `atlasBounds` is Y-up (`top` > `bottom`, matching `planeBounds`),
-        // but UV sampling in this engine is Y-down (v=0 is the top of the
-        // texture - see `computeNineSliceRegions`'s `uvOffset`, documented
-        // as the region's top-left corner). `1 - atlasTop` converts the
-        // glyph's (inset) top edge to its Y-down v.
+        // `atlasBounds` is measured up from the atlas image's bottom edge
+        // (`top` > `bottom`, matching `planeBounds`), but v=0 is the top of
+        // the texture (see `computeNineSliceRegions`'s `uvOffset`,
+        // documented as the region's top-left corner). `1 - atlasTop`
+        // converts the glyph's (inset) top edge to its v.
         uvOffset: { x: atlasLeft, y: 1 - atlasTop },
         uvScale: {
           x: atlasRight - atlasLeft,
@@ -603,8 +606,9 @@ function getJustifyGapStretch(
  *   strings with no descenders.
  *
  * Before this offset, line `0`'s baseline sits at `y = 0` and each
- * following line's baseline is `actualLineHeight` further in the negative
- * (downward, Y-up) direction.
+ * following line's baseline is `actualLineHeight` further down (`+y`). The
+ * font's metrics are typographic, measured up from the baseline, so they're
+ * negated to place them in the Y-down world.
  * @param verticalAlign - The requested vertical alignment.
  * @param fontAtlasData - The font atlas metrics `ascender`/`descender`/`capHeight` are read from.
  * @param size - Font size, in world units.
@@ -620,25 +624,25 @@ function getVerticalAlignOffset(
   actualLineHeight: number,
 ): number {
   const { ascender, descender, capHeight } = fontAtlasData.metrics;
-  const lastBaseline = -(lineCount - 1) * actualLineHeight;
+  const lastBaseline = (lineCount - 1) * actualLineHeight;
 
   if (verticalAlign === 'baseline') {
     return 0;
   }
 
   if (verticalAlign === 'capline') {
-    return -(capHeight * size);
+    return capHeight * size;
   }
 
   if (verticalAlign === 'middle') {
-    return -(capHeight * size + lastBaseline) / 2;
+    return (capHeight * size - lastBaseline) / 2;
   }
 
   if (verticalAlign === 'bottom') {
-    return -(lastBaseline + descender * size);
+    return descender * size - lastBaseline;
   }
 
-  return -(ascender * size);
+  return ascender * size;
 }
 
 /**
@@ -745,7 +749,7 @@ export function shapeText(
       isLastLine,
       line,
     );
-    const lineY = -lineIndex * actualLineHeight;
+    const lineY = lineIndex * actualLineHeight;
 
     lineOffsets.push({
       x: boxLeftOffset + uniformOffset,

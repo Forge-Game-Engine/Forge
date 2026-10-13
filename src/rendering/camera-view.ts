@@ -92,22 +92,22 @@ export function computeCameraView(
   const width = (height * renderContext.width) / renderContext.height;
   const { x: centerX, y: centerY } = position.world;
   const minX = centerX - width / 2;
-  const maxY = centerY + height / 2;
+  const minY = centerY - height / 2;
 
   return {
     bounds: {
-      min: { x: minX, y: centerY - height / 2 },
-      max: { x: centerX + width / 2, y: maxY },
+      min: { x: minX, y: minY },
+      max: { x: centerX + width / 2, y: centerY + height / 2 },
     },
     size: { x: width, y: height },
     pixelsPerUnit: cssHeight / height,
     worldToViewport: (worldPosition: Vector2): Vector2 => ({
       x: ((worldPosition.x - minX) / width) * cssWidth,
-      y: ((maxY - worldPosition.y) / height) * cssHeight,
+      y: ((worldPosition.y - minY) / height) * cssHeight,
     }),
     viewportToWorld: (viewportPosition: Vector2): Vector2 => ({
       x: minX + (viewportPosition.x / cssWidth) * width,
-      y: maxY - (viewportPosition.y / cssHeight) * height,
+      y: minY + (viewportPosition.y / cssHeight) * height,
     }),
   };
 }

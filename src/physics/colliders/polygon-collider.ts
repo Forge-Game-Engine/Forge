@@ -33,7 +33,7 @@ function validateConvexity(vertices: readonly Vector2[]): void {
 /**
  * A convex polygon collider, defined by a set of vertices in the entity's
  * local space. The vertices are kept where they're authored (only their
- * winding order is normalized to counter-clockwise), so a shape drawn
+ * winding order is normalized to a positive signed area), so a shape drawn
  * around a sprite's pivot lines up with the sprite. The polygon's centroid
  * is its {@link localCenterOfMass}, which needn't be the entity's origin.
  */

@@ -118,7 +118,7 @@ export async function createOptionsForm(
       x: width,
       y: titleHeight + titleGap + panelHeight,
     }),
-    anchoredPosition: { x: -60, y: 60 },
+    anchoredPosition: { x: -60, y: -60 },
   });
 
   createLabel(world, group, {

@@ -115,12 +115,7 @@ describe('createLabel', () => {
     expect(world.getComponent(label, layoutElementId)).toBeNull();
   });
 
-  it("defaults verticalAlign to 'bottom' when sizeToText is set", () => {
-    // Regression test: a layout-arranged child is always forced to a
-    // bottom-left pivot, but verticalAlign's own default ('top') assumes a
-    // top pivot instead - without this default, sizeToText labels render a
-    // full line-height below their own measured box when placed in a
-    // layout group.
+  it("keeps verticalAlign's own default ('top') with sizeToText, since a layout-arranged child is pivoted at its top-left", () => {
     const world = new EcsWorld();
     const parent = world.createEntity();
 
@@ -129,38 +124,6 @@ describe('createLabel', () => {
       fontAtlas,
       size: 20,
       sizeToText: true,
-    });
-
-    expect(world.getComponent(label, textId)!.verticalAlign).toBe(
-      textVerticalAlignments.bottom,
-    );
-  });
-
-  it('lets an explicit verticalAlign override the sizeToText default', () => {
-    const world = new EcsWorld();
-    const parent = world.createEntity();
-
-    const label = createLabel(world, parent, {
-      text: 'Music',
-      fontAtlas,
-      size: 20,
-      sizeToText: true,
-      verticalAlign: textVerticalAlignments.middle,
-    });
-
-    expect(world.getComponent(label, textId)!.verticalAlign).toBe(
-      textVerticalAlignments.middle,
-    );
-  });
-
-  it("keeps verticalAlign's own default ('top') when sizeToText is not set", () => {
-    const world = new EcsWorld();
-    const parent = world.createEntity();
-
-    const label = createLabel(world, parent, {
-      text: 'Music',
-      fontAtlas,
-      size: 20,
     });
 
     expect(world.getComponent(label, textId)!.verticalAlign).toBe(

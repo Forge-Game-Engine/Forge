@@ -41,7 +41,7 @@ export interface RigidBodyEcsComponent {
   velocity: Vector2;
   /**
    * The body's angular velocity, in radians/second. Positive turns
-   * counter-clockwise. Defaults to `0`.
+   * `+X` towards `+Y` (clockwise on screen). Defaults to `0`.
    */
   angularVelocity: number;
   /**

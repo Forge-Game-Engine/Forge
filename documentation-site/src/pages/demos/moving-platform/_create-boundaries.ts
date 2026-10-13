@@ -83,11 +83,7 @@ export async function createBoundaries(
     });
   };
 
-  createWall(
-    { x: 0, y: -halfHeight + wallThickness / 2 },
-    width,
-    wallThickness,
-  );
+  createWall({ x: 0, y: halfHeight - wallThickness / 2 }, width, wallThickness);
 
   createWall(
     { x: -halfWidth + wallThickness / 2, y: 0 },
