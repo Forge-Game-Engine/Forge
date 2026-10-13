@@ -584,6 +584,15 @@ links and the example. #783 is closed, so a `Depends on #783` line on #784
 `.github/scripts/claude-dependencies.sh`) would no longer hold anything
 back.
 
+The unattended run that implemented this couldn't merge `origin/dev` (its
+tools don't allow a merge or rebase), so task 1.0 didn't run, and neither
+did the two changes to files that only exist on `dev`: the sentence in
+`meshes.md` (task 1.9) and the `meshes` demo's exhaust (task 1.10, open
+question 2). Committing either one to a branch without those files would
+conflict with `dev`. The ribbon guide still has its mesh-component example
+and its link to `meshes.md`, which resolve once the branch merges into
+`dev`. Those two changes are left for a follow-up or for #785.
+
 ## Performance
 
 - One pass over the points, with a lookahead for the next kept point, so

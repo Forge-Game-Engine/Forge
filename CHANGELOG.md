@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Added
 
+- **rendering:** `buildRibbonMesh(points, options, buffers)` turns a line of points, each with a `position`, `width`, straight-alpha `color` and `distance`, into a triangle-strip ribbon that keeps its width around corners, for a `'triangleStrip'` `Geometry`. Joins are mitered and beveled past `miterLimit`, the inner side of a curve tighter than half the width is pulled in instead of folding, and points closer than `1e-4` units are skipped. `textureMode` `'stretch'` runs U from `0` to `1` over the ribbon and `'tile'` repeats the texture every `tileLength` units. It writes into reusable `createRibbonMeshBuffers(pointCapacity)` arrays and allocates nothing once they're large enough. See the new Ribbon Meshes guide
 - **rendering:** `Geometry.update({ vertexCount, attributes, indices })` replaces a geometry's vertex data, as often as every frame, for meshes that change shape, such as trails, ropes and debug lines. It writes into the existing buffers and grows a buffer to the next power of two bytes only when the data doesn't fit, so it creates no GPU objects, and a restored WebGL context gets the latest data. A geometry can also have `indices` (`Uint16Array` or `Uint32Array`) and a `topology` (`'triangles'`, `'triangleStrip'`, `'lines'`, `'lineStrip'` or `'points'`), and draws itself with `draw()` or `drawInstanced(instanceCount)` after `bind(material)`. `vertexCount` is the number of vertices drawn
 
 #### Changed
