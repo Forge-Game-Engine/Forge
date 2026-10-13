@@ -11,8 +11,7 @@ out vec4 v_maskClipDistance;
 out vec2 v_maskCoord;
 flat out vec4 v_maskShape;
 
-// Forwards a vertex's mask inputs to `spriteMaskCoverage` (the `spriteMask`
-// include). Both are affine in the vertex's world position, so they
+// Forwards a vertex's mask inputs to `maskCoverage` (the `mask` include). Both are affine in the vertex's world position, so they
 // interpolate exactly across the quad.
 void forwardSpriteMask(vec2 world) {
   v_maskClipDistance = vec4(

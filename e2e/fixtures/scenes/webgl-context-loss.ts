@@ -43,10 +43,10 @@ uniform sampler2D u_texture;
 in vec2 v_texCoord;
 out vec4 fragColor;
 
-#pragma forge include(spriteMask)
+#pragma forge include(mask)
 
 void main() {
-  fragColor = vec4(texture(u_texture, v_texCoord).rgb, spriteMaskCoverage());
+  fragColor = vec4(texture(u_texture, v_texCoord).rgb, maskCoverage());
 }
 `;
 

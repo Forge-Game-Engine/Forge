@@ -17,7 +17,7 @@ in vec2 v_shadowOffset;
 in float v_shadowSoftness;
 out vec4 fragColor;
 
-#pragma forge include(spriteMask)
+#pragma forge include(mask)
 
 float median(float r, float g, float b) {
   return max(min(r, g), min(max(r, g), b));
@@ -119,5 +119,5 @@ void main() {
   vec4 shadowLayer = vec4(v_shadowColor.rgb, shadowCoverage * v_shadowColor.a);
 
   fragColor = compositeOver(outlineLayer, shadowLayer);
-  fragColor.a *= spriteMaskCoverage();
+  fragColor.a *= maskCoverage();
 }

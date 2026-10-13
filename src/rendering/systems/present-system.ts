@@ -107,7 +107,7 @@ export const createPresentEcsSystem = (
 
       // Blending is global GL state: leave it off, as the render system
       // does, so a pass that draws before the next frame's sprites (for
-      // example `createTerrainRenderEcsSystem`) never inherits this pass's
+      // example a game's own fullscreen pass) never inherits this pass's
       // premultiplied blend function.
       gl.disable(gl.BLEND);
     },
