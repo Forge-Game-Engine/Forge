@@ -85,7 +85,7 @@ jobs:
     # starts only once the gate has found every dependency closed.
     needs: gate
     if: >-
-      always() && (
+      !cancelled() && (
         (github.event_name == 'issues' && needs.gate.result == 'success' && needs.gate.outputs.blocked == 'false') ||
         (github.event.sender.type != 'Bot' && (
           (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||

@@ -7,21 +7,29 @@
 #   claude-dependencies.sh gate <issue>   used by claude.yml before a label run
 #   claude-dependencies.sh unblock        used by claude-unblock.yml
 #
-# Needs GH_TOKEN and GH_REPO (owner/name) in the environment.
+# Needs GH_TOKEN and GH_REPO (owner/name) in the environment. Any failed
+# GitHub call stops the script with an error, so a dependency is never taken
+# as closed because its state couldn't be read.
 set -euo pipefail
+shopt -s inherit_errexit
 
 waiting_label='claude-waiting'
 declare -A dependency_states=()
+open=()
 
-# Prints the issue's dependencies that are still open, one number per line.
-open_dependencies() {
-  local issue=$1 dependency state
+# Sets `open` to the issue's dependencies that are still open.
+find_open_dependencies() {
+  local issue=$1 body dependency
+  local -a dependencies
 
-  for dependency in $(
-    gh api "repos/$GH_REPO/issues/$issue" --jq '.body // ""' |
-      grep -iE '^[[:space:]]*depends on' |
+  open=()
+  body=$(gh api "repos/$GH_REPO/issues/$issue" --jq '.body // ""')
+  mapfile -t dependencies < <(
+    grep -iE '^[[:space:]]*depends on' <<< "$body" |
       grep -oE '#[0-9]+' | tr -d '#' | sort -un
-  ); do
+  )
+
+  for dependency in "${dependencies[@]}"; do
     if [ "$dependency" = "$issue" ]; then
       continue
     fi
@@ -30,20 +38,18 @@ open_dependencies() {
       dependency_states[$dependency]=$(gh api "repos/$GH_REPO/issues/$dependency" --jq .state)
     fi
 
-    state=${dependency_states[$dependency]}
-
-    if [ "$state" = 'open' ]; then
-      echo "$dependency"
+    if [ "${dependency_states[$dependency]}" != 'closed' ]; then
+      open+=("$dependency")
     fi
   done
 }
 
 gate() {
-  local issue=$1 open
+  local issue=$1
 
-  open=$(open_dependencies "$issue")
+  find_open_dependencies "$issue"
 
-  if [ -z "$open" ]; then
+  if [ "${#open[@]}" -eq 0 ]; then
     echo 'blocked=false' >> "$GITHUB_OUTPUT"
     return
   fi
@@ -55,15 +61,15 @@ gate() {
     --description 'Labeled claude; waiting for its dependencies to close'
   gh issue edit "$issue" --remove-label claude --add-label "$waiting_label"
   dependency_states=()
-  open=$(open_dependencies "$issue")
+  find_open_dependencies "$issue"
 
-  if [ -z "$open" ]; then
-    gh issue edit "$issue" --remove-label "$waiting_label"
+  if [ "${#open[@]}" -eq 0 ]; then
+    gh issue edit "$issue" --remove-label "$waiting_label" --add-label claude
     echo 'blocked=false' >> "$GITHUB_OUTPUT"
     return
   fi
 
-  gh issue comment "$issue" --body "Waiting for $(sed 's/^/#/' <<< "$open" | paste -sd ' ') to close before starting. This issue is labeled \`$waiting_label\`, and gets the \`claude\` label back once every issue on its \`Depends on\` lines has closed."
+  gh issue comment "$issue" --body "Waiting for $(printf '#%s ' "${open[@]}")to close before starting. This issue is labeled \`$waiting_label\`, and gets the \`claude\` label back once every issue on its \`Depends on\` lines has closed."
   echo 'blocked=true' >> "$GITHUB_OUTPUT"
 }
 
@@ -71,13 +77,23 @@ gate() {
 # just closed: a run cancelled by the concurrency group is caught up by the
 # next one.
 unblock() {
-  local issue
+  local issue listing
+  local -a waiting
 
-  for issue in $(
+  listing=$(
     gh api --paginate "repos/$GH_REPO/issues?state=open&labels=$waiting_label&per_page=100" \
       --jq '.[] | select(.pull_request == null) | .number'
-  ); do
-    if [ -z "$(open_dependencies "$issue")" ]; then
+  )
+  mapfile -t waiting <<< "$listing"
+
+  for issue in "${waiting[@]}"; do
+    if [ -z "$issue" ]; then
+      continue
+    fi
+
+    find_open_dependencies "$issue"
+
+    if [ "${#open[@]}" -eq 0 ]; then
       echo "Unblocking #$issue"
       gh issue edit "$issue" --remove-label "$waiting_label" --add-label claude
     fi
