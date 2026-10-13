@@ -10,19 +10,19 @@ const X_CODE_POINT = 120;
 
 function buildFixtureFontAtlasData(): FontAtlasData {
   return {
-    formatVersion: 2,
+    formatVersion: 3,
     type: 'msdf',
     atlasSize: { width: 256, height: 256 },
     distanceRange: 4,
-    // `capHeight: 0.7` intentionally matches "A"/"V"'s own `planeBounds.top`
+    // `capLine: -0.7` intentionally matches "A"/"V"'s own `planeBounds.top`
     // below - the fixture's stand-in for "a capital letter's actual top" -
-    // while `ascender: 0.9` stays taller, standing in for a true ascender
-    // (e.g. "b"/"d"/"h") that reaches higher than any capital does.
+    // while `ascentLine: -0.9` reaches higher, standing in for a true
+    // ascender (e.g. "b"/"d"/"h") that reaches higher than any capital does.
     metrics: {
       lineHeight: 1.2,
-      ascender: 0.9,
-      descender: -0.2,
-      capHeight: 0.7,
+      ascentLine: -0.9,
+      descentLine: 0.2,
+      capLine: -0.7,
     },
     glyphs: new Map([
       [
@@ -30,8 +30,8 @@ function buildFixtureFontAtlasData(): FontAtlasData {
         {
           codePoint: A_CODE_POINT,
           advance: 0.6,
-          planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: 0.7 },
-          atlasBounds: { left: 0, bottom: 0, right: 0.1, top: 0.14 },
+          planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: -0.7 },
+          atlasBounds: { left: 0, bottom: 0.14, right: 0.1, top: 0 },
         },
       ],
       [
@@ -39,8 +39,8 @@ function buildFixtureFontAtlasData(): FontAtlasData {
         {
           codePoint: V_CODE_POINT,
           advance: 0.6,
-          planeBounds: { left: 0.02, bottom: 0, right: 0.58, top: 0.7 },
-          atlasBounds: { left: 0.1, bottom: 0, right: 0.2, top: 0.14 },
+          planeBounds: { left: 0.02, bottom: 0, right: 0.58, top: -0.7 },
+          atlasBounds: { left: 0.1, bottom: 0.14, right: 0.2, top: 0 },
         },
       ],
       [
@@ -60,8 +60,8 @@ function buildFixtureFontAtlasData(): FontAtlasData {
         {
           codePoint: X_CODE_POINT,
           advance: 0.5,
-          planeBounds: { left: 0.05, bottom: 0, right: 0.45, top: 0.5 },
-          atlasBounds: { left: 0.2, bottom: 0, right: 0.3, top: 0.14 },
+          planeBounds: { left: 0.05, bottom: 0, right: 0.45, top: -0.5 },
+          atlasBounds: { left: 0.2, bottom: 0.14, right: 0.3, top: 0 },
         },
       ],
     ]),
@@ -83,13 +83,13 @@ describe('shapeText', () => {
     expect(glyphs[0].offset).toEqual({ x: 3, y: -3.5 + 9 });
     expect(glyphs[0].size).toEqual({ x: 5, y: 7 });
 
-    // `atlasBounds` is `{ left: 0, bottom: 0, right: 0.1, top: 0.14 }`, a
+    // `atlasBounds` is `{ left: 0, bottom: 0.14, right: 0.1, top: 0 }`, a
     // 256-wide/tall atlas (1/256 texel), inset by one texel on each edge to
     // avoid GL_LINEAR sampling across the tile boundary into the next
-    // glyph, then flipped so v = 0 is the top of the atlas image.
+    // glyph.
     const inset = 1 / 256;
     expect(glyphs[0].uvOffset.x).toBeCloseTo(inset);
-    expect(glyphs[0].uvOffset.y).toBeCloseTo(1 - (0.14 - inset));
+    expect(glyphs[0].uvOffset.y).toBeCloseTo(inset);
     expect(glyphs[0].uvScale.x).toBeCloseTo(0.1 - 2 * inset);
     expect(glyphs[0].uvScale.y).toBeCloseTo(0.14 - 2 * inset);
 
@@ -512,8 +512,8 @@ describe('shapeText', () => {
 
   describe('vertical alignment', () => {
     // Anchored to the font's metrics, not the line-height box: fixture
-    // metrics are `ascender: 0.9`, `descender: -0.2` (measured up from the
-    // baseline, as fonts are), so at size 10 and with line 0's baseline at
+    // metrics are `ascentLine: -0.9`, `descentLine: 0.2` (relative to the
+    // baseline), so at size 10 and with line 0's baseline at
     // y = 0, the ink's top is at `inkTop = -9` and (for a 3-line,
     // `actualLineHeight: 12` block) its bottom at
     // `inkBottom = (3 - 1) * 12 + 0.2 * 10 = 26`.
@@ -617,12 +617,12 @@ describe('shapeText', () => {
         verticalAlign: 'capline',
       });
 
-      // The fixture's `capHeight` (0.7) is shorter than its `ascender`
-      // (0.9) - standing in for a real font's cap height (capital letters)
+      // The fixture's `capLine` (-0.7) is lower than its `ascentLine`
+      // (-0.9) - standing in for a real font's cap height (capital letters)
       // being shorter than its true ascender (which also covers taller
       // ascenders like "b"/"d"/"h"). Shifting down by `0.7 * 10` = 7 puts
       // "A"'s own top (which happens to sit exactly at the fixture's
-      // capHeight) at y = 0, not the `9` a `'top'`-style ascender anchor
+      // capLine) at y = 0, not the `9` a `'top'`-style ascender anchor
       // would use (see the "anchors the block by its top" test above).
       expect(glyphs[0].offset.y).toBeCloseTo(-3.5 + 7);
     });
@@ -647,7 +647,7 @@ describe('shapeText', () => {
 
       // `actualLineHeight` doubles to 24, but the default `'top'`
       // alignment's ascender offset (9) is independent of `lineHeight` - it
-      // only depends on the font's own `ascender` metric and `size`.
+      // only depends on the font's own `ascentLine` metric and `size`.
       expect(glyphs[0].offset.y).toBeCloseTo(-3.5 + 9);
       expect(glyphs[2].offset.y).toBeCloseTo(-3.5 + 24 + 9);
       expect(glyphs[4].offset.y).toBeCloseTo(-3.5 + 48 + 9);

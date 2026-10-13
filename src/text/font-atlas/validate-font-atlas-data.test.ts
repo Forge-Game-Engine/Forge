@@ -11,13 +11,18 @@ const buildValidJson = (): FontAtlasFileData => ({
   type: 'msdf',
   atlasSize: { width: 512, height: 512 },
   distanceRange: 4,
-  metrics: { lineHeight: 1.2, ascender: 0.9, descender: -0.2, capHeight: 0.7 },
+  metrics: {
+    lineHeight: 1.2,
+    ascentLine: -0.9,
+    descentLine: 0.2,
+    capLine: -0.7,
+  },
   glyphs: [
     {
       codePoint: 65,
       advance: 0.6,
-      planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: 0.7 },
-      atlasBounds: { left: 0.1, bottom: 0.2, right: 0.2, top: 0.3 },
+      planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: -0.7 },
+      atlasBounds: { left: 0.1, bottom: 0.3, right: 0.2, top: 0.2 },
     },
     {
       codePoint: 32,
@@ -52,6 +57,14 @@ describe('validateFontAtlasFileData', () => {
 
     expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
       /unsupported formatVersion "999"/,
+    );
+  });
+
+  it('should reject a version 2 file, whose glyph bounds and metrics are Y-up', () => {
+    const json = { ...buildValidJson(), formatVersion: 2 };
+
+    expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
+      /unsupported formatVersion "2", expected 3/,
     );
   });
 
@@ -101,30 +114,30 @@ describe('validateFontAtlasFileData', () => {
       ...buildValidJson(),
       metrics: {
         lineHeight: 1.2,
-        ascender: Number.POSITIVE_INFINITY,
-        descender: -0.2,
-        capHeight: 0.7,
+        ascentLine: Number.POSITIVE_INFINITY,
+        descentLine: 0.2,
+        capLine: -0.7,
       },
     };
 
     expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
-      /metrics\.lineHeight, metrics\.ascender, metrics\.descender, and metrics\.capHeight must all be finite numbers/,
+      /metrics\.lineHeight, metrics\.ascentLine, metrics\.descentLine, and metrics\.capLine must all be finite numbers/,
     );
   });
 
-  it('should throw when metrics.capHeight is non-finite', () => {
+  it('should throw when metrics.capLine is non-finite', () => {
     const json = {
       ...buildValidJson(),
       metrics: {
         lineHeight: 1.2,
-        ascender: 0.9,
-        descender: -0.2,
-        capHeight: Number.NaN,
+        ascentLine: -0.9,
+        descentLine: 0.2,
+        capLine: Number.NaN,
       },
     };
 
     expect(() => validateFontAtlasFileData(json, 'fixture.json')).toThrow(
-      /metrics\.lineHeight, metrics\.ascender, metrics\.descender, and metrics\.capHeight must all be finite numbers/,
+      /metrics\.lineHeight, metrics\.ascentLine, metrics\.descentLine, and metrics\.capLine must all be finite numbers/,
     );
   });
 

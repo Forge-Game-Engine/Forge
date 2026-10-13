@@ -106,19 +106,21 @@ const glyph = fontAtlas.data.glyphs.get(0x41); // 'A'
 ```
 
 - `advance`, `planeBounds` and the font-level `fontAtlas.data.metrics`
-  (`lineHeight`, `ascender`, `descender`, `capHeight`) are in **em
+  (`lineHeight`, `ascentLine`, `descentLine`, `capLine`) are in **em
   units**: multiply them by the text's `size` to get world units.
-  `planeBounds` is relative to the glyph's origin on the baseline and
-  measured upwards, as font tools write it (`top` is greater than
-  `bottom`); the shaping system converts it when it places glyphs in the
-  Y-down world.
+- `planeBounds` and the `*Line` metrics are Y positions relative to the
+  glyph's origin on the baseline, Y-down like the world, so anything above
+  the baseline is negative: `ascentLine` and `capLine` are negative,
+  `descentLine` is positive, and a glyph's `top` is smaller than its
+  `bottom`.
 - `planeBounds` includes the distance field's padding around the glyph's
   ink (half of `distanceRange`, in atlas pixels), which outlines and
-  shadows draw into. `ascender` and `descender` are measured from those
-  padded bounds; `capHeight` is measured on a flat capital (such as "H")
+  shadows draw into. `ascentLine` and `descentLine` are measured from those
+  padded bounds; `capLine` is measured on a flat capital (such as "H")
   without the padding.
 - `atlasBounds` is the glyph's rectangle in the texture, normalized from
-  `0` to `1`.
+  `0` to `1` with `(0, 0)` at the image's top-left corner, like every
+  texture coordinate in the engine.
 - `planeBounds` and `atlasBounds` are `null` for a glyph with no visible
   ink, such as space.
 - `glyphs.get` returns `undefined` for a code point that isn't in the

@@ -55,7 +55,7 @@ const CHARSET_PRESETS = {
   ascii: ASCII_CHARSET,
 };
 
-const CURRENT_FONT_ATLAS_FORMAT_VERSION = 2;
+const CURRENT_FONT_ATLAS_FORMAT_VERSION = 3;
 
 const args = process.argv.slice(2);
 
@@ -119,8 +119,8 @@ function resolveCharset(charsetArg) {
 
 /**
  * Converts one BMFont `chars[]` entry (pixel-space, Y-down from the line's
- * top) into a `GlyphMetrics`-shaped object (em units, Y-up, relative to the
- * baseline).
+ * top) into a `GlyphMetrics`-shaped object (em units, relative to the
+ * baseline). Both are Y-down, like the engine, so only the origin moves.
  */
 function normalizeGlyph(char, fontSize, base, atlasWidth, atlasHeight) {
   const hasInk = char.width > 0 && char.height > 0;
@@ -128,18 +128,18 @@ function normalizeGlyph(char, fontSize, base, atlasWidth, atlasHeight) {
   const planeBounds = hasInk
     ? {
         left: char.xoffset / fontSize,
-        top: (base - char.yoffset) / fontSize,
+        top: (char.yoffset - base) / fontSize,
         right: (char.xoffset + char.width) / fontSize,
-        bottom: (base - char.yoffset - char.height) / fontSize,
+        bottom: (char.yoffset + char.height - base) / fontSize,
       }
     : null;
 
   const atlasBounds = hasInk
     ? {
         left: char.x / atlasWidth,
-        top: 1 - char.y / atlasHeight,
+        top: char.y / atlasHeight,
         right: (char.x + char.width) / atlasWidth,
-        bottom: 1 - (char.y + char.height) / atlasHeight,
+        bottom: (char.y + char.height) / atlasHeight,
       }
     : null;
 
@@ -151,43 +151,44 @@ function normalizeGlyph(char, fontSize, base, atlasWidth, atlasHeight) {
   };
 }
 
-// Flat-top capital letters, in priority order, used to measure `capHeight`
-// (see `computeCapHeight`). Deliberately excludes round/pointed capitals
+// Flat-top capital letters, in priority order, used to measure `capLine`
+// (see `computeCapLine`). Deliberately excludes round/pointed capitals
 // like "O"/"C"/"A" - well-designed fonts draw those with a slight vertical
 // overshoot past the true cap height (an optical correction so round shapes
-// don't look shorter than flat ones), which would make `capHeight` a hair
-// taller than the letter it's meant to represent.
-const CAP_HEIGHT_REFERENCE_CHARACTERS = ['H', 'I', 'E', 'F', 'L', 'T'];
+// don't look shorter than flat ones), which would put `capLine` a hair
+// above the letter it's meant to represent.
+const CAP_LINE_REFERENCE_CHARACTERS = ['H', 'I', 'E', 'F', 'L', 'T'];
 
 /**
- * Measures `capHeight` (the baseline-to-top distance of the font's capital
- * letters) from whichever flat-top reference capital is actually present in
- * `glyphs`, trying each of `CAP_HEIGHT_REFERENCE_CHARACTERS` in turn. Falls
- * back to `fallback` (the already-computed `ascender`) when the charset
- * contains none of them - e.g. a numbers-only or symbols-only atlas - since
- * that's the same "safe outer bound" fallback `ascender`/`descender`
- * themselves use when there's no ink to measure at all.
+ * Measures `capLine` (the top of the font's capital letters, relative to
+ * the baseline and Y-down, so negative) from whichever flat-top reference
+ * capital is actually present in `glyphs`, trying each of
+ * `CAP_LINE_REFERENCE_CHARACTERS` in turn. Falls back to `fallback` (the
+ * already-computed `ascentLine`) when the charset contains none of them -
+ * e.g. a numbers-only or symbols-only atlas - since that's the same "safe
+ * outer bound" fallback `ascentLine`/`descentLine` themselves use when
+ * there's no ink to measure at all.
  *
  * A glyph's plane bounds include the distance field's padding around its
  * ink, so the reference capital's `top` sits `padding` above the letter's
- * real top. `capHeight` is a typographic metric (`'capline'` puts the top
+ * real top. `capLine` is a typographic metric (`'capline'` puts the top
  * of an "H" on the anchor, `'middle'` centers the band from it to the
- * baseline), so the padding is subtracted.
+ * baseline), so the padding is removed.
  * @param glyphs - Every normalized glyph in this atlas.
  * @param padding - The distance field padding around every glyph, in em units.
  * @param fallback - The value to use when no reference capital is present.
- * @returns The measured (or fallback) cap height, in em units.
+ * @returns The measured (or fallback) cap line, in em units.
  */
-function computeCapHeight(glyphs, padding, fallback) {
+function computeCapLine(glyphs, padding, fallback) {
   const glyphsByCodePoint = new Map(
     glyphs.map((glyph) => [glyph.codePoint, glyph]),
   );
 
-  for (const character of CAP_HEIGHT_REFERENCE_CHARACTERS) {
+  for (const character of CAP_LINE_REFERENCE_CHARACTERS) {
     const glyph = glyphsByCodePoint.get(character.codePointAt(0));
 
     if (glyph?.planeBounds) {
-      return glyph.planeBounds.top - padding;
+      return glyph.planeBounds.top + padding;
     }
   }
 
@@ -225,7 +226,8 @@ function normalizeBmfontJson(raw) {
   const inkBottoms = glyphs
     .filter((glyph) => glyph.planeBounds !== null)
     .map((glyph) => glyph.planeBounds.bottom);
-  const ascender = inkTops.length > 0 ? Math.max(...inkTops) : base / fontSize;
+  const ascentLine =
+    inkTops.length > 0 ? Math.min(...inkTops) : -base / fontSize;
 
   // msdf-bmfont-xml pads every glyph by `distanceRange >> 1` pixels on each
   // side and includes that padding in the glyph's offsets and size.
@@ -249,19 +251,19 @@ function normalizeBmfontJson(raw) {
       // metrics, but they routinely undershoot the font's actually rendered
       // ink - e.g. this engine's shipped default font renders "b"/"d"/"h"/
       // "i"/"l" taller than `base` accounts for, and "("/")"/"j" lower than
-      // `lineHeight - base` accounts for. `ascender`/`descender` are the
+      // `lineHeight - base` accounts for. `ascentLine`/`descentLine` are the
       // outer bounds `'top'`/`'bottom'` anchor to (see
       // `getVerticalAlignOffset` in `shape-text.ts`), so they're taken from
       // every glyph's plane bounds *including* the distance field padding:
       // outlines, glows and shadows draw into that padding, so nothing a
       // glyph renders pokes past a `'top'`/`'bottom'`-aligned anchor.
-      // `capHeight`, by contrast, is a typographic metric and excludes it.
-      ascender,
-      descender:
+      // `capLine`, by contrast, is a typographic metric and excludes it.
+      ascentLine,
+      descentLine:
         inkBottoms.length > 0
-          ? Math.min(...inkBottoms)
-          : (base - lineHeight) / fontSize,
-      capHeight: computeCapHeight(glyphs, padding, ascender),
+          ? Math.max(...inkBottoms)
+          : (lineHeight - base) / fontSize,
+      capLine: computeCapLine(glyphs, padding, ascentLine),
     },
     glyphs,
     kerning,

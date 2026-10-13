@@ -131,15 +131,15 @@ describe('createTextRenderables', () => {
 
     fontAtlas = {
       data: {
-        formatVersion: 2,
+        formatVersion: 3,
         type: 'msdf',
         atlasSize: { width: 512, height: 512 },
         distanceRange: 4,
         metrics: {
           lineHeight: 1.2,
-          ascender: 0.9,
-          descender: -0.2,
-          capHeight: 0.7,
+          ascentLine: -0.9,
+          descentLine: 0.2,
+          capLine: -0.7,
         },
         glyphs: new Map(),
         kerning: new Map(),

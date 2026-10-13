@@ -36,9 +36,9 @@ const fontAtlas = {
   data: {
     metrics: {
       lineHeight: 1.2,
-      ascender: 0.8,
-      descender: -0.2,
-      capHeight: 0.7,
+      ascentLine: -0.8,
+      descentLine: 0.2,
+      capLine: -0.7,
     },
     glyphs: new Map(
       [...'abcdefghijklmnopqrstuvwxyzAB'].map((character) => [

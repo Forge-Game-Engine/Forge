@@ -416,12 +416,11 @@ export const createUiTextInputEcsSystem = (
     const stopAt = (index: number): Vector2 =>
       caretStops[Math.min(index, caretStops.length - 1)] ?? { x: 0, y: 0 };
 
-    // Font metrics are typographic: `ascender` is how far the line reaches
-    // above its baseline and `descender` (negative) how far below, while
-    // caret stops sit on each line's baseline with y growing down.
-    const { ascender, descender } = label.fontAtlas.data.metrics;
-    const lineTop = -ascender * label.size;
-    const lineBottom = -descender * label.size;
+    // Caret stops sit on each line's baseline, which the font's lines are
+    // measured from.
+    const { ascentLine, descentLine } = label.fontAtlas.data.metrics;
+    const lineTop = ascentLine * label.size;
+    const lineBottom = descentLine * label.size;
     const lineHeight = lineBottom - lineTop;
     const start = Math.min(entry.selectionStart, entry.selectionEnd);
     const end = Math.max(entry.selectionStart, entry.selectionEnd);

@@ -1,18 +1,19 @@
 /**
  * A rectangle in a glyph's own coordinate space (see `GlyphMetrics.planeBounds`
- * and `GlyphMetrics.atlasBounds` for the two spaces this is used in).
+ * and `GlyphMetrics.atlasBounds` for the two spaces this is used in). Both
+ * are Y-down, like the world.
  */
 export interface Bounds {
   /** The rectangle's left edge. */
   left: number;
 
-  /** The rectangle's bottom edge (smaller than `top`). */
+  /** The rectangle's bottom edge (larger than `top`). */
   bottom: number;
 
   /** The rectangle's right edge. */
   right: number;
 
-  /** The rectangle's top edge (larger than `bottom`). */
+  /** The rectangle's top edge (smaller than `bottom`). */
   top: number;
 }
 
@@ -28,9 +29,9 @@ export interface GlyphMetrics {
   advance: number;
 
   /**
-   * This glyph's quad, in em units relative to the text baseline origin,
-   * measured upwards as fonts are (`top` > `bottom`), unlike the Y-down
-   * world; `shapeText` converts it when it places glyphs. Includes the distance field's padding around the glyph's ink
+   * This glyph's quad, in em units relative to the glyph's origin on the
+   * baseline, Y-down like the world: ink above the baseline has a negative
+   * `top`. Includes the distance field's padding around the glyph's ink
    * (half of `FontAtlasData.distanceRange`, in atlas pixels), which
    * outlines and shadows draw into. `null` for glyphs with no visible ink
    * (e.g. space).
@@ -38,34 +39,37 @@ export interface GlyphMetrics {
   planeBounds: Bounds | null;
 
   /**
-   * This glyph's texture rect in the atlas, normalized 0 to 1 with `top`
-   * closer to the top of the atlas image than `bottom`. `null` for glyphs
-   * with no visible ink (e.g. space).
+   * This glyph's texture rect in the atlas, normalized 0 to 1 from the
+   * atlas image's top-left corner, like every texture coordinate in the
+   * engine. `null` for glyphs with no visible ink (e.g. space).
    */
   atlasBounds: Bounds | null;
 }
 
-/** Font metrics shared by every glyph in a `FontAtlas`, in em units. */
+/**
+ * Font metrics shared by every glyph in a `FontAtlas`, in em units. The
+ * `*Line` metrics are Y positions relative to the baseline, Y-down like
+ * `GlyphMetrics.planeBounds`, so a line above the baseline is negative.
+ */
 export interface FontAtlasMetrics {
   /** The default distance between successive lines' baselines. */
   lineHeight: number;
 
-  /** The distance from the baseline to the top of the font's tallest glyphs. */
-  ascender: number;
+  /** The top of the font's tallest glyphs (negative). */
+  ascentLine: number;
 
-  /** The distance from the baseline to the bottom of the font's lowest-descending glyphs (negative). */
-  descender: number;
+  /** The bottom of the font's lowest-descending glyphs (positive). */
+  descentLine: number;
 
   /**
-   * The distance from the baseline to the top of the font's capital letters
-   * (e.g. "H"), excluding ascenders like "b"/"d"/"h" that reach higher than
-   * a capital's flat top. Measured on the letter itself, without the
-   * distance field padding around its quad. `TextEcsComponent.verticalAlign`
-   * reads it for `'capline'` (the top of a capital on the anchor) and
-   * `'middle'` (the band from the cap line to the baseline centered on the
-   * anchor).
+   * The top of the font's capital letters (e.g. "H"), excluding ascenders
+   * like "b"/"d"/"h" that reach higher than a capital's flat top
+   * (negative). Measured on the letter itself, without the distance field
+   * padding around its quad. `TextEcsComponent.verticalAlign` reads it for
+   * `'capline'` (the top of a capital on the anchor) and `'middle'` (the
+   * band from the cap line to the baseline centered on the anchor).
    */
-  capHeight: number;
+  capLine: number;
 }
 
 /** The pixel dimensions of an atlas texture. */
@@ -81,7 +85,7 @@ export interface AtlasSize {
  * The current version of the `FontAtlasData`/`FontAtlasFileData` schema.
  * Bumped on any breaking change to that shape.
  */
-export const CURRENT_FONT_ATLAS_FORMAT_VERSION = 2 as const;
+export const CURRENT_FONT_ATLAS_FORMAT_VERSION = 3 as const;
 
 /**
  * The runtime, Forge-owned representation of a generated MSDF font atlas's
