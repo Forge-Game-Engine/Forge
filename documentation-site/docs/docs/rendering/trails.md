@@ -37,7 +37,8 @@ import {
 const ship = world.createEntity();
 
 addPositionComponent(world, ship);
-addTrailComponent(world, ship, {
+
+const trail = addTrailComponent(world, ship, {
   lifetimeSeconds: 0.6,
   startWidth: 0.4,
   endWidth: 0,
@@ -52,10 +53,17 @@ world.addSystem(createRenderEcsSystem(renderContext));
 
 The trail system reads the entity's world position, so it runs after the
 transform system has written it. It adds a
-[`MeshEcsComponent`](./meshes.md) to the entity that draws the trail, so the
-trail draws in the [draw order](./draw-order.md) with sprites, behind the
-entity's own sprite. An entity has one mesh, so it can't have a trail and
-another mesh: put the other mesh on a child entity.
+[`MeshEcsComponent`](./meshes.md) to the entity that draws the trail. An
+entity has one mesh, so it can't have a trail and another mesh: put the
+other mesh on a child entity.
+
+`addTrailComponent` returns the component. The trail system reads its
+settings every frame, so a change to one of them changes the trail from the
+next frame:
+
+```ts
+trail.startWidth = 0.8;
+```
 
 ## Length and detail
 
@@ -85,8 +93,7 @@ import { easeInOutSine } from '@forge-game-engine/forge/animations';
 addTrailComponent(world, entity, { widthEasing: easeInOutSine });
 ```
 
-Colors are straight (not premultiplied) alpha. Red, green and blue can be
-above `1` to make the trail glow with [bloom](./bloom.md).
+Colors are straight (not premultiplied) alpha.
 
 ## Textures
 
@@ -100,19 +107,109 @@ same way up as a sprite.
 - `'stretch'` stretches it once from the tail to the entity.
 - `'tile'` repeats it every `tileLength` world units of the path. Each
   repeat stays where it was laid down as the entity moves on, like tire
-  tracks. Give the texture `wrap: 'repeat'`.
+  tracks. Give the texture `wrap: 'repeat'`:
+
+```ts
+const tracks = await renderContext.textureCache.getOrLoad('tracks.png', {
+  wrap: 'repeat',
+});
+
+addTrailComponent(world, entity, {
+  texture: tracks,
+  textureMode: 'tile',
+  tileLength: 0.5,
+});
+```
+
+## Draw order
+
+The trail is drawn by its entity's mesh, so it takes the entity's place in
+the [draw order](./draw-order.md), and the entity's
+`DrawOrderEcsComponent` moves it the same way. An entity's mesh draws
+before its sprite and text, so the trail is drawn behind the entity's own
+sprite and in front of everything drawn before the entity.
+
+`layer` puts the trail on a draw-order layer, and `category` is matched
+against each camera's `cullingMask` to decide which cameras draw it:
+
+```ts
+addTrailComponent(world, entity, { layer: -1, category: 1 << 1 });
+```
+
+Set `layer` and `category` on the trail, not on its mesh. The trail system
+copies them to the mesh every frame, so a value written to the mesh is
+overwritten.
+
+To draw a trail in front of its entity's sprite, put the trail on a child
+entity, which draws after its parent:
+
+```ts
+import { addPositionComponent } from '@forge-game-engine/forge/common';
+
+const trailEntity = world.createEntity();
+
+addPositionComponent(world, trailEntity);
+addTrailComponent(world, trailEntity);
+world.setParent(trailEntity, entity);
+```
+
+## Glowing trails
+
+Red, green and blue in `startColor` and `endColor` can be above `1`, for a
+trail brighter than white. A camera whose render target is
+[HDR](./hdr-rendering.md) keeps those values, and [bloom](./bloom.md) on
+the camera makes them glow. A bloom `threshold` of `1` makes only what's
+brighter than white glow:
+
+```ts
+import {
+  addBloomComponent,
+  addToneMappingComponent,
+  addTrailComponent,
+  Color,
+  createCamera,
+  createRenderTarget,
+  RENDER_TARGET_FORMAT,
+} from '@forge-game-engine/forge/rendering';
+
+const sceneTarget = createRenderTarget(
+  renderContext,
+  'canvas',
+  RENDER_TARGET_FORMAT.hdr,
+);
+const camera = createCamera(world, { renderTarget: sceneTarget });
+
+addBloomComponent(world, camera, { threshold: 1 });
+addToneMappingComponent(world, camera);
+
+addTrailComponent(world, entity, {
+  startColor: new Color(4, 1.6, 0.4, 1),
+  endColor: new Color(4, 0.6, 0, 0),
+});
+```
+
+Register the bloom, tone mapping and present systems after the render
+system, as the [bloom](./bloom.md#adding-bloom-to-a-camera) and
+[tone mapping](./hdr-rendering.md#tone-mapping-a-camera) guides show. On a
+camera whose render target isn't HDR, colors are clamped to `1`, so a trail
+brighter than white blooms no more than a white one.
 
 ## Turning a trail on and off
 
 Set `emitting` to `false` to stop recording. The trail ends where the
 entity was when it stopped, and fades out over `lifetimeSeconds`. Setting it
 back to `true` starts a new piece of trail from where the entity is, with
-nothing drawn across the gap.
+nothing drawn across the gap:
+
+```ts
+trail.emitting = false;
+```
 
 ## Clearing a trail
 
-When an entity teleports or respawns, call
-[`clearTrail`](/Forge/docs/api/functions/clearTrail) so its trail isn't
+[`clearTrail`](/Forge/docs/api/functions/clearTrail) removes every point
+the trail has recorded at once, where turning `emitting` off leaves them to
+fade out. Call it when an entity teleports or respawns, so its trail isn't
 drawn across the jump:
 
 ```ts
@@ -123,8 +220,9 @@ position.local.y = spawnY;
 clearTrail(world, entity);
 ```
 
-The trail starts again from the entity's new position the next time the
-trail system runs.
+The trail system clears the points the next time it runs. The trail starts
+again from the entity's new position if it's emitting, and stays empty
+until `emitting` is `true` if it isn't.
 
 ## Removing a trail
 
