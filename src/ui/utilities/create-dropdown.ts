@@ -141,7 +141,7 @@ export interface Dropdown {
  */
 const optionRowAnchor = (height: number): UiAnchorConfig => ({
   x: UiAxis.stretch({ min: 0, max: 1 }),
-  y: UiAxis.point(0, { pivot: 1, size: height }),
+  y: UiAxis.point(1, { pivot: 0, size: height }),
 });
 
 /**
@@ -262,7 +262,7 @@ export function createDropdown(
   const optionButtons = optionLabels.map((label, index) =>
     createButton(world, list, {
       anchor: optionRowAnchor(resolvedOptionHeight),
-      anchoredPosition: { x: 0, y: -resolvedOptionHeight * index },
+      anchoredPosition: { x: 0, y: resolvedOptionHeight * index },
       // `optionRowAnchor` stretches each row to the header's full width with
       // a zero margin, so the row's actual rendered width is the header's
       // own width, not its own - `createButton` can't derive that from a

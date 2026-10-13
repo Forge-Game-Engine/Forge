@@ -26,7 +26,7 @@ const ballRadius = 35;
 const armLength = 220;
 const armWidth = 10;
 const startAngle = 0.9;
-const gravity = { x: 0, y: -600 };
+const gravity = { x: 0, y: 600 };
 
 // `paddle_10.png` is a 640x141 horizontal capsule (rounded caps with a
 // flat center); these insets keep its caps at a fixed size while the
@@ -164,8 +164,8 @@ export async function createCradle(
     const pivotPosition = { x: firstPivotX + spacing * i, y: center.y };
     // Only the leftmost ball starts displaced; the rest hang at rest,
     // touching their neighbors.
-    const angle = i === 0 ? -startAngle : 0;
-    const localAnchorB = { x: 0, y: armLength };
+    const angle = i === 0 ? startAngle : 0;
+    const localAnchorB = { x: 0, y: -armLength };
     // clone both: pivotPosition and localAnchorB are both reused below unchanged
     // (localAnchorB is also passed as-is to addRevoluteJointComponent).
     const ballPosition = Vec2.subtract(

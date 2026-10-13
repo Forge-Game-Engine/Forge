@@ -35,7 +35,7 @@ const renderLayers = {
   foreground: 1 << 0,
 };
 
-const gravity = { x: 0, y: -700 };
+const gravity = { x: 0, y: 700 };
 const terrainWidth = 8000;
 
 export const createRollingBallGame = async (): Promise<Game> => {
@@ -71,7 +71,7 @@ export const createRollingBallGame = async (): Promise<Game> => {
 
   const spawnPosition = {
     x: terrain.spawnX,
-    y: terrain.worldSurfaceYAt(terrain.spawnX) + 60,
+    y: terrain.worldSurfaceYAt(terrain.spawnX) - 60,
   };
 
   const player = await createPlayer(

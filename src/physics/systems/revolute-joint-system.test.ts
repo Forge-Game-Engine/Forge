@@ -62,7 +62,7 @@ describe('createRevoluteJointEcsSystem', () => {
     const pendulumPosition = addPositionComponent(world, pendulum);
     const pendulumRotation = addRotationComponent(world, pendulum);
     addColliderComponent(world, pendulum, {
-      collider: new CircleCollider(1, 1, { x: 0, y: -5 }),
+      collider: new CircleCollider(1, 1, { x: 0, y: 5 }),
     });
     const rigidBody = addRigidBodyComponent(world, pendulum, {
       velocity: { x: 3, y: 0 },
@@ -74,19 +74,20 @@ describe('createRevoluteJointEcsSystem', () => {
       entityB: pendulum,
     });
 
-    let maxRotation = 0;
+    let minRotation = 0;
 
     for (let i = 0; i < 60; i++) {
-      Vec2.add(rigidBody.velocity, { x: 0, y: -9.8 * (1 / 60) });
+      Vec2.add(rigidBody.velocity, { x: 0, y: 9.8 * (1 / 60) });
       tick();
-      maxRotation = Math.max(maxRotation, pendulumRotation.local);
+      minRotation = Math.min(minRotation, pendulumRotation.local);
 
       expect(Vec2.magnitude(pendulumPosition.local)).toBeLessThan(0.1);
     }
 
-    // The bob swung up to the right: the body turned about the pivot rather
-    // than sliding its origin away from it.
-    expect(maxRotation).toBeGreaterThan(0.3);
+    // The bob swung up to the right (a negative turn, counter-clockwise on
+    // screen): the body turned about the pivot rather than sliding its
+    // origin away from it.
+    expect(minRotation).toBeLessThan(-0.3);
   });
 
   it('keeps a dynamic body pinned to a static pivot under repeated gravity-like kicks', () => {
@@ -98,7 +99,7 @@ describe('createRevoluteJointEcsSystem', () => {
 
     const ball = world.createEntity();
     const ballPosition = addPositionComponent(world, ball, {
-      local: { x: 0, y: -5 },
+      local: { x: 0, y: 5 },
     });
     const ballRotation = addRotationComponent(world, ball);
     addUnitMassCollider(world, ball);
@@ -108,17 +109,17 @@ describe('createRevoluteJointEcsSystem', () => {
     addRevoluteJointComponent(world, jointEntity, {
       entityA: pivot,
       entityB: ball,
-      localAnchorB: { x: 0, y: 5 },
+      localAnchorB: { x: 0, y: -5 },
     });
 
     for (let i = 0; i < 180; i++) {
-      Vec2.add(ballRigidBody.velocity, { x: 0, y: -9.8 * (1 / 60) });
+      Vec2.add(ballRigidBody.velocity, { x: 0, y: 9.8 * (1 / 60) });
       tick();
     }
 
     const anchorB = Vec2.add(
       Vec2.clone(ballPosition.world),
-      Vec2.rotate({ x: 0, y: 5 }, ballRotation.world),
+      Vec2.rotate({ x: 0, y: -5 }, ballRotation.world),
     );
     const separation = Vec2.magnitude(anchorB);
 

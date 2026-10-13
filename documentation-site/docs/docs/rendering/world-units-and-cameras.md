@@ -37,6 +37,9 @@ and on a 1200 pixel tall one, so an entity keeps its place and size relative
 to the screen when the canvas is resized. A sprite's `width` and `height`,
 physics shapes and positions are all in world units.
 
+The world is Y-down, like the canvas and the DOM: `+X` points right and
+`+Y` points down the screen.
+
 The number of CSS pixels one world unit covers on screen follows from
 `verticalWorldUnits`, the camera's `zoom` and the canvas's height:
 
@@ -176,11 +179,12 @@ const { bounds, size } = getCameraView(world, camera, renderContext);
 // Above the top edge, anywhere across the visible width.
 const spawnPosition = {
   x: bounds.min.x + Math.random() * size.x,
-  y: bounds.max.y + 1,
+  y: bounds.min.y - 1,
 };
 ```
 
-`bounds` includes the camera's position and zoom. The canvas's aspect ratio
+`bounds.min` is the view's top-left corner and `bounds.max` its
+bottom-right. `bounds` includes the camera's position and zoom. The canvas's aspect ratio
 changes when it's resized, so get the view each time it's used rather than
 once at startup.
 

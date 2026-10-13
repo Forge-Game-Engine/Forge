@@ -64,7 +64,7 @@ export const createSensorsGame = async (): Promise<Game> => {
   // never pushes a ball out of a sensor zone. The zone and drain systems
   // read the contacts after it, in the same tick.
   world.addSystem(
-    createBallSpawnerEcsSystem(time, ballSprite, height / 2 + 40, width * 0.4),
+    createBallSpawnerEcsSystem(time, ballSprite, -height / 2 - 40, width * 0.4),
   );
   world.addSystem(createTransformEcsSystem());
   world.addSystem(createGravityEcsSystem(time));

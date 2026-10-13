@@ -45,9 +45,10 @@ export interface CreateTooltipDefaultedOptions {
   size: Vector2;
 
   /**
-   * Gap between the source element's top edge and the tooltip's bottom
-   * edge, in reference pixels. Defaults to `{ x: 0, y: 8 }` - a small
-   * vertical gap, horizontally centered over the source.
+   * Offset of the tooltip's bottom-center from the source element's
+   * top-center, in reference pixels. Defaults to `{ x: 0, y: -8 }` - a
+   * small gap above the source (`y` grows down the screen), horizontally
+   * centered over it.
    */
   offset: Vector2;
 
@@ -114,7 +115,7 @@ export function createTooltip(
 ): Tooltip {
   const defaultCreateTooltipOptions = {
     size: { x: 160, y: 40 },
-    offset: { x: 0, y: 8 },
+    offset: { x: 0, y: -8 },
     showDelayMilliseconds: 400,
     textColor: Color.white,
   };
@@ -141,7 +142,7 @@ export function createTooltip(
     sprite,
     anchor: {
       x: UiAxis.point(0.5, { size: size.x }),
-      y: UiAxis.point(1, { pivot: 0, size: size.y }),
+      y: UiAxis.point(0, { pivot: 1, size: size.y }),
     },
     anchoredPosition: offset,
   });

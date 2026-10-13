@@ -184,15 +184,16 @@ describe('createTerrainMesh', () => {
     );
 
     // Surface left, surface right, bottom left; surface right, bottom
-    // right, bottom left. Y-up and unmoved: the entity's transform places
-    // the mesh when it's drawn.
+    // right, bottom left. The lowest point is the one with the largest Y
+    // (20), so the bottom edge is at 20 + 50 = 70. Unmoved: the entity's
+    // transform places the mesh when it's drawn.
     expect(Array.from(positions)).toEqual([
-      5, 10, 15, 20, 5, -40, 15, 20, 15, -40, 5, -40,
+      5, 10, 15, 20, 5, 70, 15, 20, 15, 70, 5, 70,
     ]);
-    expect(Array.from(depths)).toEqual([0, 0, 50, 0, 60, 50]);
+    expect(Array.from(depths)).toEqual([0, 0, 60, 0, 50, 60]);
     expect(mesh.geometry.bounds).toEqual({
-      min: { x: 5, y: -40 },
-      max: { x: 15, y: 20 },
+      min: { x: 5, y: 10 },
+      max: { x: 15, y: 70 },
     });
   });
 

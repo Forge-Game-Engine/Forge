@@ -146,7 +146,7 @@ export class MeshMaterial extends Material {
    * @param gl - The WebGL2 rendering context.
    * @param model - The mesh's entity's world transform, uploaded to
    * `u_model`.
-   * @param viewProjection - The camera's Y-up world to clip space transform,
+   * @param viewProjection - The camera's world to clip space transform,
    * uploaded to `u_viewProjection`.
    * @param mask - The masks the mesh is drawn through, or `null` for none.
    * @returns The first texture unit the material left free.
@@ -159,7 +159,7 @@ export class MeshMaterial extends Material {
   ): number {
     this._model.matrix.set(model.matrix);
     this._viewProjection.matrix.set(viewProjection.matrix);
-    writeMaskData(mask, this._maskData, 0, 1);
+    writeMaskData(mask, this._maskData, 0);
 
     return this.bind(gl);
   }

@@ -120,7 +120,8 @@ function buildControlPoints(totalWidth: number): Vector2[] {
     }
 
     previousHeight = height;
-    controlPoints.push({ x, y: height });
+    // Heights are measured upwards; the world is Y-down.
+    controlPoints.push({ x, y: -height });
   }
 
   return controlPoints;

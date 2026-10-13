@@ -695,9 +695,9 @@ describe('createRenderEcsSystem', () => {
       addYSortCamera();
       const { renderable, bindInstanceData } = createRenderable();
 
-      addTaggedSprite(renderable, 2, -5);
-      addTaggedSprite(renderable, 0, 10);
-      addTaggedSprite(renderable, 1, 2);
+      addTaggedSprite(renderable, 2, 5);
+      addTaggedSprite(renderable, 0, -10);
+      addTaggedSprite(renderable, 1, -2);
 
       world.update();
 
@@ -708,9 +708,9 @@ describe('createRenderEcsSystem', () => {
       addYSortCamera();
       const { renderable, bindInstanceData } = createRenderable();
 
-      const character = addTaggedSprite(renderable, 0, 5);
+      const character = addTaggedSprite(renderable, 0, -5);
       // Far below everything, but it belongs to the character.
-      const sword = addTaggedSprite(renderable, 1, -100);
+      const sword = addTaggedSprite(renderable, 1, 100);
 
       addTaggedSprite(renderable, 2, 0);
       world.setParent(sword, character);
@@ -724,11 +724,11 @@ describe('createRenderEcsSystem', () => {
       addYSortCamera();
       const { renderable, bindInstanceData } = createRenderable();
 
-      addTaggedSprite(renderable, 2, -1);
+      addTaggedSprite(renderable, 2, 1);
       const container = world.createEntity();
-      const child = addTaggedSprite(renderable, 1, -50);
+      const child = addTaggedSprite(renderable, 1, 50);
 
-      addTaggedSprite(renderable, 0, 1);
+      addTaggedSprite(renderable, 0, -1);
       world.setParent(child, container);
 
       world.update();
@@ -741,10 +741,10 @@ describe('createRenderEcsSystem', () => {
       const { renderable, bindInstanceData } = createRenderable();
 
       addTaggedSprite(renderable, 3, 0);
-      addTaggedSprite(renderable, 4, -1e6);
-      addTaggedSprite(renderable, 2, 1e-3);
-      addTaggedSprite(renderable, 0, 1e6);
-      addTaggedSprite(renderable, 1, 2e-3);
+      addTaggedSprite(renderable, 4, 1e6);
+      addTaggedSprite(renderable, 2, -1e-3);
+      addTaggedSprite(renderable, 0, -1e6);
+      addTaggedSprite(renderable, 1, -2e-3);
 
       world.update();
 
@@ -756,8 +756,8 @@ describe('createRenderEcsSystem', () => {
       addYSortCamera();
       const { renderable, bindInstanceData } = createRenderable();
 
-      addTaggedSprite(renderable, 0, -5);
-      addTaggedSprite(renderable, 1, 5);
+      addTaggedSprite(renderable, 0, 5);
+      addTaggedSprite(renderable, 1, -5);
 
       world.update();
 
@@ -792,7 +792,7 @@ describe('createRenderEcsSystem', () => {
         .slice()
         .sort(
           (a, b) =>
-            a.layer - b.layer || a.order - b.order || b.y - a.y || a.id - b.id,
+            a.layer - b.layer || a.order - b.order || a.y - b.y || a.id - b.id,
         )
         .map((sprite) => sprite.id);
 
@@ -1084,12 +1084,12 @@ describe('createRenderEcsSystem', () => {
         (call) => (call[0] as { position: PositionEcsComponent }).position,
       );
 
-      // The top-left corner (offset (-45, 45) before rotation) rotates 180
+      // The top-left corner (offset (-45, -45) before rotation) rotates 180
       // degrees around the entity, landing on the opposite side.
       const rotatedCorner = positions.find(
         (position) =>
           Math.abs(position.world.x - (50 + 45)) < 1e-9 &&
-          Math.abs(position.world.y - -45) < 1e-9,
+          Math.abs(position.world.y - 45) < 1e-9,
       );
 
       expect(rotatedCorner).toBeDefined();
@@ -1108,7 +1108,7 @@ describe('createRenderEcsSystem', () => {
       addPositionComponent(world, entity, {
         local: { x: 50, y: 0 },
       });
-      addRotationComponent(world, entity, { local: Math.PI / 2 });
+      addRotationComponent(world, entity, { local: -Math.PI / 2 });
       addSpriteComponent(
         world,
         entity,
@@ -1126,16 +1126,16 @@ describe('createRenderEcsSystem', () => {
         (call) => (call[0] as { position: PositionEcsComponent }).position,
       );
 
-      // The top-left corner (offset (-45, 45) before rotation) orbits to
-      // (-45, -45): the same direction `Vec2.rotate` (and the shader's
-      // own rotation of the region's quad) turns the entity's true world
+      // The top-left corner (offset (-45, -45) before rotation) orbits to
+      // (-45, 45): the same direction `Vec2.rotate` (and the shader's own
+      // rotation of the region's quad) turns the entity's true world
       // rotation. Orbiting it the other way around the entity (a sign bug)
-      // would instead land it at (45, 45), tearing the sliced sprite's
+      // would instead land it at (45, -45), tearing the sliced sprite's
       // regions apart on rotation.
       const rotatedCorner = positions.find(
         (position) =>
           Math.abs(position.world.x - (50 - 45)) < 1e-9 &&
-          Math.abs(position.world.y - -45) < 1e-9,
+          Math.abs(position.world.y - 45) < 1e-9,
       );
 
       expect(rotatedCorner).toBeDefined();
@@ -1345,7 +1345,7 @@ describe('createRenderEcsSystem', () => {
       addNarrowCamera();
       const { renderable, bindInstanceData } = createRenderable();
 
-      addSpriteAt(renderable, { x: 0, y: 5.51 });
+      addSpriteAt(renderable, { x: 0, y: -5.51 });
 
       world.update();
 
@@ -1357,7 +1357,7 @@ describe('createRenderEcsSystem', () => {
       addNarrowCamera();
       const { renderable, bindInstanceData } = createRenderable();
 
-      addSpriteAt(renderable, { x: 0, y: 5.49 });
+      addSpriteAt(renderable, { x: 0, y: -5.49 });
 
       world.update();
 
@@ -1752,8 +1752,8 @@ describe('createRenderEcsSystem', () => {
 
       const { renderable } = createRenderable();
 
-      addSpriteEntity(renderable, -10);
-      addMeshEntity('higher', { x: 0, y: 10 });
+      addSpriteEntity(renderable, 10);
+      addMeshEntity('higher', { x: 0, y: -10 });
 
       world.update();
 
@@ -1844,12 +1844,12 @@ describe('createRenderEcsSystem', () => {
       it("places a mesh's bounds with its entity's rotation and scale", () => {
         addNarrowCamera();
 
-        // Local x in [0, 1]: unturned and unscaled, it spans y 6.4 to 6.6,
-        // above the view. Turned to point down (-Y) and doubled, it reaches
-        // down to y 4.5, inside the view.
+        // Local x in [0, 1]: unturned and unscaled, it spans y -6.6 to -6.4,
+        // above the view. Turned to point down (+Y) and doubled, it reaches
+        // down to y -4.5, inside the view.
         const { entity } = addMeshEntity(
           'turned',
-          { x: 0, y: 6.5 },
+          { x: 0, y: -6.5 },
           { bounds: { min: { x: 0, y: -0.1 }, max: { x: 1, y: 0.1 } } },
         );
 
@@ -1857,7 +1857,7 @@ describe('createRenderEcsSystem', () => {
 
         expect(drawCalls).toEqual([]);
 
-        addRotationComponent(world, entity, { local: -Math.PI / 2 });
+        addRotationComponent(world, entity, { local: Math.PI / 2 });
         addScaleComponent(world, entity, { local: { x: 2, y: 2 } });
         world.update();
 
@@ -1945,7 +1945,7 @@ describe('createRenderEcsSystem', () => {
       expect(y2).toBeCloseTo(4);
     });
 
-    it("binds a Y-up view-projection that maps the camera's view to clip space", () => {
+    it("binds a view-projection that maps the camera's view to clip space", () => {
       addCameraEntity();
       const { bindMesh } = addMeshEntity('projected');
 
@@ -1953,11 +1953,11 @@ describe('createRenderEcsSystem', () => {
 
       const viewProjection = (bindMesh.mock.calls[0][2] as Matrix3x3).matrix;
       // The camera shows y in [-5000, 5000], so a point a quarter of the way
-      // up from the center lands halfway up clip space.
+      // down from the center lands halfway down clip space.
       const clipY =
         viewProjection[1] * 0 + viewProjection[4] * 2500 + viewProjection[7];
 
-      expect(clipY).toBeCloseTo(0.5);
+      expect(clipY).toBeCloseTo(-0.5);
     });
 
     it('draws meshes with straight-alpha blending, and disables blending afterwards', () => {

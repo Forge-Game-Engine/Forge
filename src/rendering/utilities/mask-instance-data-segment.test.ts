@@ -35,15 +35,15 @@ describe('maskInstanceDataSegment', () => {
     expect(data.slice(4)).toEqual(new Array(10).fill(0));
   });
 
-  it("binds the clip rect in the shader's Y-down space", () => {
+  it('binds the clip rect as its min and max corners', () => {
     const data = bind({ visible: true, clip, bounds: clip, shape: null });
 
-    expect(data.slice(0, 4)).toEqual([-1, -6, 5, 2]);
+    expect(data.slice(0, 4)).toEqual([-1, -2, 5, 6]);
     // No shape, clipped.
     expect(data[10]).toBe(3);
   });
 
-  it('binds a linear mask with its Y inputs flipped for the Y-down shader', () => {
+  it("binds a linear mask's axes, origin and edge", () => {
     const data = bind({
       visible: true,
       clip,
@@ -51,7 +51,7 @@ describe('maskInstanceDataSegment', () => {
       shape: { kind: 'linear', ...frame, edge: 0.5 },
     });
 
-    expect(data.slice(4)).toEqual([1, -2, 3, -4, 3, -4, 4, 0.5, 0, 0]);
+    expect(data.slice(4)).toEqual([1, 2, 3, 4, 3, 4, 4, 0.5, 0, 0]);
   });
 
   it('binds a radial mask', () => {

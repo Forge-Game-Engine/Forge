@@ -110,11 +110,10 @@ bindings built from buttons read the button's analog `value`, from `0` to
 
 ## Reading sticks
 
-A stick pushed up reads `+1` and pushed down reads `-1`, matching the
-engine's Y-up world and the D-pad's north button. The W3C Standard Gamepad
-reports the opposite, so the source negates `gamepadAxes.leftStickY` and
-`gamepadAxes.rightStickY` as it reads them. Values read directly from
-`navigator.getGamepads()` keep the W3C sign.
+A stick pushed up reads `-1` and pushed down reads `+1`, as the W3C Standard
+Gamepad reports them. That matches the engine's Y-down world and the D-pad's
+north button on a `GamepadAxis2dBinding`, which also reads `-1`, so values
+read directly from `navigator.getGamepads()` agree with the source's.
 
 Stick values within `0.15` of `0` read `0`. A `GamepadAxis2dBinding`
 applies this to the stick's deflection (the length of its `(x, y)` vector),

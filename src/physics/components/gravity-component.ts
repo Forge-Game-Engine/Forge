@@ -12,7 +12,8 @@ export interface GravityDefaultedOptions {
    * The acceleration, in world units per second squared, that
    * `createGravityEcsSystem` adds to the entity's
    * `RigidBodyEcsComponent.velocity` every tick, scaled by the tick's
-   * duration. Defaults to `(0, -9.81)`.
+   * duration. Defaults to `(0, 9.81)` (down, since the
+   * world is Y-down).
    */
   amount: Vector2;
 }
@@ -38,7 +39,7 @@ export function addGravityComponent(
   options: Partial<GravityEcsComponent> = {},
 ): GravityEcsComponent {
   const defaultGravityOptions: GravityDefaultedOptions = {
-    amount: { x: 0, y: -9.81 },
+    amount: { x: 0, y: 9.81 },
   };
 
   const component: GravityEcsComponent = withDefaults(

@@ -40,7 +40,7 @@ const brickCount = 10;
 const towerColumns = 6;
 
 const armWidth = 14;
-const gravity = { x: 0, y: -600 };
+const gravity = { x: 0, y: 600 };
 
 // `block_narrow.png` is a 32x128 rounded, bolted panel; these insets keep
 // its rounded corners and bolt-head detail at a fixed size while the center
@@ -60,14 +60,14 @@ const armSlices: NineSliceOptions = {
 // position). The one exception is the joint's `localAnchorB`, which the
 // revolute joint API requires as an offset local to the ball, computed once
 // from `pivotPosition` and `ballStartPosition` (see `createWreckingBall`).
-const pivotPosition = { x: -260, y: 260 };
-const ballStartPosition = { x: -480, y: 150 };
+const pivotPosition = { x: -260, y: -260 };
+const ballStartPosition = { x: -480, y: -150 };
 // The center of the floor's middle tile. Its height was chosen so the
 // floor's top surface stays below the ball's swing everywhere the floor
 // spans, while the brick tower standing on it rises back up into the
 // ball's path, see the comment on `floorTileCount` uses in
 // `createWreckingBall`.
-const floorPosition = { x: -100, y: -107 };
+const floorPosition = { x: -100, y: 107 };
 
 interface WreckingBallSprites {
   ball: SpriteEcsComponent;
@@ -196,7 +196,7 @@ function createFloor(world: EcsWorld, sprite: SpriteEcsComponent): void {
 }
 
 function createBrickTower(world: EcsWorld, sprite: SpriteEcsComponent): void {
-  const towerBottomY = floorPosition.y + floorTileSize / 2;
+  const towerBottomY = floorPosition.y - floorTileSize / 2;
   const firstColumnX = floorPosition.x - (brickSize * (towerColumns - 1)) / 2;
   // The bricks are explicitly half the size of their sprite's native 64x64
   // pixels, so (unlike every other object in this scene) they need a scale
@@ -207,7 +207,7 @@ function createBrickTower(world: EcsWorld, sprite: SpriteEcsComponent): void {
   };
 
   for (let row = 0; row < brickCount; row++) {
-    const y = towerBottomY + brickSize / 2 + row * brickSize;
+    const y = towerBottomY - brickSize / 2 - row * brickSize;
 
     for (let column = 0; column < towerColumns; column++) {
       const position = { x: firstColumnX + column * brickSize, y };

@@ -119,8 +119,9 @@ export interface ParticleEmitterOptions {
   /**
    * The range for the direction particles move in when they spawn, in
    * radians, in the emitter's frame: `0` points along the emitter's local
-   * `+X` and angles increase counter-clockwise (`Math.PI / 2` is its local
-   * up). The emitter's frame is the world rotation of the entity it's on, or
+   * `+X` and a positive angle turns towards `+Y`, clockwise on screen
+   * (`Math.PI / 2` is its local down and `-Math.PI / 2` its local up, since
+   * the world is Y-down). The emitter's frame is the world rotation of the entity it's on, or
    * the world's own when the entity has no rotation. A range spanning a full
    * turn picks from the whole circle. Ignored when `emitOutward` is `true`,
    * except for particles spawned at the shape's exact center.
@@ -134,7 +135,8 @@ export interface ParticleEmitterOptions {
   scaleRange: Range;
   /**
    * The range for the initial world rotation of each particle's sprite, in
-   * radians, counter-clockwise. This only turns the sprite; it doesn't change
+   * radians; a positive angle turns `+X` towards `+Y` (clockwise on screen).
+   * This only turns the sprite; it doesn't change
    * the direction the particle moves in, and it doesn't follow the emitter's
    * rotation.
    * @default { min: 0, max: 0 }
@@ -166,7 +168,8 @@ export interface ParticleEmitterOptions {
   /**
    * A constant acceleration, in world units per second squared, applied to
    * every particle. It's in world space, so it doesn't turn with the
-   * emitter. For example `{ x: 0, y: -9.8 }` for gravity.
+   * emitter. For example `{ x: 0, y: 9.8 }` for gravity
+   * (down, since the world is Y-down).
    * @default { x: 0, y: 0 }
    */
   acceleration: Vector2;

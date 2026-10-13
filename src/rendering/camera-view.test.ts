@@ -100,7 +100,7 @@ describe('computeCameraView', () => {
 
     expect(view.size).toEqual({ x: 20, y: 10 });
     expect(view.pixelsPerUnit).toBe(40);
-    expect(view.worldToViewport({ x: 10, y: -5 })).toEqual({ x: 800, y: 400 });
+    expect(view.worldToViewport({ x: 10, y: 5 })).toEqual({ x: 800, y: 400 });
   });
 
   it("lays a render target camera's view out at the canvas's aspect, since the target is presented over the whole canvas", () => {
@@ -115,7 +115,7 @@ describe('computeCameraView', () => {
     expect(view.size).toEqual({ x: 20, y: 10 });
   });
 
-  it("maps the view's corners and center to the canvas's, Y-down", () => {
+  it("maps the view's corners and center to the canvas's", () => {
     const view = computeCameraView(
       buildCamera({ verticalWorldUnits: 10, zoom: 2 }),
       buildPosition(100, 50),
@@ -126,12 +126,9 @@ describe('computeCameraView', () => {
       x: 400,
       y: 200,
     });
-    expect(view.worldToViewport(view.bounds.min)).toEqual({ x: 0, y: 400 });
-    expect(view.worldToViewport(view.bounds.max)).toEqual({ x: 800, y: 0 });
-    expect(view.viewportToWorld({ x: 0, y: 0 })).toEqual({
-      x: view.bounds.min.x,
-      y: view.bounds.max.y,
-    });
+    expect(view.worldToViewport(view.bounds.min)).toEqual({ x: 0, y: 0 });
+    expect(view.worldToViewport(view.bounds.max)).toEqual({ x: 800, y: 400 });
+    expect(view.viewportToWorld({ x: 0, y: 0 })).toEqual(view.bounds.min);
   });
 
   it('round-trips a position through the viewport and back', () => {
@@ -164,11 +161,11 @@ describe('computeCameraView', () => {
     );
 
     const onHud = hudView.viewportToWorld(
-      gameView.worldToViewport({ x: 5, y: 5 }),
+      gameView.worldToViewport({ x: 5, y: -5 }),
     );
 
     expect(onHud.x).toBeCloseTo(0);
-    expect(onHud.y).toBeCloseTo(540);
+    expect(onHud.y).toBeCloseTo(-540);
   });
 
   it('returns new vectors without mutating its input', () => {

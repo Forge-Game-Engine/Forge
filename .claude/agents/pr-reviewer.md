@@ -63,7 +63,7 @@ checks, tests, the presence of a changelog bullet).
 4. **Root cause, not symptom** (AGENTS.md "Change Philosophy", "Common
    Patterns"). The change fixes the layer that breaks a convention, so no
    caller compensates, and it deletes workarounds the fix made
-   unnecessary. Check the conventions that apply: Y-up and angles, device
+   unnecessary. Check the conventions that apply: Y-down and angles, device
    vs. CSS pixels, premultiplied alpha and `gl.BLEND` left disabled, and GL
    objects held only through their engine wrappers. Game- or
    genre-specific code in `/src` fails.

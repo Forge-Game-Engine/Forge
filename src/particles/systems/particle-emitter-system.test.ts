@@ -324,7 +324,7 @@ describe('createParticleEcsSystem', () => {
 
   it('copies acceleration, drag, opacity and the velocity offset onto each particle', () => {
     const getVelocityOffset = (): Vector2 => ({ x: 1, y: 0 });
-    const acceleration = { x: 0, y: -9.8 };
+    const acceleration = { x: 0, y: 9.8 };
     const emitter = addEmitter({
       numParticlesRange: { min: 1, max: 1 },
       acceleration,

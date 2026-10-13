@@ -231,7 +231,7 @@ export const createScene: CreateScene = (
       context2d.drawImage(canvas, 0, 0);
 
       const pixelsPerUnit = canvas.height / verticalWorldUnits;
-      const row = Math.round(canvas.height / 2 - sampleWorldY * pixelsPerUnit);
+      const row = Math.round(canvas.height / 2 + sampleWorldY * pixelsPerUnit);
       const { data } = context2d.getImageData(0, row, canvas.width, 1);
       const extents: Record<SampledShape, PixelExtent | null> = {
         red: null,

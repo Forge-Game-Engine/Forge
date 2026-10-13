@@ -28,7 +28,7 @@ const mountSize = 24;
 const wheelRadius = 30;
 const wheelDensity = 0.6;
 const lineWidth = 10;
-const gravity = { x: 0, y: -600 };
+const gravity = { x: 0, y: 600 };
 
 // `block_square.png`/`block_narrow.png` are 64x64/32x128 rounded, bolted
 // panels; these insets keep their rounded corners and bolt-head detail at a
@@ -189,7 +189,7 @@ function createSuspensionScenario(
   // clone: mountPosition is reused below (unchanged) for the mount/line entities.
   const wheelPosition = Vec2.add(Vec2.clone(mountPosition), {
     x: 0,
-    y: -wheelDropHeight,
+    y: wheelDropHeight,
   });
   const wheelCollider = new CircleCollider(wheelRadius, wheelDensity);
 
@@ -276,9 +276,9 @@ export async function createSuspensions(
     renderContext,
   ).size;
   const columnWidth = width / 2;
-  const mountY = height * 0.25;
+  const mountY = -height * 0.25;
   const stiffness = 30_000;
-  const bumpVelocity = { x: 0, y: 180 };
+  const bumpVelocity = { x: 0, y: -180 };
   const resetIntervalSeconds = 6;
 
   // Spring only: nothing dissipates the energy of the bump, so the wheel

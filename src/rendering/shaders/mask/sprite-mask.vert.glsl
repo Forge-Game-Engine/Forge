@@ -1,7 +1,7 @@
 #pragma forge name(spriteMaskVertex)
 
-// The per-instance mask data `maskInstanceDataSegment` binds, in the same
-// Y-down world space as the quad's own instance data.
+// The per-instance mask data `maskInstanceDataSegment` binds, in world
+// space like the quad's own instance data.
 in vec4 a_instanceMaskClip;    // Clip rect: min.xy, max.xy
 in vec4 a_instanceMaskAxes;    // World offset -> mask coordinates, by row
 in vec2 a_instanceMaskOrigin;  // The shape mask's center

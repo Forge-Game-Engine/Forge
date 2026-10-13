@@ -49,10 +49,10 @@ export async function createAsteroidSpawner(
     nextSpawnTime: 0,
     minX: -visibleWorldSize.x / 2,
     maxX: visibleWorldSize.x / 2,
-    spawnY: visibleWorldSize.y / 2 + 100,
+    spawnY: -(visibleWorldSize.y / 2 + 100),
     minSpeed: 70,
     maxSpeed: 130,
-    rotationSpeed: Math.PI / 6,
+    rotationSpeed: -Math.PI / 6,
   };
 
   world.addComponent(spawnerEntity, asteroidSpawnerId, spawnerComponent);

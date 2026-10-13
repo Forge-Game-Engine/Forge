@@ -30,10 +30,10 @@ export const ringCenter = { x: -160, y: 0 };
 
 const barWidth = 240;
 const barHeight = 40;
-const barCenter = { x: 160, y: 120 };
+const barCenter = { x: 160, y: -120 };
 
 const clipSize = 100;
-const clipCenter = { x: 160, y: -120 };
+const clipCenter = { x: 160, y: 120 };
 const clippedChildWidth = 300;
 
 /** How many pixels of each landmark the camera currently shows. */
@@ -211,8 +211,8 @@ export const createScene: CreateScene = (
     height: ringDiameter,
     shape: {
       kind: 'radial',
-      startAngle: Math.PI / 2,
-      sweep: -Math.PI * 2,
+      startAngle: -Math.PI / 2,
+      sweep: Math.PI * 2,
       amount: 1,
     },
   });
@@ -306,7 +306,7 @@ export const createScene: CreateScene = (
       );
       const scale = renderContext.height / verticalWorldUnits;
       const ringCenterX = canvas.width / 2 + ringCenter.x * scale;
-      const ringCenterY = canvas.height / 2 - ringCenter.y * scale;
+      const ringCenterY = canvas.height / 2 + ringCenter.y * scale;
       const tally = createPixelTally(ringCenterX, ringCenterY);
 
       for (let y = 0; y < canvas.height; y++) {

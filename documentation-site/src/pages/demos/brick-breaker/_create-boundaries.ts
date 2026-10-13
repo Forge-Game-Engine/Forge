@@ -108,7 +108,11 @@ export async function createBoundaries(
     });
   };
 
-  createWall({ x: 0, y: halfHeight - wallThickness / 2 }, width, wallThickness);
+  createWall(
+    { x: 0, y: -halfHeight + wallThickness / 2 },
+    width,
+    wallThickness,
+  );
 
   createWall(
     { x: -halfWidth + wallThickness / 2, y: 0 },
@@ -121,7 +125,7 @@ export async function createBoundaries(
   return {
     minX: -halfWidth + wallThickness,
     maxX: halfWidth - wallThickness,
-    topY: halfHeight - wallThickness,
-    bottomY: -halfHeight,
+    topY: -halfHeight + wallThickness,
+    bottomY: halfHeight,
   };
 }

@@ -139,7 +139,7 @@ export const createDropdownGame = async (): Promise<Game> => {
     labelColor: textColor,
     labelCategory: renderLayers.ui,
     anchor: UiAnchor.center({ x: 320, y: 56 }),
-    anchoredPosition: { x: 0, y: 100 },
+    anchoredPosition: { x: 0, y: -100 },
     selectedIndex: 2,
     transition: boxTransition,
   });

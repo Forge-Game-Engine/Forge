@@ -53,7 +53,7 @@ describe('applyExplosiveForce', () => {
     const rigidBody = world.getComponent(centered, rigidBodyId)!;
 
     expect(rigidBody.velocity.x).toBeCloseTo(0);
-    expect(rigidBody.velocity.y).toBeGreaterThan(0);
+    expect(rigidBody.velocity.y).toBeLessThan(0);
   });
 
   it('does not affect bodies at or beyond the radius', () => {
@@ -70,14 +70,14 @@ describe('applyExplosiveForce', () => {
   it('measures from the center of mass and imparts no spin', () => {
     // The origin is outside the radius, but the center of mass is inside,
     // directly above the explosion.
-    const entity = createBody({ x: 0, y: 250 }, { x: 0, y: -100 });
+    const entity = createBody({ x: 0, y: -250 }, { x: 0, y: 100 });
 
     applyExplosiveForce(world, Vec2.zero, 1000, 200);
 
     const rigidBody = world.getComponent(entity, rigidBodyId)!;
 
     expect(rigidBody.velocity.x).toBeCloseTo(0);
-    expect(rigidBody.velocity.y).toBeGreaterThan(0);
+    expect(rigidBody.velocity.y).toBeLessThan(0);
     expect(rigidBody.angularVelocity).toBe(0);
   });
 

@@ -90,19 +90,19 @@ function validateMetrics(
     return;
   }
 
-  const { lineHeight, ascender, descender, capHeight } = metrics as Record<
+  const { lineHeight, ascentLine, descentLine, capLine } = metrics as Record<
     string,
     unknown
   >;
 
   if (
     !Number.isFinite(lineHeight) ||
-    !Number.isFinite(ascender) ||
-    !Number.isFinite(descender) ||
-    !Number.isFinite(capHeight)
+    !Number.isFinite(ascentLine) ||
+    !Number.isFinite(descentLine) ||
+    !Number.isFinite(capLine)
   ) {
     fail(
-      'metrics.lineHeight, metrics.ascender, metrics.descender, and metrics.capHeight must all be finite numbers.',
+      'metrics.lineHeight, metrics.ascentLine, metrics.descentLine, and metrics.capLine must all be finite numbers.',
     );
   }
 }

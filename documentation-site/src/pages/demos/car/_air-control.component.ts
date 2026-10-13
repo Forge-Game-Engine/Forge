@@ -4,7 +4,7 @@ import { GroundContactEcsComponent } from './_ground-contact.component';
 
 /**
  * Mid-air pitch control. While both wheels are off the ground, the chassis
- * spins towards `throttleInput * maxAngularSpeed`: gas tilts the nose up,
+ * spins towards `-throttleInput * maxAngularSpeed`: gas tilts the nose up,
  * brake tilts it down, and letting go stops the spin.
  */
 export interface AirControlEcsComponent {

@@ -54,6 +54,9 @@ const ribbon = new Geometry(renderContext, {
 });
 ```
 
+`buildRibbonMesh` builds a ribbon's vertices along a line; see
+[Ribbon Meshes](./ribbon-meshes.md).
+
 ## Indexing vertices
 
 `indices` lists which vertices make up the primitives, in order, so

@@ -100,13 +100,13 @@ const verticalBand =
  */
 export const UiAnchor = {
   /** Pins to the parent's top-left corner. `size` sets the element's literal width/height. */
-  topLeft: point(0, 1),
+  topLeft: point(0, 0),
 
   /** Pins to the parent's top edge, horizontally centered. `size` sets the element's literal width/height. */
-  topCenter: point(0.5, 1),
+  topCenter: point(0.5, 0),
 
   /** Pins to the parent's top-right corner. `size` sets the element's literal width/height. */
-  topRight: point(1, 1),
+  topRight: point(1, 0),
 
   /** Pins to the parent's left edge, vertically centered. `size` sets the element's literal width/height. */
   middleLeft: point(0, 0.5),
@@ -118,20 +118,20 @@ export const UiAnchor = {
   middleRight: point(1, 0.5),
 
   /** Pins to the parent's bottom-left corner. `size` sets the element's literal width/height. */
-  bottomLeft: point(0, 0),
+  bottomLeft: point(0, 1),
 
   /** Pins to the parent's bottom edge, horizontally centered. `size` sets the element's literal width/height. */
-  bottomCenter: point(0.5, 0),
+  bottomCenter: point(0.5, 1),
 
   /** Pins to the parent's bottom-right corner. `size` sets the element's literal width/height. */
-  bottomRight: point(1, 0),
+  bottomRight: point(1, 1),
 
   /**
    * A full-width horizontal band pinned to the parent's top edge - the
    * common "HUD top bar" anchor. `height` sets the band's height (it's
    * point-anchored vertically); `horizontalMargin` is a horizontal margin.
    */
-  stretchTop: horizontalBand(1, 0.5),
+  stretchTop: horizontalBand(0, 0.5),
 
   /** Stretches to fill the parent's full width, vertically centered. */
   stretchHorizontal: horizontalBand(0.5, 0.5),
@@ -140,7 +140,7 @@ export const UiAnchor = {
    * A full-width horizontal band pinned to the parent's bottom edge - the
    * common "HUD bottom bar" anchor. `height` sets the band's height.
    */
-  stretchBottom: horizontalBand(0, 0.5),
+  stretchBottom: horizontalBand(1, 0.5),
 
   /**
    * A full-height vertical band pinned to the parent's left edge - the
@@ -191,7 +191,7 @@ export const UiAnchor = {
    * useful for. `height` still sets the band's height (point-anchored
    * vertically); `horizontalMargin` is still a horizontal margin.
    */
-  stretchTopLeft: horizontalBand(1, 0),
+  stretchTopLeft: horizontalBand(0, 0),
 
   /**
    * The mirror image of `stretchTopLeft` - a full-width horizontal band
@@ -204,5 +204,5 @@ export const UiAnchor = {
    * syncing). `height` still sets the band's height (point-anchored
    * vertically); `horizontalMargin` is still a horizontal margin.
    */
-  stretchTopRight: horizontalBand(1, 1),
+  stretchTopRight: horizontalBand(0, 1),
 };

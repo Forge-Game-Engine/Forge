@@ -96,7 +96,7 @@ export interface TranslucentUiCompositingSceneHandle extends SceneHandle {
 
 /**
  * Averages a small block of `context2d` centered on the normalized
- * (`0`-`1`, Y-up, matching the UI's anchors) position `(u, v)`, so a single
+ * (`0`-`1` from the top-left, matching the UI's anchors) position `(u, v)`, so a single
  * antialiased or dithered pixel can't skew the result.
  */
 function sampleBlock(
@@ -109,7 +109,7 @@ function sampleBlock(
   const radius = 4;
   const size = radius * 2 + 1;
   const left = Math.round(u * width) - radius;
-  const top = Math.round((1 - v) * height) - radius;
+  const top = Math.round(v * height) - radius;
   const { data } = context2d.getImageData(left, top, size, size);
   const pixelCount = size * size;
   let r = 0;

@@ -51,7 +51,7 @@ export const createParticlesGame = async (): Promise<Game> => {
 
   const fountainPosition = {
     x: 0,
-    y: -DEMO_VERTICAL_WORLD_UNITS / 2 + fountainHeightFromBottom,
+    y: DEMO_VERTICAL_WORLD_UNITS / 2 - fountainHeightFromBottom,
   };
 
   await createEmberFountain(

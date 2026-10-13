@@ -94,7 +94,7 @@ export function createFlagshipPanel(
   // the right edge instead of the left: `originalLeftOffset + width - 1320`.
   const heroBox = createPanel(world, parent, {
     anchor: UiAnchor.topRight({ x: heroBoxWidth, y: heroBoxHeight }),
-    anchoredPosition: { x: 86 + heroBoxWidth - 1320, y: -694 },
+    anchoredPosition: { x: 86 + heroBoxWidth - 1320, y: 694 },
     sprite: borderSprite,
   });
 
@@ -136,7 +136,7 @@ export function createFlagshipPanel(
 
   const card = createPanel(world, parent, {
     anchor: UiAnchor.topRight({ x: cardWidth, y: cardHeight }),
-    anchoredPosition: { x: 744 + cardWidth - 1320, y: -754 },
+    anchoredPosition: { x: 744 + cardWidth - 1320, y: 754 },
     sprite: panelSprite,
   });
 
@@ -146,7 +146,7 @@ export function createFlagshipPanel(
     size: 15,
     letterSpacing: 0.12,
     anchor: UiAnchor.topLeft({ x: 300, y: 22 }),
-    anchoredPosition: { x: 24, y: -20 },
+    anchoredPosition: { x: 24, y: 20 },
     verticalAlign: textVerticalAlignments.capline,
     color: fleetCommandPalette.blue,
     category: uiCategory,
@@ -158,7 +158,7 @@ export function createFlagshipPanel(
     size: 24,
     letterSpacing: 0.02,
     anchor: UiAnchor.topLeft({ x: 440, y: 32 }),
-    anchoredPosition: { x: 24, y: -46 },
+    anchoredPosition: { x: 24, y: 46 },
     verticalAlign: textVerticalAlignments.capline,
     color: fleetCommandPalette.ink,
     category: uiCategory,
@@ -170,7 +170,7 @@ export function createFlagshipPanel(
     size: 15,
     letterSpacing: 0.05,
     anchor: UiAnchor.topLeft({ x: 220, y: 20 }),
-    anchoredPosition: { x: 24, y: -96 },
+    anchoredPosition: { x: 24, y: 96 },
     verticalAlign: textVerticalAlignments.capline,
     color: fleetCommandPalette.ink,
     category: uiCategory,
@@ -187,7 +187,7 @@ export function createFlagshipPanel(
     // to the *right* of the card's own edge instead of flush with it, since
     // that box is always measured rightward from the label's local x = 0.
     anchor: UiAnchor.topLeft({ x: percentageWidth, y: 20 }),
-    anchoredPosition: { x: cardWidth - 24 - percentageWidth, y: -96 },
+    anchoredPosition: { x: cardWidth - 24 - percentageWidth, y: 96 },
     maxWidth: percentageWidth,
     horizontalAlign: textHorizontalAlignments.right,
     verticalAlign: textVerticalAlignments.capline,
@@ -197,7 +197,7 @@ export function createFlagshipPanel(
 
   createProgressBar(world, card, {
     anchor: UiAnchor.topLeft({ x: cardContentWidth, y: 16 }),
-    anchoredPosition: { x: 24, y: -120 },
+    anchoredPosition: { x: 24, y: 120 },
     trackSprite,
     fillSprite,
     value: fleetStrength,
@@ -205,7 +205,7 @@ export function createFlagshipPanel(
 
   const deployButton = createButton(world, card, {
     anchor: UiAnchor.bottomLeft({ x: cardContentWidth, y: 56 }),
-    anchoredPosition: { x: 24, y: 24 },
+    anchoredPosition: { x: 24, y: -24 },
     sprite: buttonSprite,
     label: 'DEPLOY',
     fontAtlas,

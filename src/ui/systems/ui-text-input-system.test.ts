@@ -36,9 +36,9 @@ const fontAtlas = {
   data: {
     metrics: {
       lineHeight: 1.2,
-      ascender: 0.8,
-      descender: -0.2,
-      capHeight: 0.7,
+      ascentLine: -0.8,
+      descentLine: 0.2,
+      capLine: -0.7,
     },
     glyphs: new Map(
       [...'abcdefghijklmnopqrstuvwxyzAB'].map((character) => [
@@ -196,6 +196,12 @@ describe('createUiTextInputEcsSystem', () => {
     expect(
       world.getComponent(textInput.compositionUnderline, visibilityId)!.visible,
     ).toBe(true);
+    // Halfway between the baseline (y 0) and the descender line, which is
+    // 0.2 * 20 = 4 below it: y grows down.
+    expect(
+      world.getComponent(textInput.compositionUnderline, rectTransformId)!
+        .anchoredPosition.y,
+    ).toBe(2);
 
     element.dispatchEvent(new CompositionEvent('compositionend'));
     world.update();
@@ -335,7 +341,10 @@ describe('createUiTextInputEcsSystem', () => {
 
     const caret = world.getComponent(textInput.caret, rectTransformId)!;
 
-    expect(caret.anchoredPosition).toEqual({ x: 20, y: -4 });
+    // The caret hangs from its top edge, at the ascender line 0.8 * 20 = 16
+    // above the baseline (y 0), down to the descender line 4 below it.
+    expect(caret.y).toMatchObject({ kind: 'point', pivot: 0, size: 20 });
+    expect(caret.anchoredPosition).toEqual({ x: 20, y: -16 });
     expect(world.getComponent(textInput.caret, visibilityId)!.visible).toBe(
       true,
     );
@@ -348,8 +357,9 @@ describe('createUiTextInputEcsSystem', () => {
 
     const selection = world.getComponent(textInput.selection, rectTransformId)!;
 
-    expect(selection.anchoredPosition.x).toBe(10);
+    expect(selection.anchoredPosition).toEqual({ x: 10, y: -16 });
     expect(selection.x.kind === 'point' && selection.x.size).toBe(20);
+    expect(selection.y).toMatchObject({ kind: 'point', pivot: 0, size: 20 });
     expect(world.getComponent(textInput.selection, visibilityId)!.visible).toBe(
       true,
     );
@@ -381,6 +391,19 @@ describe('createUiTextInputEcsSystem', () => {
     expect(style.left).toBe('300px');
     expect(style.top).toBe('280px');
     expect(style.width).toBe('200px');
+    expect(style.height).toBe('40px');
+  });
+
+  it('places the hidden input for a field near the top of the canvas at a small CSS top', () => {
+    world.getComponent(field.entity, rectTransformId)!.rect = {
+      min: { x: -100, y: -250 },
+      max: { x: 100, y: -210 },
+    };
+    world.update();
+
+    const { style } = textInput.entry.element;
+
+    expect(style.top).toBe('50px');
     expect(style.height).toBe('40px');
   });
 

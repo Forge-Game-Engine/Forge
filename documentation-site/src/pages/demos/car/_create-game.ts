@@ -68,7 +68,7 @@ export const createCarGame = async (): Promise<Game> => {
 
   addCameraFollowComponent(world, cameraEntity, {
     targetEntity: chassisEntity,
-    offset: { x: 140, y: 70 },
+    offset: { x: 140, y: -70 },
     smoothTime: 0.25,
     maxSpeed: 3000,
   });

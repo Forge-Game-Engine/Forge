@@ -356,7 +356,7 @@ test.describe('gamepad input', () => {
     });
   });
 
-  test('a stick pushed up and D-pad up drive an up-is-positive action the same way', async ({
+  test('a stick pushed up and D-pad up drive a vertical action the same way, moving up on screen', async ({
     page,
   }) => {
     const before = await test.step('capture the starting state', () =>
@@ -367,25 +367,22 @@ test.describe('gamepad input', () => {
     const dpadUp = await test.step('capture the state with D-pad up', () =>
       stepAndReadState(page));
 
-    expect(dpadUp.verticalPosition.y).toBeGreaterThan(
-      before.verticalPosition.y,
-    );
+    // The world is Y-down, so up is negative y.
+    expect(dpadUp.verticalPosition.y).toBeLessThan(before.verticalPosition.y);
 
     await test.step('release D-pad up', async () => {
       await setButton(page, 'dpadUp', false);
       await step(page);
     });
 
-    // The W3C Standard Gamepad reports a stick pushed up as -1; the engine
-    // reads it as up-positive.
+    // The W3C Standard Gamepad reports a stick pushed up as -1, which is
+    // already up in the engine's Y-down world.
     await test.step('push the stick up', () => setStickY(page, -0.8));
 
     const stickUp = await test.step('capture the state with the stick up', () =>
       stepAndReadState(page));
 
-    expect(stickUp.verticalPosition.y).toBeGreaterThan(
-      before.verticalPosition.y,
-    );
+    expect(stickUp.verticalPosition.y).toBeLessThan(before.verticalPosition.y);
 
     await test.step('assert the stick and D-pad moved the square the same way on screen', () => {
       expect(before.verticalBounds).not.toBeNull();
@@ -396,7 +393,8 @@ test.describe('gamepad input', () => {
       const dpadOffset = centerY(dpadUp.verticalBounds!) - baseCenter;
       const stickOffset = centerY(stickUp.verticalBounds!) - baseCenter;
 
-      expect(Math.abs(dpadOffset)).toBeGreaterThan(0);
+      // Up on screen is a smaller canvas Y.
+      expect(dpadOffset).toBeLessThan(0);
       expect(Math.sign(stickOffset)).toBe(Math.sign(dpadOffset));
       // A 0.8 deflection travels 80% as far as the D-pad's full 1.
       expect(stickOffset / dpadOffset).toBeGreaterThan(0.7);

@@ -24,7 +24,7 @@ import { getAssetUrl } from '@site/src/utils/get-asset-url';
 import { addPushComponent } from './_push.component';
 
 const pivotSize = 14;
-const gravity = { x: 0, y: -600 };
+const gravity = { x: 0, y: 600 };
 
 // `block_square.png`/`block_narrow.png` are 64x64/32x128 rounded, bolted
 // panels; these insets keep their rounded corners and bolt-head detail at a
@@ -152,7 +152,7 @@ function createPivotMarker(
 /**
  * Builds the door scenario: a hinge fixed to a wall-mounted pivot, limited
  * to swing between closed (hanging straight down, `angle` 0) and open
- * (horizontal, `angle` 90 degrees). Gravity swings it closed; a
+ * (horizontal, `angle` -90 degrees). Gravity swings it closed; a
  * `PushEcsComponent` periodically shoves it back open near its far edge
  * (revolute joints have no built-in motor).
  * @param world - The ECS world to add the scenario's entities to.
@@ -168,7 +168,7 @@ function createDoorScenario(
   const doorHeight = 22;
   // Hanging straight down: the hinge (local origin side) points up, the far
   // (push) edge points down.
-  const doorAngle = -Math.PI / 2;
+  const doorAngle = Math.PI / 2;
   const localAnchorB = { x: -doorWidth / 2, y: 0 };
   // clone both: localAnchorB is passed unrotated to the revolute joint below,
   // and pivotPosition is reused as-is for createPivotMarker after this.
@@ -204,7 +204,7 @@ function createDoorScenario(
   addGravityComponent(world, doorEntity, { amount: gravity });
 
   // referenceAngle is captured as doorAngle here, so the joint's own
-  // relative angle starts at 0 (closed) and 90 degrees is fully open.
+  // relative angle starts at 0 (closed) and -90 degrees is fully open.
   const jointEntity = world.createEntity();
 
   addRevoluteJointComponent(world, jointEntity, {
@@ -212,8 +212,8 @@ function createDoorScenario(
     entityB: doorEntity,
     localAnchorB,
     enableLimit: true,
-    lowerAngle: 0,
-    upperAngle: Math.PI / 2,
+    lowerAngle: -Math.PI / 2,
+    upperAngle: 0,
   });
   addPushComponent(world, jointEntity, {
     entity: doorEntity,
@@ -238,10 +238,10 @@ function createPendulumScenario(
 ): void {
   const bobRadius = 22;
   const armLength = 150;
-  const startAngle = 0.8;
+  const startAngle = -0.8;
   // The bob's anchor sits `armLength` above its own center in its local
   // (unrotated) frame, i.e. directly below the pivot at rest (angle 0).
-  const localAnchorB = { x: 0, y: armLength };
+  const localAnchorB = { x: 0, y: -armLength };
   // clone both: localAnchorB is passed unrotated to the revolute joint below,
   // and pivotPosition is reused as-is for createPivotMarker after this.
   const bobPosition = Vec2.subtract(
@@ -317,7 +317,7 @@ function createWheelScenario(
     restitution: 0,
   });
   addRigidBodyComponent(world, wheelEntity, {
-    angularVelocity: 5,
+    angularVelocity: -5,
   });
   addGravityComponent(world, wheelEntity, { amount: gravity });
 
@@ -354,11 +354,11 @@ export async function createHinges(
   const columnWidth = width / 3;
   const columnLeft = -width / 2 + columnWidth / 2;
 
-  createDoorScenario(world, sprites, { x: columnLeft, y: height * 0.3 });
+  createDoorScenario(world, sprites, { x: columnLeft, y: -height * 0.3 });
 
   createPendulumScenario(world, sprites, {
     x: columnLeft + columnWidth,
-    y: height * 0.35,
+    y: -height * 0.35,
   });
 
   createWheelScenario(world, sprites, {

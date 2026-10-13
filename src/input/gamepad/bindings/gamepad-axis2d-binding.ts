@@ -8,17 +8,17 @@ export interface GamepadStickAxis2dBindingArgs {
   xAxisIndex: GamepadAxisIndex;
   /**
    * The index of the gamepad axis to read the Y value from. A stick pushed up
-   * reads as positive, matching `KeyboardAxis2dBinding` and the button form
-   * of `GamepadAxis2dBinding`.
+   * reads as negative, matching the Y-down world, `KeyboardAxis2dBinding` and
+   * the button form of `GamepadAxis2dBinding`.
    */
   yAxisIndex: GamepadAxisIndex;
 }
 
 /** Drives a 2D axis from four digital gamepad buttons, such as the D-pad. */
 export interface GamepadButtonsAxis2dBindingArgs {
-  /** The index of the button that drives Y towards 1. */
+  /** The index of the button that drives Y towards -1 (up, since the world is Y-down). */
   northButtonIndex: GamepadButtonIndex;
-  /** The index of the button that drives Y towards -1. */
+  /** The index of the button that drives Y towards 1 (down). */
   southButtonIndex: GamepadButtonIndex;
   /** The index of the button that drives X towards 1. */
   eastButtonIndex: GamepadButtonIndex;

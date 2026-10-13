@@ -44,7 +44,7 @@ import {
 } from '@forge-game-engine/forge/physics';
 
 const gravity = addGravityComponent(world, body, {
-  amount: { x: 0, y: -600 },
+  amount: { x: 0, y: 600 },
 });
 
 world.addSystem(createGravityEcsSystem(time));
@@ -54,7 +54,7 @@ Gravity is per entity, so each body can have a different `amount`, or none.
 `amount` can be changed at any time, for example to reverse gravity:
 
 ```ts
-gravity.amount.y = 600;
+gravity.amount.y = -600;
 ```
 
 Register `createGravityEcsSystem` before `createCollisionResolutionEcsSystem`,
@@ -76,7 +76,7 @@ const position = world.getComponent(body, positionId);
 if (position !== null) {
   // For a collider centered on the entity's origin, the position is the
   // center of mass, so the body doesn't start to turn.
-  applyImpulse(world, body, { x: 0, y: 500 }, position.world);
+  applyImpulse(world, body, { x: 0, y: -500 }, position.world);
 }
 ```
 
@@ -104,13 +104,14 @@ duration pushes a body further at a higher frame rate.
 
 `applyTorque(world, entity, torque, deltaTimeInSeconds)` changes a body's
 angular velocity by `torque / momentOfInertia * deltaTimeInSeconds`. A
-positive torque turns the body counter-clockwise. Call it every tick for a
+positive torque turns the body clockwise on screen (from `+X` towards `+Y`,
+see [Angles and Rotation](../math/angles-and-rotation.md)). Call it every tick for a
 continuous torque:
 
 ```ts
 import { applyTorque } from '@forge-game-engine/forge/physics';
 
-applyTorque(world, body, 50, time.deltaTimeInSeconds);
+applyTorque(world, body, -50, time.deltaTimeInSeconds);
 ```
 
 Call it from a system registered before `createEulerIntegrationEcsSystem`,
@@ -138,7 +139,7 @@ import {
 } from '@forge-game-engine/forge/physics';
 
 const motor = addAngularVelocityMotorComponent(world, body, {
-  targetVelocity: 8,
+  targetVelocity: -8,
   maxTorque: 40,
 });
 

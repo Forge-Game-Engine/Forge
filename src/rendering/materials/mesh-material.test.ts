@@ -219,7 +219,7 @@ describe('MeshMaterial', () => {
       expect(uploaded('u_maskShape')[0]).toBe(0);
     });
 
-    it('uploads masks in the Y-up world, unlike the Y-down sprite instance data', () => {
+    it('uploads the masks in world space', () => {
       const material = createMeshMaterial(
         renderContext,
         'flat.vert',

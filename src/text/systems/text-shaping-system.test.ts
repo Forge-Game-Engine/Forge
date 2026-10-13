@@ -12,15 +12,15 @@ import { createTextShapingEcsSystem } from './text-shaping-system.js';
 function buildFontAtlas(): FontAtlas {
   return {
     data: {
-      formatVersion: 2,
+      formatVersion: 3,
       type: 'msdf',
       atlasSize: { width: 256, height: 256 },
       distanceRange: 4,
       metrics: {
         lineHeight: 1.2,
-        ascender: 0.9,
-        descender: -0.2,
-        capHeight: 0.7,
+        ascentLine: -0.9,
+        descentLine: 0.2,
+        capLine: -0.7,
       },
       glyphs: new Map([
         [
@@ -28,8 +28,8 @@ function buildFontAtlas(): FontAtlas {
           {
             codePoint: 65,
             advance: 0.6,
-            planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: 0.7 },
-            atlasBounds: { left: 0, bottom: 0, right: 0.1, top: 0.14 },
+            planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: -0.7 },
+            atlasBounds: { left: 0, bottom: 0.14, right: 0.1, top: 0 },
           },
         ],
         [
@@ -37,8 +37,8 @@ function buildFontAtlas(): FontAtlas {
           {
             codePoint: 66,
             advance: 0.6,
-            planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: 0.7 },
-            atlasBounds: { left: 0.1, bottom: 0, right: 0.2, top: 0.14 },
+            planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: -0.7 },
+            atlasBounds: { left: 0.1, bottom: 0.14, right: 0.2, top: 0 },
           },
         ],
       ]),
@@ -73,8 +73,8 @@ describe('createTextShapingEcsSystem', () => {
     expect(mesh?.glyphs).toHaveLength(1);
     // `verticalAlign` defaults to `'top'`, which anchors the first line's
     // ascender (0.9em * size 10 = 9) to y = 0, shifting the baseline-relative
-    // y (3.5) down by 9.
-    expect(mesh?.glyphs[0].offset).toEqual({ x: 3, y: 3.5 - 9 });
+    // y (-3.5) down by 9.
+    expect(mesh?.glyphs[0].offset).toEqual({ x: 3, y: -3.5 + 9 });
     expect(mesh?.bounds).toEqual({ width: 6, height: 12 });
     expect(mesh?.caretStops).toHaveLength(2);
   });

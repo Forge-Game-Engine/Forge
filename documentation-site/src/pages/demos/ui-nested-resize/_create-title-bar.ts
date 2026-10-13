@@ -29,7 +29,7 @@ export function createTitleBar(
 ): void {
   const titleBar = createPanel(world, content, {
     anchor: UiAnchor.stretchTop({ height: 64, horizontalMargin: -16 }),
-    anchoredPosition: { x: 0, y: -8 },
+    anchoredPosition: { x: 0, y: 8 },
     sprite: sprites.header,
   });
 

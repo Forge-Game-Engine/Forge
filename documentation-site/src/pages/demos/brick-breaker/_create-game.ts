@@ -122,7 +122,7 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
 
   const ballStartPosition = {
     x: paddlePosition.x,
-    y: paddlePosition.y + ballStartOffset,
+    y: paddlePosition.y - ballStartOffset,
   };
 
   await createBall(
@@ -141,7 +141,7 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
     playArea,
   );
 
-  const missY = playArea.bottomY - missMargin;
+  const missY = playArea.bottomY + missMargin;
 
   const collisionPairs: CollisionPair[] = [];
   const collisionManifolds: CollisionManifold[] = [];

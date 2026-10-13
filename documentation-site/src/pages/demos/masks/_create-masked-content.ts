@@ -59,7 +59,7 @@ function createScrollingList(
     const hue = i / rowCount;
 
     addPositionComponent(world, row, {
-      local: { x: 0, y: listHeight / 2 - i * (rowHeight + rowGap) },
+      local: { x: 0, y: -listHeight / 2 + i * (rowHeight + rowGap) },
     });
     world.setParent(row, list);
     addSpriteComponent(world, row, {
@@ -155,8 +155,8 @@ function createRadialGauge(
   const diameter = 180;
   // The gauge's arc starts at the bottom-left and runs clockwise to the
   // bottom-right.
-  const startAngle = (5 * Math.PI) / 4;
-  const sweep = (-3 * Math.PI) / 2;
+  const startAngle = (3 * Math.PI) / 4;
+  const sweep = (3 * Math.PI) / 2;
 
   for (const lit of [false, true]) {
     const ring = world.createEntity();
@@ -192,6 +192,6 @@ export async function createMaskedContent(
   renderContext: RenderContext,
 ): Promise<void> {
   createScrollingList(world, renderContext, { x: -140, y: 0 });
-  await createLinearFill(world, renderContext, { x: 115, y: 130 });
-  createRadialGauge(world, renderContext, { x: 115, y: -80 });
+  await createLinearFill(world, renderContext, { x: 115, y: -130 });
+  createRadialGauge(world, renderContext, { x: 115, y: 80 });
 }

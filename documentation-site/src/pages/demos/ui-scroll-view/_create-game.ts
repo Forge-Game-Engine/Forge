@@ -172,7 +172,7 @@ export const createScrollViewGame = async (): Promise<Game> => {
     fontAtlas,
     size: 36,
     anchor: UiAnchor.center(),
-    anchoredPosition: { x: -150, y: 420 },
+    anchoredPosition: { x: -150, y: -420 },
     verticalAlign: textVerticalAlignments.middle,
     color: Color.white,
     category: renderLayers.ui,
@@ -181,7 +181,7 @@ export const createScrollViewGame = async (): Promise<Game> => {
 
   const levels = createScrollView(world, canvas, {
     anchor: UiAnchor.center({ x: 560, y: 720 }),
-    anchoredPosition: { x: 0, y: -40 },
+    anchoredPosition: { x: 0, y: 40 },
     sprite: createUiSprite(renderContext, new Color(0.16, 0.19, 0.26, 1)),
     layout: {
       padding: { left: 16, right: 16, top: 16, bottom: 16 },

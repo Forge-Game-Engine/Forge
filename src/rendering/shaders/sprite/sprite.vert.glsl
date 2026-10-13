@@ -32,20 +32,11 @@ void main() {
     // scales, so pivot only ever applies half its intended offset - e.g.
     // pivot (0,0) lands 25% in from the sprite's edge instead of at the
     // edge, and every non-center pivot value needs a compensating
-    // adjustment to land where it visually should.
-    //
-    // Y is negated on top of that: `a_instanceSizePivot.zw` is public API
-    // (`SpriteEcsComponent.pivot`) and is Y-up like every other public
-    // Y-facing value in the engine (world position, rotation), so pivot
-    // (0, 0) means bottom-left and (1, 1) means top-right. Everything below
-    // this line - a_position, a_instancePos, the projection - lives in the
-    // Y-down space the projection matrix's flip expects, so the pivot's Y
-    // needs the same flip before it's combined with a_position.
-    vec2 normalizedPivot = vec2(
-        (a_instanceSizePivot.z - 0.5) * 2.0,
-        -(a_instanceSizePivot.w - 0.5) * 2.0
-    );
-    
+    // adjustment to land where it visually should. Pivot (0, 0) is the
+    // sprite's top-left corner, matching a_position's (-1, -1) corner in the
+    // Y-down world.
+    vec2 normalizedPivot = (a_instanceSizePivot.zw - 0.5) * 2.0;
+
     // 1. Apply pivot (move origin)
     vec2 pivoted = a_position - normalizedPivot;
 

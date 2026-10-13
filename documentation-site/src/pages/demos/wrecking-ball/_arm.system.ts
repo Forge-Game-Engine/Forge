@@ -19,8 +19,8 @@ import { ArmEcsComponent, armId } from './_arm.component';
  * ball instead of only the (otherwise invisible) revolute joint moving it.
  * The angle is derived so that a vertical (pointing down) sprite at
  * rotation 0 aligns with the pivot-to-ball direction, matching this
- * engine's `Vector2.rotate` convention (counter-clockwise-positive,
- * `atan2(y, x)`). Reads the ball's `local` position (it has no parent, so
+ * engine's `Vector2.rotate` convention (a positive angle turns `+X` towards
+ * `+Y`, which is clockwise on the Y-down screen). Reads the ball's `local` position (it has no parent, so
  * that's its current pose even before `createTransformEcsSystem` has run
  * this tick) and writes only the arm's `local` pose, so it must run before
  * `createTransformEcsSystem` for the render pass to see this tick's arm.
@@ -57,7 +57,7 @@ export const createArmEcsSystem = (): EcsSystem<
         Vec2.add(Vec2.clone(pivotPosition), bodyPosition),
         0.5,
       );
-      const angle = Math.atan2(delta.x, -delta.y);
+      const angle = Math.atan2(-delta.x, delta.y);
 
       positionComponent.local.x = midpoint.x;
       positionComponent.local.y = midpoint.y;
