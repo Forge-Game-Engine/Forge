@@ -232,7 +232,7 @@ describe('createTrailEcsSystem', () => {
 
     expect(dispose).toHaveBeenCalledTimes(1);
     expect(world.getComponent(entity, meshId)).toBeNull();
-    expect(trail.state.geometry).toBeNull();
+    expect(geometry.isDisposed).toBe(true);
   });
 
   it('disposes the geometry when the entity or its parent is removed', () => {
@@ -284,8 +284,11 @@ describe('createTrailEcsSystem', () => {
     world.addComponent(entity, trailId, trail);
     step();
 
-    expect(trail.state.geometry).not.toBeNull();
     expect(trail.state.geometry).not.toBe(oldGeometry);
+    expect(trail.state.geometry?.isDisposed).toBe(false);
+    expect(world.getComponent(entity, meshId)?.geometry).toBe(
+      trail.state.geometry,
+    );
   });
 
   it('leaves trails, meshes and geometries alone when the world stops or the system is removed', () => {

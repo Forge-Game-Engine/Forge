@@ -213,6 +213,7 @@ export class Geometry {
   private readonly _rebuild: () => void;
   private _vertexCount: number;
   private _bounds: Rect | null = null;
+  private _isDisposed = false;
 
   /**
    * Creates a geometry from vertex data, uploading each attribute, and the
@@ -290,6 +291,14 @@ export class Geometry {
     this._bounds ??= this._computeBounds();
 
     return this._bounds;
+  }
+
+  /**
+   * Whether {@link Geometry.dispose} has freed the geometry, so it can't be
+   * drawn any more.
+   */
+  get isDisposed(): boolean {
+    return this._isDisposed;
   }
 
   /**
@@ -453,9 +462,15 @@ export class Geometry {
 
   /**
    * Frees the geometry's buffers and vertex arrays, and stops the render
-   * context rebuilding it.
+   * context rebuilding it. Disposing it again does nothing.
    */
   public dispose(): void {
+    if (this._isDisposed) {
+      return;
+    }
+
+    this._isDisposed = true;
+
     const { gl } = this._renderContext;
 
     unregisterGpuResource(this._renderContext, 'geometry', this._rebuild);

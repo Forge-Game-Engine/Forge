@@ -553,16 +553,16 @@ the system adds a component during `update` (the mesh), and a trail draws
 nothing until the system's first update after it's added, which in the
 usual order is the same frame. Open question 3.
 
-**T19. Releasing a trail resets its `state.geometry`.**
-The remove hook, `releaseTrail`, removes the trail's mesh, disposes the
-geometry and sets `state.geometry` to `null`. Setting it to `null` lets a
-removed trail object be added again (to the same or another entity) and
-get a new geometry, instead of drawing a disposed one. The hook is the
-trail module's own code releasing what it created, and it only runs once
-the trail is no longer an entity's component, never alongside the system's
-update of that trail, so it doesn't give `state.geometry` a second
-independent writer; the JSDoc says so. Nothing else releases it: the trail
-system has no `cleanup` (T1).
+**T19. Releasing a trail disposes its geometry; the system replaces it.**
+The remove hook, `releaseTrail`, removes the trail's mesh and disposes the
+geometry, and doesn't write `state`. A removed trail object can be added
+again (to the same or another entity): the system creates a new geometry
+when `state.geometry` is `null` or `isDisposed` (a getter `Geometry` gains
+for this, as `Texture` already tracks it), instead of drawing a disposed
+one. That keeps the trail system the only writer of `state.geometry`. (The
+first version of this change had the hook set `state.geometry` to `null`,
+a second writer the pull request review flagged.) Nothing else releases
+it: the trail system has no `cleanup` (T1).
 
 **T20. A short guide in this issue.**
 Options: (a) `trails.md` with the essentials here, which #786 extends with
@@ -821,14 +821,14 @@ flowchart LR
   M --> MM
 ```
 
-| Value                                   | Writer                                                                                      |
-| --------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `TrailEcsComponent` settings            | Game code                                                                                   |
-| `TrailEcsComponent.clearRequests`       | `clearTrail` (starts at `0` in `addTrailComponent`)                                         |
-| `TrailEcsComponent.state`               | The trail system; the remove hook (`releaseTrail`) resets `geometry` to `null` (T19)        |
-| The trail's `Geometry` vertex data      | The trail system                                                                            |
-| The trail entity's `MeshEcsComponent`   | The trail system adds it and writes `category` and `layer`; the remove hook removes it (T5) |
-| `position`, `rotation`, `scale` `world` | The transform system; the trail system only reads them                                      |
+| Value                                   | Writer                                                                                            |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `TrailEcsComponent` settings            | Game code                                                                                         |
+| `TrailEcsComponent.clearRequests`       | `clearTrail` (starts at `0` in `addTrailComponent`)                                               |
+| `TrailEcsComponent.state`               | The trail system; the remove hook (`releaseTrail`) disposes `geometry` but doesn't write it (T19) |
+| The trail's `Geometry` vertex data      | The trail system                                                                                  |
+| The trail entity's `MeshEcsComponent`   | The trail system adds it and writes `category` and `layer`; the remove hook removes it (T5)       |
+| `position`, `rotation`, `scale` `world` | The transform system; the trail system only reads them                                            |
 
 ## Component
 
@@ -1090,7 +1090,7 @@ is mirrored twice, so it lands where it was recorded.
 ## The trail's geometry
 
 - **Created** by the system the first time it updates a trail whose
-  `state.geometry` is `null`: `new Geometry(renderContext, { attributes:
+  `state.geometry` is `null` or disposed: `new Geometry(renderContext, { attributes:
 [a_position (2), a_texCoord (2), a_color (4)], topology:
 'triangleStrip' })`, each from an empty `Float32Array`, so it starts with
   no vertices. Its material is `createMeshMaterial(renderContext,
@@ -1134,7 +1134,6 @@ function releaseTrail(
   }
 
   geometry.dispose();
-  trail.state.geometry = null;
 }
 ```
 

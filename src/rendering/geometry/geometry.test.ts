@@ -646,5 +646,24 @@ describe('Geometry', () => {
 
       expect(gl.deleteBuffer).toHaveBeenCalledTimes(3);
     });
+
+    it('marks the geometry disposed', () => {
+      const geometry = createGeometry();
+
+      expect(geometry.isDisposed).toBe(false);
+
+      geometry.dispose();
+
+      expect(geometry.isDisposed).toBe(true);
+    });
+
+    it('does nothing when the geometry is disposed again', () => {
+      const geometry = createGeometry({ indices: new Uint16Array(3) });
+
+      geometry.dispose();
+      geometry.dispose();
+
+      expect(gl.deleteBuffer).toHaveBeenCalledTimes(3);
+    });
   });
 });

@@ -37,7 +37,9 @@ import { validateTrailSettings } from '../validate-trail-settings.js';
  * into the trail's own geometry and draws it through a `MeshEcsComponent`
  * it adds to the entity, so the render system draws the trail in the same
  * draw order as sprites, behind the entity's own sprite. It writes only the
- * trail's `state`, its geometry and that mesh.
+ * trail's `state`, its geometry and that mesh. The mesh belongs to the
+ * trail: the system copies the trail's `layer` and `category` onto it every
+ * frame, so set them on the trail, not the mesh.
  *
  * Register it after `createTransformEcsSystem`, whose world transforms it
  * reads, and before `createRenderEcsSystem`, which draws the mesh. Removing
@@ -147,7 +149,12 @@ const updateTrail = (
   validateTrailSettings(trail, entity);
   recordTrail(trail, transform.x, transform.y, deltaSeconds);
 
-  state.geometry ??= createTrailGeometry(renderContext);
+  // Removing or replacing the trail disposes its geometry, so a trail that
+  // was removed and added again draws into a new one.
+  if (!state.geometry || state.geometry.isDisposed) {
+    state.geometry = createTrailGeometry(renderContext);
+  }
+
   state.material ??= createMeshMaterial(
     renderContext,
     'trail.vert',

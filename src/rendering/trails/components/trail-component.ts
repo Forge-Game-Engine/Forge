@@ -101,14 +101,17 @@ export interface TrailSettings {
 
   /**
    * The render category the trail belongs to, matched against each camera's
-   * `cullingMask`.
+   * `cullingMask`. The trail system copies it onto the trail's mesh every
+   * frame, so set it here rather than on the mesh.
    */
   category: number;
 
   /**
    * The draw-order layer for the trail, shared with sprites, text and
    * meshes. Within a layer the trail draws in its entity's place in the
-   * draw order, behind the entity's own sprite and text.
+   * draw order, behind the entity's own sprite and text. The trail system
+   * copies it onto the trail's mesh every frame, so set it here rather than
+   * on the mesh.
    */
   layer: number;
 }
@@ -150,8 +153,7 @@ export interface TrailPoints {
 
 /**
  * The trail system's record of a trail, and the GPU data it draws with.
- * Written only by `createTrailEcsSystem`, except that removing or replacing
- * the trail disposes `geometry` and sets it to `null`.
+ * Written only by `createTrailEcsSystem`.
  */
 export interface TrailState {
   /** The seconds of game time the trail system has advanced this trail by. */
@@ -168,7 +170,8 @@ export interface TrailState {
 
   /**
    * The geometry the trail draws, created the first time the system draws
-   * the trail, and disposed when the trail is removed.
+   * the trail. Removing or replacing the trail disposes it, and the system
+   * creates a new one if the trail is added and drawn again.
    */
   geometry: Geometry | null;
 
@@ -305,11 +308,12 @@ export function addTrailComponent(
 
 /**
  * The trail's remove hook: removes the mesh that draws the trail's geometry
- * from `entity`, disposes the geometry and forgets it, so the trail gets a
- * new one if it's added and drawn again. It runs only once the trail is no
- * longer the entity's component, so it never runs alongside the trail
- * system's update of this trail. A function declaration, so it's hoisted
- * above `trailId`, which names it.
+ * from `entity` and disposes the geometry. It leaves `state` to the trail
+ * system, which gives the trail a new geometry in place of the disposed one
+ * if it's added and drawn again. It runs only once the trail is no longer
+ * the entity's component, so it never runs alongside the trail system's
+ * update of this trail. A function declaration, so it's hoisted above
+ * `trailId`, which names it.
  * @param world - The world the trail was removed from.
  * @param entity - The entity the trail belonged to.
  * @param trail - The removed trail.
@@ -330,5 +334,4 @@ function releaseTrail(
   }
 
   geometry.dispose();
-  trail.state.geometry = null;
 }

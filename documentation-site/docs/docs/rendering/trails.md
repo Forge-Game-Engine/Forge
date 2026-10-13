@@ -57,6 +57,11 @@ trail draws in the [draw order](./draw-order.md) with sprites, behind the
 entity's own sprite. An entity has one mesh, so it can't have a trail and
 another mesh: put the other mesh on a child entity.
 
+That mesh belongs to the trail. Set the trail's `layer` to move it in the
+draw order and its `category` to choose which cameras draw it (matched
+against each camera's `cullingMask`). The trail system copies both onto the
+mesh every frame, so a value written to the mesh itself is overwritten.
+
 ## Length and detail
 
 - `lifetimeSeconds` is how long each part of the trail stays. The trail is
