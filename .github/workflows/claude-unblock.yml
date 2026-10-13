@@ -1,0 +1,53 @@
+name: Claude unblock
+
+# When an issue closes (usually because the pull request that says
+# `Closes #<n>` merged), gives every issue labeled `claude-waiting` whose
+# dependencies have now all closed its `claude` label back, which starts
+# claude.yml's run for it. claude.yml's gate job adds `claude-waiting` when it
+# finds a labeled issue's `Depends on #N` issues still open.
+#
+# Labels added with GITHUB_TOKEN don't start workflows, so this labels with a
+# GitHub App's token instead. Create a GitHub App with read and write access
+# to Issues, install it on the repository, and add its ID and private key as
+# the `CLAUDE_LABELER_APP_ID` and `CLAUDE_LABELER_PRIVATE_KEY` secrets and its
+# slug as the `CLAUDE_LABELER_APP_SLUG` variable (claude.yml only accepts a
+# bot's label from this App).
+
+on:
+  issues:
+    types: [closed]
+
+permissions:
+  contents: read
+
+concurrency:
+  # One scan at a time, so two issues closing together don't label the same
+  # waiting issue twice. Each scan checks every waiting issue, so a scan that
+  # waits here and is replaced by a newer one loses nothing.
+  group: claude-unblock
+  cancel-in-progress: false
+
+jobs:
+  unblock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout the dependency script
+        uses: actions/checkout@v7
+        with:
+          ref: dev
+          fetch-depth: 1
+          sparse-checkout: .github/scripts
+
+      - name: Create the labeler App's token
+        id: labeler
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.CLAUDE_LABELER_APP_ID }}
+          private-key: ${{ secrets.CLAUDE_LABELER_PRIVATE_KEY }}
+
+      - name: Label issues whose dependencies have closed
+        env:
+          GH_TOKEN: ${{ steps.labeler.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: .github/scripts/claude-dependencies.sh unblock

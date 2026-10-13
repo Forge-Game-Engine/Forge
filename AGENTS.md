@@ -119,7 +119,7 @@ unattended:
 | 1   | Plan a milestone                              | Human                                                                  |
 | 2   | Research it                                   | Human                                                                  |
 | 3   | Turn the milestone into issues                | Agent, with the `plan-milestone` skill                                 |
-| 4   | Label an issue `claude`                       | Human                                                                  |
+| 4   | Label the milestone's issues `claude`         | Human, in any order                                                    |
 | 5   | Write a design document                       | `design-author`, inside the label run (`.github/workflows/claude.yml`) |
 | 6   | Review the design                             | `solution-reviewer`, inside the label run                              |
 | 7   | Implement, with unit and e2e tests            | The label run, which opens the pull request                            |
@@ -127,6 +127,19 @@ unattended:
 | 9   | Review the pull request against Forge's rules | `pr-reviewer` (`.github/workflows/claude-pr-review.yml`)               |
 | 10  | Merge                                         | Human                                                                  |
 
+- **Dependencies hold a run back, not you.** Label every issue in a
+  milestone at once. Before a label run starts, its `gate` job reads the
+  issue's `Depends on #N` lines (`.github/scripts/claude-dependencies.sh`).
+  While any of those issues is open, it swaps `claude` for
+  `claude-waiting`, says what it's waiting for in a comment, and stops
+  before installing anything or starting Claude. When an issue closes,
+  `.github/workflows/claude-unblock.yml` gives `claude` back to every
+  waiting issue whose dependencies have all closed, which starts its run.
+  A dependency closed as not planned counts as closed. An `@claude`
+  mention on a waiting issue starts a run anyway. Each close starts a run
+  for every issue it unblocks, so closing a groundwork issue that many
+  issues depend on starts that many runs (and pull requests to review) at
+  once.
 - **Steps 5 and 6 only run when they're needed.** The label run designs a
   new feature, large change or refactor whose issue doesn't link a design
   in `/design` already. A one-line or clearly scoped fix skips the design
