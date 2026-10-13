@@ -500,8 +500,9 @@ describe('scroll offset helpers', () => {
   });
 
   it('normalizes an axis the content fits to 0', () => {
-    expect(
-      normalizeUiScrollOffset({ x: 0, y: 0 }, { x: 0, y: 0 }),
-    ).toEqual({ x: 0, y: 0 });
+    expect(normalizeUiScrollOffset({ x: 0, y: 0 }, { x: 0, y: 0 })).toEqual({
+      x: 0,
+      y: 0,
+    });
   });
 });

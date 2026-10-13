@@ -92,6 +92,6 @@ This adds a
 [`LayoutElementEcsComponent`](/Forge/docs/api/interfaces/LayoutElementEcsComponent)
 with `sizeToText: true`, so the label is measured from its
 `TextMeshEcsComponent.bounds` every frame, and follows changes to its
-text. It also sets `verticalAlign` to `'bottom'` unless you pass one,
-because a layout group places each child's pivot at its bottom-left
-corner.
+text. A layout group places each child's pivot at its top-left corner, so
+the default `verticalAlign` of `'top'` keeps the text inside the box it's
+measured to.

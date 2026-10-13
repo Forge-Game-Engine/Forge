@@ -58,7 +58,11 @@ describe('createScrollView', () => {
     const scrollView = createScrollView(world, parent);
     const content = world.getComponent(scrollView.content, rectTransformId)!;
 
-    expect(content.x).toMatchObject({ kind: 'stretch', anchorMin: 0, pivot: 0 });
+    expect(content.x).toMatchObject({
+      kind: 'stretch',
+      anchorMin: 0,
+      pivot: 0,
+    });
     expect(content.y).toMatchObject({ kind: 'point', anchor: 0, pivot: 0 });
 
     if (content.y.kind === 'point') {

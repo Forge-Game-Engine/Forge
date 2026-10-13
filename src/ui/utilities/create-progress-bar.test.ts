@@ -69,13 +69,13 @@ describe('createProgressBar', () => {
       trackSprite: buildSprite(),
       fillSprite: buildSprite(),
       value: 0.5,
-      fillShape: { kind: 'radial', startAngle: Math.PI / 2, sweep: -Math.PI },
+      fillShape: { kind: 'radial', startAngle: -Math.PI / 2, sweep: Math.PI },
     });
 
     expect(world.getComponent(progressBar.fill, maskId)!.shape).toEqual({
       kind: 'radial',
-      startAngle: Math.PI / 2,
-      sweep: -Math.PI,
+      startAngle: -Math.PI / 2,
+      sweep: Math.PI,
       amount: 0.5,
     });
   });

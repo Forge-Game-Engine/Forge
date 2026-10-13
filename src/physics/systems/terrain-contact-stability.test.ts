@@ -49,7 +49,7 @@ function denseNoisyTerrainPoints(
   for (let i = -halfSpanCount; i <= halfSpanCount; i++) {
     points.push({
       x: i * spacing,
-      y: random.randomFloat(-maxJitter, maxJitter),
+      y: -random.randomFloat(-maxJitter, maxJitter),
     });
   }
 
@@ -84,7 +84,8 @@ function tiltFromVertical(
 ): number {
   const push = terrainPushDirection(manifold, terrainEntity);
 
-  return Math.abs(Math.atan2(push.x, push.y));
+  // Straight up is `(0, -1)`, since the world is Y-down.
+  return Math.abs(Math.atan2(push.x, -push.y));
 }
 
 describe('contact stability on a multi-edge TerrainCollider', () => {
@@ -124,7 +125,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
 
     // Authored as the ground's surface in world coordinates, unrotated: the
     // slab extends below the points, and the bodies dropped onto it from
-    // above fall toward it under the engine's default gravity (toward -y).
+    // above fall toward it under the engine's default gravity (toward +y).
     addPositionComponent(world, entity, { local: { x: 0, y: 0 } });
     addColliderComponent(world, entity, {
       collider: new TerrainCollider(
@@ -162,7 +163,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
 
     const gravity = addGravityComponent(world, entity);
 
-    expect(gravity.amount.y).toBeLessThan(0);
+    expect(gravity.amount.y).toBeGreaterThan(0);
 
     return { entity, position, rigidBody };
   }
@@ -226,7 +227,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     const radius = 2.5;
 
     addTerrainEntity();
-    const { position } = addHeavyCircleEntity(0, radius + 0.05, radius);
+    const { position } = addHeavyCircleEntity(0, -(radius + 0.05), radius);
 
     const settledDepths: number[] = [];
 
@@ -243,8 +244,8 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     expect(settledDepths.length).toBeGreaterThan(0);
     // Resting on top of the ground, whose surface is within a thousandth
     // of a unit of y = 0, rather than having fallen into or through it.
-    expect(position.world.y).toBeGreaterThan(radius - 0.05);
-    expect(position.world.y).toBeLessThan(radius + 0.05);
+    expect(position.world.y).toBeLessThan(-(radius - 0.05));
+    expect(position.world.y).toBeGreaterThan(-(radius + 0.05));
 
     for (const depth of settledDepths) {
       // The soft contact constraint's `slop` (0.002, the default) is the
@@ -259,7 +260,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
 
   it('settles a heavy box spanning many surface edges to a bounded penetration depth', () => {
     addTerrainEntity();
-    const { position } = addHeavyBoxEntity(0, 1.05, 4, 2);
+    const { position } = addHeavyBoxEntity(0, -1.05, 4, 2);
 
     const settledDepths: number[] = [];
 
@@ -276,8 +277,8 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
 
     // Resting on top of the ground (its half-height, 1, above y = 0)
     // rather than having fallen into or through it.
-    expect(position.world.y).toBeGreaterThan(1 - 0.05);
-    expect(position.world.y).toBeLessThan(1 + 0.05);
+    expect(position.world.y).toBeLessThan(-(1 - 0.05));
+    expect(position.world.y).toBeGreaterThan(-(1 + 0.05));
 
     for (const depth of settledDepths) {
       expect(depth).toBeLessThan(0.05);
@@ -288,7 +289,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     const radius = 2.5;
 
     addTerrainEntity();
-    addHeavyCircleEntity(0, radius + 0.05, radius);
+    addHeavyCircleEntity(0, -(radius + 0.05), radius);
 
     for (let i = 0; i < 60; i++) {
       tick();
@@ -324,8 +325,8 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     // decomposition exposed to a body this wide - would push sideways
     // instead.
     const terrainEntity = addTerrainEntity();
-    addHeavyCircleEntity(0, 2.55, 2.5);
-    addHeavyBoxEntity(8, 1.05, 4, 2);
+    addHeavyCircleEntity(0, -2.55, 2.5);
+    addHeavyBoxEntity(8, -1.05, 4, 2);
 
     let checkedContacts = 0;
 
@@ -335,9 +336,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
       for (const manifold of collisionManifolds) {
         checkedContacts++;
         expect(tiltFromVertical(manifold, terrainEntity)).toBeLessThan(0.02);
-        expect(terrainPushDirection(manifold, terrainEntity).y).toBeGreaterThan(
-          0,
-        );
+        expect(terrainPushDirection(manifold, terrainEntity).y).toBeLessThan(0);
       }
     }
 
@@ -348,7 +347,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     const radius = 2.5;
 
     const terrainEntity = addTerrainEntity();
-    const { rigidBody } = addHeavyCircleEntity(-6, radius + 0.05, radius);
+    const { rigidBody } = addHeavyCircleEntity(-6, -(radius + 0.05), radius);
 
     for (let i = 0; i < 60; i++) {
       tick();
@@ -377,7 +376,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
 
   it('carries most of a rolling box’s contacts from one tick to the next', () => {
     addTerrainEntity();
-    const { rigidBody } = addHeavyBoxEntity(-6, 1.05, 4, 2);
+    const { rigidBody } = addHeavyBoxEntity(-6, -1.05, 4, 2);
 
     for (let i = 0; i < 60; i++) {
       tick();

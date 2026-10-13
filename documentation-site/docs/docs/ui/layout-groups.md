@@ -80,7 +80,7 @@ for (const label of ['Play', 'Options', 'Quit']) {
 ```
 
 The group writes each child's `x`, `y` and `anchoredPosition`, so the
-child's own anchor isn't used, and its pivot is at its bottom-left corner.
+child's own anchor isn't used, and its pivot is at its top-left corner.
 By default the group also resizes its children: along the group's
 direction, each child gets its preferred size plus a share of the space
 left over, and across it, each child fills the group. `childControlWidth`,
