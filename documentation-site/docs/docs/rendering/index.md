@@ -1,11 +1,12 @@
 # Rendering
 
-Forge draws sprites and text with WebGL2, from ECS components.
+Forge draws sprites, text and meshes with WebGL2, from ECS components.
 [`RenderContext`](/Forge/docs/api/classes/RenderContext) holds the canvas
 and its WebGL2 context. Each frame,
 [`createRenderEcsSystem`](/Forge/docs/api/functions/createRenderEcsSystem)
-draws, for every camera entity, the sprites and text whose `category`
-matches the camera's `cullingMask`, in [draw order](./draw-order.md).
+draws, for every camera entity, the sprites, text and meshes whose
+`category` matches the camera's `cullingMask`, in
+[draw order](./draw-order.md).
 
 ## Parts of the renderer
 
@@ -15,19 +16,21 @@ matches the camera's `cullingMask`, in [draw order](./draw-order.md).
 - [Sprites](./sprites.md): the `SpriteEcsComponent`, which draws a texture
   at an entity's position, and [nine-slice sprites](./nine-slice-sprites.md),
   which resize without stretching their corners.
-- [Draw order](./draw-order.md): which sprite or text is drawn on top where
-  they overlap.
+- [Draw order](./draw-order.md): which sprite, text or mesh is drawn on top
+  where they overlap.
 - [Cameras](./world-units-and-cameras.md): the `CameraEcsComponent`, which
   sets which part of the world is drawn to the canvas, and how world units
   map to screen pixels and texels.
 - [Visibility](./visibility.md): hiding an entity and everything parented
   under it, in the world and in UI.
-- [Masks](./masks.md): clipping sprites and text to a rect, or revealing
-  part of them from an edge or around a center.
+- [Masks](./masks.md): clipping sprites, text and meshes to a rect, or
+  revealing part of them from an edge or around a center.
 - [Materials](./material-uniforms.md): shader programs and the uniform
   values they draw with.
 - [Geometry](./geometry.md): vertex data drawn with a material, which can
   change every frame.
+- [Meshes](./meshes.md): the `MeshEcsComponent`, which draws a geometry on
+  an entity in the same draw order as sprites and text.
 - [Render targets](./multipass-rendering.md): drawing a camera into an
   off-screen texture, and the post-processing effects that process it
   ([Gaussian blur](./gaussian-blur.md), [bloom](./bloom.md) and

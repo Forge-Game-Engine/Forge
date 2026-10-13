@@ -109,8 +109,8 @@ export const createRollingBallGame = async (): Promise<Game> => {
   // system reads the narrow phase's collisions, so it runs after it; it and
   // the camera-follow system write `local` positions after the transform
   // system has run, so their changes are rendered from the next tick on. The
-  // terrain render system must run before createRenderEcsSystem so the
-  // ball's sprite draws on top of the terrain mesh, not underneath it.
+  // terrain mesh draws behind the ball's sprite because the terrain entity is
+  // created first: the render system draws them in creation order.
   world.addSystem(createRollEcsSystem(rollInput));
   world.addSystem(createTransformEcsSystem());
   world.addSystem(createAngularVelocityMotorEcsSystem(time));
