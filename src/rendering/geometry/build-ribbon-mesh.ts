@@ -7,7 +7,7 @@ import type { Color } from '../color.js';
  */
 export interface RibbonPoint {
   /**
-   * The point's position. Y-up, in the space of the mesh that draws the
+   * The point's position. Y-down, in the space of the mesh that draws the
    * ribbon: its entity's local space, which is world space when the entity
    * is at the origin, with no rotation and a scale of `1`.
    */
@@ -82,13 +82,14 @@ export type RibbonMeshOptions =
  * them from this object after every call.
  */
 export interface RibbonMeshBuffers {
-  /** `x, y` per vertex, Y-up, in the same space as the points. */
+  /** `x, y` per vertex, Y-down, in the same space as the points. */
   positions: Float32Array;
 
   /**
    * `u, v` per vertex. U runs along the ribbon (see
    * {@link RibbonTextureMode}); V is `0` on the left edge (looking along
-   * the line) and `1` on the right.
+   * the line on screen) and `1` on the right, so on a ribbon running
+   * towards `+X` the texture's top row is along the `−Y` edge.
    */
   uvs: Float32Array;
 
@@ -275,8 +276,8 @@ function writeVertex(
 
 /**
  * Writes an end point's pair of vertices, offset along the normal of the
- * segment from `from` to `to` (the segment's direction turned +90°, so it
- * points left of travel).
+ * segment from `from` to `to` (the segment's direction turned −90°, which
+ * points left of travel on screen).
  * @param out - The buffers to write into.
  * @param vertexIndex - The index of the pair's left vertex.
  * @param point - The end point.
@@ -296,8 +297,8 @@ function writeEnd(
   const dx = to.position.x - from.position.x;
   const dy = to.position.y - from.position.y;
   const halfWidthOverLength = point.width / 2 / Math.sqrt(dx * dx + dy * dy);
-  const offsetX = -dy * halfWidthOverLength;
-  const offsetY = dx * halfWidthOverLength;
+  const offsetX = dy * halfWidthOverLength;
+  const offsetY = -dx * halfWidthOverLength;
   const { x, y } = point.position;
 
   writeVertex(out, vertexIndex, x + offsetX, y + offsetY, u, point.color);
@@ -372,15 +373,16 @@ function writeJoin(
   const outY = next.position.y - y;
   const outLength = Math.sqrt(outX * outX + outY * outY);
 
-  // The segments' directions, and their normals turned +90°.
+  // The segments' directions, and their normals turned −90° (left of
+  // travel on screen).
   const d0x = inX / inLength;
   const d0y = inY / inLength;
   const d1x = outX / outLength;
   const d1y = outY / outLength;
-  const ax = -d0y;
-  const ay = d0x;
-  const bx = -d1y;
-  const by = d1x;
+  const ax = d0y;
+  const ay = -d0x;
+  const bx = d1y;
+  const by = -d1x;
 
   // For unit normals at an angle θ, |a + b| = 2cos(θ/2) and
   // |a − b| = 2sin(θ/2). Reading the half angle from these lengths keeps
@@ -395,11 +397,12 @@ function writeJoin(
   let sinHalfTurn =
     Math.sqrt(differenceX * differenceX + differenceY * differenceY) / 2;
 
-  // A left turn (positive cross product) puts the inner corner on the
-  // left; a right turn on the right. A straight line or an exact reversal
-  // has no turn and uses the left.
+  // A positive cross product turns towards `+Y`, clockwise on screen: a
+  // right turn, which puts the inner corner on the right. A left turn puts
+  // it on the left. A straight line or an exact reversal has no turn and
+  // uses the left.
   const turn = d0x * d1y - d0y * d1x;
-  const innerSign = turn < 0 ? -1 : 1;
+  const innerSign = turn > 0 ? -1 : 1;
   const outerSign = -innerSign;
 
   let miterX: number;

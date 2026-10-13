@@ -51,14 +51,16 @@ closer together than a small epsilon are skipped. U runs along the
 ribbon, stretched once over it (`'stretch'`) or repeated every
 `tileLength` units (`'tile'`); V runs across it.
 
-The function fits the engine as it is: no core design is bent. It's Y-up
-throughout, in whatever space its points are in, which for a drawn ribbon
-is the space of the mesh that draws it: its entity's local space, as for
-every mesh since #783 (PR #862). Its normals are the segment directions
-turned +90° (counter-clockwise, the engine's angle convention), and its
-colors are straight alpha, which mesh shaders output and the render
-system's premultiplying blend expects. Nothing flips Y: mesh shaders get a
-Y-up view-projection from the `meshVertex` include.
+The function fits the engine as it is: no core design is bent. It's
+Y-down throughout, like the engine's 2D world since #864, in whatever space
+its points are in, which for a drawn ribbon is the space of the mesh that
+draws it: its entity's local space, as for every mesh since #783 (PR
+#862). Its normals are the segment directions turned −90° on the engine's
+angle convention (`Vec2.perpendicular`), which is left of travel on
+screen, and its colors are straight alpha, which mesh shaders output and
+the render system's premultiplying blend expects. Nothing flips Y: mesh
+shaders get the world's Y-down view-projection from the `meshVertex`
+include.
 
 ## Scope
 
@@ -90,7 +92,7 @@ Y-up view-projection from the `meshVertex` include.
   later; the component isn't designed here.
 - **Round joins and caps** (Unity's corner and end-cap vertices, Godot's
   `LINE_JOINT_ROUND` and `LINE_CAP_ROUND`), square caps and closed loops
-  (open question 6).
+  (open question 5).
 - **Other texture modes**: Unity's `DistributePerSegment` and
   `RepeatPerSegment`, Godot's `LINE_TEXTURE_NONE`. Unity's `Static` trail
   mode isn't a mode here: the caller-supplied `distance` gives it (see
@@ -102,7 +104,6 @@ Y-up view-projection from the `meshVertex` include.
 - **Anti-aliased edges** (feathering with an extra vertex row or a
   distance-to-edge varying). The canvas's own multisampling applies as it
   does to sprites.
-- **Changing `Vec2.perpendicular`** (open question 5).
 - **Smoothing or resampling the polyline** (Catmull-Rom, as
   `buildTerrainCurve` does for terrain). Callers pass the points they want
   drawn.
@@ -150,7 +151,7 @@ the `Geometry` it feeds.
 /** A point of the polyline a ribbon is built along. */
 export interface RibbonPoint {
   /**
-   * The point's position. Y-up, in the space of the mesh that draws the
+   * The point's position. Y-down, in the space of the mesh that draws the
    * ribbon: its entity's local space, which is world space when the entity
    * has no position, rotation or scale of its own.
    */
@@ -203,7 +204,7 @@ export type RibbonMeshOptions =
  * object after every call.
  */
 export interface RibbonMeshBuffers {
-  /** `x, y` per vertex, Y-up, in the same space as the points. */
+  /** `x, y` per vertex, Y-down, in the same space as the points. */
   positions: Float32Array;
   /** `u, v` per vertex. */
   uvs: Float32Array;
@@ -299,7 +300,7 @@ void main() {
 }
 ```
 
-with no Y negation: `u_viewProjection` is Y-up.
+with no Y negation: the points and `u_viewProjection` are both Y-down.
 
 ## Buffers
 
@@ -325,8 +326,10 @@ with half-widths `hᵢ` (half of each point's `width`). Segment `k` runs from
 
 - `ℓ_k`, its length;
 - `d_k = (q_{k+1} − q_k) / ℓ_k`, its direction;
-- `n_k = (−d_k.y, d_k.x)`, its normal: `d_k` turned +90°, so it points to
-  the left of travel (`+Y` for a ribbon running toward `+X`).
+- `n_k = (d_k.y, −d_k.x)`, its normal: `d_k` turned −90° on the engine's
+  angle convention (`Vec2.perpendicular`), so it points to the left of
+  travel on screen (`−Y`, up the screen, for a ribbon running toward
+  `+X`).
 
 Every point emits a pair of vertices, left (`+n` side) then right (`−n`
 side). A beveled join emits two pairs. The vertices make one triangle
@@ -347,8 +350,9 @@ For `q = qᵢ` with incoming normal `a = n_{i−1}` and outgoing normal
 bisectorLength = |a + b|
 c = bisectorLength / 2                  // cos of half the turn
 s = |a − b| / 2                         // sin of half the turn
-turn = cross(d_{i−1}, dᵢ)               // > 0 turns left, < 0 turns right
-inner = turn < 0 ? right : left         // turn = 0 (straight, or an exact
+turn = cross(d_{i−1}, dᵢ)               // > 0 turns right (towards +Y,
+                                        // clockwise on screen), < 0 left
+inner = turn > 0 ? right : left         // turn = 0 (straight, or an exact
                                         // reversal): left
 outer = the other side
 sign(left) = +1, sign(right) = −1
@@ -423,7 +427,7 @@ deliberate choice over Godot's and Unity's overlap (open question 1).
 **Exact reversals.** When the line turns back on itself
 (`|a + b| < 1e−9`), there's no bisector to normalize. The inner side
 still comes from the turn's sign, as in the general case: the right when
-`turn < 0`, otherwise the left (an exact reversal has `turn = 0`). The
+`turn > 0`, otherwise the left (an exact reversal has `turn = 0`). The
 miter direction is `m = sign(inner) · (−d_{i−1})`, so
 `I = q + sign(inner) · m · k = q − d_{i−1} · k` lies behind `q` on the
 incoming segment, whichever side is inner. That is the limit the general
@@ -492,8 +496,8 @@ constant, not an option: it only guards against a zero-length direction
 **V** is `0` on the left edge (`+n`) and `1` on the right edge (`−n`).
 Forge uploads images with row 0 at `v = 0`, and a sprite shows row 0 at
 its top. So a texture laid along a ribbon running toward `+X` shows the
-same way up as on a sprite: its top row along the ribbon's `+Y` edge,
-which is up the screen through a mesh shader's Y-up view-projection.
+same way up as on a sprite: its top row along the ribbon's `−Y` edge,
+which is up the screen in the Y-down world.
 
 **U** is one value per point, shared by every vertex the point emits:
 
@@ -574,7 +578,7 @@ The rule: the guide describes only what's shipped on the branch it lands
 from, and whichever of #784 and #862 merges second adds the links between
 `ribbon-meshes.md` and `meshes.md` and the ribbon guide's mesh-component
 example. The other one's guide stands alone: filling a `Geometry` from the
-buffers, positions Y-up, no Y flip.
+buffers, positions Y-down, no Y flip.
 
 How it played out: #862 merged into `dev` on 2026-10-13 at 17:14 UTC,
 after this branch was cut from `dev` at `77123e1`. So #784 merges second,
@@ -591,7 +595,9 @@ did the two changes to files that only exist on `dev`: the sentence in
 question 2). Committing either one to a branch without those files would
 conflict with `dev`. The ribbon guide still has its mesh-component example
 and its link to `meshes.md`, which resolve once the branch merges into
-`dev`. Those two changes are left for a follow-up or for #785.
+`dev`. Those two changes are left for a follow-up or for #785. A
+maintainer later merged `dev`, with #862 and #864's switch to a Y-down
+world, into the branch.
 
 ## Performance
 
@@ -619,7 +625,7 @@ positions are compared with `toBeCloseTo`.
 
 | Case                        | Asserts                                                                                                                                                                                                                                                                                                                      |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Straight line, 2 points     | 4 vertices; left vertices `+h` along `+Y` for a line along `+X`, right `−h`; V is `0` left, `1` right                                                                                                                                                                                                                        |
+| Straight line, 2 points     | 4 vertices; left vertices `h` along `−Y` for a line along `+X`, right `h` along `+Y`; V is `0` left, `1` right                                                                                                                                                                                                               |
 | Straight line, 3 collinear  | 6 vertices (a straight interior point is a miter of length `h`)                                                                                                                                                                                                                                                              |
 | 90° turn, left and right    | Outer vertex `h·√2` from the corner; every vertex is `h` from both segments' center lines (width preserved); no bevel                                                                                                                                                                                                        |
 | Turn at the miter limit     | Just under the limit: 2 vertices at the join; just over: 4, with the outer pair at `q ± a·h` and `q ± b·h`                                                                                                                                                                                                                   |
@@ -676,7 +682,7 @@ either.
   that haven't shipped. When #785 lands, its own change adds a sentence
   pointing trail users at the trail component;
 - `RibbonPoint`'s fields, with straight-alpha colors;
-- **coordinates**: positions are Y-up, like every position in the engine,
+- **coordinates**: positions are Y-down, like every position in the engine,
   in the space of the mesh that draws the ribbon (the mesh entity's local
   space; world space for an entity at the origin with no rotation or
   scale). Width and distance are in the same units. No Y flip anywhere;
@@ -742,7 +748,7 @@ restart. Chosen: (a), as the issue asks. It's the least data (two
 vertices per point), needs no index buffer, and the bevel costs two
 vertices and one zero-area triangle. Tradeoff: round joins later would
 need more degenerate triangles in a strip than in an indexed mesh.
-Assumption: round joins aren't needed soon (open question 6).
+Assumption: round joins aren't needed soon (open question 5).
 
 **D5. Output buffers grow to a power of two.**
 Options: (a) grow in `buildRibbonMesh` when needed; (b) throw when the
@@ -816,40 +822,41 @@ calls both once a frame. The reasons are these:
 writes `miterLimit` out. Assumption: most callers are components, not game
 code (open question 3).
 
-**D10. Positions are Y-up, in the space of the mesh that draws them.**
-Options: (a) the function is space-agnostic and Y-up: it offsets, miters
-and orients V in whatever space its points are in, and a drawn ribbon's
-points are in its mesh entity's local space; (b) world space, with the
-caller placing the mesh entity at the origin; (c) negate Y, as
-`createTerrainMesh` did for the sprite pipeline's Y-down render space
-before #862. Chosen: (a). #783 (PR #862) settled where the Y flip lives:
-mesh shaders get a Y-up `u_viewProjection` and a Y-up `u_model` from the
-`meshVertex` include, so nothing that produces mesh vertices flips Y, and
-#862 removed terrain's negation. Mesh vertices are in their entity's
-local space and placed by its world transform, so a ribbon's points are
-too; world space is the special case of an entity with no position,
-rotation or scale. The function only needs its points' space to be
-Y-up, for its `+n` (left) side and V orientation to mean what the guide
-says. Tradeoff: widths, distances and `tileLength` are in the same space,
-so a scaled mesh entity scales them too, as it scales a sprite. Assumption:
-no caller draws ribbons through a Y-down projection. This answers the
-earlier open question on where meshes flip into the renderer's Y-down
-space; the guide's former "negate Y in the vertex shader" step and its
-`createProjectionMatrix` sample shader are gone.
+**D10. Positions are Y-down, in the space of the mesh that draws them.**
+Options: (a) the function is space-agnostic and Y-down: it offsets,
+miters and orients V in whatever space its points are in, and a drawn
+ribbon's points are in its mesh entity's local space; (b) world space,
+with the caller placing the mesh entity at the origin; (c) flip Y inside
+the function. Chosen: (a). Since #864 the engine's 2D world is Y-down,
+like Godot's 2D, the DOM and texture rows, and mesh shaders get the
+world's `u_viewProjection` and `u_model` from the `meshVertex` include,
+so nothing that produces mesh vertices flips Y. Mesh vertices are in
+their entity's local space and placed by its world transform, so a
+ribbon's points are too; world space is the special case of an entity
+with no position, rotation or scale. The function only needs its points'
+space to be Y-down, for its `+n` (left) side and V orientation to mean
+what the guide says. Tradeoff: widths, distances and `tileLength` are in
+the same space, so a scaled mesh entity scales them too, as it scales a
+sprite. Assumption: no caller draws ribbons through a projection that
+flips Y. An earlier draft of this design was Y-up, matching the engine
+before #864; the Y-down function is its exact mirror, with the same
+vertex order, UVs and colors.
 
-**D11. Scalar math with an explicit +90° normal.**
-Options: (a) plain-number math, `n = (−d.y, d.x)`; (b) `Vec2` helpers on
-scratch vectors; (c) `Vec2.negate(Vec2.perpendicular(d))`. Chosen: (a).
-The issue suggests `Vec2` helpers, but the formulas are short and this is
-the hot loop; the normal's direction is spelled out and matches the
-engine's counter-clockwise angle convention. `Vec2.perpendicular` turns
-−90°, so (c) would need a negation and a comment explaining it.
-Tradeoff: the function doesn't read like the rest of the math code.
+**D11. Scalar math with an explicit left-of-travel normal.**
+Options: (a) plain-number math, `n = (d.y, −d.x)`; (b) `Vec2` helpers on
+scratch vectors, `Vec2.perpendicular(d)`. Chosen: (a). The issue
+suggests `Vec2` helpers, but the formulas are short and this is the hot
+loop. The normal is the same one `Vec2.perpendicular` returns (`−90°` on
+the engine's clockwise-positive angle convention, left of travel on
+screen in the Y-down world), spelled out so the function allocates
+nothing and needs no scratch vectors. Godot's `Line2D` uses the same
+normal (`orthogonal()`) with V `0` on that side. Tradeoff: the function
+doesn't read like the rest of the math code.
 
 **D12. V is `0` on the left (`+n`) edge.**
 Options: `0` on the left; `0` on the right. Chosen: left, so a texture on
 a ribbon running toward `+X` is the same way up as on a sprite (row 0 at
-the top). Tradeoff: none known; it's a convention that has to be picked
+the top, along the `−Y` edge). Tradeoff: none known; it's a convention that has to be picked
 and documented.
 
 **D13. Half-angle cosine and sine from `|a + b|` and `|a − b|`.**
@@ -924,15 +931,7 @@ the one-sentence guide edits.
    - _Relative to width_: scales with the ribbon, but a width of `0`
      would skip nothing, and it changes nothing at normal scales.
 
-5. **`Vec2.perpendicular` turns clockwise in a Y-up world (non-blocking,
-   separate issue).** It returns `(y, −x)`, which is −90°, while every
-   angle in Forge is counter-clockwise. Its callers in `src/physics`
-   negate it or use it as a tangent.
-   - _Leave it_: this design doesn't use it (D11).
-   - _Change it to +90° (`(−y, x)`, Unity's `Vector2.Perpendicular`)_ in
-     its own issue, updating the physics callers and `vectors.md`.
-
-6. **Round joins and caps (non-blocking).** Default: none (out of scope).
+5. **Round joins and caps (non-blocking).** Default: none (out of scope).
    - _None_: trails taper to a point or fade at the tail, so ends rarely
      show.
    - _Later, for line rendering_: round caps matter for thick lines; that

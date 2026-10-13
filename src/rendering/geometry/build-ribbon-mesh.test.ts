@@ -91,7 +91,10 @@ function distanceTo(vertex: Vertex, point: Vector2): number {
   return Math.hypot(vertex.x - point.x, vertex.y - point.y);
 }
 
-/** Points along `+X` to the origin, then turning by `turn` radians. */
+/**
+ * Points along `+X` to the origin, then turning by `turn` radians. A
+ * positive turn is towards `+Y`, clockwise on screen: a right turn.
+ */
 function turnAtOrigin(turn: number, length: number = 10): RibbonPoint[] {
   return polyline([
     [-length, 0],
@@ -142,10 +145,11 @@ describe('buildRibbonMesh', () => {
       );
 
       expect(count).toBe(4);
-      expectPosition(vertices[0], 0, 1);
-      expectPosition(vertices[1], 0, -1);
-      expectPosition(vertices[2], 10, 1);
-      expectPosition(vertices[3], 10, -1);
+      // Left of travel along `+X` is `−Y`, up the screen.
+      expectPosition(vertices[0], 0, -1);
+      expectPosition(vertices[1], 0, 1);
+      expectPosition(vertices[2], 10, -1);
+      expectPosition(vertices[3], 10, 1);
       expect(vertices.map((vertex) => vertex.v)).toEqual([0, 1, 0, 1]);
     });
 
@@ -159,8 +163,8 @@ describe('buildRibbonMesh', () => {
       );
 
       expect(count).toBe(6);
-      expectPosition(vertices[2], 5, 1);
-      expectPosition(vertices[3], 5, -1);
+      expectPosition(vertices[2], 5, -1);
+      expectPosition(vertices[3], 5, 1);
     });
 
     it.each<[[number, number], [number, number]]>([
@@ -195,15 +199,15 @@ describe('buildRibbonMesh', () => {
       const points = polyline([
         [0, 0],
         [10, 0],
-        [10, 10],
+        [10, -10],
       ]);
       const { count, vertices } = build(points);
 
       expect(count).toBe(6);
       // The inner (left) vertex, then the outer (right) one, √2·h from the
       // corner.
-      expectPosition(vertices[2], 9, 1);
-      expectPosition(vertices[3], 11, -1);
+      expectPosition(vertices[2], 9, -1);
+      expectPosition(vertices[3], 11, 1);
       expect(distanceTo(vertices[3], points[1].position)).toBeCloseTo(
         Math.SQRT2,
       );
@@ -222,14 +226,14 @@ describe('buildRibbonMesh', () => {
       const points = polyline([
         [0, 0],
         [10, 0],
-        [10, -10],
+        [10, 10],
       ]);
       const { count, vertices } = build(points);
 
       expect(count).toBe(6);
       // The outer (left) vertex, then the inner (right) one.
-      expectPosition(vertices[2], 11, 1);
-      expectPosition(vertices[3], 9, -1);
+      expectPosition(vertices[2], 11, -1);
+      expectPosition(vertices[3], 9, 1);
 
       for (const vertex of [vertices[2], vertices[3]]) {
         expect(
@@ -253,15 +257,15 @@ describe('buildRibbonMesh', () => {
 
     it('should bevel the outer side just over the miter limit', () => {
       const turn = (121 * Math.PI) / 180;
-      const { count, vertices } = build(turnAtOrigin(turn), {
+      const { count, vertices } = build(turnAtOrigin(-turn), {
         textureMode: 'stretch',
         miterLimit: 2,
       });
 
       expect(count).toBe(8);
       // A left turn: the outer side is the right, at q − a·h, then q − b·h.
-      expectPosition(vertices[3], 0, -1);
-      expectPosition(vertices[5], Math.sin(turn), -Math.cos(turn));
+      expectPosition(vertices[3], 0, 1);
+      expectPosition(vertices[5], Math.sin(turn), Math.cos(turn));
       // Both pairs share the inner vertex.
       expect(vertices[4]).toEqual(vertices[2]);
     });
@@ -269,8 +273,8 @@ describe('buildRibbonMesh', () => {
 
   describe('hairpin turns', () => {
     it.each([
-      ['left', 1],
-      ['right', -1],
+      ['left', -1],
+      ['right', 1],
     ])('should bevel a near-180° %s turn without a spike', (_, side) => {
       const turn = side * ((179 * Math.PI) / 180);
       const { count, vertices } = build(turnAtOrigin(turn));
@@ -306,21 +310,21 @@ describe('buildRibbonMesh', () => {
       expectPosition(vertices[2], 7.5, 0);
       expectPosition(vertices[4], 7.5, 0);
       // The outer vertices are q − a·h and q + a·h.
-      expectPosition(vertices[3], 10, -1);
-      expectPosition(vertices[5], 10, 1);
+      expectPosition(vertices[3], 10, 1);
+      expectPosition(vertices[5], 10, -1);
     });
 
     it.each([
-      ['left', 1e-6, 1],
-      ['left', 1e-12, 1],
-      ['right', 1e-6, -1],
-      ['right', 1e-12, -1],
+      ['left', 1e-6, -1],
+      ['left', 1e-12, -1],
+      ['right', 1e-6, 1],
+      ['right', 1e-12, 1],
     ])(
       'should bevel a %s turn %f radians short of 180° on the same side as at 179°',
       (_, shortBy, side) => {
         const nearlyReversed = build(turnAtOrigin(side * (Math.PI - shortBy)));
         const at179 = build(turnAtOrigin(side * ((179 * Math.PI) / 180)));
-        const innerSlot = side > 0 ? 0 : 1;
+        const innerSlot = side < 0 ? 0 : 1;
 
         expect(nearlyReversed.count).toBe(8);
         expect(at179.count).toBe(8);
@@ -356,7 +360,8 @@ describe('buildRibbonMesh', () => {
       // sqrt((1 + dot) / 2) form only gets to about 1e-4.
       const shortBy = 1e-6;
       const halfWidth = 1e-7;
-      const points = turnAtOrigin(Math.PI - shortBy).map((point) => ({
+      // A left turn, so the inner vertex is the first of its pair.
+      const points = turnAtOrigin(shortBy - Math.PI).map((point) => ({
         ...point,
         width: halfWidth * 2,
       }));
@@ -463,8 +468,8 @@ describe('buildRibbonMesh', () => {
       });
 
       expect(count).toBe(4);
-      expectPosition(vertices[2], 10 + 0.5e-4, 2);
-      expectPosition(vertices[3], 10 + 0.5e-4, -2);
+      expectPosition(vertices[2], 10 + 0.5e-4, -2);
+      expectPosition(vertices[3], 10 + 0.5e-4, 2);
       expect(vertices[2]).toMatchObject({ u: 99, ...red });
     });
   });
@@ -496,10 +501,10 @@ describe('buildRibbonMesh', () => {
       ]).map((point, i) => ({ ...point, width: 2 - i }));
       const { vertices } = build(points);
 
-      expectPosition(vertices[0], 0, 1);
-      expectPosition(vertices[1], 0, -1);
-      expectPosition(vertices[2], 5, 0.5);
-      expectPosition(vertices[3], 5, -0.5);
+      expectPosition(vertices[0], 0, -1);
+      expectPosition(vertices[1], 0, 1);
+      expectPosition(vertices[2], 5, -0.5);
+      expectPosition(vertices[3], 5, 0.5);
       expectPosition(vertices[4], 10, 0);
       expectPosition(vertices[5], 10, 0);
     });
@@ -551,6 +556,12 @@ describe('buildRibbonMesh', () => {
       const { vertices } = build(line);
 
       expect(vertices.map((vertex) => vertex.v)).toEqual([0, 1, 0, 1, 0, 1]);
+
+      // Along `+X`, the left edge is `−Y`: a texture's top row is up the
+      // screen, as on a sprite.
+      for (const vertex of vertices) {
+        expect(Math.sign(vertex.y)).toBe(vertex.v === 0 ? -1 : 1);
+      }
     });
   });
 

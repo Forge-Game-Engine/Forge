@@ -27,7 +27,8 @@ const points: RibbonPoint[] = [
 ];
 ```
 
-- `position` is Y-up, in the space of the mesh that draws the ribbon (see
+- `position` is in the engine's Y-down world (`+Y` is down the screen), in
+  the space of the mesh that draws the ribbon (see
   [Drawing a ribbon](#drawing-a-ribbon)).
 - `width` is the ribbon's full width at the point, in the same units. The
   edges run in straight lines between points, so the ribbon tapers between
@@ -120,9 +121,9 @@ The first and last points end the ribbon straight across their segment.
 
 ## Texture coordinates
 
-V is `0` on the left edge, looking along the line, and `1` on the right.
-On a ribbon running toward `+X`, a texture's top row is along the `+Y`
-edge, the same way up as on a sprite.
+V is `0` on the left edge, looking along the line on screen, and `1` on
+the right. On a ribbon running toward `+X`, a texture's top row is along
+the `−Y` edge, up the screen, the same way up as on a sprite.
 
 U runs along the ribbon, by the `textureMode` option:
 
