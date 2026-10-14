@@ -107,7 +107,8 @@ A render target uses 8-bit color by default, which clamps every color to
 `[0, 1]`. On such a target, a sprite tinted brighter than white blooms no
 more than a white one. A render target created with
 `RENDER_TARGET_FORMAT.hdr` keeps values above `1`, so brighter sprites
-bloom more. See [HDR Rendering & Tone Mapping](./hdr-rendering.md).
+and [trails](./trails.md#glowing-trails) bloom more. See
+[HDR Rendering & Tone Mapping](./hdr-rendering.md).
 :::
 
 ## Blooming part of a scene

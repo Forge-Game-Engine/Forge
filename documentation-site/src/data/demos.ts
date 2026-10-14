@@ -16,7 +16,7 @@ export const demos: Demo[] = [
     slug: 'space-shooter',
     title: 'Space Shooter',
     description:
-      'Fly a ship through an asteroid field and shoot it apart, with bloom, a blurred background, sprite-sheet explosions and audio buses.',
+      'Fly a ship through an asteroid field and shoot it apart, with bloom, glowing bullet trails, a blurred background, sprite-sheet explosions and audio buses.',
     categories: ['games'],
   },
   {
@@ -170,6 +170,13 @@ export const demos: Demo[] = [
     title: 'Meshes',
     description:
       "A ship's exhaust drawn as a mesh, sorted among the sprites around it by its layer and draw order.",
+    categories: ['rendering'],
+  },
+  {
+    slug: 'trails',
+    title: 'Trails',
+    description:
+      'Trails behind the mouse, a ship and moving shapes, with live settings for their length, width, color, texture and glow.',
     categories: ['rendering'],
   },
   {

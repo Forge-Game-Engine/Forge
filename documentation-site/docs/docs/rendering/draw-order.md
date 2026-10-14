@@ -23,7 +23,8 @@ by four keys. Each key only orders items the keys before it leave equal:
 
 Every entity has its own place in hierarchy order, so the order is the same
 every frame until one of these four keys changes. An entity's mesh draws
-before its sprite, and its sprite before its text.
+before its sprite, and its sprite before its text. A
+[trail](./trails.md#draw-order) is drawn by its entity's mesh.
 
 Draw order applies within one camera. Which camera's output is drawn over
 another's is set by the cameras' own `layer` (see
