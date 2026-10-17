@@ -38,7 +38,7 @@ import { sortByDrawOrder } from './sort-by-draw-order.js';
 function isVisibleToCamera(
   world: EcsWorld,
   entity: number,
-  camera: CameraEcsComponent | null,
+  camera: CameraEcsComponent,
 ): boolean {
   const sprite = world.getComponent<SpriteEcsComponent>(entity, spriteId);
 
@@ -46,7 +46,7 @@ function isVisibleToCamera(
     return true;
   }
 
-  return !!camera && matchesMask(sprite.category, camera.cullingMask);
+  return matchesMask(sprite.category, camera.cullingMask);
 }
 
 /**
@@ -162,12 +162,14 @@ export function raycastUiCanvas(
     }
   }
 
-  const camera = world.getComponent<CameraEcsComponent>(
+  // The pointer position resolved, so the canvas's camera entity has a
+  // `CameraEcsComponent`.
+  const camera = world.getComponentRequired<CameraEcsComponent>(
     canvas.camera,
     cameraId,
   );
 
-  sortByDrawOrder(world, candidates, camera?.ySort ?? false);
+  sortByDrawOrder(world, candidates, camera.ySort);
 
   for (let i = candidates.length - 1; i >= 0; i--) {
     const entity = candidates[i];
