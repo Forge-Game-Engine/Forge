@@ -505,7 +505,8 @@ export class EcsWorld implements Updatable, Stoppable {
    * appended to `parent`'s children, removed along with `parent`, and its
    * transform follows `parent`'s. Its local transform is kept as it is, so
    * it takes the same offset under its new parent. Setting its current
-   * parent again does nothing, and keeps its place among its siblings.
+   * parent again does nothing, and keeps its place among its siblings. To
+   * place it anywhere other than last, call `setSiblingIndex` afterwards.
    * @param child - The entity to parent.
    * @param parent - Its new parent.
    * @throws An error if either entity isn't alive, or if `parent` is `child`
@@ -569,9 +570,55 @@ export class EcsWorld implements Updatable, Stoppable {
   }
 
   /**
+   * Moves `child` to `index` among its parent's children, shifting the
+   * siblings from `index` on one place later. An `index` at or past the
+   * last sibling moves it last, like Unity's `Transform.SetSiblingIndex`.
+   * Sibling order is the order children draw in (see `DrawOrderEcsComponent`)
+   * and UI layout groups arrange them in.
+   * @param child - The entity to move.
+   * @param index - Its new place among its siblings, from `0` for first.
+   * @throws An error if `child` isn't alive or has no parent, or if `index`
+   * is negative or not an integer.
+   */
+  public setSiblingIndex(child: number, index: number): void {
+    if (!Number.isInteger(index) || index < 0) {
+      throw new Error(
+        `Unable to set the sibling index of entity ${formatEntity(child)} to ${index}, the index must be a non-negative integer.`,
+      );
+    }
+
+    const siblings = this._requireSiblingsFor(
+      child,
+      'set the sibling index of',
+    );
+    const from = siblings.indexOf(child);
+    const to = Math.min(index, siblings.length - 1);
+
+    if (from === to) {
+      return;
+    }
+
+    siblings.splice(from, 1);
+    siblings.splice(to, 0, child);
+  }
+
+  /**
+   * Reads an entity's place among its parent's children: its index in
+   * `getChildren(parent)`.
+   * @param child - The entity.
+   * @returns Its index, `0` for the first child.
+   * @throws An error if `child` isn't alive or has no parent.
+   */
+  public getSiblingIndex(child: number): number {
+    return this._requireSiblingsFor(child, 'read the sibling index of').indexOf(
+      child,
+    );
+  }
+
+  /**
    * Reads an entity's children, in sibling order: the order they were
-   * parented to it in. Removing a child, or moving it to another parent,
-   * keeps its siblings in order.
+   * parented to it in, unless `setSiblingIndex` moved one. Removing a
+   * child, or moving it to another parent, keeps its siblings in order.
    * @param parent - The entity.
    * @returns A read-only view of the world's own list, which changes as
    * children are added or removed, so copy it before removing or reparenting
@@ -825,6 +872,25 @@ export class EcsWorld implements Updatable, Stoppable {
         `Unable to ${action} entity ${formatEntity(entity)}, it isn't alive: it was removed, or wasn't created by this world.`,
       );
     }
+  }
+
+  // The children list `child` is in. A parent that's being removed keeps
+  // its list until its children are gone, so a remove hook can still
+  // reorder the siblings that haven't been removed yet.
+  private _requireSiblingsFor(child: number, action: string): number[] {
+    this._requireAliveFor(child, action);
+
+    const parent = this.getParent(child);
+    const siblings =
+      parent === null ? undefined : this._childrenByParent.get(parent);
+
+    if (!siblings) {
+      throw new Error(
+        `Unable to ${action} entity ${formatEntity(child)}, it's a root entity: parent it with setParent first.`,
+      );
+    }
+
+    return siblings;
   }
 
   // Removes a dying entity's children, in sibling order. Iterates a copy:
