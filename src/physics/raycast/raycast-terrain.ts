@@ -1,33 +1,12 @@
-import { Vec2, Vector2 } from '../../math/index.js';
+import { Vector2 } from '../../math/index.js';
 import {
   buildTerrainEdgeSlab,
   TerrainCollider,
 } from '../colliders/terrain-collider.js';
+import { toChainLocal } from '../collision/edge-chain-contacts.js';
 import { CollisionBody } from '../types/collision-body.js';
 import { RaycastShapeHit } from '../types/raycast-hit.js';
 import { raycastConvexPolygon } from './raycast-convex-polygon.js';
-
-function localXRange(
-  start: Vector2,
-  end: Vector2,
-  terrainBody: CollisionBody,
-): { minX: number; maxX: number } {
-  // Clone before subtracting: `start`/`end` are the caller's own ray
-  // points, so this must not mutate them.
-  const localStart = Vec2.rotate(
-    Vec2.subtract(Vec2.clone(start), terrainBody.position),
-    -terrainBody.rotation,
-  );
-  const localEnd = Vec2.rotate(
-    Vec2.subtract(Vec2.clone(end), terrainBody.position),
-    -terrainBody.rotation,
-  );
-
-  return {
-    minX: Math.min(localStart.x, localEnd.x),
-    maxX: Math.max(localStart.x, localEnd.x),
-  };
-}
 
 /**
  * Casts a ray segment against a terrain-collider body, by running the same
@@ -38,9 +17,9 @@ function localXRange(
  *
  * Unlike narrow-phase collision - which only ever meets the terrain's
  * surface, so a moving body can't catch on a boundary between two
- * neighboring columns (see {@link TerrainSurfaceEdge}) - a ray can
- * legitimately enter the slab from any direction, including from
- * underneath, so it is tested against the whole solid.
+ * neighboring columns (see {@link ChainEdge}) - a ray can legitimately
+ * enter the slab from any direction, including from underneath, so it is
+ * tested against the whole solid.
  * @param terrainBody - The body with a {@link TerrainCollider}.
  * @param start - The ray's world-space start point.
  * @param end - The ray's world-space end point.
@@ -53,17 +32,21 @@ export function raycastTerrain(
   end: Vector2,
 ): RaycastShapeHit | null {
   const terrainCollider = terrainBody.collider as TerrainCollider;
-  const { minX, maxX } = localXRange(start, end, terrainBody);
+  const localStart = toChainLocal(start, terrainBody);
+  const localEnd = toChainLocal(end, terrainBody);
+
+  // The column beneath an edge reaches down to the slab's bottom, so every
+  // edge in the ray's x-range counts, however far above the ray it is.
+  const edgeIndices = terrainCollider.surface.queryEdges({
+    min: { x: Math.min(localStart.x, localEnd.x), y: -Infinity },
+    max: { x: Math.max(localStart.x, localEnd.x), y: Infinity },
+  });
 
   let closest: RaycastShapeHit | null = null;
 
-  for (const edge of terrainCollider.surface) {
-    if (maxX < edge.start.x || minX > edge.end.x) {
-      continue;
-    }
-
+  for (const edgeIndex of edgeIndices) {
     const slab = buildTerrainEdgeSlab(
-      edge,
+      terrainCollider.surface.edges[edgeIndex],
       terrainCollider.bottomY,
       terrainBody.position,
       terrainBody.rotation,
