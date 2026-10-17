@@ -187,7 +187,7 @@ as before (the car drives over the hills, the ball rolls along them).
 | Shared edge-chain sweep     | `findEdgeChainSweepHits` in `circle-sweep-hits.ts`, used by `findCircleTerrainSweepHits`                                                                                                                                                         | S    |
 | Dynamic-body restriction    | `Collider.supportsDynamicBodies`; `getRigidBodyMassData` throws for a dynamic body whose collider returns `false`                                                                                                                                | S    |
 | Zero terrain mass           | `TerrainCollider` passes zero mass data to `super` and deletes its area, centroid and inertia code (DL-7); `Collider.mass`'s doc gains the one exception for shapes that can't be dynamic                                                        | S    |
-| Typed tables, static pairs  | `ColliderType`, detector table as `Record<ColliderPairKey, ManifoldDetector>`, `noManifolds` for terrain-terrain; raycast table as `Record<ColliderType, …>`; delete the unreachable throws                                                      | S    |
+| Typed tables, static pairs  | `ColliderType`, detector table as `Record<ColliderType, Record<ColliderType, ManifoldDetector>>`, `noManifolds` for terrain-terrain; raycast table as `Record<ColliderType, …>`; delete the unreachable throws                                   | S    |
 | Cached bounds               | `TerrainCollider.computeAabb` transforms its cached local bounds' corners instead of every silhouette vertex                                                                                                                                     | S    |
 | Tests                       | Tree equivalence, overlapping terrains, dynamic terrain throws, zero terrain mass, open-chain builder, type-only exports                                                                                                                         | M    |
 | Docs and changelog          | `terrain.md` (remove the overlap caution, add the dynamic restriction), `rigid-bodies.md`; `Changed` and `Fixed` bullets                                                                                                                         | S    |
@@ -414,7 +414,7 @@ typecheck` and `npm run build` in `documentation-site/` pass.
 
 ### DL-9: Typed detector tables replace the runtime "no detector" errors
 
-- **Options:** (a) ``Record<`${ColliderType}-${ColliderType}`, …>`` and
+- **Options:** (a) `Record<ColliderType, Record<ColliderType, …>>` and
   `Record<ColliderType, …>` tables; (b) keep `Map<string, …>` with a
   runtime throw.
 - **Chosen:** (a).
@@ -915,23 +915,36 @@ velocity. This is the terrain's existing mechanism, which
 `detectCollision`'s table is typed over every pair of `ColliderType`:
 
 ```ts
-type ColliderPairKey = `${ColliderType}-${ColliderType}`;
-
 const noManifolds: ManifoldDetector = () => [];
 
-const collisionDetectors: Record<ColliderPairKey, ManifoldDetector> = {
-  'circle-circle': asManifolds(detectCircleCircleCollision),
-  // ... existing entries ...
-  'circle-chain': detectCircleChainCollision,
-  'chain-circle': flipped(detectCircleChainCollision),
-  'polygon-chain': detectPolygonChainCollision,
-  'chain-polygon': flipped(detectPolygonChainCollision),
-  // Neither shape can be on a dynamic body, so no contact between them
-  // could ever be resolved.
-  'terrain-terrain': noManifolds,
-  'chain-chain': noManifolds,
-  'chain-terrain': noManifolds,
-  'terrain-chain': noManifolds,
+// Indexed by the first body's type, then the second's. A nested record
+// keeps the keys camelCase, as the lint rules require of object literal
+// keys, and is still checked over every pair.
+const collisionDetectors: Record<
+  ColliderType,
+  Record<ColliderType, ManifoldDetector>
+> = {
+  circle: {
+    // ... existing entries ...
+    chain: detectCircleChainCollision,
+  },
+  polygon: {
+    // ... existing entries ...
+    chain: detectPolygonChainCollision,
+  },
+  terrain: {
+    // ... existing entries ...
+    // Neither shape can be on a dynamic body, so no contact between them
+    // could ever be resolved.
+    terrain: noManifolds,
+    chain: noManifolds,
+  },
+  chain: {
+    circle: flipped(detectCircleChainCollision),
+    polygon: flipped(detectPolygonChainCollision),
+    terrain: noManifolds,
+    chain: noManifolds,
+  },
 };
 ```
 
