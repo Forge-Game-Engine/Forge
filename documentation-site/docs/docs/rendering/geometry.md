@@ -79,6 +79,45 @@ const square = new Geometry(renderContext, {
 An indexed geometry draws all of its indices. A geometry without indices
 draws its first `vertexCount` vertices in order.
 
+## Dividing a geometry into sections
+
+`sections` divides a geometry's elements into ranges that
+[meshes](./meshes.md#drawing-a-section-of-a-geometry) can draw on their
+own. An element is an index for an indexed geometry, or a vertex for one
+without indices, and
+[`elementCount`](/Forge/docs/api/classes/Geometry#elementcount) is the
+number of them. Each section has a `start` and a `count` of elements:
+
+```ts
+const twoSquares = new Geometry(renderContext, {
+  attributes: [
+    {
+      name: 'a_position',
+      data: new Float32Array([0, 0, 1, 0, 1, 1, 0, 1, 2, 0, 3, 0, 3, 1, 2, 1]),
+      size: 2,
+    },
+  ],
+  indices: new Uint16Array([0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7]),
+  sections: [
+    { start: 0, count: 6 },
+    { start: 6, count: 6 },
+  ],
+});
+```
+
+The constructor and `update` throw for a section that isn't inside the
+elements or isn't whole primitives: `start` and `count` are non-negative
+integers, and multiples of 3 for `'triangles'` or of 2 for `'lines'`.
+Sections may overlap. A geometry created without `sections` has none.
+
+Each section in
+[`sections`](/Forge/docs/api/classes/Geometry#sections) has its own
+`bounds`, which surround the `a_position` of the vertices the section
+draws. They're computed when first read, and again after `update` changes
+`a_position`, the indices or `vertexCount`. Indices aren't checked when
+they're written, so reading the bounds throws for an index at or past
+`vertexCount`.
+
 ## Drawing a geometry
 
 To draw a geometry on an entity, in the same draw order as sprites and
@@ -100,6 +139,18 @@ draws nothing while the [WebGL context is lost](./context-loss.md).
 `drawInstanced(instanceCount)` draws the geometry `instanceCount` times in
 one draw call.
 
+`drawRange(start, count)` draws `count` elements from `start`, such as one
+section:
+
+```ts
+const { start, count } = geometry.sections[1];
+
+geometry.drawRange(start, count);
+```
+
+It throws for a range that ends past `elementCount`. `draw()` is
+`drawRange(0, geometry.elementCount)`.
+
 ## Updating vertex data
 
 `update` replaces the vertex data, and can be called every frame for a
@@ -120,6 +171,9 @@ geometry.update({ vertexCount, attributes: { a_position: positions } });
   `vertexCount` vertices.
 - `indices` replaces the indices of an indexed geometry. `update` throws
   if the geometry was created without indices.
+- `sections` replaces every section. Left out, the geometry keeps its
+  sections, and `update` throws if one of them doesn't fit inside the
+  elements the update leaves. A throwing `update` changes nothing.
 
 `update` writes into the geometry's existing buffers, and creates no GPU
 objects. A buffer that the new data doesn't fit grows to the next power of
