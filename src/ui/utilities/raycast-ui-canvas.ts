@@ -162,12 +162,12 @@ export function raycastUiCanvas(
     }
   }
 
-  sortByDrawOrder(world, candidates);
-
   const camera = world.getComponent<CameraEcsComponent>(
     canvas.camera,
     cameraId,
   );
+
+  sortByDrawOrder(world, candidates, camera?.ySort ?? false);
 
   for (let i = candidates.length - 1; i >= 0; i--) {
     const entity = candidates[i];

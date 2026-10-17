@@ -37,6 +37,43 @@ export interface DrawOrderEcsComponent {
    * has no effect on an entity without a parent.
    */
   behindParent: boolean;
+
+  /**
+   * Whether, under a camera with `ySort`, each of this entity's children
+   * sorts by its own Y instead of by this entity's.
+   *
+   * A camera that y-sorts orders sort units by Y. Every entity belongs to
+   * one:
+   *
+   * 1. A root entity is a sort unit.
+   * 2. When a sort unit sets `ySortChildren`, each of its children is a sort
+   *    unit too, and this rule applies to them in turn.
+   * 3. Every other entity belongs to the unit of its nearest ancestor that
+   *    is one, and draws with it, in hierarchy order.
+   *
+   * So `ySortChildren` has no effect on an entity that isn't itself a sort
+   * unit. For example, for walls under a `layer` entity under a `level`
+   * root to sort against a `character` root, both `level` and `layer` set
+   * `ySortChildren`. The character's sword, a child of the character, still
+   * draws with the character. Units at the same Y draw in hierarchy order:
+   * roots in creation order, units under one root in sibling order.
+   *
+   * Cameras without `ySort` ignore it.
+   */
+  ySortChildren: boolean;
+
+  /**
+   * Where, under a camera with `ySort`, this entity's sort unit sorts when
+   * the entity is a sort unit (see `ySortChildren`): at the world Y of the
+   * point `(0, ySortOrigin)` in the entity's local space, so the point
+   * follows the entity's rotation and scale. A positive value moves it down.
+   * For example, a tree sprite with a centred pivot and a height of `4`
+   * sorts at the base of its trunk with `ySortOrigin: 2`.
+   *
+   * It has no effect on an entity that isn't a sort unit, or under a camera
+   * without `ySort`.
+   */
+  ySortOrigin: number;
 }
 
 /** The component key of {@link DrawOrderEcsComponent}. */
@@ -46,6 +83,8 @@ export const drawOrderId =
 const defaultDrawOrderOptions: DrawOrderEcsComponent = {
   order: 0,
   behindParent: false,
+  ySortChildren: false,
+  ySortOrigin: 0,
 };
 
 /**
@@ -55,7 +94,7 @@ const defaultDrawOrderOptions: DrawOrderEcsComponent = {
  * @param options - Options for configuring the draw order.
  * @returns The attached component, for further tuning or runtime changes.
  * @throws An error if `order` isn't an integer in
- * `[-maxDrawOrder, maxDrawOrder]`.
+ * `[-maxDrawOrder, maxDrawOrder]`, or if `ySortOrigin` isn't finite.
  */
 export function addDrawOrderComponent(
   world: EcsWorld,
@@ -73,6 +112,12 @@ export function addDrawOrderComponent(
   ) {
     throw new Error(
       `Unable to add a draw order of ${component.order}, it must be an integer from ${-maxDrawOrder} to ${maxDrawOrder}.`,
+    );
+  }
+
+  if (!Number.isFinite(component.ySortOrigin)) {
+    throw new Error(
+      `Unable to add a draw order with a ySortOrigin of ${component.ySortOrigin}, it must be a finite number.`,
     );
   }
 
