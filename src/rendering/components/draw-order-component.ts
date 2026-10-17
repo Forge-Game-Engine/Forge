@@ -17,7 +17,8 @@ export const maxDrawOrder = 4096;
  * Orders are relative: an entity's world order is its own `order` plus its
  * parent's world order. Within a layer, a lower world order draws first,
  * and entities with the same world order draw in hierarchy order (parents
- * before their children, siblings in the order they were parented). So a
+ * before their children, siblings in the order `EcsWorld.getChildren`
+ * returns, which `EcsWorld.setSiblingIndex` changes). So a
  * child at `-1` draws behind every entity at its parent's level, not just
  * behind its parent. To draw a child just behind its parent, set
  * `behindParent` instead.
