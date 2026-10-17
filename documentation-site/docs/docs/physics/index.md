@@ -28,8 +28,8 @@ The physics module has these parts:
 - **Joints**: revolute (hinge) and prismatic (slider) joints constrain how
   two bodies move relative to each other. See [Joints](./joints.md).
 - **Terrain**: a
-  [`TerrainCollider`](/Forge/docs/api/classes/TerrainCollider) is static
-  ground built from a heightmap. See [Terrain](./terrain.md).
+  [`TerrainCollider`](/Forge/docs/api/classes/TerrainCollider) is ground
+  built from a heightmap, for static and kinematic bodies. See [Terrain](./terrain.md).
 - **Chain colliders**: a
   [`ChainCollider`](/Forge/docs/api/classes/ChainCollider) is static level
   geometry built from closed loops of edges, such as a level's walls,

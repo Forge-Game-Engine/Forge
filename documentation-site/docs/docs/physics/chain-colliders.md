@@ -94,9 +94,12 @@ doesn't catch where two edges meet. A body in a corner where two edges
 meet at an inward angle gets a contact from each edge.
 
 An edge doesn't push a body whose center is behind it, on the solid side.
-A body that is inside solid doesn't collide with the edges around it, and
-a wall thinner than a body never pushes the body out of both sides at
-once.
+For a polygon, the center is its center of mass, and an edge still pushes
+it while its center is in front of a neighbor that meets the edge at an
+outward corner, so a box balanced on a platform's corner stays on the
+platform. A body that is inside solid doesn't collide with the edges
+around it, and a wall thinner than a body never pushes the body out of
+both sides at once.
 
 :::caution
 A body that moves more than half its size into a chain in one tick has

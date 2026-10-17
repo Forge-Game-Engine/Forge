@@ -30,8 +30,8 @@ export default function ChainColliderDemo(): JSX.Element {
           file: 'create-level.ts',
         },
         {
-          text: 'Bodies collide with each edge only from the side its normal faces, and get a contact from each wall in a concave corner.',
-          file: 'spawn-bodies.system.ts',
+          text: 'Bodies collide with each edge only from the side its normal faces, and get a contact from each wall in a concave corner, such as the top of the L-shaped shelf.',
+          file: 'create-level.ts',
         },
         {
           text: 'Continuous collision detection sweeps the fast ball against the chain, so it stops at the thin wall.',
