@@ -1,6 +1,7 @@
 export * from './clamp.js';
 export * from './degrees-to-radians.js';
 export * from './radians-to-degrees.js';
+export * from './grid-layout/index.js';
 export * from './lerp.js';
 export * from './matrices/index.js';
 export * from './random.js';
