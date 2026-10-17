@@ -89,9 +89,12 @@ export interface CameraDefaultedOptions {
    * Whether this camera orders sprites and text by height on screen within
    * a layer and world order, for top-down and isometric views: a lower
    * world Y draws first, so whatever is lower on screen (higher Y, since
-   * the world is Y-down) is in front. Each
-   * root entity's subtree sorts by the root's Y, so a character's sword
-   * stays with the character. Defaults to `false`: sprites draw in
+   * the world is Y-down) is in front. Each sort unit sorts as one, by its
+   * Y: a root entity's subtree, unless it hands its children their own
+   * place with `DrawOrderEcsComponent.ySortChildren`. So a character's
+   * sword stays with the character, while walls under a level root with
+   * `ySortChildren` sort against the character one by one. A unit sorts at
+   * its `DrawOrderEcsComponent.ySortOrigin`. Defaults to `false`: sprites draw in
    * hierarchy order, the right choice for side views and UI.
    */
   ySort: boolean;

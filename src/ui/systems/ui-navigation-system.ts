@@ -1,6 +1,10 @@
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Rect, Rects, Vec2, Vector2 } from '../../math/index.js';
+import {
+  CameraEcsComponent,
+  cameraId,
+} from '../../rendering/components/camera-component.js';
 import { isVisibleInHierarchy } from '../../rendering/components/visibility-component.js';
 import {
   CanvasEcsComponent,
@@ -152,14 +156,19 @@ function findNearestInDirection(
   return bestEntity;
 }
 
-/** The candidate drawn first (see `sortByDrawOrder`): the first element of a menu, not one drawn over it. */
+/** The candidate drawn first by `canvas`'s camera (see `sortByDrawOrder`): the first element of a menu, not one drawn over it. */
 function pickFirstDrawnCandidate(
   world: EcsWorld,
+  canvas: CanvasEcsComponent,
   candidates: readonly FocusCandidate[],
 ): number | null {
   const entities = candidates.map((candidate) => candidate.entity);
+  const camera = world.getComponent<CameraEcsComponent>(
+    canvas.camera,
+    cameraId,
+  );
 
-  return sortByDrawOrder(world, entities)[0] ?? null;
+  return sortByDrawOrder(world, entities, camera?.ySort ?? false)[0] ?? null;
 }
 
 /** The currently focused entity's explicit `UiFocusEcsComponent` override for `direction`, if it's set and still focusable. */
@@ -184,7 +193,7 @@ function resolveNextFocusTarget(
   candidates: readonly FocusCandidate[],
 ): number | null {
   if (canvas.focusedEntity === null) {
-    return pickFirstDrawnCandidate(world, candidates);
+    return pickFirstDrawnCandidate(world, canvas, candidates);
   }
 
   const explicitTarget = resolveExplicitFocusTarget(

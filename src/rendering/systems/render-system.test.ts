@@ -764,6 +764,197 @@ describe('createRenderEcsSystem', () => {
       expect(drawnIds(bindInstanceData)).toEqual([0, 1, 1, 0]);
     });
 
+    describe('sort units', () => {
+      const addLevel = (y: number = 0): number => {
+        const level = world.createEntity();
+
+        addPositionComponent(world, level, { local: { x: 0, y } });
+        addDrawOrderComponent(world, level, { ySortChildren: true });
+
+        return level;
+      };
+
+      it("y-sorts the children of a ySortChildren root against another root by each child's own Y", () => {
+        addYSortCamera();
+        const { renderable, bindInstanceData } = createRenderable();
+
+        const level = addLevel();
+        const upperWall = addTaggedSprite(renderable, 0, 0);
+        const lowerWall = addTaggedSprite(renderable, 2, 10);
+
+        addTaggedSprite(renderable, 1, 5);
+        world.setParent(upperWall, level);
+        world.setParent(lowerWall, level);
+
+        world.update();
+
+        expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+      });
+
+      it('ignores ySortChildren on an entity that is not itself a sort unit', () => {
+        addYSortCamera();
+        const { renderable, bindInstanceData } = createRenderable();
+
+        const level = world.createEntity();
+        const layer = world.createEntity();
+        const upperWall = addTaggedSprite(renderable, 0, 0);
+        const lowerWall = addTaggedSprite(renderable, 1, 10);
+
+        addTaggedSprite(renderable, 2, 5);
+        addPositionComponent(world, level);
+        addPositionComponent(world, layer);
+        addDrawOrderComponent(world, layer, { ySortChildren: true });
+        world.setParent(layer, level);
+        world.setParent(upperWall, layer);
+        world.setParent(lowerWall, layer);
+
+        world.update();
+
+        expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+      });
+
+      it('y-sorts the children of nested ySortChildren entities', () => {
+        addYSortCamera();
+        const { renderable, bindInstanceData } = createRenderable();
+
+        const level = addLevel();
+        const layer = world.createEntity();
+        const upperWall = addTaggedSprite(renderable, 0, 0);
+        const lowerWall = addTaggedSprite(renderable, 2, 10);
+
+        addTaggedSprite(renderable, 1, 5);
+        addPositionComponent(world, layer);
+        addDrawOrderComponent(world, layer, { ySortChildren: true });
+        world.setParent(layer, level);
+        world.setParent(upperWall, layer);
+        world.setParent(lowerWall, layer);
+
+        world.update();
+
+        expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+      });
+
+      it("keeps a sort unit's own subtree together", () => {
+        addYSortCamera();
+        const { renderable, bindInstanceData } = createRenderable();
+
+        const level = addLevel();
+        const chest = addTaggedSprite(renderable, 0, 0);
+        // Far below the character, but it belongs to the chest.
+        const lid = addTaggedSprite(renderable, 1, 100);
+
+        addTaggedSprite(renderable, 2, 5);
+        world.setParent(chest, level);
+        world.setParent(lid, chest);
+
+        world.update();
+
+        expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+      });
+
+      it('draws sort units at the same Y in hierarchy order: siblings in sibling order, roots in creation order', () => {
+        addYSortCamera();
+        const { renderable, bindInstanceData } = createRenderable();
+
+        const level = addLevel(5);
+        // Created before its sibling, but parented after it.
+        const secondWall = addTaggedSprite(renderable, 1, 5);
+        const firstWall = addTaggedSprite(renderable, 0, 5);
+
+        addTaggedSprite(renderable, 2, 5);
+        world.setParent(firstWall, level);
+        world.setParent(secondWall, level);
+
+        world.update();
+
+        expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+      });
+
+      it('draws in hierarchy order for a camera without ySort', () => {
+        addCameraEntity();
+        const { renderable, bindInstanceData } = createRenderable();
+
+        const level = addLevel();
+        const upperWall = addTaggedSprite(renderable, 0, 0);
+        const lowerWall = addTaggedSprite(renderable, 1, 10);
+
+        addTaggedSprite(renderable, 2, 5);
+        world.setParent(upperWall, level);
+        world.setParent(lowerWall, level);
+
+        world.update();
+
+        expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+      });
+
+      it('sorts by world order before Y', () => {
+        addYSortCamera();
+        const { renderable, bindInstanceData } = createRenderable();
+
+        const level = addLevel();
+        const floor = addTaggedSprite(renderable, 0, 100);
+        const wall = addTaggedSprite(renderable, 2, 10);
+
+        addTaggedSprite(renderable, 1, 5);
+        addDrawOrderComponent(world, floor, { order: -1 });
+        world.setParent(floor, level);
+        world.setParent(wall, level);
+
+        world.update();
+
+        expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+      });
+
+      it('sorts two units at the same position apart by their ySortOrigin', () => {
+        addYSortCamera();
+        const { renderable, bindInstanceData } = createRenderable();
+
+        const level = addLevel();
+        const roof = addTaggedSprite(renderable, 2, 0);
+        const shadow = addTaggedSprite(renderable, 0, 0);
+
+        addTaggedSprite(renderable, 1, 1);
+        addDrawOrderComponent(world, roof, { ySortOrigin: 2 });
+        addDrawOrderComponent(world, shadow, { ySortOrigin: -2 });
+        world.setParent(roof, level);
+        world.setParent(shadow, level);
+
+        world.update();
+
+        expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+      });
+
+      it('ignores ySortOrigin on an entity that is not a sort unit', () => {
+        addYSortCamera();
+        const { renderable, bindInstanceData } = createRenderable();
+
+        const character = addTaggedSprite(renderable, 0, 0);
+        const sword = addTaggedSprite(renderable, 1, 0);
+
+        addTaggedSprite(renderable, 2, 1);
+        addDrawOrderComponent(world, sword, { ySortOrigin: 10 });
+        world.setParent(sword, character);
+
+        world.update();
+
+        expect(drawnIds(bindInstanceData)).toEqual([0, 1, 2]);
+      });
+    });
+
+    it('throws when adding a ySortOrigin that is not finite', () => {
+      const entity = world.createEntity();
+
+      expect(() =>
+        addDrawOrderComponent(world, entity, { ySortOrigin: Number.NaN }),
+      ).toThrow();
+      expect(() =>
+        addDrawOrderComponent(world, entity, { ySortOrigin: Infinity }),
+      ).toThrow();
+      expect(() =>
+        addDrawOrderComponent(world, entity, { ySortOrigin: -2.5 }),
+      ).not.toThrow();
+    });
+
     it('orders many sprites the same way a full comparison sort would', () => {
       addYSortCamera();
       const { renderable, bindInstanceData } = createRenderable();

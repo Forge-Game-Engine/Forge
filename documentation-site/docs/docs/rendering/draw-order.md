@@ -14,7 +14,8 @@ by four keys. Each key only orders items the keys before it leave equal:
    [`DrawOrderEcsComponent`](/Forge/docs/api/interfaces/DrawOrderEcsComponent)
    `order`, added to its parent's world order. A lower world order draws
    first.
-3. **Y**, only for a camera with `ySort`: a lower root Y draws first.
+3. **Y**, only for a camera with `ySort`: a lower sort unit Y draws first
+   (see [Sorting by height on screen](#sorting-by-height-on-screen)).
 4. **Hierarchy order**: root entities in the order they were created,
    each followed by its children, parents before children and siblings in
    the order they were parented. A child with `behindParent` comes just
@@ -29,8 +30,8 @@ before its sprite, and its sprite before its text. A
 Draw order applies within one camera. Which camera's output is drawn over
 another's is set by the cameras' own `layer` (see
 [Layering multiple render targets](./multipass-rendering.md#layering-multiple-render-targets)).
-UI hit testing checks elements in the reverse of this order, without
-Y-sorting (see
+UI hit testing checks elements in the reverse of the order their canvas's
+camera draws them in (see
 [Buttons and Interaction](../ui/buttons-and-interaction.md#hit-testing)).
 
 ## Drawing in hierarchy order
@@ -115,7 +116,66 @@ const camera = createCamera(world, { ySort: true });
 ```
 
 The camera then sorts by Y after layer and world order: a lower Y (higher
-on screen) draws first. Every entity sorts by the Y of its root entity (its topmost
-ancestor), so an entity's children sort with it rather than by their own Y.
-Entities under one shared root all sort by that root's Y, so they aren't
-Y-sorted against each other. A root without a position sorts as Y `0`.
+on screen) draws first. It sorts **sort units**, not single entities. Every
+root entity is a sort unit, and its whole subtree sorts by the root's
+`position.world.y`, so a character's children (a sword, a shadow) draw with
+the character rather than by their own Y. A unit without a position sorts
+as Y `0`.
+
+Sort units at the same Y draw in hierarchy order: roots in the order they
+were created, units under one root in sibling order. The entities of one
+unit draw together, in hierarchy order.
+
+### Y-sorting an entity's children
+
+Entities parented under one root sort by that root's Y, so they aren't
+Y-sorted against each other or against other roots. To sort each child of
+an entity by its own Y, such as the walls under a level entity, set
+`ySortChildren` on the entity's
+[`DrawOrderEcsComponent`](/Forge/docs/api/interfaces/DrawOrderEcsComponent):
+
+```ts
+import { addDrawOrderComponent } from '@forge-game-engine/forge/rendering';
+
+addDrawOrderComponent(world, level, { ySortChildren: true });
+world.setParent(wall, level);
+world.setParent(tree, level);
+```
+
+Each child of a sort unit with `ySortChildren` is a sort unit of its own,
+so `wall` and `tree` each sort against every root, such as a character, by
+their own Y. The level entity is a unit containing only itself. Every
+other entity belongs to the unit of its nearest ancestor that is one, so a
+wall's own children draw with the wall.
+
+`ySortChildren` only applies on an entity that is a sort unit itself. For
+the rows under a layer entity under a level root to sort against a
+character, both the level and the layer set `ySortChildren`:
+
+```ts
+addDrawOrderComponent(world, level, { ySortChildren: true });
+addDrawOrderComponent(world, layer, { ySortChildren: true });
+world.setParent(layer, level);
+world.setParent(row, layer);
+```
+
+World order still comes before Y, so a floor child with an `order` of `-1`
+draws behind every entity at world order `0`, whatever its Y. A
+`behindParent` child that is a sort unit sorts against its parent by Y, and
+`behindParent` only orders them when their Y is equal. Cameras without
+`ySort` ignore `ySortChildren`.
+
+### Choosing where an entity sorts
+
+A sort unit sorts at its entity's position. To sort it at another point,
+such as the base of a tree whose sprite is centred on its position, set
+`ySortOrigin`:
+
+```ts
+addDrawOrderComponent(world, tree, { ySortOrigin: 2 });
+```
+
+The unit sorts by the world Y of the point `(0, ySortOrigin)` in its
+entity's local space, so the point turns and scales with the entity's
+`rotation.world` and `scale.world`. A positive value moves it down the
+screen. `ySortOrigin` has no effect on an entity that isn't a sort unit.
