@@ -51,6 +51,9 @@ system registered before `createTransformEcsSystem`.
   path and whose category and mask let the two collide. Sensors aren't
   targets. Against a `TerrainCollider`, the sweep only meets the surface,
   as [terrain collision](./terrain.md#colliding-with-terrain) does.
+  Against a `ChainCollider`, it only meets edges from the side their
+  normals face, as [chain collision](./chain-colliders.md#colliding-with-a-chain)
+  does, so a fast circle stops at the near side of a thin wall.
 - **When it stops a body**: when the circle would end the tick more than a
   tenth of its radius inside a target. Collision resolution pushes out
   shallower contacts. A circle that moves less than a tenth of its radius
@@ -72,8 +75,9 @@ still pass through each other within one tick.
 ## Sweeping a circle yourself
 
 [`sweepCircleCircle`](/Forge/docs/api/functions/sweepCircleCircle),
-[`sweepCirclePolygon`](/Forge/docs/api/functions/sweepCirclePolygon) and
-[`sweepCircleTerrain`](/Forge/docs/api/functions/sweepCircleTerrain) find
+[`sweepCirclePolygon`](/Forge/docs/api/functions/sweepCirclePolygon),
+[`sweepCircleTerrain`](/Forge/docs/api/functions/sweepCircleTerrain) and
+[`sweepCircleChain`](/Forge/docs/api/functions/sweepCircleChain) find
 where a circle moving in a straight line first touches a target collider.
 Each takes the moving `CircleCollider`, the target's position, rotation and
 collider, and the circle's world-space center at the start and end of the

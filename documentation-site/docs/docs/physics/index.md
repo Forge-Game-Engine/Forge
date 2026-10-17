@@ -30,6 +30,10 @@ The physics module has these parts:
 - **Terrain**: a
   [`TerrainCollider`](/Forge/docs/api/classes/TerrainCollider) is static
   ground built from a heightmap. See [Terrain](./terrain.md).
+- **Chain colliders**: a
+  [`ChainCollider`](/Forge/docs/api/classes/ChainCollider) is static level
+  geometry built from closed loops of edges, such as a level's walls,
+  floors and platforms. See [Chain Colliders](./chain-colliders.md).
 - **Continuous collision detection**: stops fast circles from sinking into
   or passing through static colliders within one tick. See
   [Continuous Collision Detection](./continuous-collision-detection.md).
