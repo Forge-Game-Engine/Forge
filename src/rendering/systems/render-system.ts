@@ -748,6 +748,12 @@ function setDrawItem(
   item.textMesh = null;
   item.meshCommandReady = false;
 
+  // Only a mesh item keeps a command, so a removed mesh's geometry isn't
+  // held after its slot goes to a sprite or text.
+  if (kind !== MESH_ITEM_KIND) {
+    item.meshCommand = null;
+  }
+
   return item;
 }
 
