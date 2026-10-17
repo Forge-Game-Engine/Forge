@@ -3,12 +3,11 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { createTerrainMesh } from './create-terrain-mesh';
 import { buildTerrainCurve } from './terrain-curve';
 import { ImageCache } from '../../asset-loading/index.js';
-import { Vec2 } from '../../math/index.js';
 import { Color } from '../color.js';
+import { MeshMaterial } from '../materials/mesh-material.js';
 import { RenderContext } from '../render-context.js';
-import { ForgeShaderSource, ShaderCache } from '../shaders/index.js';
 import { Texture } from '../texture.js';
-import { terrainFragmentShader, terrainVertexShader } from './shaders/index';
+import { createShaderCache } from '../utilities/create-shader-cache.js';
 
 describe('createTerrainMesh', () => {
   let canvas: HTMLCanvasElement;
@@ -29,8 +28,6 @@ describe('createTerrainMesh', () => {
       4,
     ),
     depth: 50,
-    position: Vec2.zero,
-    angle: 0,
     border: {
       texture: borderTexture,
       tileSize: { x: 20, y: 20 },
@@ -128,11 +125,11 @@ describe('createTerrainMesh', () => {
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockGl);
 
-    const shaderCache = new ShaderCache([])
-      .addShader(new ForgeShaderSource(terrainVertexShader))
-      .addShader(new ForgeShaderSource(terrainFragmentShader));
-
-    renderContext = new RenderContext(shaderCache, new ImageCache(), canvas);
+    renderContext = new RenderContext(
+      createShaderCache(),
+      new ImageCache(),
+      canvas,
+    );
     fillTexture = new Texture(renderContext, { wrap: 'repeat' });
     borderTexture = new Texture(renderContext, { wrap: 'repeat' });
   });
@@ -141,6 +138,12 @@ describe('createTerrainMesh', () => {
     expect(() =>
       createTerrainMesh(renderContext, createOptions()),
     ).not.toThrow();
+  });
+
+  it('draws with a mesh material, so it can be added with addMeshComponent', () => {
+    const mesh = createTerrainMesh(renderContext, createOptions());
+
+    expect(mesh.material).toBeInstanceOf(MeshMaterial);
   });
 
   it('builds 6 vertices (2 triangles) per pair of consecutive curve points', () => {
@@ -157,35 +160,41 @@ describe('createTerrainMesh', () => {
       createOptions({ curvePoints }),
     );
 
-    expect(mesh.vertexCount).toBe((curvePoints.length - 1) * 6);
+    expect(mesh.geometry.vertexCount).toBe((curvePoints.length - 1) * 6);
   });
 
-  it('extends the mesh below its surface, toward -y, by depth below the lowest point', () => {
+  it('builds its vertices from the curve points in local space, extending depth below the lowest point', () => {
     const curvePoints = buildTerrainCurve(
       [
-        { x: 0, y: 10 },
-        { x: 10, y: 20 },
+        { x: 5, y: 10 },
+        { x: 15, y: 20 },
       ],
       1,
     );
 
-    createTerrainMesh(renderContext, createOptions({ curvePoints, depth: 50 }));
+    (mockGl.bufferData as Mock).mockClear();
+
+    const mesh = createTerrainMesh(
+      renderContext,
+      createOptions({ curvePoints, depth: 50 }),
+    );
 
     const [positions, , depths] = (mockGl.bufferData as Mock).mock.calls.map(
       ([, data]) => data as Float32Array,
     );
 
-    // Each pair is (x, -y): the mesh hands the GPU the negated world y, as
-    // the sprite pipeline does.
-    const worldYs = Array.from(
-      { length: positions.length / 2 },
-      (_, index) => -positions[index * 2 + 1],
-    );
-
     // Surface left, surface right, bottom left; surface right, bottom
-    // right, bottom left.
-    expect(worldYs).toEqual([10, 20, -40, 20, -40, -40]);
-    expect(Array.from(depths)).toEqual([0, 0, 50, 0, 60, 50]);
+    // right, bottom left. The lowest point is the one with the largest Y
+    // (20), so the bottom edge is at 20 + 50 = 70. Unmoved: the entity's
+    // transform places the mesh when it's drawn.
+    expect(Array.from(positions)).toEqual([
+      5, 10, 15, 20, 5, 70, 15, 20, 15, 70, 5, 70,
+    ]);
+    expect(Array.from(depths)).toEqual([0, 0, 60, 0, 50, 60]);
+    expect(mesh.geometry.bounds).toEqual({
+      min: { x: 5, y: 10 },
+      max: { x: 15, y: 70 },
+    });
   });
 
   it('binds the configured border width uniform', () => {

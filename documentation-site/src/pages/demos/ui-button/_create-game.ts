@@ -215,9 +215,9 @@ export const createButtonGame = async (): Promise<Game> => {
     // on-screen.
     anchor: {
       x: UiAxis.point(0.5, { pivot: 0, size: statusLabelWidth }),
-      y: UiAxis.point(1, { size: 40 }),
+      y: UiAxis.point(0, { size: 40 }),
     },
-    anchoredPosition: { x: -statusLabelWidth / 2, y: -60 },
+    anchoredPosition: { x: -statusLabelWidth / 2, y: 60 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     maxWidth: statusLabelWidth,
@@ -226,7 +226,7 @@ export const createButtonGame = async (): Promise<Game> => {
   });
   const statusText = world.getComponent(statusLabel, textId)!;
 
-  const buttonY = [80, 0, -80];
+  const buttonY = [-80, 0, 80];
   const labels = ['Play', 'Options', 'Quit'];
 
   for (let i = 0; i < labels.length; i++) {

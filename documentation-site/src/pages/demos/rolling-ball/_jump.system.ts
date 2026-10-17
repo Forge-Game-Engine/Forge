@@ -60,14 +60,14 @@ export const createJumpEcsSystem = (
       applyImpulse(
         world,
         playerEntity,
-        { x: 0, y: jumpImpulse },
+        { x: 0, y: -jumpImpulse },
         position.world,
       );
     }
 
-    // Gravity pulls toward -y in this demo (see `_create-game.ts`), so
-    // "fallen too far" means the ball's y has dropped well below spawn.
-    if (position.local.y < spawnPosition.y - respawnFallDistance) {
+    // Gravity pulls toward +y (see `_create-game.ts`), so "fallen too far"
+    // means the ball's y has grown well past spawn.
+    if (position.local.y > spawnPosition.y + respawnFallDistance) {
       position.local = Vec2.clone(spawnPosition);
       rigidBody.velocity = Vec2.zero;
       rigidBody.angularVelocity = 0;

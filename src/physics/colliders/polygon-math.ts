@@ -1,8 +1,9 @@
 import { Vec2, Vector2 } from '../../math/index.js';
 
 /**
- * Calculates the signed area of a polygon (positive for counter-clockwise
- * winding, negative for clockwise), via the shoelace formula.
+ * Calculates the signed area of a polygon (positive when the
+ * vertices turn from `+X` towards `+Y`, which is clockwise on screen since the
+ * world is Y-down; negative for the other winding), via the shoelace formula.
  * @param vertices - The polygon's vertices, in order.
  */
 export function calculateSignedArea(vertices: readonly Vector2[]): number {

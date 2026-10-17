@@ -1,6 +1,6 @@
 import { Stoppable, Updatable } from '../../../common/index.js';
 import { Axis1dAction, Axis2dAction, HoldAction } from '../../actions/index.js';
-import { gamepadAxes, GamepadAxisIndex } from '../../constants/index.js';
+import { GamepadAxisIndex } from '../../constants/index.js';
 import {
   Axis1dInputSource,
   Axis2dInputSource,
@@ -31,28 +31,11 @@ const clampAxisValue = (value: number): number =>
   Math.max(-1, Math.min(1, value));
 
 /**
- * The W3C Standard Gamepad reports a stick pushed up as `-1`, but the engine
- * is Y-up everywhere else (keyboard bindings, the D-pad's north button,
- * world space). These axes are negated as they're read, so a stick and
- * every other input agree on which way is up.
+ * Reads an axis as the W3C Standard Gamepad reports it. Its stick Y axes
+ * already read up as `-1`, which matches the engine's Y-down world.
  */
-const stickYAxes: ReadonlySet<GamepadAxisIndex> = new Set([
-  gamepadAxes.leftStickY,
-  gamepadAxes.rightStickY,
-]);
-
-/**
- * Reads a stick axis with up positive. Leaves `0` alone so an idle Y axis
- * reads `0` rather than `-0`.
- */
-const readStickAxis = (
-  gamepad: Gamepad,
-  axisIndex: GamepadAxisIndex,
-): number => {
-  const rawValue = gamepad.axes[axisIndex] ?? 0;
-
-  return stickYAxes.has(axisIndex) && rawValue !== 0 ? -rawValue : rawValue;
-};
+const readAxisValue = (gamepad: Gamepad, axisIndex: GamepadAxisIndex): number =>
+  gamepad.axes[axisIndex] ?? 0;
 
 const isButtonPressed = (gamepad: Gamepad, buttonIndex: number): boolean =>
   gamepad.buttons[buttonIndex]?.pressed ?? false;
@@ -288,7 +271,7 @@ export class GamepadInputSource
     const { source } = binding;
 
     if ('axisIndex' in source) {
-      const value = readStickAxis(gamepad, source.axisIndex);
+      const value = readAxisValue(gamepad, source.axisIndex);
 
       return Math.abs(value) < gamepadAxisDeadzone ? 0 : value;
     }
@@ -306,8 +289,8 @@ export class GamepadInputSource
     const { source } = binding;
 
     if ('xAxisIndex' in source) {
-      const x = readStickAxis(gamepad, source.xAxisIndex);
-      const y = readStickAxis(gamepad, source.yAxisIndex);
+      const x = readAxisValue(gamepad, source.xAxisIndex);
+      const y = readAxisValue(gamepad, source.yAxisIndex);
 
       return Math.hypot(x, y) < gamepadAxisDeadzone ? { x: 0, y: 0 } : { x, y };
     }
@@ -317,8 +300,8 @@ export class GamepadInputSource
         readButtonValue(gamepad, source.eastButtonIndex) -
         readButtonValue(gamepad, source.westButtonIndex),
       y:
-        readButtonValue(gamepad, source.northButtonIndex) -
-        readButtonValue(gamepad, source.southButtonIndex),
+        readButtonValue(gamepad, source.southButtonIndex) -
+        readButtonValue(gamepad, source.northButtonIndex),
     };
   }
 }

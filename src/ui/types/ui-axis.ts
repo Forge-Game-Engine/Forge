@@ -21,6 +21,10 @@ export type UiAxisSizeUnit = 'referencePixels' | 'screenPixels';
  * parent's rect on this axis (the element's own `anchorMin`/`anchorMax` on
  * this axis coincide), so the element keeps its own literal `size` and moves
  * with the anchor rather than resizing with the parent.
+ *
+ * Every normalized value on an axis runs from `0` at the left (`x`) or top
+ * (`y`) edge to `1` at the right or bottom edge, since UI world space, like
+ * the rest of the engine's 2D world, is Y-down.
  */
 export interface UiPointAxis {
   kind: 'point';

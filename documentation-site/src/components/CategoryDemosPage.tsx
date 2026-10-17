@@ -29,13 +29,15 @@ export const CategoryDemosPage: FC<CategoryDemosPageProps> = ({
     <Layout
       title={`${category.title} Demos`}
       description={category.description}
+      wrapperClassName="display-font"
     >
       <div className={styles.container}>
         <Link to="/demos" className={styles.back}>
           ← All categories
         </Link>
+        <p className="eyebrow">Demos</p>
         <h1>{category.title}</h1>
-        <p>{category.description}</p>
+        <p className={styles.intro}>{category.description}</p>
         <div className={styles.demoGrid}>
           {categoryDemos.map((demo) => (
             <DemoCard

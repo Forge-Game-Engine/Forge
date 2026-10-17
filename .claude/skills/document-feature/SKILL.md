@@ -192,7 +192,8 @@ With an `index.md` overview page:
 {
   "label": "<Display Name>",
   "position": <N>,
-  "link": { "type": "doc", "id": "docs/<module>/index" }
+  "link": { "type": "doc", "id": "docs/<module>/index" },
+  "customProps": { "icon": "<moduleIconName>" }
 }
 ```
 
@@ -201,9 +202,16 @@ Without one:
 ```json
 {
   "label": "<Display Name>",
-  "position": <N>
+  "position": <N>,
+  "customProps": { "icon": "<moduleIconName>" }
 }
 ```
+
+`customProps.icon` names an icon in
+`documentation-site/src/components/ModuleIcon.tsx`, the same set the
+homepage uses. The docs overview card for a module shows it (see
+`src/theme/DocCard`); draw a new icon in the same style if none fits. A
+category nested inside a module's folder doesn't need one.
 
 Pick a `position` that no sibling `_category_.json` under
 `documentation-site/docs/docs/` uses.

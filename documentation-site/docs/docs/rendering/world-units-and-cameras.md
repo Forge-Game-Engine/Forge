@@ -37,6 +37,9 @@ and on a 1200 pixel tall one, so an entity keeps its place and size relative
 to the screen when the canvas is resized. A sprite's `width` and `height`,
 physics shapes and positions are all in world units.
 
+The world is Y-down, like the canvas and the DOM: `+X` points right and
+`+Y` points down the screen.
+
 The number of CSS pixels one world unit covers on screen follows from
 `verticalWorldUnits`, the camera's `zoom` and the canvas's height:
 
@@ -176,11 +179,12 @@ const { bounds, size } = getCameraView(world, camera, renderContext);
 // Above the top edge, anywhere across the visible width.
 const spawnPosition = {
   x: bounds.min.x + Math.random() * size.x,
-  y: bounds.max.y + 1,
+  y: bounds.min.y - 1,
 };
 ```
 
-`bounds` includes the camera's position and zoom. The canvas's aspect ratio
+`bounds.min` is the view's top-left corner and `bounds.max` its
+bottom-right. `bounds` includes the camera's position and zoom. The canvas's aspect ratio
 changes when it's resized, so get the view each time it's used rather than
 once at startup.
 
@@ -218,15 +222,16 @@ The result is correct for any position and zoom of either camera.
 
 ## Culling sprites outside the view
 
-The render system doesn't draw a sprite, nine-slice region or text glyph
-whose quad is entirely outside a camera's view, and uploads nothing to the
+The render system doesn't draw a sprite, nine-slice region, text glyph or
+mesh that's entirely outside a camera's view, and uploads nothing to the
 GPU for it. Sprites outside the view don't need to be disabled.
 
 The test uses the quad the sprite vertex shader draws: the sprite's
 `width` and `height` around its `pivot`, scaled, flipped and rotated by the
 entity's world transform. Text outlines and shadows are drawn inside their
-glyph quads, so they're culled with their glyphs. Terrain meshes are always
-drawn.
+glyph quads, so they're culled with their glyphs. A
+[mesh](./meshes.md) is tested with its geometry's `bounds`, placed by the
+entity's world transform.
 
 ## High-DPI displays
 

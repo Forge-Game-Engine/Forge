@@ -17,109 +17,164 @@ import airControlSystemCode from '!!raw-loader!./_air-control.system';
 import groundContactComponentCode from '!!raw-loader!./_ground-contact.component';
 import groundContactSystemCode from '!!raw-loader!./_ground-contact.system';
 
-import { Demo } from '@site/src/components/Demo';
-import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
-import { KeyboardKey } from '@site/src/components/_KeyboardKey';
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function Car(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'Car Demo',
-        description:
-          'A demo showing how to set up a car with the physics engine: a chassis with two spring-suspended, motor-driven wheels climbing a procedurally generated hill.',
-      }}
-      header="Car"
-      blurb="This demo composes several of the physics engine's existing primitives into a drivable car: the chassis, both wheels, and a small invisible 'upright' body per wheel (a wheel hub/knuckle) are all independent entities with their own RigidBodyEcsComponent, and each wheel is driven by an AngularVelocityMotorEcsComponent (see the Torque and Motors demo). A demo-only GroundContactEcsComponent/system pair, attached to each wheel's own entity, tracks how many static bodies that wheel is touching, recomputed every tick from the wheel's ContactsEcsComponent. While a wheel is grounded, its motor's target speed tracks the throttle input directly, and the engine's own Coulomb friction model - not an artificial clamp - is what correctly limits how much of that becomes real acceleration versus slip, the same way it would for a real tire. Only while a wheel is airborne does WheelDriveEcsSystem clamp its target to a bounded slip band around its current rolling speed (derived from the chassis's own velocity every tick): airborne, a wheel has nothing but its own rotational inertia to resist the motor, so left unclamped it would accelerate towards an arbitrary top speed almost instantly and land spinning far faster than the car is actually moving, burning torque on wheel spin instead of quickly regaining grip. Each wheel mounts to the chassis through its upright: a PrismaticJoint (see the Prismatic Joint demo) constrains the upright to slide only vertically relative to the chassis, a RevoluteJoint (see the Revolute Joint demo) pins the wheel's position to that upright while leaving its rotation completely free to spin, and a LinearSpring/LinearDamper pair (see the Linear Spring and Damper demo) along that same axis supplies the suspension's force. Wiring either joint straight to the wheel wouldn't work - a RevoluteJoint would pin it rigidly in place with no suspension travel, and a PrismaticJoint locks relative rotation, which would lock the wheel's spin to the chassis - so the upright exists specifically to give the wheel a rotation-free attachment point. Unlike a spring-only mount, both joints are hard, iteratively-solved constraints with no lateral give, so the wheel only ever travels along that one axis, no swinging or sideways slop. Because the mount's *force* still comes from a soft spring rather than a rigid frame, accelerating and braking visibly pitches the chassis backward and forward, the 'leaning' feel the genre is named for; a light demo-only ChassisStabilizerEcsComponent nudges the chassis back level once nothing else is actively tipping it, without fighting a deliberate acceleration or brake lean. Each wheel mount's PrismaticJoint axis is also tilted outward rather than straight up/down, so the line from each chassis anchor to its wheel splays into a trapezoid instead of a rectangle, like a monster truck's lifted suspension - besides the visual, this gives an impact that's perpendicular to the chassis (hitting a ledge face-on) a component along the suspension axis for the spring to absorb, rather than landing entirely on the joint's hard, unsprung constraint. The terrain is a single static TerrainCollider following a procedurally generated height profile (see the Terrain guide), and a demo-only camera-follow system (the engine's built-in camera only supports input-driven pan/zoom) keeps the car in view as it drives across a course much wider than the canvas. ChassisStabilizerEcsComponent and AirControlEcsComponent, which both live on the chassis rather than either wheel, hold direct references to both wheels' GroundContactEcsComponent objects to check grounded state - ChassisStabilizerEcsSystem stays out of the way entirely while both wheels are airborne, and in that same situation AirControlEcsSystem instead drives the chassis's angular velocity towards a target proportional to the throttle input (the same targetVelocity/maxTorque approach AngularVelocityMotorEcsComponent uses for the wheels) - gas targets a nose-up-and-back spin, brake targets nose-down-and-forward, and releasing the input targets zero rotation, actively cancelling existing spin rather than just coasting on momentum, the classic mid-air control for lining up a landing. Letting go of the throttle on the ground also drops the driven wheel's motor torque budget to zero rather than braking it to a stop, so the car coasts and freewheels downhill under gravity instead of being held by an invisible parking brake. The hills get steep further along the course - if the car flips or gets stuck, press R to restart."
+    <DemoPage
+      slug="car"
       createGame={createCarGame}
-      interactions={
-        <>
-          <InteractionInstruction
-            displayElement={<KeyboardKey keyCode="→" />}
-            text="Accelerate"
-          />
-          <InteractionInstruction
-            displayElement={<KeyboardKey keyCode="D" />}
-            text="Accelerate"
-          />
-          <InteractionInstruction
-            displayElement={<KeyboardKey keyCode="←" />}
-            text="Brake / Reverse"
-          />
-          <InteractionInstruction
-            displayElement={<KeyboardKey keyCode="A" />}
-            text="Brake / Reverse"
-          />
-          <InteractionInstruction
-            displayElement={<KeyboardKey keyCode="R" />}
-            text="Restart"
-          />
-        </>
-      }
-      codeFiles={[
+      controls={[
         {
-          name: 'game.ts',
-          content: gameCode,
+          inputs: ['→', 'D'],
+          action: 'Accelerate',
+          detail: 'In the air: tilt back',
         },
         {
-          name: 'create-car.ts',
-          content: createCarCode,
+          inputs: ['←', 'A'],
+          action: 'Brake / reverse',
+          detail: 'In the air: tilt forward',
+        },
+        { inputs: ['R'], action: 'Restart' },
+      ]}
+      highlights={[
+        {
+          text: 'The chassis and both wheels are separate rigid bodies.',
+          file: 'create-car.ts',
         },
         {
-          name: 'create-terrain.ts',
-          content: createTerrainCode,
+          text: 'Each wheel hangs from a hidden hub: a prismatic joint for suspension travel, a revolute joint so it can spin, and a spring and damper for the bounce.',
+          file: 'create-car.ts',
         },
         {
-          name: 'create-inputs.ts',
-          content: createInputsCode,
+          text: 'A motor spins each wheel, and friction with the ground decides how much of that becomes speed.',
+          file: 'wheel-drive.system.ts',
         },
         {
-          name: 'wheel-drive.component.ts',
-          content: wheelDriveComponentCode,
+          text: 'With both wheels off the ground, the throttle tilts the car so you can line up a landing.',
+          file: 'air-control.system.ts',
         },
         {
-          name: 'wheel-drive.system.ts',
-          content: wheelDriveSystemCode,
+          text: 'The hills are a single terrain collider, drawn with a mesh built from the same points.',
+          file: 'create-terrain.ts',
+        },
+      ]}
+      docLinks={[
+        { label: 'Rigid bodies', to: '/docs/docs/physics/rigid-bodies' },
+        { label: 'Joints', to: '/docs/docs/physics/joints' },
+        { label: 'Forces', to: '/docs/docs/physics/forces' },
+        { label: 'Terrain', to: '/docs/docs/physics/terrain' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Sets up the camera, terrain and car, and registers every system in the order they run.',
+              content: gameCode,
+            },
+          ],
         },
         {
-          name: 'camera-follow.component.ts',
-          content: cameraFollowComponentCode,
+          title: 'Building the scene',
+          files: [
+            {
+              name: 'create-car.ts',
+              summary:
+                'Builds the chassis, wheels and suspension, and the tuning values that make it drive well.',
+              content: createCarCode,
+            },
+            {
+              name: 'create-terrain.ts',
+              summary:
+                'Generates the hills, their collider and the mesh that draws them.',
+              content: createTerrainCode,
+            },
+            {
+              name: 'create-inputs.ts',
+              summary: 'Binds the arrow keys, A/D and R to game actions.',
+              content: createInputsCode,
+            },
+          ],
         },
         {
-          name: 'camera-follow.system.ts',
-          content: cameraFollowSystemCode,
+          title: 'Driving',
+          files: [
+            {
+              name: 'ground-contact.component.ts',
+              summary: 'Stores how many ground bodies a wheel is touching.',
+              content: groundContactComponentCode,
+            },
+            {
+              name: 'ground-contact.system.ts',
+              summary: "Counts each wheel's ground contacts every tick.",
+              content: groundContactSystemCode,
+            },
+            {
+              name: 'wheel-drive.component.ts',
+              summary:
+                "Settings for driving a wheel's motor from the throttle.",
+              content: wheelDriveComponentCode,
+            },
+            {
+              name: 'wheel-drive.system.ts',
+              summary:
+                "Sets each wheel motor's speed and torque from the throttle.",
+              content: wheelDriveSystemCode,
+            },
+          ],
         },
         {
-          name: 'car-reset.component.ts',
-          content: carResetComponentCode,
+          title: 'Balance',
+          files: [
+            {
+              name: 'chassis-stabilizer.component.ts',
+              summary: 'Settings for pulling the chassis back to level.',
+              content: chassisStabilizerComponentCode,
+            },
+            {
+              name: 'chassis-stabilizer.system.ts',
+              summary: 'Levels the chassis while a wheel is on the ground.',
+              content: chassisStabilizerSystemCode,
+            },
+            {
+              name: 'air-control.component.ts',
+              summary: 'Settings for tilting the car in mid-air.',
+              content: airControlComponentCode,
+            },
+            {
+              name: 'air-control.system.ts',
+              summary: 'Tilts the car with the throttle while it is airborne.',
+              content: airControlSystemCode,
+            },
+          ],
         },
         {
-          name: 'car-reset.system.ts',
-          content: carResetSystemCode,
-        },
-        {
-          name: 'chassis-stabilizer.component.ts',
-          content: chassisStabilizerComponentCode,
-        },
-        {
-          name: 'chassis-stabilizer.system.ts',
-          content: chassisStabilizerSystemCode,
-        },
-        {
-          name: 'air-control.component.ts',
-          content: airControlComponentCode,
-        },
-        {
-          name: 'air-control.system.ts',
-          content: airControlSystemCode,
-        },
-        {
-          name: 'ground-contact.component.ts',
-          content: groundContactComponentCode,
-        },
-        {
-          name: 'ground-contact.system.ts',
-          content: groundContactSystemCode,
+          title: 'Camera and reset',
+          files: [
+            {
+              name: 'camera-follow.component.ts',
+              summary: 'Settings for a camera that follows an entity.',
+              content: cameraFollowComponentCode,
+            },
+            {
+              name: 'camera-follow.system.ts',
+              summary: 'Moves the camera smoothly after the car.',
+              content: cameraFollowSystemCode,
+            },
+            {
+              name: 'car-reset.component.ts',
+              summary: "Each body's spawn point, for restarting.",
+              content: carResetComponentCode,
+            },
+            {
+              name: 'car-reset.system.ts',
+              summary: 'Puts the car back at the start when R is pressed.',
+              content: carResetSystemCode,
+            },
+          ],
         },
       ]}
     />

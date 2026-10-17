@@ -1,3 +1,4 @@
+import { getComponentRemoveHook } from './component-hooks.js';
 import { ComponentKey, TagKey } from './ecs-component.js';
 import { createSystemGroup, EcsSystemGroup } from './ecs-system-group.js';
 import { Stoppable, Updatable } from '../common/index.js';
@@ -463,40 +464,40 @@ export class EcsWorld implements Updatable, Stoppable {
    * removed earlier this tick.
    *
    * The entity stops being alive before its children are removed, but keeps
-   * its components until they're gone, so an `onEntityRemoved` listener for
-   * a descendant can still read its ancestors' components. To keep a child,
-   * call `removeParent` (or `setParent` with another parent) first.
+   * its components until they're gone, so a remove hook or an
+   * `onEntityRemoved` listener for a descendant can still read its
+   * ancestors' components. Then the remove hook of each of the entity's
+   * components runs (see `ComponentRemoveHook`), in no particular order,
+   * while its other components are still stored; then its remaining
+   * components and tags are removed and `onEntityRemoved` is raised. To
+   * keep a child, call `removeParent` (or `setParent` with another parent)
+   * first.
+   *
+   * A hook or listener that throws doesn't stop the removal: the entity and
+   * all of its descendants are removed, every other hook and listener runs,
+   * and then the error is rethrown, or an `AggregateError` holding every
+   * error if more than one threw.
    * @param entity - The entity to remove.
    * @returns `true` if the entity was removed, `false` if it wasn't alive.
+   * @throws The error a remove hook or `onEntityRemoved` listener threw, or
+   * an `AggregateError` if several did, once the removal is complete.
    */
   public removeEntity(entity: number): boolean {
-    if (!this.isAlive(entity)) {
-      return false;
+    const errors: unknown[] = [];
+    const removed = this._removeEntity(entity, errors);
+
+    if (errors.length === 1) {
+      throw errors[0];
     }
 
-    const index = entityIndex(entity);
-
-    // Dead before its children, components and event go, so removing it
-    // again from anywhere in between does nothing rather than freeing the
-    // slot twice, and nothing can be parented to it meanwhile.
-    this._liveHandles[index] = -1;
-
-    this._removeChildren(entity);
-    this._detachFromParent(entity);
-
-    for (const componentSet of this._componentSets.values()) {
-      componentSet.remove(entity);
+    if (errors.length > 1) {
+      throw new AggregateError(
+        errors,
+        `Removed entity ${formatEntity(entity)} and its descendants, but ${errors.length} remove hooks or onEntityRemoved listeners threw.`,
+      );
     }
 
-    // Queued before the event, so a listener that throws can't leak the
-    // slot. The slot's next handle is a new generation, so reusing it from a
-    // listener can't be mistaken for this entity.
-    this._freeHandles.push(
-      createEntityHandle(index, entityGeneration(entity) + 1),
-    );
-    this.onEntityRemoved.raise(entity);
-
-    return true;
+    return removed;
   }
 
   /**
@@ -555,7 +556,7 @@ export class EcsWorld implements Updatable, Stoppable {
    */
   public removeParent(child: number): void {
     this._detachFromParent(child);
-    this._componentSets.get(parentId)?.remove(child);
+    this._detachComponent(child, parentId);
   }
 
   /**
@@ -582,13 +583,16 @@ export class EcsWorld implements Updatable, Stoppable {
 
   /**
    * Adds a component to an entity, replacing any it already has for
-   * `componentKey`.
+   * `componentKey`. Replacing it with a different value runs the key's
+   * remove hook with the old value, once the new one is stored (see
+   * `ComponentRemoveHook`); storing the same value again runs nothing.
    * @param entity - The entity to add the component to.
    * @param componentKey - The component's key.
    * @param componentData - The component.
    * @returns `componentData`.
    * @throws An error if `entity` isn't alive, or if `componentKey` is
-   * `parentId` (use `setParent`).
+   * `parentId` (use `setParent`); and whatever the remove hook of a replaced
+   * value throws, once the new value is stored.
    */
   public addComponent<T>(
     entity: number,
@@ -603,8 +607,15 @@ export class EcsWorld implements Updatable, Stoppable {
 
     this._requireAlive(entity, componentKey, 'component');
 
-    const componentSet = this._getComponentOrCreateSetByKey(componentKey);
+    const componentSet = this._getComponentOrCreateSetByKey<T>(componentKey);
+    const hadComponent = componentSet.has(entity);
+    const previous = componentSet.get(entity);
+
     componentSet.add(entity, componentData);
+
+    if (hadComponent && previous !== componentData) {
+      getComponentRemoveHook(componentKey)?.(this, entity, previous);
+    }
 
     return componentData;
   }
@@ -695,12 +706,14 @@ export class EcsWorld implements Updatable, Stoppable {
   }
 
   /**
-   * Removes one of an entity's components. The entity stays alive, whether
-   * or not it has any components left; remove it with `removeEntity`. Does
+   * Removes one of an entity's components, then runs the key's remove hook
+   * with it (see `ComponentRemoveHook`). The entity stays alive, whether or
+   * not it has any components left; remove it with `removeEntity`. Does
    * nothing if the entity doesn't have the component or isn't alive.
    * @param entity - The entity to remove the component from.
    * @param componentKey - The component's key.
-   * @throws An error if `componentKey` is `parentId` (use `removeParent`).
+   * @throws An error if `componentKey` is `parentId` (use `removeParent`);
+   * and whatever the remove hook throws, once the component is removed.
    */
   public removeComponent<T>(
     entity: number,
@@ -712,7 +725,86 @@ export class EcsWorld implements Updatable, Stoppable {
       );
     }
 
-    this._componentSets.get(componentKey)?.remove(entity);
+    this._detachComponent(entity, componentKey);
+  }
+
+  // Every removal of one stored value goes through here, so no path can
+  // skip the key's remove hook. The value leaves storage before the hook
+  // runs, so a hook that removes the same key again does nothing, and a
+  // hook that throws can't leave it behind. Presence comes from `has`, not
+  // the value, since a stored value can itself be `null`.
+  private _detachComponent(entity: number, key: symbol): void {
+    const componentSet = this._componentSets.get(key);
+
+    if (!componentSet?.has(entity)) {
+      return;
+    }
+
+    const value = componentSet.get(entity);
+
+    componentSet.remove(entity);
+    getComponentRemoveHook(key)?.(this, entity, value);
+  }
+
+  private _removeEntity(entity: number, errors: unknown[]): boolean {
+    if (!this.isAlive(entity)) {
+      return false;
+    }
+
+    const index = entityIndex(entity);
+
+    // Dead before its children, components and event go, so removing it
+    // again from anywhere in between does nothing rather than freeing the
+    // slot twice, and nothing can be parented to it or added to it
+    // meanwhile.
+    this._liveHandles[index] = -1;
+
+    this._removeChildren(entity, errors);
+    this._detachFromParent(entity);
+    this._runRemoveHooks(entity, errors);
+
+    for (const componentSet of this._componentSets.values()) {
+      componentSet.remove(entity);
+    }
+
+    // Queued before the event, so a listener that throws can't leak the
+    // slot. The slot's next handle is a new generation, so reusing it from a
+    // listener can't be mistaken for this entity.
+    this._freeHandles.push(
+      createEntityHandle(index, entityGeneration(entity) + 1),
+    );
+
+    try {
+      this.onEntityRemoved.raise(entity);
+    } catch (error) {
+      errors.push(error);
+    }
+
+    return true;
+  }
+
+  // Detaches each of a dying entity's hooked components and runs its hook,
+  // while its other components are still stored. A hook may remove another
+  // of them first, which runs that one's hook then, so each is checked for
+  // just before it's detached.
+  private _runRemoveHooks(entity: number, errors: unknown[]): void {
+    for (const [key, componentSet] of this._componentSets) {
+      const hook = getComponentRemoveHook(key);
+
+      if (!hook || !componentSet.has(entity)) {
+        continue;
+      }
+
+      const value = componentSet.get(entity);
+
+      componentSet.remove(entity);
+
+      try {
+        hook(this, entity, value);
+      } catch (error) {
+        errors.push(error);
+      }
+    }
   }
 
   private _requireAlive(
@@ -736,9 +828,9 @@ export class EcsWorld implements Updatable, Stoppable {
   }
 
   // Removes a dying entity's children, in sibling order. Iterates a copy:
-  // a listener for an earlier child's removal can reparent or unparent a
-  // later one, which then isn't removed.
-  private _removeChildren(entity: number): void {
+  // a hook or listener for an earlier child's removal can reparent or
+  // unparent a later one, which then isn't removed.
+  private _removeChildren(entity: number, errors: unknown[]): void {
     const children = this._childrenByParent.get(entity);
 
     if (!children) {
@@ -747,7 +839,7 @@ export class EcsWorld implements Updatable, Stoppable {
 
     for (const child of [...children]) {
       if (this.getParent(child) === entity) {
-        this.removeEntity(child);
+        this._removeEntity(child, errors);
       }
     }
 

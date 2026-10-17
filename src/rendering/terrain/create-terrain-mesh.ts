@@ -1,7 +1,8 @@
-import { Vec2, Vector2 } from '../../math/index.js';
+import { Vector2 } from '../../math/index.js';
 import { Color } from '../color.js';
+import type { MeshRequiredOptions } from '../components/mesh-component.js';
 import { Geometry } from '../geometry/index.js';
-import { Material } from '../materials/index.js';
+import { createMeshMaterial } from '../materials/mesh-material.js';
 import { RenderContext } from '../render-context.js';
 import type { Texture } from '../texture.js';
 import type { TerrainCurvePoint } from './terrain-curve.js';
@@ -47,6 +48,8 @@ export interface CreateTerrainMeshOptions extends Partial<CreateTerrainMeshDefau
    * Pass the same points used to build the corresponding `TerrainCollider` (by
    * mapping each `TerrainCurvePoint.position` into the `Vector2[]`
    * `TerrainCollider` expects), so what's drawn always matches what's touched.
+   * They're in the terrain entity's local space, like the collider's, so the
+   * mesh follows the entity's world position, rotation and scale.
    */
   curvePoints: readonly TerrainCurvePoint[];
 
@@ -56,19 +59,6 @@ export interface CreateTerrainMeshOptions extends Partial<CreateTerrainMeshDefau
    * `TerrainCollider` for the mesh to align with the collision volume.
    */
   depth: number;
-
-  /**
-   * The world-space position of the mesh. Must match the world position
-   * of the corresponding `TerrainCollider`'s entity. The mesh's vertices
-   * are baked into world space, so the mesh doesn't follow the entity.
-   */
-  position: Vector2;
-
-  /**
-   * The world-space rotation of the mesh, in radians. Must match the world
-   * rotation of the corresponding `TerrainCollider`'s entity.
-   */
-  angle: number;
 
   /** The texture tiled across the terrain's surface, from the surface down to `borderWidth`. */
   border: TerrainMeshLayerOptions;
@@ -87,28 +77,15 @@ const defaultCreateTerrainMeshOptions: CreateTerrainMeshDefaultedOptions = {
   borderBlend: 12,
 };
 
-/**
- * The static terrain mesh built by {@link createTerrainMesh}, ready to draw
- * with `createTerrainRenderEcsSystem`.
- */
-export interface TerrainMesh {
-  readonly geometry: Geometry;
-  readonly material: Material;
-  readonly vertexCount: number;
-}
-
 interface TerrainMeshData {
   positions: Float32Array;
   distances: Float32Array;
   depths: Float32Array;
-  vertexCount: number;
 }
 
 function buildTerrainMeshData(
   curvePoints: readonly TerrainCurvePoint[],
   bottomY: number,
-  angle: number,
-  position: Vector2,
 ): TerrainMeshData {
   const positions: number[] = [];
   const distances: number[] = [];
@@ -119,19 +96,7 @@ function buildTerrainMeshData(
     distance: number,
     depth: number,
   ): void => {
-    // Clone before rotating: `localPoint` may be reused for multiple
-    // vertices (e.g. a curve point shared between adjacent triangles, or a
-    // shared bottom corner within the same quad).
-    const world = Vec2.add(
-      Vec2.rotate(Vec2.clone(localPoint), angle),
-      position,
-    );
-
-    // Y is negated here to match the sprite pipeline's world-to-render
-    // convention (see sprite-instance-data-segment.ts's
-    // bindSpriteInstanceData, which negates position.world.y the same way
-    // before it reaches the GPU).
-    positions.push(world.x, -world.y);
+    positions.push(localPoint.x, localPoint.y);
     distances.push(distance);
     depths.push(depth);
   };
@@ -142,8 +107,8 @@ function buildTerrainMeshData(
 
     const bottomLeft = { x: left.position.x, y: bottomY };
     const bottomRight = { x: right.position.x, y: bottomY };
-    const depthLeft = left.position.y - bottomY;
-    const depthRight = right.position.y - bottomY;
+    const depthLeft = bottomY - left.position.y;
+    const depthRight = bottomY - right.position.y;
 
     pushVertex(left.position, left.distance, 0);
     pushVertex(right.position, right.distance, 0);
@@ -158,7 +123,6 @@ function buildTerrainMeshData(
     positions: new Float32Array(positions),
     distances: new Float32Array(distances),
     depths: new Float32Array(depths),
-    vertexCount: positions.length / 2,
   };
 }
 
@@ -166,11 +130,13 @@ function createTerrainGeometry(
   renderContext: RenderContext,
   meshData: TerrainMeshData,
 ): Geometry {
-  return new Geometry(renderContext, [
-    { name: 'a_position', data: meshData.positions, size: 2 },
-    { name: 'a_distance', data: meshData.distances, size: 1 },
-    { name: 'a_depth', data: meshData.depths, size: 1 },
-  ]);
+  return new Geometry(renderContext, {
+    attributes: [
+      { name: 'a_position', data: meshData.positions, size: 2 },
+      { name: 'a_distance', data: meshData.distances, size: 1 },
+      { name: 'a_depth', data: meshData.depths, size: 1 },
+    ],
+  });
 }
 
 function assertRepeatingTexture(layer: string, texture: Texture): void {
@@ -185,40 +151,40 @@ function assertRepeatingTexture(layer: string, texture: Texture): void {
  * Builds a single triangulated mesh visualizing a `TerrainCollider`'s
  * heightmap, textured with a tileable "border" layer near the surface
  * blending into a tileable "fill" layer below it (see
- * `CreateTerrainMeshOptions`). Since the mesh has an arbitrary vertex count
- * - not the fixed six-vertices-per-quad the sprite pipeline batches - draw
- * it with `createTerrainRenderEcsSystem` rather than through
- * `createRenderEcsSystem`.
+ * `CreateTerrainMeshOptions`). The vertices are the curve points as they
+ * are, in the terrain entity's local space. Add the result to the terrain
+ * entity with `addMeshComponent`, so the render system draws it through
+ * the entity's transform, in the same draw order as sprites and text.
  * @param renderContext - The render context used to build the mesh's geometry and material.
  * @param options - Sizing and texturing options for the mesh.
  * @throws An error if a layer's texture doesn't have `wrap: 'repeat'`.
- * @returns The built `TerrainMesh`.
+ * @returns The mesh's geometry and material, ready for `addMeshComponent`.
+ * The caller owns the geometry.
  */
 export function createTerrainMesh(
   renderContext: RenderContext,
   options: CreateTerrainMeshOptions,
-): TerrainMesh {
-  const { curvePoints, depth, position, angle, border, fill, borderWidth } =
-    options;
+): MeshRequiredOptions {
+  const { curvePoints, depth, border, fill, borderWidth } = options;
   const { borderBlend } = withDefaults(
     defaultCreateTerrainMeshOptions,
     options,
   );
-  const { shaderCache } = renderContext;
-
-  const bottomY =
-    Math.min(...curvePoints.map((curvePoint) => curvePoint.position.y)) - depth;
-
-  const meshData = buildTerrainMeshData(curvePoints, bottomY, angle, position);
-  const geometry = createTerrainGeometry(renderContext, meshData);
 
   assertRepeatingTexture('fill', fill.texture);
   assertRepeatingTexture('border', border.texture);
 
-  const material = new Material(
+  // The world is Y-down, so the lowest curve point has the largest Y and
+  // the solid slab extends towards +Y from it.
+  const bottomY =
+    Math.max(...curvePoints.map((curvePoint) => curvePoint.position.y)) + depth;
+
+  const meshData = buildTerrainMeshData(curvePoints, bottomY);
+  const geometry = createTerrainGeometry(renderContext, meshData);
+  const material = createMeshMaterial(
     renderContext,
-    shaderCache.getShader('terrain.vert'),
-    shaderCache.getShader('terrain.frag'),
+    'terrain.vert',
+    'terrain.frag',
   );
 
   material.setUniform('u_fillTexture', fill.texture);
@@ -230,5 +196,5 @@ export function createTerrainMesh(
   material.setUniform('u_borderWidth', borderWidth);
   material.setUniform('u_borderBlend', borderBlend);
 
-  return { geometry, material, vertexCount: meshData.vertexCount };
+  return { geometry, material };
 }

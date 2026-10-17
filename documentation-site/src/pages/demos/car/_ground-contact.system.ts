@@ -10,13 +10,8 @@ import {
 } from './_ground-contact.component';
 
 /**
- * Recomputes each matched entity's `GroundContactEcsComponent.groundContacts`
- * from its `ContactsEcsComponent`, counting how many of the entities it's
- * touching are static (no `RigidBodyEcsComponent`) bodies. Must run after
- * `createNarrowPhaseEcsSystem`, which fills the contacts, and before any
- * system that reads a `GroundContactEcsComponent` this same tick
- * (`createWheelDriveEcsSystem`, `createChassisStabilizerEcsSystem`,
- * `createAirControlEcsSystem`).
+ * Counts how many static bodies each wheel is touching, from the contacts
+ * the narrow phase found this tick.
  */
 export const createGroundContactEcsSystem = (): EcsSystem<
   [GroundContactEcsComponent, ContactsEcsComponent]

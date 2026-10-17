@@ -14,10 +14,9 @@ const project = (
 ): { x: number; y: number } => {
   const m = matrix.matrix;
 
-  // Sprite instance data negates world y before it reaches the shader.
   return {
-    x: m[0] * x + m[3] * -y + m[6],
-    y: m[1] * x + m[4] * -y + m[7],
+    x: m[0] * x + m[3] * y + m[6],
+    y: m[1] * x + m[4] * y + m[7],
   };
 };
 
@@ -52,14 +51,14 @@ describe('createProjectionMatrix', () => {
 
     const result = createProjectionMatrix(bounds);
 
-    const bottomLeft = project(result, bounds.min.x, bounds.min.y);
-    const topRight = project(result, bounds.max.x, bounds.max.y);
+    const topLeft = project(result, bounds.min.x, bounds.min.y);
+    const bottomRight = project(result, bounds.max.x, bounds.max.y);
     const center = project(result, 30, -10);
 
-    expect(bottomLeft.x).toBeCloseTo(-1);
-    expect(bottomLeft.y).toBeCloseTo(-1);
-    expect(topRight.x).toBeCloseTo(1);
-    expect(topRight.y).toBeCloseTo(1);
+    expect(topLeft.x).toBeCloseTo(-1);
+    expect(topLeft.y).toBeCloseTo(1);
+    expect(bottomRight.x).toBeCloseTo(1);
+    expect(bottomRight.y).toBeCloseTo(-1);
     expect(center.x).toBeCloseTo(0);
     expect(center.y).toBeCloseTo(0);
   });

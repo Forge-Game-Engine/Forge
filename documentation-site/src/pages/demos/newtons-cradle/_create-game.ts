@@ -37,7 +37,7 @@ export const createNewtonsCradleGame = async (): Promise<Game> => {
 
   await createCradle(world, renderContext, renderLayers.foreground, {
     x: 0,
-    y: DEMO_VERTICAL_WORLD_UNITS * 0.3,
+    y: -DEMO_VERTICAL_WORLD_UNITS * 0.3,
   });
 
   const collisionPairs: CollisionPair[] = [];

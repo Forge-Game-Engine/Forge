@@ -1,6 +1,7 @@
 import type { RenderContext } from '../render-context.js';
 import type { Texture } from '../texture.js';
 import { Material } from './material.js';
+import { includesShader, maskShaderIncludeName } from './shader-includes.js';
 import { UniformValue } from './uniform-value.js';
 
 /** The sampler a sprite's `texture` is bound to. */
@@ -8,18 +9,6 @@ export const spriteTextureUniformName = 'u_texture';
 
 /** The sampler a sprite's emissive map is bound to. */
 export const spriteEmissiveTextureUniformName = 'u_emissiveTexture';
-
-/**
- * The shader include every sprite fragment shader applies masks with: its
- * `spriteMaskCoverage()` is how much of the fragment the sprite's masks let
- * through.
- */
-export const spriteMaskShaderIncludeName = 'spriteMask';
-
-const includesSpriteMask = (preparedSource: string): boolean =>
-  new RegExp(
-    String.raw`#pragma\s+forge\s+(?:name|include)\s*\(\s*${spriteMaskShaderIncludeName}\s*\)`,
-  ).test(preparedSource);
 
 /**
  * A material that draws sprites: `sprite.vert`, which positions each
@@ -32,9 +21,9 @@ const includesSpriteMask = (preparedSource: string): boolean =>
  * if the fragment shader declares them, so sprites with different textures
  * share one material. Those two uniforms can't be set on the material.
  *
- * The fragment shader must include `spriteMask`
- * (`#pragma forge include(spriteMask)`) and multiply its output alpha by
- * `spriteMaskCoverage()`, so the sprite is clipped by the masks above it
+ * The fragment shader must include `mask`
+ * (`#pragma forge include(mask)`) and multiply its output alpha by
+ * `maskCoverage()`, so the sprite is clipped by the masks above it
  * (see `MaskEcsComponent`).
  */
 export class SpriteMaterial extends Material {
@@ -48,15 +37,15 @@ export class SpriteMaterial extends Material {
    * `renderContext.shaderCache`, from its `#pragma forge name(...)`.
    * @throws An error under the same conditions as `Material`'s constructor,
    * if the shader cache has no shader called `fragmentShaderName`, or if
-   * that shader doesn't include `spriteMask`.
+   * that shader doesn't include `mask`.
    */
   constructor(renderContext: RenderContext, fragmentShaderName: string) {
     const { shaderCache } = renderContext;
     const fragmentShader = shaderCache.getShader(fragmentShaderName);
 
-    if (!includesSpriteMask(fragmentShader.preparedSource)) {
+    if (!includesShader(fragmentShader.preparedSource, maskShaderIncludeName)) {
       throw new Error(
-        `Sprite fragment shader "${fragmentShaderName}" must include "${spriteMaskShaderIncludeName}" (#pragma forge include(${spriteMaskShaderIncludeName})) and multiply its output alpha by spriteMaskCoverage(), so masks clip the sprites it draws.`,
+        `Sprite fragment shader "${fragmentShaderName}" must include "${maskShaderIncludeName}" (#pragma forge include(${maskShaderIncludeName})) and multiply its output alpha by maskCoverage(), so masks clip the sprites it draws.`,
       );
     }
 
@@ -121,14 +110,14 @@ export class SpriteMaterial extends Material {
  * frame UVs), `v_tint` (its tint, with `opacityMultiplier` in alpha) and
  * `v_emissive` (its emissive color), and can declare `u_texture` and
  * `u_emissiveTexture` to sample the sprite's texture and emissive map. It
- * must include `spriteMask` and multiply its output alpha by
- * `spriteMaskCoverage()`. Declare and set any other uniforms it needs on
+ * must include `mask` and multiply its output alpha by
+ * `maskCoverage()`. Declare and set any other uniforms it needs on
  * the returned material.
  * @param renderContext - The render context to draw with.
  * @param fragmentShaderName - The name of the fragment shader, registered
  * in `renderContext.shaderCache`.
  * @returns The material. Materials from the same shader share one program.
- * @throws An error if the fragment shader doesn't include `spriteMask`, and
+ * @throws An error if the fragment shader doesn't include `mask`, and
  * under the same conditions as `SpriteMaterial`'s constructor.
  */
 export function createSpriteMaterial(

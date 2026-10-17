@@ -9,7 +9,11 @@ import {
 } from '@forge-game-engine/forge/common';
 import { HoldAction } from '@forge-game-engine/forge/input';
 import { degreesToRadians, Vec2, Vector2 } from '@forge-game-engine/forge/math';
-import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
+import {
+  addSpriteComponent,
+  addTrailComponent,
+  Color,
+} from '@forge-game-engine/forge/rendering';
 import {
   addLifetimeComponent,
   RemoveFromWorldLifetimeStrategyId,
@@ -26,6 +30,18 @@ import {
 import { bulletId } from './_bullet.component';
 import { asteroidCategory, bulletCategory } from './_collision-categories';
 import { GunEcsComponent, gunId } from './_gun.component';
+
+// The bullet's streak: as wide as the bright core of its sprite, tapering
+// and fading behind it. Its colors are brighter than white, like the
+// bullet's emissive color, so the foreground camera's bloom makes it glow.
+const bulletTrailOptions = {
+  lifetimeSeconds: 0.12,
+  minVertexDistance: 8,
+  startWidth: 5,
+  endWidth: 0,
+  startColor: new Color(2, 1.3, 0.3, 1),
+  endColor: new Color(2, 0.4, 0.05, 0),
+};
 
 export const createGunEcsSystem = (
   time: Time,
@@ -51,11 +67,11 @@ export const createGunEcsSystem = (
 
         createBulletWithOffset(world, gunComponent, positionComponent, {
           x: 20,
-          y: 20,
+          y: -20,
         });
         createBulletWithOffset(world, gunComponent, positionComponent, {
           x: -20,
-          y: 20,
+          y: -20,
         });
 
         // One sound per volley; both bullets fire together.
@@ -87,11 +103,18 @@ function createBulletWithOffset(
   });
 
   addRotationComponent(world, bullet, {
-    local: degreesToRadians(90),
+    local: degreesToRadians(-90),
   });
 
   addScaleComponent(world, bullet, {
     local: { x: bulletScale, y: bulletScale },
+  });
+
+  // The trail draws behind the bullet's sprite, on the camera that draws the
+  // bullet. Removing the bullet removes its trail too.
+  addTrailComponent(world, bullet, {
+    ...bulletTrailOptions,
+    category: gunComponent.renderLayer,
   });
 
   world.addComponent(bullet, bulletId, {

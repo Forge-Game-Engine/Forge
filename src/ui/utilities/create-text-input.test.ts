@@ -18,9 +18,9 @@ const fontAtlas = {
   data: {
     metrics: {
       lineHeight: 1.2,
-      ascender: 0.8,
-      descender: -0.2,
-      capHeight: 0.7,
+      ascentLine: -0.8,
+      descentLine: 0.2,
+      capLine: -0.7,
     },
     glyphs: new Map(),
   },
@@ -102,6 +102,29 @@ describe('createTextInput', () => {
     ]) {
       expect(world.getComponent(part, visibilityId)!.visible).toBe(false);
     }
+  });
+
+  it("puts the text's baseline below the field's middle so its ascender-to-descender box is centered", () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+
+    const field = createTextInput(world, parent, {
+      renderContext,
+      sprite: buildSprite(),
+      fillSprite: buildSprite(),
+      fontAtlas,
+      size: 20,
+      padding: 8,
+    });
+    const origin = world.getParent(field.textLabel)!;
+    const originRect = world.getComponent(origin, rectTransformId)!;
+
+    // The line spans 0.8 * 20 = 16 above the baseline and 0.2 * 20 = 4
+    // below it; with y growing down, a baseline 6 below the middle puts it
+    // from -10 to 10.
+    expect(originRect.y).toMatchObject({ kind: 'point', anchor: 0.5 });
+    expect(originRect.anchoredPosition.x).toBe(8);
+    expect(originRect.anchoredPosition.y).toBeCloseTo(6);
   });
 
   it('passes the anchored position, filter and category through', () => {

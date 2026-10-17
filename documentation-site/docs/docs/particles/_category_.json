@@ -4,5 +4,8 @@
   "link": {
     "type": "doc",
     "id": "docs/particles/index"
+  },
+  "customProps": {
+    "icon": "particles"
   }
 }

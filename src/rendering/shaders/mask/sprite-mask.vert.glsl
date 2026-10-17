@@ -1,7 +1,7 @@
 #pragma forge name(spriteMaskVertex)
 
-// The per-instance mask data `maskInstanceDataSegment` binds, in the same
-// Y-down world space as the quad's own instance data.
+// The per-instance mask data `maskInstanceDataSegment` binds, in world
+// space like the quad's own instance data.
 in vec4 a_instanceMaskClip;    // Clip rect: min.xy, max.xy
 in vec4 a_instanceMaskAxes;    // World offset -> mask coordinates, by row
 in vec2 a_instanceMaskOrigin;  // The shape mask's center
@@ -11,8 +11,7 @@ out vec4 v_maskClipDistance;
 out vec2 v_maskCoord;
 flat out vec4 v_maskShape;
 
-// Forwards a vertex's mask inputs to `spriteMaskCoverage` (the `spriteMask`
-// include). Both are affine in the vertex's world position, so they
+// Forwards a vertex's mask inputs to `maskCoverage` (the `mask` include). Both are affine in the vertex's world position, so they
 // interpolate exactly across the quad.
 void forwardSpriteMask(vec2 world) {
   v_maskClipDistance = vec4(

@@ -9,7 +9,7 @@ uniform float u_time;
 in vec2 v_texCoord;
 out vec4 fragColor;
 
-#pragma forge include(spriteMask)
+#pragma forge include(mask)
 
 void main() {
   vec2 uv = v_texCoord;
@@ -28,5 +28,5 @@ void main() {
   float vignette = smoothstep(0.9, 0.2, length(uv - 0.5));
   color *= mix(0.7, 1.0, vignette);
 
-  fragColor = vec4(color, spriteMaskCoverage());
+  fragColor = vec4(color, maskCoverage());
 }`;

@@ -12,10 +12,8 @@ export interface CarResetBody {
 }
 
 /**
- * Teleports every one of `bodies` back to its recorded spawn position,
- * angle, and zero velocity whenever `restartInput` fires, undoing however
- * far the car has driven, flipped, or tumbled down a hill.
- * `createCarResetEcsSystem` applies this every tick.
+ * Moves every body in `bodies` back to its spawn point when
+ * `restartInput` fires.
  */
 export interface CarResetEcsComponent {
   restartInput: TriggerAction;

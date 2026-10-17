@@ -45,24 +45,40 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
         },
-        blog: {
-          showReadingTime: true,
-          feedOptions: {
-            type: ['rss', 'atom'],
-            xslt: true,
-          },
-          onInlineTags: 'warn',
-          onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
-        },
+        // Loaded by ./plugins/blog-with-recent-posts.ts below instead, so the
+        // homepage can list the newest posts.
+        blog: false,
         theme: {
-          customCss: './src/css/custom.css',
+          // Self-hosted fonts: Orbitron for the logo and the home and demo
+          // pages' headings, Inter for everything else and JetBrains Mono for
+          // code and small eyebrow labels.
+          customCss: [
+            require.resolve('@fontsource/orbitron/600.css'),
+            require.resolve('@fontsource/orbitron/700.css'),
+            require.resolve('@fontsource-variable/inter/index.css'),
+            require.resolve('@fontsource/jetbrains-mono/400.css'),
+            require.resolve('@fontsource/jetbrains-mono/500.css'),
+            './src/css/custom.css',
+          ],
         },
       } satisfies Preset.Options,
     ],
   ],
 
   plugins: [
+    [
+      './plugins/blog-with-recent-posts.ts',
+      {
+        showReadingTime: true,
+        feedOptions: {
+          type: ['rss', 'atom'],
+          xslt: true,
+        },
+        onInlineTags: 'warn',
+        onInlineAuthors: 'warn',
+        onUntruncatedBlogPosts: 'warn',
+      },
+    ],
     [
       'docusaurus-plugin-typedoc',
       {
@@ -92,9 +108,9 @@ const config: Config = {
   themes: ['@docusaurus/theme-mermaid'],
 
   themeConfig: {
-    // Replace with your project's social card
-    image: 'img/forge-social-card.jpg',
+    image: 'img/forge-link-preview.png',
     colorMode: {
+      defaultMode: 'dark',
       respectPrefersColorScheme: true,
     },
     navbar: {

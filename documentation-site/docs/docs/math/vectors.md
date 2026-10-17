@@ -28,7 +28,8 @@ The static getters [`Vec2.zero`](/Forge/docs/api/classes/Vec2#zero),
 [`Vec2.left`](/Forge/docs/api/classes/Vec2#left) and
 [`Vec2.right`](/Forge/docs/api/classes/Vec2#right) return a new vector on
 every access, so the result can be changed without affecting other code.
-The world is Y-up: `Vec2.up` is `(0, 1)` and `Vec2.down` is `(0, -1)`.
+The world is Y-down, like the screen: `Vec2.up` is `(0, -1)` and
+`Vec2.down` is `(0, 1)`.
 [`Vec3`](/Forge/docs/api/classes/Vec3) has the same getters, plus
 `forward` `(0, 0, 1)` and `backward` `(0, 0, -1)`.
 
@@ -112,14 +113,14 @@ zero (for example, the offset between two equal positions), check
 ## Rotating a vector
 
 [`Vec2.rotate`](/Forge/docs/api/classes/Vec2#rotate) rotates a vector by an
-angle in radians, counter-clockwise for a positive angle (see
+angle in radians, clockwise on screen for a positive angle (see
 [Angles and Rotation](./angles-and-rotation.md)).
 [`Vec2.perpendicular`](/Forge/docs/api/classes/Vec2#perpendicular) rotates
-it a quarter turn clockwise, to `(y, -x)`, and
+it a quarter turn counter-clockwise on screen, to `(y, -x)`, and
 [`Vec2.negate`](/Forge/docs/api/classes/Vec2#negate) reverses it:
 
 ```ts
-Vec2.rotate(offset, Math.PI / 2); // (1, 0) becomes (0, 1)
+Vec2.rotate(offset, Math.PI / 2); // (1, 0) becomes (0, 1), right to down
 Vec2.perpendicular(normal); // (0, 1) becomes (1, 0)
 ```
 
@@ -142,8 +143,8 @@ const scaled = scaleRelativeToPoint(
 
 ## Rectangles
 
-A [`Rect`](/Forge/docs/api/interfaces/Rect) has a `min` corner (lower left)
-and a `max` corner (upper right). The static methods of
+A [`Rect`](/Forge/docs/api/interfaces/Rect) has a `min` corner (top left)
+and a `max` corner (bottom right). The static methods of
 [`Rects`](/Forge/docs/api/classes/Rects) operate on it:
 
 - [`Rects.size`](/Forge/docs/api/classes/Rects#size) returns `max - min` as

@@ -28,7 +28,7 @@ export function createCornerDecorations(
 ): void {
   const versionTag = createPanel(world, windowPanel, {
     anchor: UiAnchor.bottomLeft({ x: 120, y: 32 }),
-    anchoredPosition: { x: 16, y: 16 },
+    anchoredPosition: { x: 16, y: -16 },
     sprite: sprites.cornerAccent,
   });
 

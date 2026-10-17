@@ -60,7 +60,7 @@ export const createBallEcsSystem = (
         }
       }
 
-      if (positionComponent.local.y < missY) {
+      if (positionComponent.local.y > missY) {
         positionComponent.local = Vec2.clone(ballComponent.startPosition);
         launchBall(rigidBody, ballComponent.speed, random);
       }

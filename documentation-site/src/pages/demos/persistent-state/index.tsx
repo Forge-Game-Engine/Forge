@@ -5,46 +5,93 @@ import settingsCode from '!!raw-loader!./_settings';
 import spinnerComponentCode from '!!raw-loader!./_spinner.component';
 import spinnerSystemCode from '!!raw-loader!./_spinner.system';
 
-import { Demo } from '@site/src/components/Demo';
-import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
-
-const badgeStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 20,
-  height: 20,
-  borderRadius: '50%',
-  backgroundColor: 'var(--ifm-color-emphasis-300)',
-  fontSize: 12,
-};
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function PersistentState(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'Persistent State Demo',
-        description:
-          'A demo showcasing createPersistentState from the storage module: settings that survive a reload.',
-      }}
-      header="Persistent State"
-      blurb="The size and spin settings are a persistent state stored in localStorage. They're loaded before the game is created, written into the square's component, and stored on every change, so they survive a reload and a later visit. Reset makes them the defaults again and removes the stored entry."
+    <DemoPage
+      slug="persistent-state"
       createGame={createPersistentStateGame}
-      interactions={
-        <InteractionInstruction
-          displayElement={
-            <div style={badgeStyle}>
-              <i className="fa-solid fa-computer-mouse" />
-            </div>
-          }
-          text="Change the settings, then reload the page."
-        />
-      }
-      codeFiles={[
-        { name: 'game.ts', content: gameCode },
-        { name: 'settings.ts', content: settingsCode },
-        { name: 'spinner.component.ts', content: spinnerComponentCode },
-        { name: 'spinner.system.ts', content: spinnerSystemCode },
+      controls={[
+        {
+          inputs: [{ device: 'mouse', label: 'Drag the slider' }],
+          action: 'Change the size',
+        },
+        {
+          inputs: [{ device: 'mouse', label: 'Click the toggle' }],
+          action: 'Turn spinning on or off',
+        },
+        {
+          inputs: [{ device: 'mouse', label: 'Click Reset' }],
+          action: 'Restore the defaults',
+        },
+      ]}
+      highlights={[
+        {
+          text: 'The size and spin settings are a persistent state kept in localStorage, so change them and reload the page to see them kept.',
+          file: 'settings.ts',
+        },
+        {
+          text: 'The settings are loaded before the game is created, and a stored value that fails validation falls back to its default.',
+          file: 'settings.ts',
+        },
+        {
+          text: "Every change goes through settings.set, which stores it and copies the new values into the square's component.",
+          file: 'create-game.ts',
+        },
+        {
+          text: 'Reset restores the defaults and removes the stored entry.',
+          file: 'create-game.ts',
+        },
+        {
+          text: 'If storage is unavailable, the settings fall back to memory and last for this visit only.',
+          file: 'settings.ts',
+        },
+      ]}
+      docLinks={[
+        {
+          label: 'Persistent state',
+          to: '/docs/docs/storage/persistent-state',
+        },
+        {
+          label: 'Storage backends',
+          to: '/docs/docs/storage/storage-backends',
+        },
+        { label: 'UI controls', to: '/docs/docs/ui/controls' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Loads the settings, builds the square and settings panel, and wires changes to storage.',
+              content: gameCode,
+            },
+            {
+              name: 'settings.ts',
+              summary:
+                'Creates the persistent settings record, with validation and a memory fallback.',
+              content: settingsCode,
+            },
+          ],
+        },
+        {
+          title: 'Spinner',
+          files: [
+            {
+              name: 'spinner.component.ts',
+              summary: "The square's size, spin setting and spin speed.",
+              content: spinnerComponentCode,
+            },
+            {
+              name: 'spinner.system.ts',
+              summary: 'Scales the square and turns it while spin is on.',
+              content: spinnerSystemCode,
+            },
+          ],
+        },
       ]}
     />
   );

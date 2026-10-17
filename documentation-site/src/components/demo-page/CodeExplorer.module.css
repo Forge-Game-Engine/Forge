@@ -1,0 +1,231 @@
+.explorer {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  height: 640px;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+}
+
+.fileBrowser {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--ifm-color-emphasis-300);
+  background-color: var(--ifm-background-surface-color);
+}
+
+.fileFilters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+}
+
+.fileSearch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  background-color: var(--ifm-background-color);
+  color: var(--ifm-color-emphasis-600);
+}
+
+.fileSearch:focus-within {
+  border-color: var(--ifm-color-primary);
+}
+
+.fileSearch input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  color: var(--ifm-font-color-base);
+  font-size: 0.9rem;
+}
+
+.typeFilter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.typeFilterButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 999px;
+  background: none;
+  color: var(--ifm-font-color-base);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.typeFilterButton .fileIcon {
+  width: auto;
+}
+
+.typeFilterButton:hover {
+  background-color: var(--ifm-color-emphasis-200);
+}
+
+.typeFilterButtonSelected,
+.typeFilterButtonSelected:hover {
+  border-color: var(--ifm-color-primary);
+  background-color: var(--ifm-color-emphasis-200);
+  font-weight: bold;
+}
+
+.typeFilterCount {
+  color: var(--ifm-color-emphasis-600);
+  font-weight: normal;
+}
+
+.fileTree {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.75rem 0;
+}
+
+.noFiles {
+  margin: 0;
+  padding: 0 1rem;
+  font-size: 0.9rem;
+  color: var(--ifm-color-emphasis-600);
+}
+
+.fileGroup + .fileGroup {
+  margin-top: 0.75rem;
+}
+
+.fileGroupTitle {
+  padding: 0 1rem 0.25rem;
+  font-size: 0.72rem;
+  font-weight: bold;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ifm-color-emphasis-600);
+}
+
+.fileTree ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fileButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.3rem 1rem;
+  border: none;
+  border-left: 3px solid transparent;
+  background: none;
+  color: var(--ifm-font-color-base);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.82rem;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.fileName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileButton:hover {
+  background-color: var(--ifm-color-emphasis-200);
+}
+
+.fileButtonSelected,
+.fileButtonSelected:hover {
+  border-left-color: var(--ifm-color-primary);
+  background-color: var(--ifm-color-emphasis-200);
+  font-weight: bold;
+}
+
+.fileIcon {
+  flex-shrink: 0;
+  width: 1rem;
+  text-align: center;
+}
+
+i.fileIcon {
+  color: var(--ifm-color-emphasis-700);
+}
+
+.fileTypeLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.8rem;
+}
+
+.fileTypeLabel .fileIcon {
+  width: auto;
+}
+
+.filePaneTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.filePane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.filePaneHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+  background-color: var(--ifm-background-surface-color);
+}
+
+.filePaneName {
+  font-family: var(--ifm-font-family-monospace);
+  font-weight: bold;
+}
+
+.filePaneSummary {
+  font-size: 0.88rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.codeBlock {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  overflow-y: auto;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 996px) {
+  .explorer {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 80vh;
+  }
+
+  .fileBrowser {
+    max-height: 40vh;
+    border-right: none;
+    border-bottom: 1px solid var(--ifm-color-emphasis-300);
+  }
+}

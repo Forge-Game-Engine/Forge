@@ -203,8 +203,8 @@ function toCanvasCssRect(
 
   const view = computeCameraView(camera, cameraPosition, renderContext);
   const { min, max } = rectTransform.rect;
-  const topLeft = view.worldToViewport({ x: min.x, y: max.y });
-  const bottomRight = view.worldToViewport({ x: max.x, y: min.y });
+  const topLeft = view.worldToViewport(min);
+  const bottomRight = view.worldToViewport(max);
 
   return {
     left: topLeft.x,
@@ -416,9 +416,12 @@ export const createUiTextInputEcsSystem = (
     const stopAt = (index: number): Vector2 =>
       caretStops[Math.min(index, caretStops.length - 1)] ?? { x: 0, y: 0 };
 
-    const { ascender, descender } = label.fontAtlas.data.metrics;
-    const lineBottom = descender * label.size;
-    const lineHeight = (ascender - descender) * label.size;
+    // Caret stops sit on each line's baseline, which the font's lines are
+    // measured from.
+    const { ascentLine, descentLine } = label.fontAtlas.data.metrics;
+    const lineTop = ascentLine * label.size;
+    const lineBottom = descentLine * label.size;
+    const lineHeight = lineBottom - lineTop;
     const start = Math.min(entry.selectionStart, entry.selectionEnd);
     const end = Math.max(entry.selectionStart, entry.selectionEnd);
 
@@ -427,7 +430,7 @@ export const createUiTextInputEcsSystem = (
     placePart(
       world,
       textInput.caret,
-      { x: caretStop.x, y: caretStop.y + lineBottom },
+      { x: caretStop.x, y: caretStop.y + lineTop },
       { y: lineHeight },
     );
     setVisible(
@@ -443,7 +446,7 @@ export const createUiTextInputEcsSystem = (
     placePart(
       world,
       textInput.selection,
-      { x: selectionStart.x, y: selectionStart.y + lineBottom },
+      { x: selectionStart.x, y: selectionStart.y + lineTop },
       { x: stopAt(end).x - selectionStart.x, y: lineHeight },
     );
     setVisible(

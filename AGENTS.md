@@ -8,6 +8,7 @@ Human contributors: see [CONTRIBUTING.md](./CONTRIBUTING.md) for a shorter, huma
 
 - [Project Overview](#project-overview)
 - [Change Philosophy](#change-philosophy)
+- [Agentic Workflow](#agentic-workflow)
 - [Repository Structure](#repository-structure)
 - [Architecture](#architecture)
 - [Coding Conventions](#coding-conventions)
@@ -51,11 +52,12 @@ follows these rules:
   consumers what to change; that's the whole migration story.
 - **Don't add options to dodge a decision.** An option that switches
   between the old and new behavior, or that only exists to correct a wrong
-  default, is a bug left in place for the user to find. For example,
-  `GamepadAxis1dBinding`'s `inverted` option exists because the W3C
-  gamepad reports stick-up as `-1` while the rest of the engine is Y-up.
-  The input source should translate that at the boundary so up is positive
-  for everyone. Only add an option when different games really need
+  default, is a bug left in place for the user to find. For example, an
+  `inverted` option on a gamepad binding, added because the stick's Y axis
+  disagreed with the engine's world, makes every user discover and set it.
+  The fix is one convention that every layer agrees on (the engine is Y-down
+  like the W3C gamepad, the DOM and the GPU's texture rows), translated at
+  the boundary where a source disagrees. Only add an option when different games really need
   different values (a blur radius, a gravity scale). Don't add one when the
   user could get the variation with one line of their own code.
 - **Fix the layer that owns the behavior.** The engine has conventions (see
@@ -91,8 +93,79 @@ run the `solution-reviewer` agent (`.claude/agents/solution-reviewer.md`)
 on your plan. It checks the plan against these rules and against how other
 engines solve the same problem.
 
+Once the change is done, the `pr-reviewer` agent
+(`.claude/agents/pr-reviewer.md`) reviews it against the same rules plus
+the changelog, documentation and demo requirements. It runs on every pull
+request when it opens (`.github/workflows/claude-pr-review.yml`); run it
+locally before opening one to catch the same findings first.
+
 The `fix-defect` skill (`.claude/skills/fix-defect/SKILL.md`) walks through
 this step by step for bug fixes.
+
+For a change big enough to need a design first, the `design-author` agent
+(`.claude/agents/design-author.md`) writes its design document in
+`/design`. It designs the issue it's given (the `claude` label run always
+passes the number); run locally without one, it designs the issue the
+current branch is working on (from a `claude/issue-<n>-...` branch name or
+the branch's pull request).
+
+## Agentic Workflow
+
+A milestone goes from plan to merged code in these steps. The agents and
+workflows in this table are configured so that steps 3, 5-7 and 9 run
+unattended:
+
+| #   | Step                                          | Who                                                                    |
+| --- | --------------------------------------------- | ---------------------------------------------------------------------- |
+| 1   | Plan a milestone                              | Human                                                                  |
+| 2   | Research it                                   | Human                                                                  |
+| 3   | Turn the milestone into issues                | Agent, with the `plan-milestone` skill                                 |
+| 4   | Label the milestone's issues `claude`         | Human, in any order                                                    |
+| 5   | Write a design document                       | `design-author`, inside the label run (`.github/workflows/claude.yml`) |
+| 6   | Review the design                             | `solution-reviewer`, inside the label run                              |
+| 7   | Implement, with unit and e2e tests            | The label run, which opens the pull request                            |
+| 8   | Review the pull request, test the demos       | Human                                                                  |
+| 9   | Review the pull request against Forge's rules | `pr-reviewer` (`.github/workflows/claude-pr-review.yml`)               |
+| 10  | Merge                                         | Human                                                                  |
+
+- **Dependencies hold a run back, not you.** Label every issue in a
+  milestone at once. Before a label run starts, its `gate` job reads the
+  issue's `Depends on #N` lines (`.github/scripts/claude-dependencies.sh`).
+  While any of those issues is open, it swaps `claude` for
+  `claude-waiting`, says what it's waiting for in a comment, and stops
+  before installing anything or starting Claude. When an issue closes,
+  `.github/workflows/claude-unblock.yml` gives `claude` back to every
+  waiting issue whose dependencies have all closed, which starts its run.
+  A dependency closed as not planned counts as closed. An `@claude`
+  mention on a waiting issue starts a run anyway. Each close starts a run
+  for every issue it unblocks, so closing a groundwork issue that many
+  issues depend on starts that many runs (and pull requests to review) at
+  once.
+- **Steps 5 and 6 only run when they're needed.** The label run designs a
+  new feature, large change or refactor whose issue doesn't link a design
+  in `/design` already. A one-line or clearly scoped fix skips the design
+  and goes straight to `solution-reviewer` on the plan (for anything
+  beyond one line).
+- **The run stops rather than guess.** If `design-author` reports a
+  blocking open question, or `solution-reviewer` rejects or escalates the
+  design (or rejects it again after one revision), the run commits the
+  design on its branch, posts the questions or verdict in its tracking
+  comment on the issue and stops without a pull request. Answer on the
+  issue and mention `@claude`: the next run fetches that branch, has
+  `design-author` update the design with the answers, and carries on.
+  Otherwise the design is committed in the same pull request as the
+  implementation.
+- **Testing is part of step 7.** The run installs Playwright's Chromium,
+  runs `npm run test:e2e` for anything touching rendering, input or the
+  game loop, and names the docs-site demo pages a human needs to check.
+- **Step 9 runs once, when the pull request opens.** Nothing reviews it
+  again automatically: run `pr-reviewer` locally to review new commits. An
+  `@claude` mention on a pull request starts an implementing run
+  (`claude.yml`) that pushes to its branch, not a review.
+- **Each agent asks only for what its workflow allows.** `design-author`,
+  `solution-reviewer` and `pr-reviewer` run inside the workflows above, so
+  every command they tell themselves to run must be in that workflow's
+  `--allowedTools`. When you change one, check the other.
 
 ## Repository Structure
 
@@ -163,7 +236,14 @@ factory functions, not classes:
 1. **Components**: Plain data interfaces, not classes. Each one gets a
    `createComponentId` key (a symbol) and an `add<Name>Component` factory
    that attaches it to a caller-supplied entity (see "Component Pattern"
-   below). Components carry no logic.
+   below). Components carry no logic. A component that holds something to
+   release (a GPU geometry, a DOM element, a playing sound) gets a remove
+   hook on its key, `createComponentId(name, { onRemove })`: a
+   module-level function of its `(world, entity, component)` arguments
+   that every world calls when the value is removed (`removeComponent`,
+   `removeEntity`, descendants included) or replaced by `addComponent`.
+   Release per-entity resources there, never from a system's `cleanup` or
+   a closure map the system sweeps (see `trail-component.ts`).
 
 2. **Systems** (`EcsSystem<TQuery>`): Plain objects, produced by
    `create<Name>EcsSystem` factory functions, not classes. A system declares
@@ -364,6 +444,15 @@ a component mean the same thing everywhere. If a system matches entities it
 shouldn't touch, the entities' components are wrong, or another system is
 writing a value this one owns. Fix that instead.
 
+A system holds no state. Its factory takes dependencies (`Time`,
+`RenderContext`, resolved tuning options) that it only reads, and the only
+state `update` changes is component data. Nothing declared outside `update`
+(a counter, a `Map` of per-entity bookkeeping, a snapshot from last tick)
+is changed inside it; that information goes in a component instead. See the
+`create-system` skill (`.claude/skills/create-system/SKILL.md`) for where
+each kind of state belongs. A few existing systems still keep closure state;
+don't copy them.
+
 ### Index Files
 
 Each module's `index.ts` should export everything from its submodules:
@@ -506,8 +595,11 @@ describe('MyClass', () => {
   are typed from it. Sampler values are `Texture`s
   (`new Texture(renderContext)`), and `bindTexture` receives
   `texture.glTexture`. A `SpriteMaterial`'s fragment shader must include
-  `spriteMask` (`createSpriteMaterial` throws otherwise), so a test's sprite
-  fragment shader includes it too
+  `mask` (`createSpriteMaterial` throws otherwise), so a test's sprite
+  fragment shader includes it too. A `MeshMaterial` also needs `meshVertex`
+  in its vertex shader, and stores the uniforms it declares when it's
+  created, so build its shader cache with a `ResolveIncludesPreProcessor`
+  holding both includes (see `mesh-material.test.ts`)
 - A mocked WebGL context behind a real `RenderContext` needs
   `getExtension` (the render context requests `EXT_color_buffer_float` when
   it's created) and `isContextLost` (returning `false`; GPU resources check
@@ -673,7 +765,14 @@ e2e/playwright-report` opens the HTML report, which links each test's
 
 `documentation-site/src/pages/demos/<name>/` holds interactive, in-browser
 demos of engine features (`physics`, `ecs`, `particles`, `rendering`, ...),
-each rendered through `documentation-site/src/components/Demo.tsx`.
+each rendered through `DemoPage` (`documentation-site/src/components/demo-page/`):
+the running game with its controls and a short "How it works" list beside
+it, and a code explorer for the demo's source below. Its title and summary
+come from the demo's entry in `documentation-site/src/data/demos.ts`. The
+`add-feature-demo` skill shows how to write a page. The code explorer only
+shows engine code a reader can reuse: never list React or other framework
+code (`.tsx`/`.jsx`) in it, such as a settings panel that only drives the
+site's page.
 
 **Critical gotcha**: these demos import the engine as a published package
 (e.g. `import { addRigidBodyComponent } from '@forge-game-engine/forge/physics'`),
@@ -721,8 +820,9 @@ wrapper around the shared `CategoryDemosPage` component.
 The catalogue's data lives separately from the demo pages themselves:
 
 - `documentation-site/src/data/demo-categories.ts` - the fixed list of
-  categories (slug, title, description, card image under
-  `static/img/demos/categories/`).
+  categories (slug, title, description, and the line icon its card shows,
+  from `src/components/ModuleIcon.tsx`, the same set the homepage's feature
+  grid uses).
 - `documentation-site/src/data/demos.ts` - one entry per demo (slug, title,
   short description, and the category slugs it belongs to). A demo can
   belong to more than one category - e.g. the car demo is tagged both
@@ -731,8 +831,8 @@ The catalogue's data lives separately from the demo pages themselves:
 
 **When adding a new demo**, also add an entry to `demos.ts` with the
 category slugs it belongs to (adding a new category itself means adding to
-`demo-categories.ts` and a matching SVG under
-`static/img/demos/categories/`, plus a new
+`demo-categories.ts` with a `ModuleIcon` name, drawing a new icon in
+`ModuleIcon.tsx` in the same style if none fits, plus a new
 `src/pages/demos/category/<slug>/index.tsx` wrapper). A demo that combines
 many engine features into a complete mini-game (like the space shooter,
 brick breaker and car demos) belongs in the `games` category regardless of
@@ -749,7 +849,13 @@ documentation. Enabled via the `blog` key in the `classic` preset options in
 Conventions:
 
 - One file per post: `blog/YYYY-MM-DD-slug.md`, with `slug`, `title`,
-  `authors`, and `tags` in frontmatter. Authors are defined once in
+  `description`, `authors`, `tags` and `image` in frontmatter. The
+  homepage's News section lists the three newest posts with their `image`
+  and `description` (`plugins/blog-with-recent-posts.ts`, which loads the
+  blog in place of the classic preset's, writes them to a generated
+  module). Give `image` relative to the post (`./banner.png`), and write
+  `description` as a one-sentence summary; without it Docusaurus uses the
+  post's first line, which is usually its banner image's alt text. Authors are defined once in
   `blog/authors.yml`; tags in `blog/tags.yml`.
 - Internal links (to docs, the API reference, or demos) must include the
   `/Forge` `baseUrl` prefix (e.g. `/Forge/demos/physics`,
@@ -784,7 +890,7 @@ gl.ONE_MINUS_SRC_ALPHA)` (see `render-system.ts`). Never plain
   another destination uses `gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)`
   (see `present-system.ts`).
 - Clear colors are straight-alpha `Color`s and get premultiplied when
-  written (`RenderContext.clear`, `createTerrainRenderEcsSystem`).
+  written (`RenderContext.clear`).
 - Light that should only brighten what's beneath it (bloom's glow) is
   added to the color and leaves alpha untouched (see
   `bloom-composite.frag.glsl`). Giving it alpha of its own makes it cover,
@@ -846,13 +952,31 @@ following other entities.
 
 ### Angles and Directions
 
-The world is Y-up, and every angle follows one convention: **radians, angle
-`0` points along `+X`, and a positive angle turns `+X` towards `+Y`**
-(counter-clockwise on screen). `Vec2.up` is `(0, 1)`, `radiansToVector(θ)`
-is `(cos θ, sin θ)` and `vectorToRadians` is its inverse. Particle emitter
-`directionRange`/`rotationRange`, `RotationEcsComponent`, `Vec2.rotate` and
-physics all use it. Don't add an API that measures angles from up, clockwise,
-or in degrees; callers who author degrees use `degreesToRadians`.
+The world is **Y-down**, like Godot's 2D, the DOM, pointer events, the W3C
+gamepad and texture rows: `+X` is right and `+Y` is down the screen.
+`Vec2.up` is `(0, -1)`, gravity defaults to `(0, 9.81)`, a `Rect`'s `min` is
+its top-left corner, and every normalized 2D coordinate (sprite and mask
+pivots, UI anchors, pivots and alignments, UVs, scroll positions) has
+`(0, 0)` at the top-left and `(1, 1)` at the bottom-right. Text lines advance
+towards `+Y`, `ySort` cameras draw lower Y first, and terrain is solid
+towards `+Y` from its curve. Keyboard and gamepad axes read "up"/north as
+negative Y, and `CameraView` converts between the world and the canvas's
+CSS pixels without flipping. Font atlases are Y-down too: a glyph's
+`planeBounds` and the font's `ascentLine`, `descentLine` and `capLine` are
+Y positions relative to the baseline (negative above it), and `atlasBounds`
+are measured from the atlas image's top-left, as msdf-bmfont-xml writes
+them. `Vec3` is 3D and stays Y-up.
+
+Every angle follows one convention: **radians, angle `0` points along `+X`,
+and a positive angle turns `+X` towards `+Y`** (clockwise on screen).
+`radiansToVector(θ)` is `(cos θ, sin θ)` and `vectorToRadians` is its
+inverse, so `-Math.PI / 2` points up. Particle emitter
+`directionRange`/`rotationRange`, `RotationEcsComponent`, radial mask
+angles, `Vec2.rotate` and physics (angular velocity, torque, joint limits)
+all use it. Don't add an API that measures angles from up, counter-clockwise,
+or in degrees; callers who author degrees use `degreesToRadians`. Don't add a
+Y flip anywhere in the engine: if a source (a file format, a browser API)
+disagrees, convert at that boundary.
 
 Something that emits or aims relative to an entity (a particle emitter's
 spawn shape and direction) works in that entity's frame, turned by its
@@ -882,8 +1006,8 @@ unregisters in `dispose`.
   records what to create and touches no GL, and checks that read GL state
   (compile/link status, framebuffer completeness) are skipped, since a lost
   context fails all of them.
-- Engine draw functions (the render system's batches, `drawFullscreenQuad`,
-  the terrain render system) return early while the context is lost, so
+- Engine draw functions (the render system's batches and meshes,
+  `drawFullscreenQuad`) return early while the context is lost, so
   game systems that draw through them need no guard of their own.
 
 `e2e/specs/webgl-context-loss.spec.ts` loses and restores a real context

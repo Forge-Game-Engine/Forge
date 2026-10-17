@@ -119,8 +119,8 @@ const linearAxesByOrigin: Record<
 > = {
   left: (axes) => axes,
   right: ({ xx, xy, yx, yy }) => ({ xx: -xx, xy: -xy, yx, yy }),
-  bottom: ({ xx, xy, yx, yy }) => ({ xx: yx, xy: yy, yx: xx, yy: xy }),
-  top: ({ xx, xy, yx, yy }) => ({ xx: -yx, xy: -yy, yx: xx, yy: xy }),
+  top: ({ xx, xy, yx, yy }) => ({ xx: yx, xy: yy, yx: xx, yy: xy }),
+  bottom: ({ xx, xy, yx, yy }) => ({ xx: -yx, xy: -yy, yx: xx, yy: xy }),
 };
 
 interface MaskTransformAccessors {

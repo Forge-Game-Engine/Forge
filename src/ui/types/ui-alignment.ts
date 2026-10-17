@@ -1,8 +1,8 @@
 import { Vector2 } from '../../math/index.js';
 
 /**
- * A normalized alignment fraction, in the same `(0, 0)` = bottom-left,
- * `(1, 1)` = top-right convention as `RectTransformEcsComponent.pivot` -
+ * A normalized alignment fraction, in the same `(0, 0)` = top-left,
+ * `(1, 1)` = bottom-right convention as `RectTransformEcsComponent.pivot` -
  * where a layout group places its children within any leftover space on
  * each axis, after the children's own sizes (and spacing) are subtracted
  * from the group's content box.
@@ -16,13 +16,13 @@ export type UiAlignment = Vector2;
  * a `childAlignment` value after reading it.
  */
 export const uiAlignments: Readonly<Record<string, UiAlignment>> = {
-  topLeft: { x: 0, y: 1 },
-  topCenter: { x: 0.5, y: 1 },
-  topRight: { x: 1, y: 1 },
+  topLeft: { x: 0, y: 0 },
+  topCenter: { x: 0.5, y: 0 },
+  topRight: { x: 1, y: 0 },
   middleLeft: { x: 0, y: 0.5 },
   center: { x: 0.5, y: 0.5 },
   middleRight: { x: 1, y: 0.5 },
-  bottomLeft: { x: 0, y: 0 },
-  bottomCenter: { x: 0.5, y: 0 },
-  bottomRight: { x: 1, y: 0 },
+  bottomLeft: { x: 0, y: 1 },
+  bottomCenter: { x: 0.5, y: 1 },
+  bottomRight: { x: 1, y: 1 },
 };

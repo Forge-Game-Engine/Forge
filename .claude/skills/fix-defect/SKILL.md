@@ -13,12 +13,12 @@ behavior. Change it, update every caller, and say so in the changelog.
 The failure mode this skill exists to stop: every fix bolts on an option so
 the old behavior survives "for compatibility", and the engine ends up with a
 pile of booleans that toggle between right and wrong. Example: a gamepad
-stick reports up as `-1` while the rest of the engine is Y-up (keyboard
-`W`/`S`, sprites, text, world space). The fix that shipped added an
-`inverted` option to `GamepadAxis1dBinding` and `invertX`/`invertY` to
-`GamepadAxis2dBinding`, so every user has to know to set it. The correct fix
-normalizes the stick's Y axis inside `GamepadInputSource` so up is positive
-for everyone, and adds no options.
+stick's Y axis once disagreed with the engine's world (keyboard `W`/`S`,
+sprites, text, world space). The fix that shipped added an `inverted` option
+to `GamepadAxis1dBinding` and `invertX`/`invertY` to `GamepadAxis2dBinding`,
+so every user had to know to set it. The correct fix is one convention every
+layer follows (the engine is now Y-down, like the W3C gamepad), translated
+at the boundary where a source disagrees, with no options.
 
 ## 1. Reproduce it with a failing test
 
@@ -38,7 +38,7 @@ speculative fix.
 Trace the wrong value back to the first place it goes wrong. Fix it there,
 not where the symptom shows up.
 
-- Ask what the engine's convention is (Y-up, CSS pixels for anything the DOM
+- Ask what the engine's convention is (Y-down, CSS pixels for anything the DOM
   measures, premultiplied alpha in render targets, `[-1, 1]` axes, ...; see
   AGENTS.md's "Common Patterns"). The defect is usually one layer breaking
   that convention. Make that layer follow it, so nothing downstream has to

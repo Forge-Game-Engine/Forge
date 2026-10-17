@@ -7,9 +7,10 @@ import {
 } from '@forge-game-engine/forge/ui';
 import { LiveMotionEcsComponent, liveMotionId } from './_live-motion.component';
 
-const oscillate = (min: number, max: number, angle: number): number => {
-  const midpoint = (min + max) / 2;
-  const amplitude = (max - min) / 2;
+// Swings between `from` and `to`, starting at the midpoint heading for `to`.
+const oscillate = (from: number, to: number, angle: number): number => {
+  const midpoint = (from + to) / 2;
+  const amplitude = (to - from) / 2;
 
   return midpoint + amplitude * Math.sin(angle);
 };
@@ -57,7 +58,8 @@ export const createLiveMotionEcsSystem = (
       );
       rectTransform.anchoredPosition = {
         x: oscillate(live.minX, live.maxX, xAngle),
-        y: oscillate(live.minY, live.maxY, yAngle),
+        // From max to min, so the window sets off upwards (towards -Y).
+        y: oscillate(live.maxY, live.minY, yAngle),
       };
     }
   },

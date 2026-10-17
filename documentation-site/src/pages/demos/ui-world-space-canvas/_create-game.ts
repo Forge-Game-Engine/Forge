@@ -44,9 +44,11 @@ const renderLayers = {
   world: 1 << 0,
 };
 
-const spinRadiansPerSecond = 1.4;
+// Negative turns counter-clockwise on screen (a positive angle turns +X
+// towards +Y, which is down).
+const spinRadiansPerSecond = -1.4;
 
-const enemyY = -40;
+const enemyY = 40;
 
 async function createBackdrop(
   world: EcsWorld,
@@ -131,9 +133,9 @@ async function createSpinningEnemyWithHealthBar(
   world.setParent(marker, enemy);
   addSpriteComponent(world, marker, markerSprite);
 
-  // 80 units above the enemy: relative to the enemy when parented, and in
-  // world space otherwise.
-  const healthBarOffset = { x: 0, y: 80 };
+  // 80 units above the enemy (y grows down the screen): relative to the
+  // enemy when parented, and in world space otherwise.
+  const healthBarOffset = { x: 0, y: -80 };
 
   const healthBarCanvas = createUiCanvas(world, renderContext, {
     renderMode: uiCanvasRenderModes.worldSpace,
@@ -178,7 +180,7 @@ async function createSpinningEnemyWithHealthBar(
     fontAtlas,
     size: 20,
     anchor: UiAnchor.center({ x: 260, y: 32 }),
-    anchoredPosition: { x: 0, y: -34 },
+    anchoredPosition: { x: 0, y: 34 },
     horizontalAlign: textHorizontalAlignments.center,
     verticalAlign: textVerticalAlignments.middle,
     color: Color.white,

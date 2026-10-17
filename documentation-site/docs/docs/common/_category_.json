@@ -4,5 +4,8 @@
   "link": {
     "type": "doc",
     "id": "docs/common/index"
+  },
+  "customProps": {
+    "icon": "transforms"
   }
 }

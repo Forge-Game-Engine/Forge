@@ -16,7 +16,7 @@ section has the reasoning.
   Only add an option when different games really need different values,
   and ask first if you're unsure.
 - **Fix root causes.** Correct the layer that breaks the engine's
-  conventions (Y-up, CSS vs. device pixels, premultiplied alpha, ...), so
+  conventions (Y-down, CSS vs. device pixels, premultiplied alpha, ...), so
   callers don't have to compensate.
 - **Prefer deleting.** A fix that makes a workaround unnecessary also
   removes the workaround.
@@ -31,20 +31,38 @@ section has the reasoning.
   one owning system (e.g. only `createTransformEcsSystem` writes
   `position.world`; everything else writes `local`). A system's `query`
   and `tags` are never configurable.
+- **Systems are stateless.** A system reads its dependencies (e.g. `Time`)
+  and changes only component data. Anything it needs to remember between
+  ticks goes in a component.
 
 ## Skills
 
 Project skills live in `.claude/skills/`. Use the matching one before you
 start the task:
 
-| Task                                                           | Skill                    |
-| -------------------------------------------------------------- | ------------------------ |
-| Fixing a bug, defect, regression or wrong behavior             | `fix-defect`             |
-| Adding an ECS component                                        | `create-component`       |
-| Adding a major feature (needs a docs-site demo)                | `add-feature-demo`       |
-| Writing or updating documentation in `documentation-site/docs` | `document-feature`       |
-| Adding a Playwright test for rendering, input or game loop     | `write-e2e-test`         |
-| Designing or planning a new feature or large change            | `create-design-document` |
+| Task                                                           | Skill              |
+| -------------------------------------------------------------- | ------------------ |
+| Fixing a bug, defect, regression or wrong behavior             | `fix-defect`       |
+| Adding an ECS component                                        | `create-component` |
+| Adding an ECS system                                           | `create-system`    |
+| Adding a major feature (needs a docs-site demo)                | `add-feature-demo` |
+| Writing or updating documentation in `documentation-site/docs` | `document-feature` |
+| Adding a Playwright test for rendering, input or game loop     | `write-e2e-test`   |
+| Planning a milestone into issues                               | `plan-milestone`   |
+
+## Agents
+
+Project agents live in `.claude/agents/`:
+
+| Agent               | Use it to                                                                                                      |
+| ------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `solution-reviewer` | Review a fix or feature plan before writing code (see "Before implementing")                                   |
+| `design-author`     | Design or plan a new feature or large change in `/design` (the issue it's given, or else the current branch's) |
+| `pr-reviewer`       | Review a finished change against Forge's checklist before opening a pull request                               |
+
+AGENTS.md's "Agentic Workflow" section says where each agent and skill
+fits between planning a milestone and merging, and which steps the GitHub
+workflows run unattended.
 
 ## Before implementing
 
@@ -91,5 +109,5 @@ Before marking any task complete, run these in order:
     bullet says what consumers need to change. AGENTS.md's "Changelog"
     section covers the format, what CI enforces, and what never to edit by
     hand.
-11. Keep `/AGENTS.md` and the skills in `.claude/skills/` up to date when
-    the conventions they describe change.
+11. Keep `/AGENTS.md`, the skills in `.claude/skills/` and the agents in
+    `.claude/agents/` up to date when the conventions they describe change.

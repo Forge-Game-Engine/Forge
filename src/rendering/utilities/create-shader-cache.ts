@@ -6,6 +6,8 @@ import {
   cubicShaderInclude,
   ForgeShaderSource,
   gaussianBlurFragmentShader,
+  maskShaderInclude,
+  meshVertexShaderInclude,
   passthroughFragmentShader,
   passthroughVertexShader,
   perlinNoiseFragmentShader,
@@ -25,7 +27,6 @@ import {
   sdfTrapezoidInclude,
   ShaderCache,
   spriteFragmentShader,
-  spriteMaskShaderInclude,
   spriteMaskVertexShaderInclude,
   spriteVertexShader,
   toneMappingFragmentShader,
@@ -34,6 +35,10 @@ import {
   terrainFragmentShader,
   terrainVertexShader,
 } from '../terrain/shaders/index.js';
+import {
+  trailFragmentShader,
+  trailVertexShader,
+} from '../trails/shaders/index.js';
 import {
   msdfEffectsFragmentShader,
   msdfFillFragmentShader,
@@ -46,8 +51,9 @@ import {
  *
  * The shader includes added to the ShaderCache provide reusable shader code snippets, such as
  * cubic interpolation, Perlin noise, quintic interpolation, radial gradients, random gradients,
- * signed distance functions (SDF) for circles, and oriented boxes, and the
- * `spriteMask` include every sprite fragment shader applies masks with.
+ * signed distance functions (SDF) for circles, and oriented boxes, the
+ * `mask` include every sprite and mesh fragment shader applies masks with,
+ * and the `meshVertex` include every mesh vertex shader is positioned with.
  *
  * The shaders added to the ShaderCache include fragment and vertex shaders for rendering
  * radial gradients, Perlin noise, and sprites.
@@ -70,8 +76,9 @@ export function createShaderCache(): ShaderCache {
     new ForgeShaderSource(sdfOrientedBoxShaderInclude),
     new ForgeShaderSource(sdfRhombusInclude),
     new ForgeShaderSource(sdfTrapezoidInclude),
-    new ForgeShaderSource(spriteMaskShaderInclude),
+    new ForgeShaderSource(maskShaderInclude),
     new ForgeShaderSource(spriteMaskVertexShaderInclude),
+    new ForgeShaderSource(meshVertexShaderInclude),
   ];
 
   const includesPreProcessor = new ResolveIncludesPreProcessor(includeMap);
@@ -91,6 +98,8 @@ export function createShaderCache(): ShaderCache {
     .addShader(new ForgeShaderSource(toneMappingFragmentShader))
     .addShader(new ForgeShaderSource(terrainVertexShader))
     .addShader(new ForgeShaderSource(terrainFragmentShader))
+    .addShader(new ForgeShaderSource(trailVertexShader))
+    .addShader(new ForgeShaderSource(trailFragmentShader))
     .addShader(new ForgeShaderSource(msdfFillVertexShader))
     .addShader(new ForgeShaderSource(msdfFillFragmentShader))
     .addShader(new ForgeShaderSource(msdfEffectsFragmentShader))

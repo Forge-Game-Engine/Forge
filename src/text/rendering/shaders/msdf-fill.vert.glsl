@@ -31,10 +31,7 @@ void main() {
     // Identical to `sprite.vert` - glyph quads are positioned, pivoted,
     // rotated, and projected exactly like a sprite region already is (see
     // `sprite.vert.glsl` for the derivation of each step below).
-    vec2 normalizedPivot = vec2(
-        (a_instanceSizePivot.z - 0.5) * 2.0,
-        -(a_instanceSizePivot.w - 0.5) * 2.0
-    );
+    vec2 normalizedPivot = (a_instanceSizePivot.zw - 0.5) * 2.0;
 
     vec2 pivoted = a_position - normalizedPivot;
     vec2 scaled = pivoted * a_instanceSizePivot.xy * a_instancePosScale.zw * 0.5;

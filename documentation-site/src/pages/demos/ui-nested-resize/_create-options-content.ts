@@ -38,7 +38,7 @@ export function createOptionsContent(
   world.setParent(optionsGrid, content);
   addRectTransformComponent(world, optionsGrid, {
     ...UiAnchor.topLeft(),
-    anchoredPosition: { x: 16, y: -96 },
+    anchoredPosition: { x: 16, y: 96 },
   });
   addContentSizeFitterComponent(world, optionsGrid, {
     horizontalFit: 'preferredSize',
@@ -94,6 +94,6 @@ export function createOptionsContent(
     labelColor: textColor,
     labelCategory: uiLayer,
     anchor: UiAnchor.bottomRight({ x: 100, y: 40 }),
-    anchoredPosition: { x: -16, y: 16 },
+    anchoredPosition: { x: -16, y: -16 },
   });
 }

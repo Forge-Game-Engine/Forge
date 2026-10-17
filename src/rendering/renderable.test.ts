@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Material } from './materials/material.js';
-import type { RenderCommand } from './render-command.js';
+import type { QuadRenderCommand } from './render-command.js';
 import { Renderable } from './renderable.js';
 
 describe('Renderable', () => {
@@ -35,7 +35,7 @@ describe('Renderable', () => {
       bindBatch,
     );
     const gl = {} as WebGL2RenderingContext;
-    const command = {} as RenderCommand;
+    const command = {} as QuadRenderCommand;
 
     renderable.bindBatch(gl, command);
 

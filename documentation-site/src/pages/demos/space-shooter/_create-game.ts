@@ -12,6 +12,7 @@ import {
   createRenderEcsSystem,
   createRenderTarget,
   createToneMapEcsSystem,
+  createTrailEcsSystem,
   GaussianBlurEcsComponent,
   RENDER_TARGET_FORMAT,
 } from '@forge-game-engine/forge/rendering';
@@ -298,8 +299,11 @@ export const createSpaceShooterGame = async (
   // turn this frame's poses into the `world` poses that rendering and
   // collision detection read.
   world.addSystem(createTransformEcsSystem());
-  // Rendering runs right after the transform pass, so it draws this frame's
-  // poses. Explosions spawned and the player reset by the collision and
+  // The bullets' trails follow the `world` poses the transform pass just
+  // wrote, and are drawn by the render system below.
+  world.addSystem(createTrailEcsSystem(time, renderContext));
+  // Rendering runs right after the transform and trail passes, so it draws
+  // this frame's poses. Explosions spawned and the player reset by the collision and
   // game-over systems below show up on the next frame.
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createBloomEcsSystem(renderContext));

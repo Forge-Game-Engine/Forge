@@ -92,7 +92,7 @@ export function spawnPlayer(
 
   const playerEntity = world.createEntity();
   const playerX = 0;
-  const playerY = -250;
+  const playerY = 250;
   const playerScale = 0.15;
 
   const playerRadius =

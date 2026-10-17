@@ -1,274 +1,154 @@
-import React, { ChangeEvent, FC } from 'react';
-import { PlaygroundHorizontalAlign } from './_create-playground';
-import styles from './_PlaygroundControls.module.css';
+import React, { FC } from 'react';
+import {
+  DemoChoice,
+  DemoSettings,
+  DemoSettingsSection,
+  DemoSlider,
+  DemoTextField,
+  DemoToggle,
+} from '@site/src/components/demo-page';
+import {
+  TextHorizontalAlign,
+  TextVerticalAlign,
+} from '@forge-game-engine/forge/text';
+import {
+  playgroundMaxWrapWidth,
+  PlaygroundSettings,
+} from './_create-playground';
+
+const horizontalAlignOptions: { value: TextHorizontalAlign; label: string }[] =
+  [
+    { value: 'left', label: 'Left' },
+    { value: 'center', label: 'Center' },
+    { value: 'right', label: 'Right' },
+    { value: 'justify', label: 'Justify' },
+  ];
+
+const verticalAlignOptions: { value: TextVerticalAlign; label: string }[] = [
+  { value: 'top', label: 'Top' },
+  { value: 'capline', label: 'Capline' },
+  { value: 'middle', label: 'Middle' },
+  { value: 'baseline', label: 'Baseline' },
+  { value: 'bottom', label: 'Bottom' },
+];
+
+const oneDecimal = (value: number): string => value.toFixed(1);
 
 interface PlaygroundControlsProps {
-  text: string;
-  size: number;
-  minSize: number;
-  maxSize: number;
-  horizontalAlign: PlaygroundHorizontalAlign;
-  wrapEnabled: boolean;
-
-  outlineEnabled: boolean;
-  outlineWidth: number;
-  minOutlineWidth: number;
-  maxOutlineWidth: number;
-
-  glowEnabled: boolean;
-  glowOffsetX: number;
-  glowOffsetY: number;
-  minGlowOffset: number;
-  maxGlowOffset: number;
-  glowSoftness: number;
-  minGlowSoftness: number;
-  maxGlowSoftness: number;
-
-  onTextChange: (value: string) => void;
-  onSizeChange: (value: number) => void;
-  onHorizontalAlignChange: (value: PlaygroundHorizontalAlign) => void;
-  onWrapEnabledChange: (value: boolean) => void;
-
-  onOutlineEnabledChange: (value: boolean) => void;
-  onOutlineWidthChange: (value: number) => void;
-
-  onGlowEnabledChange: (value: boolean) => void;
-  onGlowOffsetXChange: (value: number) => void;
-  onGlowOffsetYChange: (value: number) => void;
-  onGlowSoftnessChange: (value: number) => void;
+  settings: PlaygroundSettings;
+  onChange: (change: Partial<PlaygroundSettings>) => void;
 }
 
 /**
- * Live controls for the text demo's "Try it yourself" playground: a text
- * input, a size slider, an alignment select (only meaningful while wrapping
- * is on - `TextEcsComponent.horizontalAlign` is otherwise ignored, see
- * `text-component.ts`), a wrap toggle, and outline/glow controls (enabled
- * toggle plus width/offset/softness - color is fixed, not user-controllable;
- * an `<input type="color">` control was tried here and dropped for being
- * noticeably slow to interact with). Every change writes straight into the
- * running playground's `TextEcsComponent` (see `index.tsx`'s handlers and
- * `_create-playground.ts`), the same way the space-shooter demo's bloom/blur
- * controls retune their components live.
+ * The settings beside the text demo's canvas. Each change is written into
+ * the running text straight away.
  */
 export const PlaygroundControls: FC<PlaygroundControlsProps> = ({
-  text,
-  size,
-  minSize,
-  maxSize,
-  horizontalAlign,
-  wrapEnabled,
-  outlineEnabled,
-  outlineWidth,
-  minOutlineWidth,
-  maxOutlineWidth,
-  glowEnabled,
-  glowOffsetX,
-  glowOffsetY,
-  minGlowOffset,
-  maxGlowOffset,
-  glowSoftness,
-  minGlowSoftness,
-  maxGlowSoftness,
-  onTextChange,
-  onSizeChange,
-  onHorizontalAlignChange,
-  onWrapEnabledChange,
-  onOutlineEnabledChange,
-  onOutlineWidthChange,
-  onGlowEnabledChange,
-  onGlowOffsetXChange,
-  onGlowOffsetYChange,
-  onGlowSoftnessChange,
+  settings,
+  onChange,
 }) => {
-  const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onTextChange(event.target.value);
-  };
-
-  const handleSizeChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onSizeChange(Number(event.target.value));
-  };
-
-  const handleHorizontalAlignChange = (
-    event: ChangeEvent<HTMLSelectElement>,
-  ) => {
-    onHorizontalAlignChange(event.target.value as PlaygroundHorizontalAlign);
-  };
-
-  const handleWrapEnabledChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onWrapEnabledChange(event.target.checked);
-  };
-
-  const handleOutlineEnabledChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onOutlineEnabledChange(event.target.checked);
-  };
-
-  const handleOutlineWidthChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onOutlineWidthChange(Number(event.target.value));
-  };
-
-  const handleGlowEnabledChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onGlowEnabledChange(event.target.checked);
-  };
-
-  const handleGlowOffsetXChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onGlowOffsetXChange(Number(event.target.value));
-  };
-
-  const handleGlowOffsetYChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onGlowOffsetYChange(Number(event.target.value));
-  };
-
-  const handleGlowSoftnessChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onGlowSoftnessChange(Number(event.target.value));
-  };
-
   return (
-    <div className={styles.container}>
-      <div className={`${styles.control} ${styles.textControl}`}>
-        <label htmlFor="playground-text">
-          <span>Text</span>
-        </label>
-        <input
-          id="playground-text"
-          type="text"
-          value={text}
-          onChange={handleTextChange}
+    <DemoSettings>
+      <DemoTextField
+        label="Text"
+        rows={3}
+        value={settings.text}
+        onChange={(text) => onChange({ text })}
+      />
+      <DemoToggle
+        label="Rich text tags (<b>, <color>)"
+        checked={settings.richText}
+        onChange={(richText) => onChange({ richText })}
+      />
+
+      <DemoSettingsSection title="Layout">
+        <DemoSlider
+          label="Size"
+          value={settings.size}
+          min={12}
+          max={64}
+          onChange={(size) => onChange({ size })}
         />
-      </div>
-      <div className={styles.control}>
-        <label htmlFor="playground-size">
-          <span>Size</span>
-          <span>{size}</span>
-        </label>
-        <input
-          id="playground-size"
-          type="range"
-          min={minSize}
-          max={maxSize}
-          step={1}
-          value={size}
-          onChange={handleSizeChange}
+        <DemoSlider
+          label="Wrap width"
+          value={settings.wrapWidth}
+          min={120}
+          max={playgroundMaxWrapWidth}
+          onChange={(wrapWidth) => onChange({ wrapWidth })}
         />
-      </div>
-      <div className={styles.control}>
-        <label htmlFor="playground-align">
-          <span>Align</span>
-        </label>
-        <select
-          id="playground-align"
-          value={horizontalAlign}
-          disabled={!wrapEnabled}
-          onChange={handleHorizontalAlignChange}
+        <DemoSlider
+          label="Line height"
+          value={settings.lineHeight}
+          min={0.6}
+          max={2}
+          step={0.1}
+          format={oneDecimal}
+          onChange={(lineHeight) => onChange({ lineHeight })}
+        />
+        <DemoChoice
+          label="Horizontal align"
+          value={settings.horizontalAlign}
+          options={horizontalAlignOptions}
+          onChange={(horizontalAlign) => onChange({ horizontalAlign })}
+        />
+        <DemoChoice
+          label="Vertical align (to the orange line)"
+          value={settings.verticalAlign}
+          options={verticalAlignOptions}
+          onChange={(verticalAlign) => onChange({ verticalAlign })}
+        />
+      </DemoSettingsSection>
+
+      <DemoSettingsSection title="Effects">
+        <DemoToggle
+          label="Outline"
+          checked={settings.outline}
+          onChange={(outline) => onChange({ outline })}
         >
-          <option value="left">Left</option>
-          <option value="center">Center</option>
-          <option value="right">Right</option>
-          <option value="justify">Justify</option>
-        </select>
-      </div>
-      <div className={styles.control}>
-        <label htmlFor="playground-wrap">
-          <span>Wrap</span>
-        </label>
-        <input
-          id="playground-wrap"
-          type="checkbox"
-          checked={wrapEnabled}
-          onChange={handleWrapEnabledChange}
-        />
-      </div>
-
-      <div className={styles.effectGroup}>
-        <div className={styles.control}>
-          <label htmlFor="playground-outline">
-            <span>Outline</span>
-          </label>
-          <input
-            id="playground-outline"
-            type="checkbox"
-            checked={outlineEnabled}
-            onChange={handleOutlineEnabledChange}
-          />
-        </div>
-        <div className={styles.control}>
-          <label htmlFor="playground-outline-width">
-            <span>Width</span>
-            <span>{outlineWidth.toFixed(1)}</span>
-          </label>
-          <input
-            id="playground-outline-width"
-            type="range"
-            min={minOutlineWidth}
-            max={maxOutlineWidth}
+          <DemoSlider
+            label="Width"
+            value={settings.outlineWidth}
+            min={0.1}
+            max={4}
             step={0.1}
-            value={outlineWidth}
-            disabled={!outlineEnabled}
-            onChange={handleOutlineWidthChange}
+            format={oneDecimal}
+            onChange={(outlineWidth) => onChange({ outlineWidth })}
           />
-        </div>
-      </div>
-
-      <div className={styles.effectGroup}>
-        <div className={styles.control}>
-          <label htmlFor="playground-glow">
-            <span>Glow</span>
-          </label>
-          <input
-            id="playground-glow"
-            type="checkbox"
-            checked={glowEnabled}
-            onChange={handleGlowEnabledChange}
-          />
-        </div>
-        <div className={styles.control}>
-          <label htmlFor="playground-glow-offset-x">
-            <span>Offset X</span>
-            <span>{glowOffsetX.toFixed(1)}</span>
-          </label>
-          <input
-            id="playground-glow-offset-x"
-            type="range"
-            min={minGlowOffset}
-            max={maxGlowOffset}
+        </DemoToggle>
+        <DemoToggle
+          label="Glow"
+          checked={settings.glow}
+          onChange={(glow) => onChange({ glow })}
+        >
+          <DemoSlider
+            label="Offset X"
+            value={settings.glowOffsetX}
+            min={-3}
+            max={3}
             step={0.1}
-            value={glowOffsetX}
-            disabled={!glowEnabled}
-            onChange={handleGlowOffsetXChange}
+            format={oneDecimal}
+            onChange={(glowOffsetX) => onChange({ glowOffsetX })}
           />
-        </div>
-        <div className={styles.control}>
-          <label htmlFor="playground-glow-offset-y">
-            <span>Offset Y</span>
-            <span>{glowOffsetY.toFixed(1)}</span>
-          </label>
-          <input
-            id="playground-glow-offset-y"
-            type="range"
-            min={minGlowOffset}
-            max={maxGlowOffset}
+          <DemoSlider
+            label="Offset Y"
+            value={settings.glowOffsetY}
+            min={-3}
+            max={3}
             step={0.1}
-            value={glowOffsetY}
-            disabled={!glowEnabled}
-            onChange={handleGlowOffsetYChange}
+            format={oneDecimal}
+            onChange={(glowOffsetY) => onChange({ glowOffsetY })}
           />
-        </div>
-        <div className={styles.control}>
-          <label htmlFor="playground-glow-softness">
-            <span>Softness</span>
-            <span>{glowSoftness.toFixed(1)}</span>
-          </label>
-          <input
-            id="playground-glow-softness"
-            type="range"
-            min={minGlowSoftness}
-            max={maxGlowSoftness}
+          <DemoSlider
+            label="Softness"
+            value={settings.glowSoftness}
+            min={0}
+            max={4}
             step={0.1}
-            value={glowSoftness}
-            disabled={!glowEnabled}
-            onChange={handleGlowSoftnessChange}
+            format={oneDecimal}
+            onChange={(glowSoftness) => onChange({ glowSoftness })}
           />
-        </div>
-      </div>
-    </div>
+        </DemoToggle>
+      </DemoSettingsSection>
+    </DemoSettings>
   );
 };

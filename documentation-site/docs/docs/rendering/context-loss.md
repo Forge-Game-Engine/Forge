@@ -23,8 +23,8 @@ its resources after the browser restores it.
 
 While it's `true`:
 
-- Systems keep running, so the game keeps simulating. The render system,
-  the post-processing systems and the terrain render system draw nothing.
+- Systems keep running, so the game keeps simulating. The render system
+  and the post-processing systems draw nothing.
 - Creating a material, texture, render target or geometry, and resizing a
   render target or the canvas, work as usual. They record what to create,
   and the engine creates it when the context is restored.
@@ -62,7 +62,8 @@ When the context is restored, the render context:
 2. links every material's program again;
 3. uploads every texture again, from the source it was last updated from;
 4. recreates every render target, empty, at its current size and format;
-5. uploads every geometry's vertex data again;
+5. uploads every geometry's latest vertex data again (see
+   [Updating vertex data](./geometry.md#updating-vertex-data));
 6. raises `onContextRestored`.
 
 A render target comes back empty, and the next frame draws into it again.

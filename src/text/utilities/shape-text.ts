@@ -311,7 +311,7 @@ function shapeWord(
     if (glyph.planeBounds && glyph.atlasBounds) {
       const { planeBounds, atlasBounds } = glyph;
       const glyphWidth = (planeBounds.right - planeBounds.left) * size;
-      const glyphHeight = (planeBounds.top - planeBounds.bottom) * size;
+      const glyphHeight = (planeBounds.bottom - planeBounds.top) * size;
 
       // A UV rect that touches its tile's exact edge samples 50/50 with the
       // next glyph's tile under GL_LINEAR (texture coordinates exactly at a
@@ -325,8 +325,8 @@ function shapeWord(
       const insetY = 1 / fontAtlasData.atlasSize.height;
       const atlasLeft = atlasBounds.left + insetX;
       const atlasRight = atlasBounds.right - insetX;
-      const atlasBottom = atlasBounds.bottom + insetY;
-      const atlasTop = atlasBounds.top - insetY;
+      const atlasTop = atlasBounds.top + insetY;
+      const atlasBottom = atlasBounds.bottom - insetY;
 
       // The quad doesn't grow with the bold ink: plane bounds already
       // include `distanceRange / 2` atlas pixels of padding around the ink,
@@ -334,18 +334,13 @@ function shapeWord(
       glyphs.push({
         offset: {
           x: penX + emboldenWidth + (planeBounds.left * size + glyphWidth / 2),
-          y: planeBounds.bottom * size + glyphHeight / 2,
+          y: planeBounds.top * size + glyphHeight / 2,
         },
         size: { x: glyphWidth, y: glyphHeight },
-        // `atlasBounds` is Y-up (`top` > `bottom`, matching `planeBounds`),
-        // but UV sampling in this engine is Y-down (v=0 is the top of the
-        // texture - see `computeNineSliceRegions`'s `uvOffset`, documented
-        // as the region's top-left corner). `1 - atlasTop` converts the
-        // glyph's (inset) top edge to its Y-down v.
-        uvOffset: { x: atlasLeft, y: 1 - atlasTop },
+        uvOffset: { x: atlasLeft, y: atlasTop },
         uvScale: {
           x: atlasRight - atlasLeft,
-          y: atlasTop - atlasBottom,
+          y: atlasBottom - atlasTop,
         },
         color: styles.colors[styleIndex],
         embolden: isBold ? styles.boldEmbolden : 0,
@@ -603,10 +598,12 @@ function getJustifyGapStretch(
  *   strings with no descenders.
  *
  * Before this offset, line `0`'s baseline sits at `y = 0` and each
- * following line's baseline is `actualLineHeight` further in the negative
- * (downward, Y-up) direction.
+ * following line's baseline is `actualLineHeight` further down (`+y`), so
+ * a font line sits at its metric (scaled by `size`) plus its line's
+ * baseline. The offset is that position negated, which moves it to the
+ * anchor at `y = 0`.
  * @param verticalAlign - The requested vertical alignment.
- * @param fontAtlasData - The font atlas metrics `ascender`/`descender`/`capHeight` are read from.
+ * @param fontAtlasData - The font atlas metrics `ascentLine`/`descentLine`/`capLine` are read from.
  * @param size - Font size, in world units.
  * @param lineCount - The number of lines in the shaped block.
  * @param actualLineHeight - The distance between two lines' baselines, in world units.
@@ -619,26 +616,26 @@ function getVerticalAlignOffset(
   lineCount: number,
   actualLineHeight: number,
 ): number {
-  const { ascender, descender, capHeight } = fontAtlasData.metrics;
-  const lastBaseline = -(lineCount - 1) * actualLineHeight;
+  const { ascentLine, descentLine, capLine } = fontAtlasData.metrics;
+  const lastBaseline = (lineCount - 1) * actualLineHeight;
 
   if (verticalAlign === 'baseline') {
     return 0;
   }
 
   if (verticalAlign === 'capline') {
-    return -(capHeight * size);
+    return -capLine * size;
   }
 
   if (verticalAlign === 'middle') {
-    return -(capHeight * size + lastBaseline) / 2;
+    return -(capLine * size + lastBaseline) / 2;
   }
 
   if (verticalAlign === 'bottom') {
-    return -(lastBaseline + descender * size);
+    return -(descentLine * size + lastBaseline);
   }
 
-  return -(ascender * size);
+  return -ascentLine * size;
 }
 
 /**
@@ -745,7 +742,7 @@ export function shapeText(
       isLastLine,
       line,
     );
-    const lineY = -lineIndex * actualLineHeight;
+    const lineY = lineIndex * actualLineHeight;
 
     lineOffsets.push({
       x: boxLeftOffset + uniformOffset,

@@ -63,17 +63,17 @@ describe('raycastUiCanvas', () => {
     addPositionComponent(world, viewport);
     world.setParent(viewport, canvas);
     addRectTransformComponent(world, viewport, {
-      rect: { min: { x: -50, y: 0 }, max: { x: 50, y: 50 } },
+      rect: { min: { x: -50, y: -50 }, max: { x: 50, y: 0 } },
     });
     addMaskComponent(world, viewport, { width: 100, height: 50 });
 
     const item = addElement(world, viewport);
 
-    // Canvas (400, 280) is world (0, 20): inside the mask.
+    // Canvas (400, 280) is world (0, -20): inside the mask.
     expect(
       raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 280 }),
     ).toBe(item);
-    // Canvas (400, 320) is world (0, -20): on the item, but clipped.
+    // Canvas (400, 320) is world (0, 20): on the item, but clipped.
     expect(
       raycastUiCanvas(world, canvas, renderContext, { x: 400, y: 320 }),
     ).toBeNull();

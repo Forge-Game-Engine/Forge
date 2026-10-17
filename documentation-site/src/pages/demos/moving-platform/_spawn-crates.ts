@@ -19,7 +19,7 @@ import {
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
 
 export const crateSize = 36;
-const gravity = { x: 0, y: -500 };
+const gravity = { x: 0, y: 500 };
 
 function rectangleVertices(width: number, height: number): Vector2[] {
   const halfWidth = width / 2;

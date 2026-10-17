@@ -4,9 +4,9 @@ import { InputBinding } from '../../input-binding.js';
 
 /** Arguments for constructing a KeyboardAxis2dBinding. */
 export interface KeyboardAxis2dBindingArgs {
-  /** The key code associated with the north direction. */
+  /** The key code that drives Y towards -1 (up, since the world is Y-down). */
   northKeyCode: KeyCode;
-  /** The key code associated with the south direction. */
+  /** The key code that drives Y towards 1 (down). */
   southKeyCode: KeyCode;
   /** The key code associated with the east direction. */
   eastKeyCode: KeyCode;

@@ -1,7 +1,8 @@
 import React, { FC } from 'react';
 import Link from '@docusaurus/Link';
-import useBaseUrl from '@docusaurus/useBaseUrl';
 import { DemoCategory } from '@site/src/data/demo-categories';
+import { demos } from '@site/src/data/demos';
+import { ModuleIcon } from './ModuleIcon';
 import styles from './_DemoCategoryCard.module.css';
 
 interface DemoCategoryCardProps {
@@ -9,15 +10,22 @@ interface DemoCategoryCardProps {
 }
 
 export const DemoCategoryCard: FC<DemoCategoryCardProps> = ({ category }) => {
-  const imageUrl = useBaseUrl(category.image);
+  const demoCount = demos.filter((demo) =>
+    demo.categories.includes(category.slug),
+  ).length;
 
   return (
     <Link to={`/demos/category/${category.slug}`} className={styles.card}>
-      <img src={imageUrl} alt="" className={styles.image} />
-      <div className={styles.body}>
-        <h3 className={styles.title}>{category.title}</h3>
-        <p className={styles.description}>{category.description}</p>
+      <div className={styles.top}>
+        <span className={styles.iconTile}>
+          <ModuleIcon name={category.icon} className={styles.icon} />
+        </span>
+        <span className={styles.count}>
+          {demoCount} {demoCount === 1 ? 'demo' : 'demos'}
+        </span>
       </div>
+      <h3 className={styles.title}>{category.title}</h3>
+      <p className={styles.description}>{category.description}</p>
     </Link>
   );
 };

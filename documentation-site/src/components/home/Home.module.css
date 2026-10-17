@@ -1,0 +1,481 @@
+/* Hero */
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 6rem 1.5rem 5rem;
+  color: var(--forge-periwinkle);
+  background: var(--forge-navy);
+}
+
+.heroInner {
+  position: relative;
+  display: grid;
+  /* The text and the video share a row and overlap: the text spans the
+     first seven columns, the video the last eight. */
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: center;
+  /* 10rem wider on each side than the sections below, so the video has room
+     and the gaps either side of the hero match. */
+  max-width: calc(1200px - 3rem + 20rem);
+  margin: 0 auto;
+}
+
+/* Soft glowing orbs drifting behind the hero: amber low on the left, teal
+   high on the right, and a faint violet one between them. */
+.heroBackground {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+}
+
+.heroOrb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  animation: ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.heroOrbAmber {
+  bottom: -35%;
+  left: -12%;
+  width: clamp(340px, 46vw, 640px);
+  height: clamp(340px, 46vw, 640px);
+  background: var(--forge-amber);
+  opacity: 0.32;
+  animation-name: heroOrbAmberDrift;
+  animation-duration: 26s;
+}
+
+.heroOrbTeal {
+  top: -40%;
+  right: -14%;
+  width: clamp(380px, 52vw, 720px);
+  height: clamp(380px, 52vw, 720px);
+  background: #4fc4c4;
+  opacity: 0.4;
+  animation-name: heroOrbTealDrift;
+  animation-duration: 32s;
+}
+
+.heroOrbViolet {
+  top: 30%;
+  left: 40%;
+  width: clamp(220px, 26vw, 360px);
+  height: clamp(220px, 26vw, 360px);
+  background: #7b6cf6;
+  opacity: 0.22;
+  animation-name: heroOrbVioletDrift;
+  animation-duration: 38s;
+}
+
+@keyframes heroOrbAmberDrift {
+  to {
+    transform: translate(18vw, -10vh) scale(1.1);
+  }
+}
+
+@keyframes heroOrbTealDrift {
+  to {
+    transform: translate(-14vw, 14vh) scale(0.9);
+  }
+}
+
+@keyframes heroOrbVioletDrift {
+  from {
+    transform: translate(-10vw, 10vh);
+  }
+
+  to {
+    transform: translate(8vw, -12vh) scale(1.3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroOrb {
+    animation: none;
+  }
+}
+
+/* Above the video where they overlap. */
+.heroText {
+  position: relative;
+  z-index: 1;
+  grid-row: 1;
+  grid-column: 1 / 8;
+}
+
+/* The gameplay video, framed like a screen. */
+.heroMedia {
+  grid-row: 1;
+  grid-column: 5 / 13;
+  margin: 0;
+}
+
+.heroScreen {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border: 1px solid rgba(207, 214, 234, 0.18);
+  border-radius: 12px;
+  background: #000000;
+  box-shadow:
+    0 0 0 1px rgba(79, 196, 196, 0.15),
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 0 80px rgba(79, 196, 196, 0.12);
+}
+
+/* Darkens the video's left edge, where the text overlaps it. */
+.heroScreen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(11, 19, 43, 0.85),
+    rgba(11, 19, 43, 0.4) 25%,
+    transparent 45%
+  );
+  pointer-events: none;
+}
+
+.heroCaption {
+  margin-top: 0.75rem;
+  color: #9aa4c4;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-align: right;
+}
+
+/* A round amber play button in the video's bottom-right corner, above the
+   left-edge gradient. */
+.heroPlayLink {
+  position: absolute;
+  z-index: 1;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--forge-amber);
+  border-radius: 50%;
+  background: rgba(11, 19, 43, 0.7);
+  color: var(--forge-amber);
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.heroPlayLink:hover,
+.heroPlayLink:focus-visible {
+  background: var(--forge-amber);
+  color: var(--forge-navy);
+  text-decoration: none;
+}
+
+.heroPlayIcon {
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-left: 0.1rem;
+  fill: currentColor;
+}
+
+.heroVideo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.heroTitle {
+  margin: 0 0 1rem;
+  color: #ffffff;
+  font-size: clamp(2rem, 4vw, 5.5rem);
+  line-height: 1;
+}
+
+.heroIntro {
+  max-width: 30rem;
+  margin: 0 0 2rem;
+  color: #c3cbe0;
+  font-size: clamp(1.1rem, 1vw, 1.35rem);
+  line-height: 1.5;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.heroSecondary {
+  border-color: rgba(207, 214, 234, 0.3);
+  color: #e6eaf5;
+}
+
+/* Opaque, since it can sit over the video. */
+.heroSecondary,
+.heroSecondary:hover {
+  background: var(--forge-navy);
+}
+
+.install {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 100%;
+  padding: 0.35rem 0.35rem 0.35rem 1rem;
+  border: 1px solid rgba(207, 214, 234, 0.18);
+  border-radius: 8px;
+  background: var(--forge-navy);
+}
+
+.installCommand {
+  overflow-x: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #e6eaf5;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.copyButton {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid rgba(207, 214, 234, 0.18);
+  border-radius: 6px;
+  background: transparent;
+  color: #c3cbe0;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.copyButton:hover {
+  border-color: var(--forge-amber);
+  color: var(--forge-amber);
+}
+
+.copyButtonCopied,
+.copyButtonCopied:hover {
+  border-color: #4fc4c4;
+  color: #4fc4c4;
+}
+
+.installPrompt {
+  color: var(--forge-amber);
+}
+
+/* Sections */
+
+.section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 5rem 1.5rem;
+}
+
+/* Neighboring sections share one gap, instead of each one's padding adding
+   up between them. */
+.section + .section {
+  padding-top: 0;
+}
+
+.sectionTitle {
+  margin: 0 0 1rem;
+  font-size: clamp(2.2rem, 5vw, 3.25rem);
+  line-height: 1.1;
+}
+
+.sectionIntro {
+  max-width: 48rem;
+  margin: 0 0 3rem;
+  color: var(--text-muted-color);
+  font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+  line-height: 1.5;
+}
+
+.sectionFooter {
+  margin: 2rem 0 0;
+  font-weight: 600;
+}
+
+/* Modules */
+
+.moduleGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem 1.5rem;
+}
+
+.module {
+  display: flex;
+  gap: 1rem;
+  margin: 0 -0.75rem;
+  padding: 0.9rem 0.75rem;
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+
+.module:hover {
+  background-color: var(--card-background-color);
+  color: inherit;
+  text-decoration: none;
+}
+
+.module:hover .moduleTitle {
+  color: var(--ifm-color-primary);
+}
+
+.moduleTitle {
+  margin: 0 0 0.2rem;
+  font-size: 1.2rem;
+  transition: color 0.15s;
+}
+
+.moduleDescription {
+  margin: 0;
+  color: var(--text-muted-color);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+/* Demos */
+
+.demoGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+/* News */
+
+.newsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.newsPost {
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+  border: 1px solid var(--card-border-color);
+  border-radius: 12px;
+  background-color: var(--card-background-color);
+  color: var(--text-color);
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.newsPost:hover {
+  transform: translateY(-3px);
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  color: var(--text-color);
+  text-decoration: none;
+}
+
+.newsImage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  border-bottom: 1px solid var(--card-border-color);
+  object-fit: cover;
+}
+
+.newsBody {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+}
+
+.newsDate {
+  margin-bottom: 0.5rem;
+  color: var(--ifm-color-emphasis-700);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.newsTitle {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+  line-height: 1.3;
+}
+
+.newsDescription {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--text-muted-color);
+  font-size: 0.93rem;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+@media (max-width: 996px) {
+  .heroInner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem;
+  }
+
+  .heroText,
+  .heroMedia {
+    grid-row: auto;
+    grid-column: auto;
+  }
+
+  .heroScreen::after {
+    content: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .moduleGrid,
+  .demoGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .hero {
+    padding: 4rem 1rem 3.5rem;
+  }
+
+  .installCommand {
+    font-size: 0.78rem;
+  }
+
+  .copyLabel {
+    display: none;
+  }
+
+  .section {
+    padding: 3.5rem 1rem;
+  }
+
+  .moduleGrid,
+  .demoGrid,
+  .newsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

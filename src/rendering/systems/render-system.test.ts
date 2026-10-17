@@ -8,15 +8,19 @@ import {
   addScaleComponent,
   PositionEcsComponent,
 } from '../../common';
-import { Vec2 } from '../../math';
+import { Matrix3x3, Rect, Vec2 } from '../../math';
 import {
   addCameraComponent,
   addDrawOrderComponent,
   addMaskComponent,
+  addMeshComponent,
   addVisibilityComponent,
   CameraEcsComponent,
   maxDrawOrder,
+  MeshEcsComponent,
 } from '../components';
+import type { Geometry } from '../geometry/geometry';
+import type { MeshMaterial } from '../materials/mesh-material';
 import {
   addSpriteComponent,
   SpriteEcsComponent,
@@ -206,6 +210,32 @@ describe('createRenderEcsSystem', () => {
       caretStops: [],
       ...mesh,
     });
+
+    return entity;
+  };
+
+  // An 800x600 canvas and a camera at the origin showing 10 world units
+  // vertically: the view spans x in [-6.67, 6.67] and y in [-5, 5].
+  const addNarrowCamera = (): void => {
+    const entity = world.createEntity();
+
+    addCameraComponent(world, entity, {
+      isStatic: true,
+      verticalWorldUnits: 10,
+    });
+    addPositionComponent(world, entity);
+  };
+
+  /** Adds an entity with a 4x4 mask centered on the origin. */
+  const addMaskedParent = (
+    shape: Parameters<typeof addMaskComponent>[2]['shape'] = {
+      kind: 'rect',
+    },
+  ): number => {
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity);
+    addMaskComponent(world, entity, { width: 4, height: 4, shape });
 
     return entity;
   };
@@ -665,9 +695,9 @@ describe('createRenderEcsSystem', () => {
       addYSortCamera();
       const { renderable, bindInstanceData } = createRenderable();
 
-      addTaggedSprite(renderable, 2, -5);
-      addTaggedSprite(renderable, 0, 10);
-      addTaggedSprite(renderable, 1, 2);
+      addTaggedSprite(renderable, 2, 5);
+      addTaggedSprite(renderable, 0, -10);
+      addTaggedSprite(renderable, 1, -2);
 
       world.update();
 
@@ -678,9 +708,9 @@ describe('createRenderEcsSystem', () => {
       addYSortCamera();
       const { renderable, bindInstanceData } = createRenderable();
 
-      const character = addTaggedSprite(renderable, 0, 5);
+      const character = addTaggedSprite(renderable, 0, -5);
       // Far below everything, but it belongs to the character.
-      const sword = addTaggedSprite(renderable, 1, -100);
+      const sword = addTaggedSprite(renderable, 1, 100);
 
       addTaggedSprite(renderable, 2, 0);
       world.setParent(sword, character);
@@ -694,11 +724,11 @@ describe('createRenderEcsSystem', () => {
       addYSortCamera();
       const { renderable, bindInstanceData } = createRenderable();
 
-      addTaggedSprite(renderable, 2, -1);
+      addTaggedSprite(renderable, 2, 1);
       const container = world.createEntity();
-      const child = addTaggedSprite(renderable, 1, -50);
+      const child = addTaggedSprite(renderable, 1, 50);
 
-      addTaggedSprite(renderable, 0, 1);
+      addTaggedSprite(renderable, 0, -1);
       world.setParent(child, container);
 
       world.update();
@@ -711,10 +741,10 @@ describe('createRenderEcsSystem', () => {
       const { renderable, bindInstanceData } = createRenderable();
 
       addTaggedSprite(renderable, 3, 0);
-      addTaggedSprite(renderable, 4, -1e6);
-      addTaggedSprite(renderable, 2, 1e-3);
-      addTaggedSprite(renderable, 0, 1e6);
-      addTaggedSprite(renderable, 1, 2e-3);
+      addTaggedSprite(renderable, 4, 1e6);
+      addTaggedSprite(renderable, 2, -1e-3);
+      addTaggedSprite(renderable, 0, -1e6);
+      addTaggedSprite(renderable, 1, -2e-3);
 
       world.update();
 
@@ -726,8 +756,8 @@ describe('createRenderEcsSystem', () => {
       addYSortCamera();
       const { renderable, bindInstanceData } = createRenderable();
 
-      addTaggedSprite(renderable, 0, -5);
-      addTaggedSprite(renderable, 1, 5);
+      addTaggedSprite(renderable, 0, 5);
+      addTaggedSprite(renderable, 1, -5);
 
       world.update();
 
@@ -762,7 +792,7 @@ describe('createRenderEcsSystem', () => {
         .slice()
         .sort(
           (a, b) =>
-            a.layer - b.layer || a.order - b.order || b.y - a.y || a.id - b.id,
+            a.layer - b.layer || a.order - b.order || a.y - b.y || a.id - b.id,
         )
         .map((sprite) => sprite.id);
 
@@ -1054,12 +1084,12 @@ describe('createRenderEcsSystem', () => {
         (call) => (call[0] as { position: PositionEcsComponent }).position,
       );
 
-      // The top-left corner (offset (-45, 45) before rotation) rotates 180
+      // The top-left corner (offset (-45, -45) before rotation) rotates 180
       // degrees around the entity, landing on the opposite side.
       const rotatedCorner = positions.find(
         (position) =>
           Math.abs(position.world.x - (50 + 45)) < 1e-9 &&
-          Math.abs(position.world.y - -45) < 1e-9,
+          Math.abs(position.world.y - 45) < 1e-9,
       );
 
       expect(rotatedCorner).toBeDefined();
@@ -1078,7 +1108,7 @@ describe('createRenderEcsSystem', () => {
       addPositionComponent(world, entity, {
         local: { x: 50, y: 0 },
       });
-      addRotationComponent(world, entity, { local: Math.PI / 2 });
+      addRotationComponent(world, entity, { local: -Math.PI / 2 });
       addSpriteComponent(
         world,
         entity,
@@ -1096,16 +1126,16 @@ describe('createRenderEcsSystem', () => {
         (call) => (call[0] as { position: PositionEcsComponent }).position,
       );
 
-      // The top-left corner (offset (-45, 45) before rotation) orbits to
-      // (-45, -45): the same direction `Vec2.rotate` (and the shader's
-      // own rotation of the region's quad) turns the entity's true world
+      // The top-left corner (offset (-45, -45) before rotation) orbits to
+      // (-45, 45): the same direction `Vec2.rotate` (and the shader's own
+      // rotation of the region's quad) turns the entity's true world
       // rotation. Orbiting it the other way around the entity (a sign bug)
-      // would instead land it at (45, 45), tearing the sliced sprite's
+      // would instead land it at (45, -45), tearing the sliced sprite's
       // regions apart on rotation.
       const rotatedCorner = positions.find(
         (position) =>
           Math.abs(position.world.x - (50 - 45)) < 1e-9 &&
-          Math.abs(position.world.y - -45) < 1e-9,
+          Math.abs(position.world.y - 45) < 1e-9,
       );
 
       expect(rotatedCorner).toBeDefined();
@@ -1289,18 +1319,6 @@ describe('createRenderEcsSystem', () => {
   });
 
   describe('view culling', () => {
-    // An 800x600 canvas and a camera at the origin showing 10 world units
-    // vertically: the view spans x in [-6.67, 6.67] and y in [-5, 5].
-    const addNarrowCamera = (): void => {
-      const entity = world.createEntity();
-
-      addCameraComponent(world, entity, {
-        isStatic: true,
-        verticalWorldUnits: 10,
-      });
-      addPositionComponent(world, entity);
-    };
-
     const addSpriteAt = (
       renderable: SpriteMaterial,
       position: { x: number; y: number },
@@ -1327,7 +1345,7 @@ describe('createRenderEcsSystem', () => {
       addNarrowCamera();
       const { renderable, bindInstanceData } = createRenderable();
 
-      addSpriteAt(renderable, { x: 0, y: 5.51 });
+      addSpriteAt(renderable, { x: 0, y: -5.51 });
 
       world.update();
 
@@ -1339,7 +1357,7 @@ describe('createRenderEcsSystem', () => {
       addNarrowCamera();
       const { renderable, bindInstanceData } = createRenderable();
 
-      addSpriteAt(renderable, { x: 0, y: 5.49 });
+      addSpriteAt(renderable, { x: 0, y: -5.49 });
 
       world.update();
 
@@ -1532,19 +1550,6 @@ describe('createRenderEcsSystem', () => {
     const boundMask = (bindInstanceData: Mock): InstanceMask | null =>
       (bindInstanceData.mock.calls[0][0] as InstanceComponents).mask;
 
-    const addMaskedParent = (
-      shape: Parameters<typeof addMaskComponent>[2]['shape'] = {
-        kind: 'rect',
-      },
-    ): number => {
-      const entity = world.createEntity();
-
-      addPositionComponent(world, entity);
-      addMaskComponent(world, entity, { width: 4, height: 4, shape });
-
-      return entity;
-    };
-
     it("binds a descendant sprite's instance with its masks", () => {
       addCameraEntity();
       const { renderable, bindInstanceData } = createRenderable();
@@ -1627,6 +1632,369 @@ describe('createRenderEcsSystem', () => {
         kind: 'radial',
         filledSweep: Math.PI / 2,
       });
+    });
+  });
+
+  describe('meshes', () => {
+    /** Every draw call, in order: `quads:<instances>` or `mesh:<tag>`. */
+    let drawCalls: string[];
+
+    interface TestMesh {
+      entity: number;
+      mesh: MeshEcsComponent;
+      bindMesh: Mock;
+    }
+
+    const unitBounds = { min: { x: -0.5, y: -0.5 }, max: { x: 0.5, y: 0.5 } };
+
+    const addMeshEntity = (
+      tag: string,
+      position: { x: number; y: number } = Vec2.zero,
+      options: {
+        bounds?: Rect;
+        vertexCount?: number;
+        category?: number;
+        layer?: number;
+        entity?: number;
+      } = {},
+    ): TestMesh => {
+      const entity = options.entity ?? world.createEntity();
+      const bindMesh = vi.fn();
+      const geometry = {
+        vertexCount: options.vertexCount ?? 3,
+        bounds: options.bounds ?? unitBounds,
+        getAttributeSize: (): number => 2,
+        bind: vi.fn(),
+        draw: vi.fn(() => drawCalls.push(`mesh:${tag}`)),
+      } as unknown as Geometry;
+      const material = { bindMesh } as unknown as MeshMaterial;
+
+      if (options.entity === undefined) {
+        addPositionComponent(world, entity, { local: position });
+      }
+
+      const mesh = addMeshComponent(world, entity, {
+        geometry,
+        material,
+        category: options.category,
+        layer: options.layer,
+      });
+
+      return { entity, mesh, bindMesh };
+    };
+
+    beforeEach(() => {
+      drawCalls = [];
+      (mockGl.drawArraysInstanced as Mock).mockImplementation(
+        (_mode: unknown, _first: number, _count: number, instances: number) =>
+          drawCalls.push(`quads:${instances}`),
+      );
+    });
+
+    it('draws a mesh between two sprites of the same texture, splitting their batch', () => {
+      addCameraEntity();
+      const { renderable } = createRenderable();
+
+      const below = addSpriteEntity(renderable, 0);
+      const { entity: mesh } = addMeshEntity('between');
+      const above = addSpriteEntity(renderable, 0);
+
+      addDrawOrderComponent(world, below, { order: 0 });
+      addDrawOrderComponent(world, mesh, { order: 1 });
+      addDrawOrderComponent(world, above, { order: 2 });
+
+      world.update();
+
+      expect(drawCalls).toEqual(['quads:1', 'mesh:between', 'quads:1']);
+    });
+
+    it('batches the sprites together when the mesh sorts after both', () => {
+      addCameraEntity();
+      const { renderable } = createRenderable();
+
+      addSpriteEntity(renderable, 0);
+      const { entity: mesh } = addMeshEntity('last');
+      addSpriteEntity(renderable, 0);
+
+      addDrawOrderComponent(world, mesh, { order: 3 });
+
+      world.update();
+
+      expect(drawCalls).toEqual(['quads:2', 'mesh:last']);
+    });
+
+    it("sorts by the mesh's layer before world order", () => {
+      addCameraEntity();
+      const { renderable } = createRenderable();
+
+      const sprite = addSpriteEntity(renderable, 0);
+      const { entity: mesh } = addMeshEntity('behind', Vec2.zero, {
+        layer: -1,
+      });
+
+      addDrawOrderComponent(world, sprite, { order: 0 });
+      addDrawOrderComponent(world, mesh, { order: 5 });
+
+      world.update();
+
+      expect(drawCalls).toEqual(['mesh:behind', 'quads:1']);
+    });
+
+    it('y-sorts meshes with sprites by their root entity Y', () => {
+      const cameraEntity = world.createEntity();
+
+      addCameraComponent(world, cameraEntity, {
+        isStatic: true,
+        verticalWorldUnits: 1e4,
+        ySort: true,
+      });
+      addPositionComponent(world, cameraEntity);
+
+      const { renderable } = createRenderable();
+
+      addSpriteEntity(renderable, 10);
+      addMeshEntity('higher', { x: 0, y: -10 });
+
+      world.update();
+
+      expect(drawCalls).toEqual(['mesh:higher', 'quads:1']);
+    });
+
+    it("draws an entity's mesh behind its own sprite, and its sprite behind its own text", () => {
+      addCameraEntity();
+      const { renderable, bindInstanceData } = createRenderable();
+
+      const entity = addTextEntity(renderable, 0, {
+        glyphs: [
+          {
+            offset: Vec2.zero,
+            size: { x: 1, y: 1 },
+            uvOffset: Vec2.zero,
+            uvScale: Vec2.one,
+            embolden: 0,
+          },
+        ],
+      });
+
+      addSpriteComponent(
+        world,
+        entity,
+        createSprite(renderable, { pivot: { x: 7, y: 0 } }),
+      );
+      addMeshEntity('own', Vec2.zero, { entity });
+
+      world.update();
+
+      expect(drawCalls).toEqual(['mesh:own', 'quads:1', 'quads:1']);
+      expect(
+        (bindInstanceData.mock.calls[0][0] as InstanceComponents).sprite.pivot
+          .x,
+      ).toBe(7);
+    });
+
+    it('skips a mesh whose category does not match the camera culling mask', () => {
+      addCameraEntity(0b0010);
+      addMeshEntity('culled', Vec2.zero, { category: 0b0001 });
+      addMeshEntity('drawn', Vec2.zero, { category: 0b0010 });
+
+      world.update();
+
+      expect(drawCalls).toEqual(['mesh:drawn']);
+    });
+
+    it('skips a mesh under a hidden ancestor', () => {
+      addCameraEntity();
+      const parent = world.createEntity();
+      const visibility = addVisibilityComponent(world, parent, {
+        visible: false,
+      });
+      const { entity } = addMeshEntity('hidden');
+
+      world.setParent(entity, parent);
+      world.update();
+
+      expect(drawCalls).toEqual([]);
+
+      visibility.visible = true;
+      world.update();
+
+      expect(drawCalls).toEqual(['mesh:hidden']);
+    });
+
+    it('skips a mesh with no vertices', () => {
+      addCameraEntity();
+      addMeshEntity('empty', Vec2.zero, { vertexCount: 0 });
+
+      world.update();
+
+      expect(drawCalls).toEqual([]);
+    });
+
+    describe('view culling', () => {
+      it('skips a mesh outside the view', () => {
+        addNarrowCamera();
+        addMeshEntity('outside', { x: 0, y: 5.51 });
+        addMeshEntity('inside', { x: 0, y: 5.49 });
+
+        world.update();
+
+        expect(drawCalls).toEqual(['mesh:inside']);
+      });
+
+      it("places a mesh's bounds with its entity's rotation and scale", () => {
+        addNarrowCamera();
+
+        // Local x in [0, 1]: unturned and unscaled, it spans y -6.6 to -6.4,
+        // above the view. Turned to point down (+Y) and doubled, it reaches
+        // down to y -4.5, inside the view.
+        const { entity } = addMeshEntity(
+          'turned',
+          { x: 0, y: -6.5 },
+          { bounds: { min: { x: 0, y: -0.1 }, max: { x: 1, y: 0.1 } } },
+        );
+
+        world.update();
+
+        expect(drawCalls).toEqual([]);
+
+        addRotationComponent(world, entity, { local: Math.PI / 2 });
+        addScaleComponent(world, entity, { local: { x: 2, y: 2 } });
+        world.update();
+
+        expect(drawCalls).toEqual(['mesh:turned']);
+      });
+    });
+
+    describe('masks', () => {
+      it('binds a descendant mesh with its masks', () => {
+        addCameraEntity();
+        const parent = addMaskedParent();
+        const { entity, bindMesh } = addMeshEntity('masked');
+
+        world.setParent(entity, parent);
+        world.update();
+
+        expect(bindMesh.mock.calls[0][3]).toMatchObject({
+          visible: true,
+          clip: { min: { x: -2, y: -2 }, max: { x: 2, y: 2 } },
+        });
+      });
+
+      it('binds an unmasked mesh with no masks', () => {
+        addCameraEntity();
+        const { bindMesh } = addMeshEntity('unmasked');
+
+        world.update();
+
+        expect(bindMesh.mock.calls[0][3]).toBeNull();
+      });
+
+      it('skips a mesh a mask hides entirely', () => {
+        addCameraEntity();
+        const parent = addMaskedParent({
+          kind: 'linear',
+          origin: 'left',
+          amount: 0,
+        });
+        const { entity } = addMeshEntity('hidden');
+
+        world.setParent(entity, parent);
+        world.update();
+
+        expect(drawCalls).toEqual([]);
+      });
+
+      it("skips a mesh outside its masks' bounds", () => {
+        addCameraEntity();
+        const parent = addMaskedParent();
+        const { entity } = addMeshEntity('outside', { x: 0, y: 10 });
+
+        world.setParent(entity, parent);
+        world.update();
+
+        expect(drawCalls).toEqual([]);
+      });
+    });
+
+    it("binds the entity's world transform as the model matrix: translate, rotate, then scale", () => {
+      addCameraEntity();
+      const { entity, bindMesh } = addMeshEntity('placed', { x: 3, y: 4 });
+
+      addRotationComponent(world, entity, { local: Math.PI / 2 });
+      addScaleComponent(world, entity, { local: { x: 2, y: 3 } });
+      world.update();
+
+      const model = bindMesh.mock.calls[0][1] as Matrix3x3;
+
+      const apply = (x: number, y: number): number[] => {
+        const m = model.matrix;
+
+        return [m[0] * x + m[3] * y + m[6], m[1] * x + m[4] * y + m[7]];
+      };
+
+      // Local +X, scaled by 2, turns towards +Y.
+      const [x, y] = apply(1, 0);
+
+      expect(x).toBeCloseTo(3);
+      expect(y).toBeCloseTo(6);
+
+      // Local +Y, scaled by 3, turns towards -X.
+      const [x2, y2] = apply(0, 1);
+
+      expect(x2).toBeCloseTo(0);
+      expect(y2).toBeCloseTo(4);
+    });
+
+    it("binds a view-projection that maps the camera's view to clip space", () => {
+      addCameraEntity();
+      const { bindMesh } = addMeshEntity('projected');
+
+      world.update();
+
+      const viewProjection = (bindMesh.mock.calls[0][2] as Matrix3x3).matrix;
+      // The camera shows y in [-5000, 5000], so a point a quarter of the way
+      // down from the center lands halfway down clip space.
+      const clipY =
+        viewProjection[1] * 0 + viewProjection[4] * 2500 + viewProjection[7];
+
+      expect(clipY).toBeCloseTo(-0.5);
+    });
+
+    it('draws meshes with straight-alpha blending, and disables blending afterwards', () => {
+      addCameraEntity();
+      const { mesh } = addMeshEntity('blended');
+
+      world.update();
+
+      const blendOrder = (mockGl.blendFuncSeparate as Mock).mock
+        .invocationCallOrder[0];
+      const drawOrder = (mesh.geometry.draw as Mock).mock
+        .invocationCallOrder[0];
+
+      expect(mockGl.blendFuncSeparate).toHaveBeenCalledWith(
+        'SRC_ALPHA',
+        'ONE_MINUS_SRC_ALPHA',
+        'ONE',
+        'ONE_MINUS_SRC_ALPHA',
+      );
+      expect(mockGl.enable).toHaveBeenCalledWith('BLEND');
+      expect(blendOrder).toBeLessThan(drawOrder);
+      expect(mockGl.disable).toHaveBeenLastCalledWith('BLEND');
+    });
+
+    it("draws no mesh while the WebGL context is lost, and draws it again once it's restored", () => {
+      addCameraEntity();
+      addMeshEntity('restored');
+      (mockGl.isContextLost as Mock).mockReturnValue(true);
+
+      world.update();
+
+      expect(drawCalls).toEqual([]);
+
+      (mockGl.isContextLost as Mock).mockReturnValue(false);
+      world.update();
+
+      expect(drawCalls).toEqual(['mesh:restored']);
     });
   });
 });

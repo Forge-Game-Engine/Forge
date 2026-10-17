@@ -68,7 +68,7 @@ function resolveOwningCameraView(
  *
  * Rewrites the element's `x`/`y` (to a full stretch, `pivot: 0`, with
  * `margin` shrinking it by the inset on each enabled edge) and
- * `anchoredPosition` (offsetting it by the left/bottom insets) every frame
+ * `anchoredPosition` (offsetting it by the left/top insets) every frame
  * - `RectTransformEcsComponent`'s existing anchor/pivot/margin formula
  * already expresses independent per-edge insets exactly, so no new layout
  * math was needed. An entity anchored any other way than
@@ -117,9 +117,9 @@ export const createUiSafeAreaEcsSystem = (
       );
       rectTransform.y = UiAxis.stretch(
         { min: 0, max: 1 },
-        { pivot: 0, margin: -(bottom + top) },
+        { pivot: 0, margin: -(top + bottom) },
       );
-      rectTransform.anchoredPosition = { x: left, y: bottom };
+      rectTransform.anchoredPosition = { x: left, y: top };
     }
   },
 });

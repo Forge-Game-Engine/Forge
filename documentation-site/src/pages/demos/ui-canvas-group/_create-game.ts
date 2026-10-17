@@ -139,7 +139,7 @@ export const createCanvasGroupGame = async (): Promise<Game> => {
     fontAtlas,
     size: 26,
     anchor: UiAnchor.topLeft(),
-    anchoredPosition: { x: 60, y: -60 },
+    anchoredPosition: { x: 60, y: 60 },
     verticalAlign: textVerticalAlignments.middle,
     color: Color.white,
     category: renderLayers.ui,
@@ -193,7 +193,7 @@ export const createCanvasGroupGame = async (): Promise<Game> => {
     fontAtlas,
     size: 32,
     anchor: UiAnchor.topLeft(),
-    anchoredPosition: { x: 40, y: -40 },
+    anchoredPosition: { x: 40, y: 40 },
     color: Color.white,
     category: renderLayers.ui,
   });
@@ -207,7 +207,7 @@ export const createCanvasGroupGame = async (): Promise<Game> => {
     size: 20,
     maxWidth: 480,
     anchor: UiAnchor.topLeft(),
-    anchoredPosition: { x: 40, y: -100 },
+    anchoredPosition: { x: 40, y: 100 },
     color: new Color(0.8, 0.82, 0.88, 1),
     category: renderLayers.ui,
   });
@@ -240,7 +240,7 @@ export const createCanvasGroupGame = async (): Promise<Game> => {
     labelColor: Color.white,
     labelCategory: renderLayers.ui,
     anchor: UiAnchor.bottomLeft({ x: 200, y: 56 }),
-    anchoredPosition: { x: 40, y: 40 },
+    anchoredPosition: { x: 40, y: -40 },
     transition: {
       normalColor: buttonColor,
       hoverColor: new Color(0.45, 0.63, 0.98, 1),
@@ -252,7 +252,7 @@ export const createCanvasGroupGame = async (): Promise<Game> => {
     sprite: toggleBoxSprite,
     checkmarkSprite: crossSprite,
     anchor: UiAnchor.topLeft({ x: 32, y: 32 }),
-    anchoredPosition: { x: 300, y: -46 },
+    anchoredPosition: { x: 300, y: 46 },
   });
 
   modalToggle.onValueChanged.registerListener((isDisabled) => {

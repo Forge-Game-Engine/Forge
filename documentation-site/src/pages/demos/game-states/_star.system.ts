@@ -51,7 +51,7 @@ export const createStarSpawnerEcsSystem = (
           -playArea.halfWidth + margin,
           playArea.halfWidth - margin,
         ),
-        y: playArea.halfHeight + margin,
+        y: -playArea.halfHeight - margin,
       },
     });
     addSpriteComponent(world, star, starSprite);
@@ -88,7 +88,7 @@ export const createStarEcsSystem = (
     for (let i = 0; i < entities.length; i++) {
       const position = positions[i];
 
-      position.local.y -= stars[i].fallSpeed * time.deltaTimeInSeconds;
+      position.local.y += stars[i].fallSpeed * time.deltaTimeInSeconds;
 
       const caught = players.some((player, p) => {
         const basket = playerPositions[p].local;
@@ -106,7 +106,7 @@ export const createStarEcsSystem = (
         continue;
       }
 
-      if (position.local.y < -playArea.halfHeight) {
+      if (position.local.y > playArea.halfHeight) {
         round.misses++;
         world.removeEntity(entities[i]);
       }

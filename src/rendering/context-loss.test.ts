@@ -211,9 +211,11 @@ describe('WebGL context loss', () => {
     });
 
     it('creates geometry without touching WebGL', () => {
-      const geometry = new Geometry(renderContext, [
-        { name: 'a_position', data: new Float32Array(2), size: 2 },
-      ]);
+      const geometry = new Geometry(renderContext, {
+        attributes: [
+          { name: 'a_position', data: new Float32Array(2), size: 2 },
+        ],
+      });
 
       expect(geometry).toBeInstanceOf(Geometry);
       expect(gl.createBuffer).not.toHaveBeenCalled();
@@ -370,9 +372,9 @@ describe('WebGL context loss', () => {
 
     it('re-uploads geometry from its vertex data and makes new vertex arrays', () => {
       const data = new Float32Array([1, 2]);
-      const geometry = new Geometry(renderContext, [
-        { name: 'a_position', data, size: 2 },
-      ]);
+      const geometry = new Geometry(renderContext, {
+        attributes: [{ name: 'a_position', data, size: 2 }],
+      });
       const material = createMaterial();
 
       geometry.bind(material);
@@ -440,9 +442,11 @@ describe('WebGL context loss', () => {
         { width: 8, height: 8 },
         RENDER_TARGET_FORMAT.hdr,
       );
-      const geometry = new Geometry(renderContext, [
-        { name: 'a_position', data: new Float32Array(2), size: 2 },
-      ]);
+      const geometry = new Geometry(renderContext, {
+        attributes: [
+          { name: 'a_position', data: new Float32Array(2), size: 2 },
+        ],
+      });
       const errors: unknown[] = [];
 
       const captureError = (event: ErrorEvent): void => {
@@ -491,9 +495,11 @@ describe('WebGL context loss', () => {
 
   describe('geometry', () => {
     const createGeometry = (): Geometry =>
-      new Geometry(renderContext, [
-        { name: 'a_position', data: new Float32Array(2), size: 2 },
-      ]);
+      new Geometry(renderContext, {
+        attributes: [
+          { name: 'a_position', data: new Float32Array(2), size: 2 },
+        ],
+      });
 
     it('frees its buffers and vertex arrays when disposed, and is not rebuilt', () => {
       const geometry = createGeometry();

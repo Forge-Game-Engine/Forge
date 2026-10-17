@@ -176,14 +176,14 @@ export const createScene: CreateScene = (
     return { position, sprite };
   }
 
-  const pointerBase = { x: 0, y: -200 };
+  const pointerBase = { x: 0, y: 200 };
   const pointer = createSquare(
     pointerBase.x,
     pointerBase.y,
     toColor(inputSceneColors.blue),
   );
   const scroll = createSquare(-300, 0, toColor(inputSceneColors.yellow));
-  const marker = createSquare(-300, 200, toColor(inputSceneColors.red));
+  const marker = createSquare(-300, -200, toColor(inputSceneColors.red));
   const holdSquare = createSquare(300, 0, toColor(inputSceneColors.orange));
 
   holdSquare.sprite.width = holdSmallSize;

@@ -2,58 +2,59 @@ import React, { JSX } from 'react';
 import { createButtonGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 
-import { Demo } from '@site/src/components/Demo';
-import { InteractionInstruction } from '@site/src/components/_InteractionInstruction';
-import { KeyboardKey } from '@site/src/components/_KeyboardKey';
-
-const badgeStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 20,
-  height: 20,
-  borderRadius: '50%',
-  backgroundColor: 'var(--ifm-color-emphasis-300)',
-  fontSize: 12,
-};
+import { DemoPage } from '@site/src/components/demo-page';
 
 export default function UiButton(): JSX.Element {
   return (
-    <Demo
-      metaData={{
-        title: 'UI Buttons',
-        description:
-          'A demo showcasing createButton and keyboard/gamepad focus navigation from the ui module: click, hover, and arrow-key/Enter navigation between three buttons.',
-      }}
-      header="UI Buttons"
-      blurb="Three buttons (createButton), each hoverable, clickable, and keyboard/gamepad-focus-navigable. Click one, or use the arrow keys to move focus between them and Enter/Space to activate the focused one - either path raises the same onInvoke, updating the status text above. Hovering a button also focuses it, so the highlight follows the mouse the same way it follows the keyboard, and each button's color eases between normal/hover/pressed tints via createUiTransitionEcsSystem."
+    <DemoPage
+      slug="ui-button"
       createGame={createButtonGame}
-      interactions={
-        <>
-          <InteractionInstruction
-            displayElement={
-              <div style={badgeStyle}>
-                <i className="fa-solid fa-computer-mouse" />
-              </div>
-            }
-            text="Click a button."
-          />
-          <InteractionInstruction
-            displayElement={
-              <>
-                <KeyboardKey keyCode="↑" />
-                <KeyboardKey keyCode="↓" />
-              </>
-            }
-            text="Move focus between buttons."
-          />
-          <InteractionInstruction
-            displayElement={<KeyboardKey keyCode="⏎" />}
-            text="Activate the focused button."
-          />
-        </>
-      }
-      codeFiles={[{ name: 'game.ts', content: gameCode }]}
+      controls={[
+        {
+          inputs: [{ device: 'mouse', label: 'Click' }],
+          action: 'Press a button',
+        },
+        { inputs: ['↑↓'], action: 'Move focus' },
+        { inputs: ['Enter', 'Space'], action: 'Press the focused button' },
+      ]}
+      highlights={[
+        {
+          text: 'Each button comes from one createButton call: a sliced panel sprite, a label and an interactable component.',
+          file: 'create-game.ts',
+        },
+        {
+          text: 'A click and Enter or Space on the focused button raise the same onInvoke event, which updates the status text.',
+          file: 'create-game.ts',
+        },
+        {
+          text: 'The canvas takes a navigate and a submit input action, so the arrow keys move focus between buttons.',
+          file: 'create-game.ts',
+        },
+        {
+          text: 'Hovering a button focuses it too, and its color eases between normal, hover and pressed tints.',
+          file: 'create-game.ts',
+        },
+      ]}
+      docLinks={[
+        {
+          label: 'Buttons and interaction',
+          to: '/docs/docs/ui/buttons-and-interaction',
+        },
+        { label: 'Creating a canvas', to: '/docs/docs/ui/creating-a-canvas' },
+      ]}
+      fileGroups={[
+        {
+          title: 'Start here',
+          files: [
+            {
+              name: 'create-game.ts',
+              summary:
+                'Wires mouse and keyboard input, then builds three buttons and a status label.',
+              content: gameCode,
+            },
+          ],
+        },
+      ]}
     />
   );
 }

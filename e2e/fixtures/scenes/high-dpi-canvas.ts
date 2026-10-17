@@ -31,7 +31,7 @@ const verticalWorldUnits = 10;
 const squareWorldSize = 2;
 // Off-center, so a pointer mapping that's off by the pixel ratio (which
 // scales distances from the canvas center) lands visibly outside it.
-const squareWorldCenter: Vector2 = { x: 3, y: 2 };
+const squareWorldCenter: Vector2 = { x: 3, y: -2 };
 
 /** Converts a plain 0-255 RGB triple (see `input-scene-colors.ts`) to a `Color`. */
 function toColor(rgb: { r: number; g: number; b: number }): Color {

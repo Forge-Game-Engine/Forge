@@ -512,7 +512,7 @@ describe('GamepadInputSource', () => {
     expect(updateSpy).not.toHaveBeenCalled();
   });
   describe('stick Y axes', () => {
-    it('reports a stick pushed up as positive', () => {
+    it('reports a stick pushed up as negative, as the W3C gamepad does', () => {
       source = createSource([createGamepad([0, -0.8, 0, 0], [])]);
 
       source.axis1dBindings.add(
@@ -523,10 +523,10 @@ describe('GamepadInputSource', () => {
 
       source.update();
 
-      expect(moveAction.value).toBeCloseTo(0.8);
+      expect(moveAction.value).toBeCloseTo(-0.8);
     });
 
-    it('reports the right stick pushed up as positive and leaves X axes as reported', () => {
+    it('reports the right stick and X axes as the W3C gamepad does', () => {
       const lookAction = new Axis1dAction('look', group);
 
       inputManager.addAxis1dActions(lookAction);
@@ -546,24 +546,10 @@ describe('GamepadInputSource', () => {
       source.update();
 
       expect(moveAction.value).toBeCloseTo(0.4);
-      expect(lookAction.value).toBeCloseTo(0.7);
+      expect(lookAction.value).toBeCloseTo(-0.7);
     });
 
-    it('reads 0, not -0, within the deadzone', () => {
-      source = createSource([createGamepad([0, 0.05, 0, 0], [])]);
-
-      source.axis1dBindings.add(
-        new GamepadAxis1dBinding(moveAction, {
-          axisIndex: gamepadAxes.leftStickY,
-        }),
-      );
-
-      source.update();
-
-      expect(Object.is(moveAction.value, 0)).toBe(true);
-    });
-
-    it('agrees with a D-pad bound to the same up-is-positive action', () => {
+    it('agrees with a D-pad bound to the same up-is-negative action', () => {
       source = createSource([
         createGamepad([0, -0.5, 0, 0], pressButtons(gamepadButtons.dpadUp)),
       ]);
@@ -575,15 +561,15 @@ describe('GamepadInputSource', () => {
       );
       source.axis1dBindings.add(
         new GamepadAxis1dBinding(moveAction, {
-          positiveButtonIndex: gamepadButtons.dpadUp,
-          negativeButtonIndex: gamepadButtons.dpadDown,
+          positiveButtonIndex: gamepadButtons.dpadDown,
+          negativeButtonIndex: gamepadButtons.dpadUp,
         }),
       );
 
       source.update();
 
-      // 0.5 from the stick plus 1 from the D-pad, clamped.
-      expect(moveAction.value).toBe(1);
+      // -0.5 from the stick plus -1 from the D-pad, clamped.
+      expect(moveAction.value).toBe(-1);
     });
   });
 
@@ -595,7 +581,7 @@ describe('GamepadInputSource', () => {
       inputManager.addAxis2dActions(lookAction);
     });
 
-    it('reads a stick into the bound action, with up positive', () => {
+    it('reads a stick into the bound action, with up negative', () => {
       source = createSource([createGamepad([0.5, -0.6, 0, 0], [])]);
 
       source.axis2dBindings.add(
@@ -608,7 +594,7 @@ describe('GamepadInputSource', () => {
       source.update();
 
       expect(lookAction.value.x).toBeCloseTo(0.5);
-      expect(lookAction.value.y).toBeCloseTo(0.6);
+      expect(lookAction.value.y).toBeCloseTo(-0.6);
     });
 
     it('applies the deadzone to the overall stick deflection', () => {
@@ -625,7 +611,7 @@ describe('GamepadInputSource', () => {
       source.update();
 
       expect(lookAction.value.x).toBeCloseTo(0.12);
-      expect(lookAction.value.y).toBeCloseTo(-0.12);
+      expect(lookAction.value.y).toBeCloseTo(0.12);
 
       getGamepadsSpy.mockReturnValue([createGamepad([0.05, 0.05, 0, 0], [])]);
       source.update();
@@ -634,7 +620,7 @@ describe('GamepadInputSource', () => {
       expect(lookAction.value.y).toBe(0);
     });
 
-    it('reads four digital buttons into the bound action, with north positive', () => {
+    it('reads four digital buttons into the bound action, with north negative', () => {
       source = createSource([
         createGamepad(
           [],
@@ -654,7 +640,7 @@ describe('GamepadInputSource', () => {
       source.update();
 
       expect(lookAction.value.x).toBe(-1);
-      expect(lookAction.value.y).toBe(1);
+      expect(lookAction.value.y).toBe(-1);
     });
 
     it('combines and clamps a stick and a D-pad bound to the same action', () => {

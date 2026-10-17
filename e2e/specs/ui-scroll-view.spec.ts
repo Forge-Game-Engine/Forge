@@ -71,7 +71,7 @@ test.describe('ui scroll view', () => {
 
     const dragged = await capture(page);
 
-    expect(dragged.offsetY).toBeCloseTo(100, 0);
+    expect(dragged.offsetY).toBeCloseTo(-100, 0);
 
     // The layout places the content on the next frame.
     const drawn = await capture(page);
@@ -100,7 +100,7 @@ test.describe('ui scroll view', () => {
 
     const wheeled = await settle(page);
 
-    expect(wheeled.offsetY).toBeCloseTo(120, 0);
+    expect(wheeled.offsetY).toBeCloseTo(-120, 0);
     expect(before.landmark!.bottom - wheeled.landmark!.bottom).toBeGreaterThan(
       117,
     );
@@ -114,7 +114,7 @@ test.describe('ui scroll view', () => {
     const clipped = await settle(page);
     const visibleHeight = clipped.landmark!.bottom - clipped.landmark!.top;
 
-    expect(clipped.offsetY).toBeCloseTo(270, 0);
+    expect(clipped.offsetY).toBeCloseTo(-270, 0);
     expect(clipped.landmark!.top).toBeGreaterThanOrEqual(
       clipped.viewportTop - 1,
     );

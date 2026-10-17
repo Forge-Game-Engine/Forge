@@ -43,7 +43,7 @@ describe('resolveCanvasPointerPosition', () => {
     expect(center).toEqual({ x: 0, y: 0 });
 
     // Top-left of the screen should convert to the top-left of the
-    // reference resolution (Y flips from Y-down canvas to Y-up UI world).
+    // reference resolution.
     const topLeft = resolveCanvasPointerPosition(
       world,
       canvas,
@@ -51,7 +51,7 @@ describe('resolveCanvasPointerPosition', () => {
       buildViewportPosition(0, 0),
     );
 
-    expect(topLeft).toEqual({ x: -960, y: 540 });
+    expect(topLeft).toEqual({ x: -960, y: -540 });
   });
 
   it("converts a CSS-pixel pointer position against the canvas's CSS size on a HiDPI display", () => {
@@ -91,7 +91,7 @@ describe('resolveCanvasPointerPosition', () => {
         renderContext,
         buildViewportPosition(0, 0),
       ),
-    ).toEqual({ x: -960, y: 540 });
+    ).toEqual({ x: -960, y: -540 });
   });
 
   it('returns null when the canvas camera entity has no CameraEcsComponent', () => {

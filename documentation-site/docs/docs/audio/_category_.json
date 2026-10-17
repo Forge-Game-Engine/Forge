@@ -4,5 +4,8 @@
   "link": {
     "type": "doc",
     "id": "docs/audio/index"
+  },
+  "customProps": {
+    "icon": "audio"
   }
 }
