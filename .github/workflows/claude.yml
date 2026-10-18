@@ -139,14 +139,6 @@ jobs:
           base_branch: dev
           additional_permissions: |
             actions: read
-          # Subagents (design-author, solution-reviewer) start in the
-          # background by default. An unattended run can end its turn while
-          # one is still working, which ends the session and kills the
-          # subagent, so the run "finishes" with nothing pushed. With
-          # background tasks off, every agent runs in the foreground and the
-          # run waits for its result.
-          settings: |
-            {"env": {"CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": "1"}}
           claude_args: |
             --model claude-opus-5-5
             --effort high

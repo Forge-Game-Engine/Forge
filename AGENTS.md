@@ -166,12 +166,6 @@ unattended:
   `solution-reviewer` and `pr-reviewer` run inside the workflows above, so
   every command they tell themselves to run must be in that workflow's
   `--allowedTools`. When you change one, check the other.
-- **Agents run in the foreground in the workflows.** Both workflows set
-  `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` through the action's `settings`
-  input. Without it, a subagent starts in the background by default, and
-  an unattended run can end its turn while the subagent is still working.
-  That ends the run with nothing pushed. Keep the setting on any new
-  workflow that runs an agent.
 
 ## Repository Structure
 
