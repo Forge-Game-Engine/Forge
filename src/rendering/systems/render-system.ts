@@ -678,8 +678,8 @@ interface DrawItem {
 const drawItems: DrawItem[] = [];
 let layerKeys = new Uint32Array(0);
 let worldOrderKeys = new Uint32Array(0);
-let rootYHighKeys = new Uint32Array(0);
-let rootYLowKeys = new Uint32Array(0);
+let sortUnitYHighKeys = new Uint32Array(0);
+let sortUnitYLowKeys = new Uint32Array(0);
 let rootSequenceHighKeys = new Uint32Array(0);
 let rootSequenceLowKeys = new Uint32Array(0);
 let hierarchyKeys = new Uint32Array(0);
@@ -697,8 +697,8 @@ function ensureSortCapacity(count: number): void {
 
   layerKeys = new Uint32Array(capacity);
   worldOrderKeys = new Uint32Array(capacity);
-  rootYHighKeys = new Uint32Array(capacity);
-  rootYLowKeys = new Uint32Array(capacity);
+  sortUnitYHighKeys = new Uint32Array(capacity);
+  sortUnitYLowKeys = new Uint32Array(capacity);
   rootSequenceHighKeys = new Uint32Array(capacity);
   rootSequenceLowKeys = new Uint32Array(capacity);
   hierarchyKeys = new Uint32Array(capacity);
@@ -855,14 +855,17 @@ function writeSortKeys(resolver: DrawOrderResolver, count: number): void {
 }
 
 // Only needed when a camera y-sorts, so only written then.
-function writeRootYSortKeys(resolver: DrawOrderResolver, count: number): void {
+function writeSortUnitYSortKeys(
+  resolver: DrawOrderResolver,
+  count: number,
+): void {
   for (let i = 0; i < count; i++) {
     // Ascending, so a higher Y (further down the screen) draws later, in
     // front.
     writeSortableFloat64(
-      resolver.rootY(drawItems[i].entity),
-      rootYHighKeys,
-      rootYLowKeys,
+      resolver.sortUnitY(drawItems[i].entity),
+      sortUnitYHighKeys,
+      sortUnitYLowKeys,
       i,
     );
   }
@@ -987,9 +990,10 @@ const drawOrderResolver = createDrawOrderResolver();
  * Meshes, sprites and text hidden in the hierarchy (see
  * `VisibilityEcsComponent`) aren't drawn. The rest draw by `layer`, then by
  * world order (see `DrawOrderEcsComponent`), then, for a camera with
- * `ySort`, by their root entity's Y (lower first, so entities further down
- * the screen draw in front), then in hierarchy order: root entities in
- * creation order, each followed by its subtree in pre-order. That's a total order, resolved and sorted once per frame with
+ * `ySort`, by their sort unit's Y (lower first, so entities further down
+ * the screen draw in front; see `DrawOrderEcsComponent.ySortChildren` and
+ * `ySortOrigin`), then in hierarchy order: root entities in creation order,
+ * each followed by its subtree in pre-order. That's a total order, resolved and sorted once per frame with
  * an exact radix sort. An entity's mesh draws before its sprite, and its
  * sprite before its text.
  *
@@ -1073,13 +1077,13 @@ export const createRenderEcsSystem = (
         const projectionMatrix = createProjectionMatrix(view.bounds);
 
         if (cameraComponent.ySort && !ySortedOrder) {
-          writeRootYSortKeys(drawOrderResolver, itemCount);
+          writeSortUnitYSortKeys(drawOrderResolver, itemCount);
           ySortedOrder = radixSortByKeys(
             [
               layerKeys,
               worldOrderKeys,
-              rootYHighKeys,
-              rootYLowKeys,
+              sortUnitYHighKeys,
+              sortUnitYLowKeys,
               rootSequenceHighKeys,
               rootSequenceLowKeys,
               hierarchyKeys,

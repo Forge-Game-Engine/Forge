@@ -1,61 +1,209 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { EcsWorld } from '../ecs/index.js';
+import {
+  addPositionComponent,
+  addRotationComponent,
+  addScaleComponent,
+} from '../common/index.js';
+import { EcsWorld } from '../ecs/ecs-world.js';
 import { addDrawOrderComponent } from './components/draw-order-component.js';
-import { createDrawOrderResolver } from './draw-order.js';
+import { createDrawOrderResolver, DrawOrderResolver } from './draw-order.js';
 
 describe('createDrawOrderResolver', () => {
   let world: EcsWorld;
-  let parent: number;
-  let a: number;
-  let b: number;
-  let c: number;
+  let resolver: DrawOrderResolver;
 
-  const resolveHierarchyOrder = (): number[] => {
-    const resolver = createDrawOrderResolver();
-    const entities = [parent, a, b, c];
+  const addEntity = (y: number, parent: number | null = null): number => {
+    const entity = world.createEntity();
 
+    addPositionComponent(world, entity, { local: { x: 0, y } });
+
+    if (parent !== null) {
+      world.setParent(entity, parent);
+    }
+
+    return entity;
+  };
+
+  const resolveAll = (...entities: number[]): void => {
     resolver.resolve(world, entities);
-
-    return [...entities].sort(
-      (left, right) =>
-        resolver.hierarchyIndex(left) - resolver.hierarchyIndex(right),
-    );
   };
 
   beforeEach(() => {
     world = new EcsWorld();
-    parent = world.createEntity();
-    [a, b, c] = [
-      world.createEntity(),
-      world.createEntity(),
-      world.createEntity(),
-    ];
-
-    world.setParent(a, parent);
-    world.setParent(b, parent);
-    world.setParent(c, parent);
+    resolver = createDrawOrderResolver();
   });
 
-  it('numbers siblings in the order they were parented', () => {
-    expect(resolveHierarchyOrder()).toEqual([parent, a, b, c]);
+  describe('sortUnitY', () => {
+    it("is the root's Y for every entity of a subtree without ySortChildren", () => {
+      const root = addEntity(3);
+      const child = addEntity(10, root);
+      const grandchild = addEntity(20, child);
+
+      resolveAll(grandchild);
+
+      expect(resolver.sortUnitY(root)).toBe(3);
+      expect(resolver.sortUnitY(child)).toBe(3);
+      expect(resolver.sortUnitY(grandchild)).toBe(3);
+    });
+
+    it("is each child's own Y under a ySortChildren root, and grandchildren share their parent's", () => {
+      const root = addEntity(3);
+      const child = addEntity(10, root);
+      const grandchild = addEntity(20, child);
+
+      addDrawOrderComponent(world, root, { ySortChildren: true });
+      resolveAll(grandchild);
+
+      expect(resolver.sortUnitY(root)).toBe(3);
+      expect(resolver.sortUnitY(child)).toBe(10);
+      expect(resolver.sortUnitY(grandchild)).toBe(10);
+    });
+
+    it("ignores ySortChildren on an entity that isn't a sort unit", () => {
+      const root = addEntity(3);
+      const layer = addEntity(10, root);
+      const row = addEntity(20, layer);
+
+      addDrawOrderComponent(world, layer, { ySortChildren: true });
+      resolveAll(row);
+
+      expect(resolver.sortUnitY(layer)).toBe(3);
+      expect(resolver.sortUnitY(row)).toBe(3);
+    });
+
+    it('makes the children of nested ySortChildren entities sort units', () => {
+      const level = addEntity(3);
+      const layer = addEntity(10, level);
+      const row = addEntity(20, layer);
+      const tile = addEntity(30, row);
+
+      addDrawOrderComponent(world, level, { ySortChildren: true });
+      addDrawOrderComponent(world, layer, { ySortChildren: true });
+      resolveAll(tile);
+
+      expect(resolver.sortUnitY(layer)).toBe(10);
+      expect(resolver.sortUnitY(row)).toBe(20);
+      expect(resolver.sortUnitY(tile)).toBe(20);
+    });
+
+    it("adds ySortOrigin along the unit entity's own Y axis, through its rotation and scale", () => {
+      const root = addEntity(1);
+
+      addRotationComponent(world, root, { local: Math.PI / 3 });
+      addScaleComponent(world, root, { local: { x: 5, y: 2 } });
+      addDrawOrderComponent(world, root, { ySortOrigin: 3 });
+      resolveAll(root);
+
+      // 1 + 3 * 2 * cos(π / 3)
+      expect(resolver.sortUnitY(root)).toBeCloseTo(4);
+    });
+
+    it('sorts a unit without a position at its ySortOrigin', () => {
+      const root = world.createEntity();
+      const child = addEntity(50, root);
+
+      addRotationComponent(world, root, { local: Math.PI });
+      addDrawOrderComponent(world, root, { ySortOrigin: 2 });
+      resolveAll(child);
+
+      expect(resolver.sortUnitY(child)).toBe(2);
+    });
+
+    it("ignores ySortOrigin on an entity that isn't a sort unit", () => {
+      const root = addEntity(3);
+      const child = addEntity(10, root);
+
+      addDrawOrderComponent(world, child, { ySortOrigin: 7 });
+      resolveAll(child);
+
+      expect(resolver.sortUnitY(child)).toBe(3);
+    });
+
+    it('reads ySortChildren again on every resolve', () => {
+      const root = addEntity(3);
+      const child = addEntity(10, root);
+      const drawOrder = addDrawOrderComponent(world, root);
+
+      resolveAll(child);
+      expect(resolver.sortUnitY(child)).toBe(3);
+
+      drawOrder.ySortChildren = true;
+      resolveAll(child);
+      expect(resolver.sortUnitY(child)).toBe(10);
+    });
   });
 
-  it('numbers a child moved with setSiblingIndex at its new place', () => {
-    world.setSiblingIndex(c, 1);
+  describe('hierarchyIndex', () => {
+    it("numbers the root's whole subtree the same with and without ySortChildren", () => {
+      const root = addEntity(0);
+      const behind = addEntity(0, root);
+      const front = addEntity(0, root);
+      const frontChild = addEntity(0, front);
 
-    expect(resolveHierarchyOrder()).toEqual([parent, a, c, b]);
+      addDrawOrderComponent(world, behind, { behindParent: true });
 
-    world.setSiblingIndex(c, 0);
+      const indices = (): number[] => {
+        resolveAll(frontChild, behind);
 
-    expect(resolveHierarchyOrder()).toEqual([parent, c, a, b]);
-  });
+        return [root, behind, front, frontChild].map((entity) =>
+          resolver.hierarchyIndex(entity),
+        );
+      };
 
-  it('keeps behindParent children in their new sibling order, before the parent', () => {
-    addDrawOrderComponent(world, a, { behindParent: true });
-    addDrawOrderComponent(world, b, { behindParent: true });
+      const withoutYSortChildren = indices();
 
-    world.setSiblingIndex(b, 0);
+      addDrawOrderComponent(world, root, { ySortChildren: true });
 
-    expect(resolveHierarchyOrder()).toEqual([b, a, parent, c]);
+      expect(indices()).toEqual(withoutYSortChildren);
+      expect(withoutYSortChildren).toEqual([1, 0, 2, 3]);
+    });
+
+    describe('with setSiblingIndex', () => {
+      let parent: number;
+      let a: number;
+      let b: number;
+      let c: number;
+
+      const resolveHierarchyOrder = (): number[] => {
+        const entities = [parent, a, b, c];
+
+        resolveAll(...entities);
+
+        return [...entities].sort(
+          (left, right) =>
+            resolver.hierarchyIndex(left) - resolver.hierarchyIndex(right),
+        );
+      };
+
+      beforeEach(() => {
+        parent = addEntity(0);
+        a = addEntity(0, parent);
+        b = addEntity(0, parent);
+        c = addEntity(0, parent);
+      });
+
+      it('numbers siblings in the order they were parented', () => {
+        expect(resolveHierarchyOrder()).toEqual([parent, a, b, c]);
+      });
+
+      it('numbers a child moved with setSiblingIndex at its new place', () => {
+        world.setSiblingIndex(c, 1);
+
+        expect(resolveHierarchyOrder()).toEqual([parent, a, c, b]);
+
+        world.setSiblingIndex(c, 0);
+
+        expect(resolveHierarchyOrder()).toEqual([parent, c, a, b]);
+      });
+
+      it('keeps behindParent children in their new sibling order, before the parent', () => {
+        addDrawOrderComponent(world, a, { behindParent: true });
+        addDrawOrderComponent(world, b, { behindParent: true });
+
+        world.setSiblingIndex(b, 0);
+
+        expect(resolveHierarchyOrder()).toEqual([b, a, parent, c]);
+      });
+    });
   });
 });

@@ -1,4 +1,11 @@
-import { PositionEcsComponent, positionId } from '../common/index.js';
+import {
+  PositionEcsComponent,
+  positionId,
+  RotationEcsComponent,
+  rotationId,
+  ScaleEcsComponent,
+  scaleId,
+} from '../common/index.js';
 import { entityIndexMask } from '../ecs/entity-layout.js';
 import { ParentEcsComponent, parentId } from '../ecs/hierarchy.js';
 import { EcsWorld } from '../ecs/ecs-world.js';
@@ -14,11 +21,18 @@ import {
 /**
  * Each entity's place in the draw order, resolved from the hierarchy by
  * {@link createDrawOrderResolver}. Within a sprite or text `layer`, entities
- * draw by world order, then (for a camera that y-sorts) by their root's Y,
- * then by hierarchy order: roots in creation order, each with its subtree
- * after it in pre-order (parents before children, siblings in sibling
- * order), except that a child whose `DrawOrderEcsComponent.behindParent` is
- * `true` comes, with its own subtree, just before its parent.
+ * draw by world order, then (for a camera that y-sorts) by their sort unit's
+ * Y (see `DrawOrderEcsComponent.ySortChildren`), then by hierarchy order:
+ * roots in creation order, each with its subtree after it in pre-order
+ * (parents before children, siblings in sibling order), except that a child
+ * whose `DrawOrderEcsComponent.behindParent` is `true` comes, with its own
+ * subtree, just before its parent.
+ *
+ * Every sort unit's entities are one unbroken run of its root's hierarchy
+ * order: a unit is either its entity's whole subtree, or (when it sets
+ * `ySortChildren`) its entity alone. So ordering by sort unit Y, then root
+ * sequence, then hierarchy index keeps each unit together, and draws units
+ * at the same Y in hierarchy order, with no key of the unit's own.
  *
  * The same pass resolves which entities are visible in the hierarchy (see
  * `VisibilityEcsComponent`), so a system that draws them can skip the
@@ -51,10 +65,13 @@ export interface DrawOrderResolver {
   hierarchyIndex(entity: number): number;
 
   /**
-   * Reads the world Y of an entity's topmost ancestor, which y-sorting
-   * orders its whole subtree by. `0` when that ancestor has no position.
+   * Reads the Y a camera that y-sorts orders an entity by: the world Y of
+   * the point `(0, ySortOrigin)` in its sort unit's local space (see
+   * `DrawOrderEcsComponent.ySortChildren` and `ySortOrigin`). A unit without
+   * a position sorts at its `ySortOrigin`, the way a child at that point
+   * under a parent without a position sits at it.
    */
-  rootY(entity: number): number;
+  sortUnitY(entity: number): number;
 
   /**
    * Reads whether an entity is visible in the hierarchy: `false` if it or
@@ -82,14 +99,22 @@ export function createDrawOrderResolver(): DrawOrderResolver {
   let worldOrders = new Int32Array(0);
   let rootSequences = new Float64Array(0);
   let hierarchyIndices = new Uint32Array(0);
-  let roots = new Float64Array(0);
+  let sortUnits = new Float64Array(0);
+  let sortOrigins = new Float64Array(0);
   let visibilities = new Uint8Array(0);
-  let getRootPosition:
-    ((entity: number) => PositionEcsComponent | null) | null = null;
+  let getPosition: ((entity: number) => PositionEcsComponent | null) | null =
+    null;
+  let getRotation: ((entity: number) => RotationEcsComponent | null) | null =
+    null;
+  let getScale: ((entity: number) => ScaleEcsComponent | null) | null = null;
   const stack: number[] = [];
   const stackParentOrders: number[] = [];
   const stackParentVisibilities: boolean[] = [];
   const stackNumbering: boolean[] = [];
+  // The sort unit of the entity's parent, and whether the entity is a sort
+  // unit of its own.
+  const stackParentUnits: number[] = [];
+  const stackIsUnit: boolean[] = [];
 
   const ensureCapacity = (index: number): void => {
     if (index < stamps.length) {
@@ -117,7 +142,8 @@ export function createDrawOrderResolver(): DrawOrderResolver {
       hierarchyIndices,
       (length) => new Uint32Array(length),
     );
-    roots = grow(roots, (length) => new Float64Array(length));
+    sortUnits = grow(sortUnits, (length) => new Float64Array(length));
+    sortOrigins = grow(sortOrigins, (length) => new Float64Array(length));
     visibilities = grow(visibilities, (length) => new Uint8Array(length));
   };
 
@@ -126,7 +152,9 @@ export function createDrawOrderResolver(): DrawOrderResolver {
   // which resolves its world order and visibility and pushes its children
   // around a second, numbering entry for itself: its `behindParent`
   // children (each with its whole subtree) are numbered before it, and its
-  // other children after it.
+  // other children after it. The same visit assigns its sort unit: a root
+  // is one, and so is each child of a unit that sets `ySortChildren`; any
+  // other entity joins its parent's unit.
   const resolveSubtree = (
     world: EcsWorld,
     root: number,
@@ -136,15 +164,14 @@ export function createDrawOrderResolver(): DrawOrderResolver {
     const rootSequence = world.getCreationSequence(root);
     let nextHierarchyIndex = 0;
 
-    stack.push(root);
-    stackParentOrders.push(0);
-    stackParentVisibilities.push(true);
-    stackNumbering.push(false);
+    push(root, 0, true, false, root, true);
 
     while (stack.length > 0) {
       const entity = stack.pop()!;
       const parentOrder = stackParentOrders.pop()!;
       const parentVisible = stackParentVisibilities.pop()!;
+      const parentUnit = stackParentUnits.pop()!;
+      const isUnit = stackIsUnit.pop()!;
       const index = entity & indexMask;
 
       if (stackNumbering.pop()!) {
@@ -153,34 +180,67 @@ export function createDrawOrderResolver(): DrawOrderResolver {
         continue;
       }
 
+      const drawOrder = getDrawOrder(entity);
       const visible = parentVisible && getVisibility(entity)?.visible !== false;
       const order = Math.max(
         minWorldOrder,
-        Math.min(
-          maxWorldOrder,
-          parentOrder + (getDrawOrder(entity)?.order ?? 0),
-        ),
+        Math.min(maxWorldOrder, parentOrder + (drawOrder?.order ?? 0)),
       );
+      const unit = isUnit ? entity : parentUnit;
 
       ensureCapacity(index);
       stamps[index] = stamp;
       worldOrders[index] = order;
       rootSequences[index] = rootSequence;
-      roots[index] = root;
+      sortUnits[index] = unit;
       visibilities[index] = visible ? 1 : 0;
 
+      if (isUnit) {
+        sortOrigins[index] = drawOrder?.ySortOrigin ?? 0;
+      }
+
       const children = world.getChildren(entity);
+      const childrenAreUnits = isUnit && (drawOrder?.ySortChildren ?? false);
 
       // Pushed in the reverse of the order they're numbered in, last
       // sibling first: the children in front of `entity`, then `entity`
       // itself, then the children behind it.
-      pushChildren(children, getDrawOrder, false, order, visible);
-      stack.push(entity);
-      stackParentOrders.push(order);
-      stackParentVisibilities.push(visible);
-      stackNumbering.push(true);
-      pushChildren(children, getDrawOrder, true, order, visible);
+      pushChildren(
+        children,
+        getDrawOrder,
+        false,
+        order,
+        visible,
+        unit,
+        childrenAreUnits,
+      );
+      push(entity, order, visible, true, unit, false);
+      pushChildren(
+        children,
+        getDrawOrder,
+        true,
+        order,
+        visible,
+        unit,
+        childrenAreUnits,
+      );
     }
+  };
+
+  const push = (
+    entity: number,
+    parentOrder: number,
+    parentVisible: boolean,
+    numbering: boolean,
+    parentUnit: number,
+    isUnit: boolean,
+  ): void => {
+    stack.push(entity);
+    stackParentOrders.push(parentOrder);
+    stackParentVisibilities.push(parentVisible);
+    stackNumbering.push(numbering);
+    stackParentUnits.push(parentUnit);
+    stackIsUnit.push(isUnit);
   };
 
   const pushChildren = (
@@ -189,6 +249,8 @@ export function createDrawOrderResolver(): DrawOrderResolver {
     behindParent: boolean,
     parentOrder: number,
     parentVisible: boolean,
+    parentUnit: number,
+    childrenAreUnits: boolean,
   ): void => {
     for (let c = children.length - 1; c >= 0; c--) {
       const child = children[c];
@@ -197,10 +259,14 @@ export function createDrawOrderResolver(): DrawOrderResolver {
         continue;
       }
 
-      stack.push(child);
-      stackParentOrders.push(parentOrder);
-      stackParentVisibilities.push(parentVisible);
-      stackNumbering.push(false);
+      push(
+        child,
+        parentOrder,
+        parentVisible,
+        false,
+        parentUnit,
+        childrenAreUnits,
+      );
     }
   };
 
@@ -215,8 +281,11 @@ export function createDrawOrderResolver(): DrawOrderResolver {
 
       const getDrawOrder =
         world.getComponentAccessor<DrawOrderEcsComponent>(drawOrderId);
-      getRootPosition =
+      getPosition =
         world.getComponentAccessor<PositionEcsComponent>(positionId);
+      getRotation =
+        world.getComponentAccessor<RotationEcsComponent>(rotationId);
+      getScale = world.getComponentAccessor<ScaleEcsComponent>(scaleId);
       const getParent =
         world.getComponentAccessor<ParentEcsComponent>(parentId);
       const getVisibility =
@@ -249,8 +318,27 @@ export function createDrawOrderResolver(): DrawOrderResolver {
     worldOrder: (entity) => worldOrders[entity & indexMask],
     rootSequence: (entity) => rootSequences[entity & indexMask],
     hierarchyIndex: (entity) => hierarchyIndices[entity & indexMask],
-    rootY: (entity) =>
-      getRootPosition?.(roots[entity & indexMask])?.world.y ?? 0,
+    sortUnitY: (entity) => {
+      const unit = sortUnits[entity & indexMask];
+      const origin = sortOrigins[unit & indexMask];
+      const position = getPosition?.(unit);
+
+      if (!position) {
+        return origin;
+      }
+
+      if (origin === 0) {
+        return position.world.y;
+      }
+
+      // Where a child at `(0, origin)` would sit: scaled by the unit's
+      // scale, then turned by its rotation (`+X` towards `+Y`), then offset
+      // by its position.
+      const rotation = getRotation?.(unit)?.world ?? 0;
+      const scaleY = getScale?.(unit)?.world.y ?? 1;
+
+      return position.world.y + origin * scaleY * Math.cos(rotation);
+    },
     isVisible: (entity) => visibilities[entity & indexMask] === 1,
   };
 }

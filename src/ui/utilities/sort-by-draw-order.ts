@@ -17,26 +17,35 @@ const resolver = createDrawOrderResolver();
  *
  * An element sorts by the `layer` of its own sprite, else of its own text,
  * else `0` (an invisible hit region), then by world order (see
- * `DrawOrderEcsComponent`), then in hierarchy order. Y-sorting is left out:
- * every element of a canvas descends from the canvas entity, so they all
- * share the root a camera's `ySort` would order them by. A text drawn on a
- * different layer from its element's sprite is ordered by the sprite.
+ * `DrawOrderEcsComponent`), then, when `ySort` is `true`, by its sort unit's
+ * Y (see `DrawOrderEcsComponent.ySortChildren`), then in hierarchy order. A
+ * text drawn on a different layer from its element's sprite is ordered by
+ * the sprite.
  * @param world - The ECS world the elements belong to.
  * @param entities - The elements to sort, sorted in place.
+ * @param ySort - Whether the camera that draws the elements y-sorts (see
+ * `CameraEcsComponent.ySort`).
  * @returns `entities`.
  */
-export function sortByDrawOrder(world: EcsWorld, entities: number[]): number[] {
+export function sortByDrawOrder(
+  world: EcsWorld,
+  entities: number[],
+  ySort: boolean,
+): number[] {
   resolver.resolve(world, entities);
 
   const getSprite = world.getComponentAccessor<SpriteEcsComponent>(spriteId);
   const getText = world.getComponentAccessor<TextEcsComponent>(textId);
   const layerOf = (entity: number): number =>
     getSprite(entity)?.layer ?? getText(entity)?.layer ?? 0;
+  const sortUnitYOf = (entity: number): number =>
+    ySort ? resolver.sortUnitY(entity) : 0;
 
   return entities.sort(
     (a, b) =>
       layerOf(a) - layerOf(b) ||
       resolver.worldOrder(a) - resolver.worldOrder(b) ||
+      sortUnitYOf(a) - sortUnitYOf(b) ||
       resolver.rootSequence(a) - resolver.rootSequence(b) ||
       resolver.hierarchyIndex(a) - resolver.hierarchyIndex(b),
   );

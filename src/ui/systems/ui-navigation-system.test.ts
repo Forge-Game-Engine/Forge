@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createUiNavigationEcsSystem } from './ui-navigation-system.js';
-import { addPositionComponent } from '../../common/index.js';
+import {
+  addPositionComponent,
+  createTransformEcsSystem,
+  positionId,
+} from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   Axis2dAction,
@@ -10,7 +14,9 @@ import {
 } from '../../input/index.js';
 import {
   addCameraComponent,
+  addDrawOrderComponent,
   addVisibilityComponent,
+  cameraId,
 } from '../../rendering/index.js';
 import {
   addCanvasComponent,
@@ -123,6 +129,54 @@ describe('createUiNavigationEcsSystem', () => {
 
     navigate(navigateInput, 1, 0);
 
+    world.addSystem(createUiNavigationEcsSystem());
+    tick(world);
+
+    expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(first);
+  });
+
+  it("focuses the candidate a y-sorting canvas camera draws first, by its sort unit's Y", () => {
+    const world = new EcsWorld();
+    const navigateInput = new Axis2dAction('navigate');
+    const canvas = createTestCanvas(world, { navigateInput });
+    const camera = world.getComponent(canvas, canvasId)!.camera;
+
+    world.getComponent(camera, cameraId)!.ySort = true;
+    addDrawOrderComponent(world, canvas, { ySortChildren: true });
+
+    const lower = createButtonAt(world, canvas, { x: 0, y: 0 });
+    const higher = createButtonAt(world, canvas, { x: 200, y: 0 });
+
+    world.getComponent(lower, positionId)!.local.y = 100;
+    world.getComponent(higher, positionId)!.local.y = -100;
+    navigate(navigateInput, 1, 0);
+
+    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createUiNavigationEcsSystem());
+    tick(world);
+
+    expect(world.getComponent(canvas, canvasId)!.focusedEntity).toBe(higher);
+  });
+
+  it("focuses the first candidate in hierarchy order when the canvas's camera entity has no camera", () => {
+    const world = new EcsWorld();
+    const navigateInput = new Axis2dAction('navigate');
+    const canvas = createTestCanvas(world, { navigateInput });
+
+    world.removeComponent(
+      world.getComponent(canvas, canvasId)!.camera,
+      cameraId,
+    );
+    addDrawOrderComponent(world, canvas, { ySortChildren: true });
+
+    const first = createButtonAt(world, canvas, { x: 0, y: 0 });
+    const second = createButtonAt(world, canvas, { x: 200, y: 0 });
+
+    world.getComponent(first, positionId)!.local.y = 100;
+    world.getComponent(second, positionId)!.local.y = -100;
+    navigate(navigateInput, 1, 0);
+
+    world.addSystem(createTransformEcsSystem());
     world.addSystem(createUiNavigationEcsSystem());
     tick(world);
 

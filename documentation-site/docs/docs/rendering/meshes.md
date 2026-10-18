@@ -165,7 +165,9 @@ a later `update` removed.
 Meshes sort with sprites and text by the same keys: the mesh's own
 `layer`, the entity's world order (see
 [`DrawOrderEcsComponent`](/Forge/docs/api/interfaces/DrawOrderEcsComponent)),
-Y for a camera with `ySort`, then hierarchy order:
+Y for a camera with `ySort` (see
+[Sorting by height on screen](./draw-order.md#sorting-by-height-on-screen)),
+then hierarchy order:
 
 ```ts
 import { addDrawOrderComponent } from '@forge-game-engine/forge/rendering';
