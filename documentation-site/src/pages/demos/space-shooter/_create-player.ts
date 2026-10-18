@@ -85,7 +85,6 @@ export function spawnPlayer(
   renderContext: RenderContext,
   world: EcsWorld,
   camera: number,
-  renderLayer: number,
   playerSprites: PlayerSprites,
 ): void {
   const { playerSprite, bulletSprite } = playerSprites;
@@ -125,7 +124,6 @@ export function spawnPlayer(
   world.addComponent(playerEntity, gunId, {
     timeBetweenShots: 0.1,
     bulletSprite: bulletSprite,
-    renderLayer: renderLayer,
     nextAllowedShotTime: 0,
   });
 
@@ -144,7 +142,7 @@ export async function createPlayer(
 ): Promise<PlayerSprites> {
   const playerSprites = await loadPlayerSprites(renderContext, renderLayer);
 
-  spawnPlayer(renderContext, world, camera, renderLayer, playerSprites);
+  spawnPlayer(renderContext, world, camera, playerSprites);
 
   return playerSprites;
 }

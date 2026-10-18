@@ -222,10 +222,6 @@ export default function SpaceShooter(): JSX.Element {
           file: 'create-player.ts',
         },
         {
-          text: 'Each bullet has a trail brighter than white, which tapers and fades behind it and glows with the bloom.',
-          file: 'gun.system.ts',
-        },
-        {
           text: 'The background and foreground render to separate targets, so the blur softens the nebula while the ship stays sharp.',
           file: 'create-game.ts',
         },
@@ -244,7 +240,6 @@ export default function SpaceShooter(): JSX.Element {
       ]}
       docLinks={[
         { label: 'Bloom', to: '/docs/docs/rendering/bloom' },
-        { label: 'Trails', to: '/docs/docs/rendering/trails' },
         { label: 'Gaussian blur', to: '/docs/docs/rendering/gaussian-blur' },
         { label: 'Collisions', to: '/docs/docs/physics/collisions' },
         { label: 'Mixer and buses', to: '/docs/docs/audio/mixer-and-buses' },
@@ -299,7 +294,7 @@ export default function SpaceShooter(): JSX.Element {
             {
               name: 'gun.system.ts',
               summary:
-                'Fires a pair of bullets with glowing trails, and a laser sound, while shoot is held.',
+                'Fires a pair of glowing bullets, and a laser sound, while shoot is held.',
               content: gunSystemCode,
             },
             {

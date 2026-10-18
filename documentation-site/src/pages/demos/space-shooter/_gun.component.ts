@@ -5,7 +5,6 @@ export interface GunEcsComponent {
   timeBetweenShots: number;
   nextAllowedShotTime: number;
   bulletSprite: SpriteEcsComponent;
-  renderLayer: number;
 }
 
 export const gunId = createComponentId<GunEcsComponent>('Gun');
