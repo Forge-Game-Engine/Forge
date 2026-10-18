@@ -45,6 +45,21 @@ export interface MeshDefaultedOptions {
    * text (see the rendering guide). Defaults to `0`.
    */
   layer: number;
+
+  /**
+   * Which of the geometry's `sections` to draw, by index, or `null` to draw
+   * the whole geometry as it is each frame: every index, or the first
+   * `vertexCount` vertices. The mesh is culled with the section's bounds,
+   * or the geometry's for `null`, under the entity's transform. Defaults to
+   * `null`.
+   *
+   * Several entities can draw sections of one shared geometry, each sorted,
+   * culled and hidden as an entity of its own. Neighbors in the draw order
+   * that share a geometry, material, world transform and mask and draw
+   * sections that follow on from each other draw in one draw call (see
+   * `createRenderEcsSystem`).
+   */
+  section: number | null;
 }
 
 /**
@@ -64,6 +79,7 @@ export const meshId = createComponentId<MeshEcsComponent>('mesh');
 const defaultMeshOptions: MeshDefaultedOptions = {
   category: 1,
   layer: 0,
+  section: null,
 };
 
 /**
@@ -75,7 +91,7 @@ const defaultMeshOptions: MeshDefaultedOptions = {
  * `material` have no sensible default and must always be provided.
  * @returns The attached component, for further tuning or runtime changes.
  * @throws An error if `geometry` has no `a_position` attribute of size 2 or
- * 3.
+ * 3, or `section` isn't `null` or the index of one of its `sections`.
  */
 export function addMeshComponent(
   world: EcsWorld,
@@ -97,6 +113,18 @@ export function addMeshComponent(
   }
 
   const component: MeshEcsComponent = withDefaults(defaultMeshOptions, options);
+  const { section, geometry } = component;
+
+  if (
+    section !== null &&
+    (!Number.isInteger(section) ||
+      section < 0 ||
+      section >= geometry.sections.length)
+  ) {
+    throw new Error(
+      `Unable to add a mesh to entity ${entity}: its geometry has no section ${section} (it has ${geometry.sections.length} sections).`,
+    );
+  }
 
   return world.addComponent(entity, meshId, component);
 }
