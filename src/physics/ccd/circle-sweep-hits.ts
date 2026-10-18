@@ -1,11 +1,11 @@
 import { Vec2, Vector2 } from '../../math/index.js';
+import { ChainCollider } from '../colliders/chain-collider.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
-import { Collider } from '../colliders/collider.js';
+import { ColliderType } from '../colliders/collider.js';
+import { ChainEdge, EdgeChain } from '../colliders/edge-chain.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
-import {
-  TerrainCollider,
-  TerrainSurfaceEdge,
-} from '../colliders/terrain-collider.js';
+import { TerrainCollider } from '../colliders/terrain-collider.js';
+import { toChainLocal } from '../collision/edge-chain-contacts.js';
 import { CollisionBody } from '../types/collision-body.js';
 import { SweepHit } from '../types/sweep-hit.js';
 
@@ -248,16 +248,85 @@ export const findCirclePolygonSweepHits: CircleSweepHitsFinder = (
   return hits;
 };
 
-function edgeDirection(edge: TerrainSurfaceEdge): Vector2 {
+function edgeDirection(edge: ChainEdge): Vector2 {
   // Clone before subtracting: `edge.end` is the collider's own stored point.
   return Vec2.subtract(Vec2.clone(edge.end), edge.start);
 }
 
-function toTerrainLocal(point: Vector2, terrainBody: CollisionBody): Vector2 {
-  // Clone before subtracting: `point` is the caller's own vector.
-  return Vec2.rotate(
-    Vec2.subtract(Vec2.clone(point), terrainBody.position),
-    -terrainBody.rotation,
+/**
+ * Sweeps a circle, in a chain's local space, against the given edges of
+ * the chain and the corners they own, and returns the hits in world space.
+ *
+ * Like narrow-phase collision, the sweep only meets the chain's edges,
+ * never anything behind them, and only from the side their normals face
+ * (see `sweepFace`). Corners only exist where the outline bends away from
+ * the circle (a convex corner, or the end of an open chain); where it bends
+ * toward the circle, the two edges' faces already meet. A circle rolling
+ * quickly along a run of edges therefore never catches on the joints
+ * between them.
+ * @param chain - The chain.
+ * @param edgeIndices - The edges near the sweep.
+ * @param swept - The circle's sweep, in the chain's local space.
+ * @param chainBody - The body the chain is attached to.
+ * @returns One hit per face or corner the circle reaches, in world space.
+ */
+function findEdgeChainSweepHits(
+  chain: EdgeChain,
+  edgeIndices: readonly number[],
+  swept: SweptCircle,
+  chainBody: CollisionBody,
+): SweepHit[] {
+  const { edges } = chain;
+  const hits: SweepHit[] = [];
+
+  for (const edgeIndex of edgeIndices) {
+    const edge = edges[edgeIndex];
+    const direction = edgeDirection(edge);
+    const previous = edge.previous === null ? null : edges[edge.previous];
+
+    pushHit(hits, sweepFace(swept, edge.start, edge.end, edge.normal));
+
+    // Each edge owns the corner at its start; an edge at the end of an open
+    // chain also owns the corner at the chain's end.
+    if (previous === null || Vec2.dot(direction, previous.normal) < 0) {
+      pushHit(
+        hits,
+        sweepRound(
+          swept,
+          edge.start,
+          swept.radius,
+          previous === null ? null : edgeDirection(previous),
+          direction,
+        ),
+      );
+    }
+
+    if (edge.next === null) {
+      pushHit(hits, sweepRound(swept, edge.end, swept.radius, direction, null));
+    }
+  }
+
+  // The hits are fresh vectors, so transforming them in place is safe.
+  return hits.map((hit) => ({
+    point: Vec2.add(
+      Vec2.rotate(hit.point, chainBody.rotation),
+      chainBody.position,
+    ),
+    normal: Vec2.rotate(hit.normal, chainBody.rotation),
+    t: hit.t,
+  }));
+}
+
+function createLocalSweptCircle(
+  circle: CircleCollider,
+  chainBody: CollisionBody,
+  start: Vector2,
+  end: Vector2,
+): SweptCircle {
+  return createSweptCircle(
+    circle,
+    toChainLocal(start, chainBody),
+    toChainLocal(end, chainBody),
   );
 }
 
@@ -266,11 +335,11 @@ function toTerrainLocal(point: Vector2, terrainBody: CollisionBody): Vector2 {
  * terrain-collider body's surface chain.
  *
  * Like narrow-phase collision, the sweep only meets the terrain's surface
- * (see {@link TerrainSurfaceEdge}), never the sides of the solid columns
- * beneath it. A circle rolling quickly along the ground would otherwise
- * catch on the top corner of every column it moves onto. Corners only
- * exist where the surface bends away from the circle; where it bends
- * toward the circle, the two edges' faces already meet.
+ * (see {@link ChainEdge}), never the sides of the solid columns beneath it.
+ * A circle rolling quickly along the ground would otherwise catch on the
+ * top corner of every column it moves onto. Corners only exist where the
+ * surface bends away from the circle; where it bends toward the circle, the
+ * two edges' faces already meet.
  */
 export const findCircleTerrainSweepHits: CircleSweepHitsFinder = (
   circle,
@@ -278,74 +347,66 @@ export const findCircleTerrainSweepHits: CircleSweepHitsFinder = (
   start,
   end,
 ) => {
-  const terrain = targetBody.collider as TerrainCollider;
-  const { surface } = terrain;
-  const swept = createSweptCircle(
-    circle,
-    toTerrainLocal(start, targetBody),
-    toTerrainLocal(end, targetBody),
-  );
+  const { surface } = targetBody.collider as TerrainCollider;
+  const swept = createLocalSweptCircle(circle, targetBody, start, end);
   const sweptEnd = centerAt(swept, 1);
-  const minX = Math.min(swept.start.x, sweptEnd.x) - circle.radius;
-  const maxX = Math.max(swept.start.x, sweptEnd.x) + circle.radius;
-  const hits: SweepHit[] = [];
 
-  for (let i = 0; i < surface.length; i++) {
-    const edge = surface[i];
+  // Every edge within the sweep's x-range, however far above or below it,
+  // as the terrain's narrow phase tests.
+  const edgeIndices = surface.queryEdges({
+    min: {
+      x: Math.min(swept.start.x, sweptEnd.x) - swept.radius,
+      y: -Infinity,
+    },
+    max: { x: Math.max(swept.start.x, sweptEnd.x) + swept.radius, y: Infinity },
+  });
 
-    if (maxX < edge.start.x || minX > edge.end.x) {
-      continue;
-    }
+  return findEdgeChainSweepHits(surface, edgeIndices, swept, targetBody);
+};
 
-    const direction = edgeDirection(edge);
-    const previous = i > 0 ? surface[i - 1] : null;
+/**
+ * Finds where a moving circle first touches each edge and convex corner of
+ * a chain-collider body near its path.
+ *
+ * Like narrow-phase collision, the sweep is one-sided: a circle only hits
+ * an edge it approaches from the side the edge's outward normal faces, so
+ * a fast circle is stopped at the near face of a thin wall, and a circle
+ * inside solid isn't stopped by the edges it leaves through.
+ */
+export const findCircleChainSweepHits: CircleSweepHitsFinder = (
+  circle,
+  targetBody,
+  start,
+  end,
+) => {
+  const { outline } = targetBody.collider as ChainCollider;
+  const swept = createLocalSweptCircle(circle, targetBody, start, end);
+  const sweptEnd = centerAt(swept, 1);
+  const edgeIndices = outline.queryEdges({
+    min: {
+      x: Math.min(swept.start.x, sweptEnd.x) - swept.radius,
+      y: Math.min(swept.start.y, sweptEnd.y) - swept.radius,
+    },
+    max: {
+      x: Math.max(swept.start.x, sweptEnd.x) + swept.radius,
+      y: Math.max(swept.start.y, sweptEnd.y) + swept.radius,
+    },
+  });
 
-    pushHit(hits, sweepFace(swept, edge.start, edge.end, edge.normal));
-
-    // Each edge owns the corner at its start; the last edge also owns the
-    // corner at the chain's end.
-    if (previous === null || Vec2.dot(direction, previous.normal) < 0) {
-      pushHit(
-        hits,
-        sweepRound(
-          swept,
-          edge.start,
-          circle.radius,
-          previous === null ? null : edgeDirection(previous),
-          direction,
-        ),
-      );
-    }
-
-    if (i === surface.length - 1) {
-      pushHit(
-        hits,
-        sweepRound(swept, edge.end, circle.radius, direction, null),
-      );
-    }
-  }
-
-  // The hits are fresh vectors, so transforming them in place is safe.
-  return hits.map((hit) => ({
-    point: Vec2.add(
-      Vec2.rotate(hit.point, targetBody.rotation),
-      targetBody.position,
-    ),
-    normal: Vec2.rotate(hit.normal, targetBody.rotation),
-    t: hit.t,
-  }));
+  return findEdgeChainSweepHits(outline, edgeIndices, swept, targetBody);
 };
 
 /**
  * The sweep-hit finder for a moving circle against each kind of collider.
  */
 export const circleSweepHitFinders: Record<
-  Collider['type'],
+  ColliderType,
   CircleSweepHitsFinder
 > = {
   circle: findCircleCircleSweepHits,
   polygon: findCirclePolygonSweepHits,
   terrain: findCircleTerrainSweepHits,
+  chain: findCircleChainSweepHits,
 };
 
 /**

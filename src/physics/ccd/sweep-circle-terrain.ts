@@ -13,7 +13,7 @@ import {
  * touch.
  *
  * Like narrow-phase collision, the sweep only meets the terrain's surface
- * chain (see {@link TerrainSurfaceEdge}), and tests each of its edges on
+ * chain (see {@link ChainEdge}), and tests each of its edges on
  * its own: a circle already resting on one edge still finds the first edge
  * it would run into.
  *

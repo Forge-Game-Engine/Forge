@@ -7,6 +7,7 @@ import {
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
 import { getColliderRotation } from '../collider-rotation.js';
+import { ColliderType } from '../colliders/collider.js';
 import { aabbsOverlap } from '../collision/aabb-overlap.js';
 import {
   allCollisionCategories,
@@ -16,35 +17,21 @@ import {
 import { Aabb } from '../types/aabb.js';
 import { CollisionBody } from '../types/collision-body.js';
 import { RaycastHit, RaycastShapeHit } from '../types/raycast-hit.js';
+import { raycastChain } from './raycast-chain.js';
 import { raycastCircle } from './raycast-circle.js';
 import { raycastPolygon } from './raycast-polygon.js';
 import { raycastTerrain } from './raycast-terrain.js';
 import { withDefaults } from '../../utilities/with-defaults.js';
 
-const raycastDetectors = new Map<
-  string,
+const raycastDetectors: Record<
+  ColliderType,
   (body: CollisionBody, start: Vector2, end: Vector2) => RaycastShapeHit | null
->([
-  ['circle', raycastCircle],
-  ['polygon', raycastPolygon],
-  ['terrain', raycastTerrain],
-]);
-
-function raycastBody(
-  body: CollisionBody,
-  start: Vector2,
-  end: Vector2,
-): RaycastShapeHit | null {
-  const detector = raycastDetectors.get(body.collider.type);
-
-  if (!detector) {
-    throw new Error(
-      `No raycast detector registered for collider type "${body.collider.type}".`,
-    );
-  }
-
-  return detector(body, start, end);
-}
+> = {
+  circle: raycastCircle,
+  polygon: raycastPolygon,
+  terrain: raycastTerrain,
+  chain: raycastChain,
+};
 
 function computeSegmentAabb(start: Vector2, end: Vector2): Aabb {
   return {
@@ -142,7 +129,7 @@ export function raycast(
       rotation: getColliderRotation(getRotation(entities[i])),
       collider: collider.collider,
     };
-    const hit = raycastBody(body, start, end);
+    const hit = raycastDetectors[body.collider.type](body, start, end);
 
     if (hit !== null) {
       hits.push({ entity: entities[i], ...hit });

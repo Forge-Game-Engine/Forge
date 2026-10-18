@@ -93,7 +93,7 @@ describe('detectCircleTerrainCollision', () => {
     expect(manifolds[0].normal.y).toBeCloseTo(1);
     // flatTerrain() has 2 edges (indices 0-1) and 3 points (indices 0-2);
     // the shared vertex is point index 1, so its feature id is
-    // surface.length (2) + 1 = 3.
+    // surface.edges.length (2) + 1 = 3.
     expect(manifolds[0].featureIds).toEqual([3]);
   });
 
@@ -320,7 +320,7 @@ describe('detectCircleTerrainCollision', () => {
     expect(manifolds[0].contactPoints[0].x).toBeCloseTo(-100);
     expect(manifolds[0].normal.x).toBeCloseTo(Math.SQRT1_2);
     expect(manifolds[0].normal.y).toBeCloseTo(Math.SQRT1_2);
-    // `surface.length` (2) + point index 0.
+    // `surface.edges.length` (2) + point index 0.
     expect(manifolds[0].featureIds).toEqual([2]);
   });
 
