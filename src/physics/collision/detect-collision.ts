@@ -1,9 +1,12 @@
 import { Vec2 } from '../../math/index.js';
+import { ColliderType } from '../colliders/collider.js';
 import { CollisionBody } from '../types/collision-body.js';
 import { NarrowPhaseManifold } from '../types/collision-manifold.js';
+import { detectCircleChainCollision } from './detect-circle-chain-collision.js';
 import { detectCircleCircleCollision } from './detect-circle-circle-collision.js';
 import { detectCirclePolygonCollision } from './detect-circle-polygon-collision.js';
 import { detectCircleTerrainCollision } from './detect-circle-terrain-collision.js';
+import { detectPolygonChainCollision } from './detect-polygon-chain-collision.js';
 import { detectPolygonPolygonCollision } from './detect-polygon-polygon-collision.js';
 import { detectPolygonTerrainCollision } from './detect-polygon-terrain-collision.js';
 
@@ -48,16 +51,48 @@ function flipped(detect: ManifoldDetector): ManifoldDetector {
     }));
 }
 
-const collisionDetectors = new Map<string, ManifoldDetector>([
-  ['circle-circle', asManifolds(detectCircleCircleCollision)],
-  ['circle-polygon', asManifolds(detectCirclePolygonCollision)],
-  ['polygon-circle', flipped(asManifolds(detectCirclePolygonCollision))],
-  ['polygon-polygon', asManifolds(detectPolygonPolygonCollision)],
-  ['circle-terrain', detectCircleTerrainCollision],
-  ['terrain-circle', flipped(detectCircleTerrainCollision)],
-  ['polygon-terrain', detectPolygonTerrainCollision],
-  ['terrain-polygon', flipped(detectPolygonTerrainCollision)],
-]);
+/**
+ * The detector for a pair of shapes that can't be on a dynamic body
+ * (`TerrainCollider`s and `ChainCollider`s): no contact between them could
+ * ever be resolved, since neither body can move in response, so there's
+ * nothing to detect.
+ */
+const noManifolds: ManifoldDetector = () => [];
+
+/**
+ * The detector for every pair of collider types, indexed by the first
+ * body's type and then the second's. Typing it over every pair makes a
+ * collider type without its detectors a compile error.
+ */
+const collisionDetectors: Record<
+  ColliderType,
+  Record<ColliderType, ManifoldDetector>
+> = {
+  circle: {
+    circle: asManifolds(detectCircleCircleCollision),
+    polygon: asManifolds(detectCirclePolygonCollision),
+    terrain: detectCircleTerrainCollision,
+    chain: detectCircleChainCollision,
+  },
+  polygon: {
+    circle: flipped(asManifolds(detectCirclePolygonCollision)),
+    polygon: asManifolds(detectPolygonPolygonCollision),
+    terrain: detectPolygonTerrainCollision,
+    chain: detectPolygonChainCollision,
+  },
+  terrain: {
+    circle: flipped(detectCircleTerrainCollision),
+    polygon: flipped(detectPolygonTerrainCollision),
+    terrain: noManifolds,
+    chain: noManifolds,
+  },
+  chain: {
+    circle: flipped(detectCircleChainCollision),
+    polygon: flipped(detectPolygonChainCollision),
+    terrain: noManifolds,
+    chain: noManifolds,
+  },
+};
 
 /**
  * Detects the collisions between two {@link CollisionBody} instances,
@@ -65,29 +100,23 @@ const collisionDetectors = new Map<string, ManifoldDetector>([
  * body's collider type.
  *
  * Two convex shapes have at most one manifold between them, but a
- * {@link TerrainCollider}'s surface is a chain rather than a single convex
- * shape, so a body wide enough to straddle several of its surface edges
- * gets one manifold per edge it touches.
+ * {@link TerrainCollider}'s surface and a {@link ChainCollider}'s loops are
+ * chains of edges rather than single convex shapes, so a body wide enough
+ * to straddle several of their edges gets one manifold per edge it touches.
+ * Two terrain or chain colliders never collide with each other: neither can
+ * be on a dynamic body, so there would be nothing to resolve.
  * @param bodyA - The first body.
  * @param bodyB - The second body.
  * @returns One manifold per contacting feature pair (entity ids not yet
  * populated, normals pointing from `bodyA` toward `bodyB`), or an empty
  * array if the bodies don't overlap.
- * @throws An error if no detector is registered for the bodies' collider
- * pair.
  */
 export function detectCollision(
   bodyA: CollisionBody,
   bodyB: CollisionBody,
 ): NarrowPhaseManifold[] {
-  const key = `${bodyA.collider.type}-${bodyB.collider.type}`;
-  const detector = collisionDetectors.get(key);
-
-  if (!detector) {
-    throw new Error(
-      `No collision detector registered for collider pair "${key}".`,
-    );
-  }
-
-  return detector(bodyA, bodyB);
+  return collisionDetectors[bodyA.collider.type][bodyB.collider.type](
+    bodyA,
+    bodyB,
+  );
 }

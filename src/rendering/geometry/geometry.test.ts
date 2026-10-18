@@ -638,6 +638,318 @@ describe('Geometry', () => {
     });
   });
 
+  describe('sections', () => {
+    // Two unit quads, one at x 0..1 and one at x 2..3.
+    const twoQuadPositions = (): Float32Array =>
+      new Float32Array([0, 0, 1, 0, 1, 1, 0, 1, 2, 0, 3, 0, 3, 1, 2, 1]);
+    const twoQuadIndices = (): Uint16Array =>
+      new Uint16Array([0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7]);
+
+    const createTwoQuads = (options: Partial<GeometryOptions> = {}): Geometry =>
+      new Geometry(renderContext, {
+        attributes: [{ name: 'a_position', data: twoQuadPositions(), size: 2 }],
+        indices: twoQuadIndices(),
+        sections: [
+          { start: 0, count: 6 },
+          { start: 6, count: 6 },
+        ],
+        ...options,
+      });
+
+    it('has none unless it is given some', () => {
+      expect(createGeometry().sections).toEqual([]);
+    });
+
+    it('keeps the sections it is created with', () => {
+      const geometry = createTwoQuads();
+
+      expect(
+        geometry.sections.map(({ start, count }) => [start, count]),
+      ).toEqual([
+        [0, 6],
+        [6, 6],
+      ]);
+    });
+
+    it("copies the sections, so changing the caller's array changes nothing", () => {
+      const sections = [{ start: 0, count: 6 }];
+      const geometry = createTwoQuads({ sections });
+
+      sections[0].start = 99;
+
+      expect(geometry.sections[0].start).toBe(0);
+    });
+
+    it.each([
+      [{ start: -3, count: 3 }, 'non-negative integers'],
+      [{ start: 0, count: 1.5 }, 'non-negative integers'],
+      [{ start: 6, count: 9 }, 'ends past its 12 indices'],
+      [{ start: 1, count: 3 }, 'multiples of 3'],
+      [{ start: 0, count: 4 }, 'multiples of 3'],
+    ])('throws for section %o', (section, message) => {
+      expect(() =>
+        createTwoQuads({ sections: [{ start: 0, count: 6 }, section] }),
+      ).toThrow(
+        `Unable to create geometry: section 1 (start ${section.start}, count ${section.count})`,
+      );
+      expect(() =>
+        createTwoQuads({ sections: [{ start: 0, count: 6 }, section] }),
+      ).toThrow(message);
+    });
+
+    it('checks a geometry without indices against its vertices', () => {
+      expect(() =>
+        createGeometry({ sections: [{ start: 0, count: 6 }] }),
+      ).toThrow('ends past its 3 vertices');
+    });
+
+    it('needs lines sections to be whole lines', () => {
+      expect(() =>
+        createTwoQuads({
+          topology: 'lines',
+          sections: [{ start: 1, count: 2 }],
+        }),
+      ).toThrow('multiples of 2');
+      expect(
+        createTwoQuads({
+          topology: 'lines',
+          sections: [{ start: 2, count: 4 }],
+        }).sections,
+      ).toHaveLength(1);
+    });
+
+    it.each(['triangleStrip', 'lineStrip', 'points'] as const)(
+      'accepts any whole range of a %s geometry',
+      (topology) => {
+        expect(
+          createTwoQuads({ topology, sections: [{ start: 1, count: 4 }] })
+            .sections,
+        ).toHaveLength(1);
+      },
+    );
+
+    it('replaces the sections an update gives', () => {
+      const geometry = createTwoQuads();
+
+      geometry.update({ vertexCount: 8, sections: [{ start: 3, count: 9 }] });
+
+      expect(geometry.sections).toHaveLength(1);
+      expect(geometry.sections[0]).toMatchObject({ start: 3, count: 9 });
+    });
+
+    it('keeps its sections through an update without them', () => {
+      const geometry = createTwoQuads();
+      const sections = geometry.sections;
+
+      geometry.update({ vertexCount: 8, attributes: {} });
+
+      expect(geometry.sections).toBe(sections);
+    });
+
+    it('checks updated sections against the indices the update gives', () => {
+      const geometry = createTwoQuads();
+
+      expect(() =>
+        geometry.update({
+          vertexCount: 8,
+          indices: new Uint16Array(18),
+          sections: [{ start: 12, count: 6 }],
+        }),
+      ).not.toThrow();
+      expect(() =>
+        geometry.update({
+          vertexCount: 8,
+          sections: [{ start: 18, count: 3 }],
+        }),
+      ).toThrow(
+        'Unable to update geometry: section 0 (start 18, count 3) ends past its 18 indices.',
+      );
+    });
+
+    it('throws, changing nothing, for a shrinking update that leaves a kept section out of range', () => {
+      const geometry = createTwoQuads();
+      const indices = new Uint16Array([0, 1, 2]);
+
+      expect(() => geometry.update({ vertexCount: 8, indices })).toThrow(
+        'Unable to update geometry: section 0 (start 0, count 6) ends past its 3 indices.',
+      );
+      expect(geometry.elementCount).toBe(12);
+      expect(geometry.sections).toHaveLength(2);
+    });
+
+    it('throws for a shrinking update of a geometry without indices', () => {
+      const geometry = createGeometry({ sections: [{ start: 0, count: 3 }] });
+
+      expect(() => geometry.update({ vertexCount: 2 })).toThrow(
+        'ends past its 2 vertices',
+      );
+      expect(geometry.vertexCount).toBe(3);
+    });
+
+    describe('bounds', () => {
+      it('surrounds the vertices its indices point at', () => {
+        const geometry = createTwoQuads();
+
+        expect(geometry.sections[0].bounds).toEqual({
+          min: { x: 0, y: 0 },
+          max: { x: 1, y: 1 },
+        });
+        expect(geometry.sections[1].bounds).toEqual({
+          min: { x: 2, y: 0 },
+          max: { x: 3, y: 1 },
+        });
+      });
+
+      it('surrounds its own vertices for a geometry without indices', () => {
+        const geometry = new Geometry(renderContext, {
+          attributes: [
+            {
+              name: 'a_position',
+              data: new Float32Array([0, 0, 1, 0, 0, 1, 5, 5, 6, 5, 5, 6]),
+              size: 2,
+            },
+          ],
+          sections: [{ start: 3, count: 3 }],
+        });
+
+        expect(geometry.sections[0].bounds).toEqual({
+          min: { x: 5, y: 5 },
+          max: { x: 6, y: 6 },
+        });
+      });
+
+      it('is a zero-size rect at the origin for a section of no elements', () => {
+        const geometry = createTwoQuads({ sections: [{ start: 6, count: 0 }] });
+
+        expect(geometry.sections[0].bounds).toEqual({
+          min: { x: 0, y: 0 },
+          max: { x: 0, y: 0 },
+        });
+      });
+
+      it('is computed again after an update changes a_position', () => {
+        const geometry = createTwoQuads();
+
+        expect(geometry.sections[1].bounds.max.x).toBe(3);
+
+        const positions = twoQuadPositions().map((value) => value * 2);
+
+        geometry.update({
+          vertexCount: 8,
+          attributes: { a_position: positions },
+        });
+
+        expect(geometry.sections[1].bounds.max.x).toBe(6);
+      });
+
+      it('is computed again after an update changes the indices', () => {
+        const geometry = createTwoQuads();
+
+        expect(geometry.sections[0].bounds.max.x).toBe(1);
+
+        // The first section now draws the second quad.
+        geometry.update({
+          vertexCount: 8,
+          indices: new Uint16Array([4, 5, 6, 4, 6, 7, 0, 1, 2, 0, 2, 3]),
+        });
+
+        expect(geometry.sections[0].bounds.min.x).toBe(2);
+      });
+
+      it('throws for an index past the vertex count', () => {
+        const geometry = createTwoQuads({
+          indices: new Uint16Array([0, 1, 2, 0, 2, 9, 4, 5, 6, 4, 6, 7]),
+        });
+
+        expect(() => geometry.sections[0].bounds).toThrow(
+          "Unable to compute the bounds of the geometry's section 0: index 5 points at vertex 9, but the geometry has 8 vertices.",
+        );
+      });
+
+      it('survives a context loss and restore', () => {
+        const geometry = createTwoQuads();
+        const before = geometry.sections[1].bounds;
+
+        loseContext();
+        restoreContext();
+
+        expect(geometry.sections).toHaveLength(2);
+        expect(geometry.sections[1].bounds).toEqual(before);
+      });
+    });
+  });
+
+  describe('drawRange', () => {
+    it.each([
+      ['Uint16Array', new Uint16Array(12), 'UNSIGNED_SHORT', 2],
+      ['Uint32Array', new Uint32Array(12), 'UNSIGNED_INT', 4],
+    ] as const)(
+      'draws %s indices from a byte offset of start times the index size',
+      (_name, indices, type, bytes) => {
+        const geometry = createGeometry({ indices });
+
+        geometry.drawRange(6, 3);
+
+        expect(gl.drawElements).toHaveBeenCalledWith(
+          'TRIANGLES',
+          3,
+          type,
+          6 * bytes,
+        );
+      },
+    );
+
+    it('draws vertices from vertex start for a geometry without indices', () => {
+      const geometry = createGeometry({ topology: 'points' });
+
+      geometry.drawRange(1, 2);
+
+      expect(gl.drawArrays).toHaveBeenCalledWith('POINTS', 1, 2);
+    });
+
+    it('reads the index type again after an update changes it', () => {
+      const geometry = createGeometry({ indices: new Uint16Array(3) });
+
+      geometry.update({ vertexCount: 3, indices: new Uint32Array(6) });
+      geometry.drawRange(3, 3);
+
+      expect(gl.drawElements).toHaveBeenCalledWith(
+        'TRIANGLES',
+        3,
+        'UNSIGNED_INT',
+        12,
+      );
+    });
+
+    it.each([
+      [-1, 3],
+      [0, 1.5],
+      [3, 1],
+    ])('throws for start %d and count %d', (start, count) => {
+      const geometry = createGeometry();
+
+      expect(() => geometry.drawRange(start, count)).toThrow(
+        `Unable to draw geometry range (start ${start}, count ${count})`,
+      );
+    });
+
+    it('draws nothing while the context is lost', () => {
+      const geometry = createGeometry({ indices: new Uint16Array(6) });
+
+      loseContext();
+      geometry.drawRange(0, 3);
+
+      expect(gl.drawElements).not.toHaveBeenCalled();
+    });
+
+    it('counts indices, or else vertices, as its elements', () => {
+      expect(createGeometry().elementCount).toBe(3);
+      expect(createGeometry({ indices: new Uint16Array(9) }).elementCount).toBe(
+        9,
+      );
+    });
+  });
+
   describe('dispose', () => {
     it('deletes the index buffer too', () => {
       const geometry = createGeometry({ indices: new Uint16Array(3) });

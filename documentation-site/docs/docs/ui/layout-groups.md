@@ -46,7 +46,9 @@ group top to bottom, inside the group's rectangle minus its `padding`, with
 and
 [`addVerticalLayoutGroupComponent`](/Forge/docs/api/functions/addVerticalLayoutGroupComponent)
 add a [`UiAxisLayoutGroupEcsComponent`](/Forge/docs/api/interfaces/UiAxisLayoutGroupEcsComponent)
-to an element. Its children are arranged in the order they were parented:
+to an element. Its children are arranged in
+[sibling order](../ecs/world.md#ordering-siblings), the order they were
+parented unless `setSiblingIndex` moved one:
 
 ```ts
 import {

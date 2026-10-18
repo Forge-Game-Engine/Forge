@@ -18,7 +18,7 @@ by four keys. Each key only orders items the keys before it leave equal:
    (see [Sorting by height on screen](#sorting-by-height-on-screen)).
 4. **Hierarchy order**: root entities in the order they were created,
    each followed by its children, parents before children and siblings in
-   the order they were parented. A child with `behindParent` comes just
+   [sibling order](../ecs/world.md#ordering-siblings). A child with `behindParent` comes just
    before its parent instead (see
    [Drawing a child just behind its parent](#drawing-a-child-just-behind-its-parent)).
 

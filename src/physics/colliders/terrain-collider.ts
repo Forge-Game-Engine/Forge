@@ -1,63 +1,17 @@
 import { Vec2, Vector2 } from '../../math/index.js';
 import { Aabb } from '../types/aabb.js';
+import { createOpenEdgeChain } from './build-edge-chain.js';
 import { Collider } from './collider.js';
-import {
-  calculateArea,
-  calculateCentroid,
-  calculatePolygonMomentOfInertia,
-} from './polygon-math.js';
+import { ChainEdge, EdgeChain } from './edge-chain.js';
+import { transformBounds } from './transform-bounds.js';
 
 const EPSILON = 1e-9;
 
 /**
- * A single span of ground between two consecutive {@link TerrainCollider}
- * surface points: one link of the terrain's continuous surface chain, with
- * no closing side or bottom faces of its own. All fields are in the
- * terrain's local space.
- *
- * Narrow-phase collision treats the terrain as this chain of surface edges
- * rather than as a row of closed quadrilaterals, so a body wide enough to
- * span several edges only ever meets the ground's actual surface - there is
- * no interior face between two neighboring edges for it to catch on. An
- * edge's neighbors (the edges immediately before and after it in
- * {@link TerrainCollider.surface}) act as its "ghost" geometry, exactly as
- * a Box2D chain shape's neighboring segments do: they decide which of two
- * edges sharing a vertex owns a contact clamped to it, so the same physical
- * contact is never reported twice with two different normals.
- */
-export interface TerrainSurfaceEdge {
-  /**
-   * The edge's left-hand endpoint, in local space. Always the lesser of the
-   * edge's two x-coordinates, since a terrain's points are ordered by
-   * strictly increasing x.
-   *
-   * This aliases the owning collider's own {@link TerrainCollider.points}
-   * entry rather than copying it, so it must never be mutated.
-   */
-  start: Vector2;
-
-  /**
-   * The edge's right-hand endpoint, in local space. Always the greater of
-   * the edge's two x-coordinates.
-   *
-   * This aliases the owning collider's own {@link TerrainCollider.points}
-   * entry rather than copying it, so it must never be mutated.
-   */
-  end: Vector2;
-
-  /**
-   * The edge's unit-length outward normal, in local space: perpendicular to
-   * `start`-`end` and pointing away from the solid slab. Since the slab
-   * always extends below the surface, toward the collider's local +y (down,
-   * since the world is Y-down), this always points broadly toward local -y.
-   */
-  normal: Vector2;
-}
-
-/**
  * The world-space faces of the solid slab column directly beneath a single
- * {@link TerrainSurfaceEdge}, as consumed by volume queries that genuinely
- * care about the terrain's inside (currently only `raycastTerrain`).
+ * surface edge of a {@link TerrainCollider}, as consumed by volume queries
+ * that genuinely care about the terrain's inside (currently only
+ * `raycastTerrain`).
  */
 export interface TerrainEdgeSlab {
   /**
@@ -89,19 +43,23 @@ export interface TerrainEdgeSlab {
  *
  * Narrow-phase collision against a `TerrainCollider` (see
  * `detectCircleTerrainCollision`/`detectPolygonTerrainCollision`) runs
- * against the {@link surface} chain, never against the slab: the slab only
- * exists to give the shape a well-defined area, silhouette and bounding box
- * (and to give `raycastTerrain` something solid to hit). Contact normals
- * therefore always come from the ground's actual surface, and a body
- * straddling several surface edges gets one contact per edge it genuinely
- * touches instead of a single contact that jumps between them.
+ * against the {@link surface} chain, never against the slab: the slab gives
+ * the shape its silhouette and bounding box, decides how far below the
+ * surface a body is still pushed back up, and gives `raycastTerrain`
+ * something solid to hit. Contact normals therefore always come from the
+ * ground's actual surface, and a body straddling several surface edges gets
+ * one contact per edge it genuinely touches instead of a single contact
+ * that jumps between them.
  *
- * `TerrainCollider` is intended for static bodies only - attach it with
- * `addColliderComponent` and no `RigidBodyEcsComponent`. A heightmap has no
- * natural mass distribution to simulate as a moving object.
+ * `TerrainCollider` is for static and kinematic bodies only: attach it with
+ * `addColliderComponent` and no `RigidBodyEcsComponent` (or a `'static'` or
+ * `'kinematic'` one). A heightmap has no natural mass distribution to
+ * simulate as a moving object, so its mass data is zero and
+ * `getRigidBodyMassData` throws for a `'dynamic'` body that has one.
  */
 export class TerrainCollider extends Collider {
   public readonly type = 'terrain';
+  public readonly supportsDynamicBodies = false;
   public readonly points: readonly Vector2[];
   public readonly depth: number;
 
@@ -113,11 +71,18 @@ export class TerrainCollider extends Collider {
   public readonly bottomY: number;
 
   /**
-   * The continuous chain of surface edges narrow-phase collision detection
-   * tests against, one per consecutive pair of `points`, ordered left to
-   * right.
+   * The open chain of surface edges narrow-phase collision detection tests
+   * against, one per consecutive pair of `points`, ordered left to right.
+   * Each edge's outward normal points broadly toward local -y, away from
+   * the slab.
    */
-  public readonly surface: readonly TerrainSurfaceEdge[];
+  public readonly surface: EdgeChain;
+
+  /**
+   * The silhouette's bounding box in local space: the surface points and
+   * the bottom edge.
+   */
+  private readonly _localBounds: Aabb;
 
   /**
    * Creates a new TerrainCollider instance.
@@ -149,54 +114,24 @@ export class TerrainCollider extends Collider {
       );
     }
 
-    const clonedPoints = points.map((point) => Vec2.clone(point));
-    const bottomY = Math.max(...clonedPoints.map((point) => point.y)) + depth;
-    const silhouette = silhouetteVertices(clonedPoints, bottomY);
-    const centroid = calculateCentroid(silhouette);
-    // Clone before subtracting: `silhouette`'s surface vertices are the same
-    // objects as `clonedPoints`, which becomes `this.points` below, so this
-    // must not mutate them.
-    const verticesAboutCentroid = silhouette.map((vertex) =>
-      Vec2.subtract(Vec2.clone(vertex), centroid),
-    );
-    const mass = calculateArea(silhouette);
-    const momentOfInertia = calculatePolygonMomentOfInertia(
-      mass,
-      verticesAboutCentroid,
-    );
+    super(0, 0, Vec2.zero);
 
-    super(mass, momentOfInertia, centroid);
+    const clonedPoints = points.map((point) => Vec2.clone(point));
+    const surface = createOpenEdgeChain(clonedPoints);
+    const bottomY = surface.bounds.max.y + depth;
 
     this.points = clonedPoints;
     this.depth = depth;
     this.bottomY = bottomY;
-    this.surface = buildSurface(clonedPoints);
+    this.surface = surface;
+    this._localBounds = {
+      min: { x: surface.bounds.min.x, y: surface.bounds.min.y },
+      max: { x: surface.bounds.max.x, y: bottomY },
+    };
   }
 
   public computeAabb(position: Vector2, rotation: number): Aabb {
-    // Clone before transforming: `silhouetteVertices` reuses `this.points`'
-    // own vector objects for the surface vertices, so this must not mutate
-    // the collider's own stored points.
-    const worldVertices = silhouetteVertices(this.points, this.bottomY).map(
-      (vertex) => Vec2.add(Vec2.rotate(Vec2.clone(vertex), rotation), position),
-    );
-
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-
-    for (const vertex of worldVertices) {
-      minX = Math.min(minX, vertex.x);
-      minY = Math.min(minY, vertex.y);
-      maxX = Math.max(maxX, vertex.x);
-      maxY = Math.max(maxY, vertex.y);
-    }
-
-    return {
-      min: { x: minX, y: minY },
-      max: { x: maxX, y: maxY },
-    };
+    return transformBounds(this._localBounds, position, rotation);
   }
 }
 
@@ -207,9 +142,9 @@ export class TerrainCollider extends Collider {
  *
  * Narrow-phase collision deliberately does *not* use this: a moving body
  * must only ever meet the terrain's surface, never the interior faces two
- * neighboring columns share (see {@link TerrainSurfaceEdge}). A ray, by
- * contrast, can legitimately enter the slab from any direction, so
- * `raycastTerrain` does.
+ * neighboring columns share (see {@link ChainEdge}). A ray, by contrast,
+ * can legitimately enter the slab from any direction, so `raycastTerrain`
+ * does.
  * @param edge - The surface edge whose column to build.
  * @param bottomY - The terrain's {@link TerrainCollider.bottomY}.
  * @param position - The terrain body's world position.
@@ -218,7 +153,7 @@ export class TerrainCollider extends Collider {
  * freshly allocated so the caller may transform them further in place.
  */
 export function buildTerrainEdgeSlab(
-  edge: TerrainSurfaceEdge,
+  edge: ChainEdge,
   bottomY: number,
   position: Vector2,
   rotation: number,
@@ -250,38 +185,4 @@ export function buildTerrainEdgeSlab(
       Vec2.rotate(Vec2.clone(normal), rotation),
     ),
   };
-}
-
-function silhouetteVertices(
-  points: readonly Vector2[],
-  bottomY: number,
-): Vector2[] {
-  const first = points[0];
-  const last = points[points.length - 1];
-
-  // A positive signed area, like a `PolygonCollider`'s: along the surface
-  // left to right, then back along the bottom right to left.
-  return [...points, { x: last.x, y: bottomY }, { x: first.x, y: bottomY }];
-}
-
-function buildSurface(points: readonly Vector2[]): TerrainSurfaceEdge[] {
-  const surface: TerrainSurfaceEdge[] = [];
-
-  for (let i = 0; i < points.length - 1; i++) {
-    const start = points[i];
-    const end = points[i + 1];
-
-    // Clone before subtracting: `start`/`end` are the collider's own stored
-    // points, which this must not mutate. `perpendicular` turns the edge
-    // from `+X` towards `-Y`, so the normal points toward local -y (the
-    // points are ordered by increasing x), the side the solid slab is *not*
-    // on.
-    const normal = Vec2.normalize(
-      Vec2.perpendicular(Vec2.subtract(Vec2.clone(end), start)),
-    );
-
-    surface.push({ start, end, normal });
-  }
-
-  return surface;
 }

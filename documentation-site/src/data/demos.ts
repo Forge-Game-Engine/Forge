@@ -55,6 +55,13 @@ export const demos: Demo[] = [
     categories: ['physics'],
   },
   {
+    slug: 'chain-collider',
+    title: 'Chain Collider',
+    description:
+      'A room built from one chain collider, where boxes and balls slide across a floor of many edges without catching and a fast ball stops at a thin wall.',
+    categories: ['physics'],
+  },
+  {
     slug: 'moving-platform',
     title: 'Moving Platform',
     description:

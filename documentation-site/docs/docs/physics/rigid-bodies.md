@@ -30,20 +30,27 @@ is one of three values, `'dynamic'` by default:
 
 ## Collider shapes
 
-A [`Collider`](/Forge/docs/api/classes/Collider) is one of three shapes:
+A [`Collider`](/Forge/docs/api/classes/Collider) is one of four shapes:
 
 - [`CircleCollider`](/Forge/docs/api/classes/CircleCollider): a radius
   around a center point.
 - [`PolygonCollider`](/Forge/docs/api/classes/PolygonCollider): a convex
   polygon with at least 3 vertices, in either winding order.
-- [`TerrainCollider`](/Forge/docs/api/classes/TerrainCollider): static
-  ground built from a heightmap. See [Terrain](./terrain.md).
+- [`TerrainCollider`](/Forge/docs/api/classes/TerrainCollider): ground
+  built from a heightmap. See [Terrain](./terrain.md).
+- [`ChainCollider`](/Forge/docs/api/classes/ChainCollider): closed loops of
+  edges around solid and holes, for level geometry. See
+  [Chain Colliders](./chain-colliders.md).
+
+`TerrainCollider` and `ChainCollider` are for static and kinematic bodies
+only. A `'dynamic'` body with one throws when it is simulated.
 
 :::caution
 The `PolygonCollider` constructor throws if its vertices don't form a
 convex polygon. Build a concave shape, such as an L shape, from several
 convex `PolygonCollider`s on separate entities, connected with
-[joints](./joints.md) if they move.
+[joints](./joints.md) if they move. Use a `ChainCollider` for concave
+static geometry.
 :::
 
 ## Creating a body

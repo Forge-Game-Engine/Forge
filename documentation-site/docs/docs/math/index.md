@@ -24,3 +24,6 @@ The module is made of:
 - [Seeded random numbers](./seeded-random.md):
   [`Random`](/Forge/docs/api/classes/Random), a random number generator that
   produces the same sequence for the same seed.
+- [Grid layouts](./grid-layouts.md):
+  [`GridLayout`](/Forge/docs/api/interfaces/GridLayout), the conversion
+  between the cells of an orthogonal or isometric grid and positions.

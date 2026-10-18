@@ -4,7 +4,12 @@ import {
   getWorldCenterOfMass,
 } from './rigid-body-mass-data.js';
 import { EcsWorld } from '../ecs/index.js';
-import { PolygonCollider } from './colliders/index.js';
+import {
+  ChainCollider,
+  Collider,
+  PolygonCollider,
+  TerrainCollider,
+} from './colliders/index.js';
 import {
   addColliderComponent,
   addRigidBodyComponent,
@@ -86,6 +91,62 @@ describe('getRigidBodyMassData', () => {
 
     expect(() => getRigidBodyMassData(world, entity)).toThrow(
       /has no ColliderEcsComponent/,
+    );
+  });
+
+  describe('colliders that cannot be dynamic', () => {
+    const createStaticOnlyCollider = {
+      terrain: (): Collider =>
+        new TerrainCollider(
+          [
+            { x: 0, y: 0 },
+            { x: 10, y: 0 },
+          ],
+          5,
+        ),
+      chain: (): Collider =>
+        new ChainCollider([
+          [
+            { x: 0, y: 0 },
+            { x: 10, y: 0 },
+            { x: 10, y: 10 },
+          ],
+        ]),
+    };
+
+    it.each(['terrain', 'chain'] as const)(
+      'throws for a dynamic body with a %s collider',
+      (shape) => {
+        const entity = world.createEntity();
+
+        addColliderComponent(world, entity, {
+          collider: createStaticOnlyCollider[shape](),
+        });
+        addRigidBodyComponent(world, entity, { type: 'dynamic' });
+
+        expect(() => getRigidBodyMassData(world, entity)).toThrow(
+          `has a "${shape}" collider, which only static and kinematic bodies can use`,
+        );
+      },
+    );
+
+    it.each([
+      ['terrain', 'static'],
+      ['terrain', 'kinematic'],
+      ['chain', 'static'],
+      ['chain', 'kinematic'],
+    ] as const)(
+      'returns zero inverse mass for a %s collider on a %s body',
+      (shape, type) => {
+        const entity = world.createEntity();
+
+        addColliderComponent(world, entity, {
+          collider: createStaticOnlyCollider[shape](),
+        });
+        addRigidBodyComponent(world, entity, { type });
+
+        expect(getRigidBodyMassData(world, entity).invMass).toBe(0);
+      },
     );
   });
 });

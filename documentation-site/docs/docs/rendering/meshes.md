@@ -124,6 +124,42 @@ draws them through the entity's world position, rotation and scale, so the
 mesh moves, turns and scales with its entity and its parents, like a
 sprite. A mesh is mirrored with a negative scale.
 
+## Drawing a section of a geometry
+
+A mesh's `section` names one of its geometry's
+[sections](./geometry.md#dividing-a-geometry-into-sections) by index, and
+the mesh draws only that range. With `section: null`, the default, the mesh
+draws the whole geometry as it is each frame.
+
+Several entities can share one geometry and draw a section each. Each
+entity sorts, culls and hides on its own, like any other mesh. For example,
+props baked into one geometry, with a crate, a barrel and a lamp post as
+sections 0, 1 and 2, drawn by three entities at the same position:
+
+```ts
+import { addPositionComponent } from '@forge-game-engine/forge/common';
+import { addMeshComponent, Geometry } from '@forge-game-engine/forge/rendering';
+
+const props = new Geometry(renderContext, {
+  attributes: [{ name: 'a_position', data: propPositions, size: 2 }],
+  indices: propIndices,
+  sections: [crateRange, barrelRange, lampPostRange],
+});
+
+const crate = world.createEntity();
+const barrel = world.createEntity();
+const lampPost = world.createEntity();
+
+for (const [section, entity] of [crate, barrel, lampPost].entries()) {
+  addPositionComponent(world, entity);
+  addMeshComponent(world, entity, { geometry: props, material, section });
+}
+```
+
+`addMeshComponent` throws for a `section` the geometry doesn't have. The
+render system throws, naming the entity, when it draws a mesh whose section
+a later `update` removed.
+
 ## Ordering meshes with sprites and text
 
 Meshes sort with sprites and text by the same keys: the mesh's own
@@ -144,17 +180,38 @@ addDrawOrderComponent(world, ship, { order: 1 });
 An entity's mesh draws before its own sprite, and its sprite before its
 own text. See [Draw Order](./draw-order.md) for every key.
 
-Each mesh is a draw call of its own. Sprites that would otherwise draw in
-one batch draw in two when a mesh sorts between them.
+Sprites that would otherwise draw in one batch draw in two when a mesh
+sorts between them.
+
+## Sharing a draw call between meshes
+
+Meshes that come one after another in the draw order draw in one draw call
+when all of these hold:
+
+- they have the same geometry and the same material;
+- their entities have the same world position, rotation and scale, and the
+  same [masks](./masks.md) above them;
+- each draws a range that starts where the previous one ends, such as
+  sections 0, 1 and 2 in that order;
+- the geometry's topology is `'triangles'`, `'lines'` or `'points'`.
+  Strip ranges always draw separately, since joining them would draw
+  primitives across the join.
+
+Anything that sorts between them, such as a sprite, splits their draw call
+in two, and draws over the meshes before it and under the meshes after it.
+A mesh outside the view isn't drawn, so it splits the call too. Two meshes
+with `section: null` never share a call.
 
 ## Culling meshes outside the view
 
-A mesh isn't drawn when its geometry's
-[`bounds`](/Forge/docs/api/classes/Geometry#bounds), placed by the entity's
-transform, are outside the camera's view, or outside the bounds of the
-masks above it. `bounds` surrounds the `a_position` of the vertices the
-geometry draws, and is computed again after `update` changes them. A mesh
-whose geometry has no vertices isn't drawn.
+A mesh isn't drawn when its bounds, placed by the entity's transform, are
+outside the camera's view, or outside the bounds of the masks above it. A
+mesh with a section uses that section's `bounds`, and a mesh with
+`section: null` uses its geometry's
+[`bounds`](/Forge/docs/api/classes/Geometry#bounds). Both surround the
+`a_position` of the vertices drawn, and are computed again after `update`
+changes them. A mesh whose geometry has no vertices, or whose section has
+no elements, isn't drawn.
 
 A mesh under a hidden entity (see [Visibility](./visibility.md)) isn't
 drawn.
@@ -181,7 +238,8 @@ geometry.dispose();
 ```
 
 Whoever creates a geometry owns it. Removing the component or the entity
-doesn't dispose the geometry. A component that creates its own geometry
+doesn't dispose the geometry, so a geometry that several entities draw
+sections of is disposed after removing all of their meshes. A component that creates its own geometry
 disposes it from its
 [remove hook](../ecs/component.md#releasing-what-a-component-holds), as
 [trails](./trails.md) do.

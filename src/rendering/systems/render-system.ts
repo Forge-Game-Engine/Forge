@@ -45,6 +45,7 @@ import {
   radixSortByKeys,
   writeSortableFloat64,
 } from '../draw-order.js';
+import type { GeometryTopology } from '../geometry/geometry.js';
 import { SpriteMaterial } from '../materials/sprite-material.js';
 import { RenderContext } from '../render-context.js';
 import { RenderTarget } from '../render-target.js';
@@ -303,77 +304,132 @@ function pushSpriteRenderCommands(
 }
 
 /**
- * Builds an entity's world transform for its mesh: translate, then rotate,
- * then scale, so a local vertex is scaled, turned and then moved into place.
- * A missing rotation or scale counts as `0` or `(1, 1)`, as for sprites.
+ * Writes an entity's world transform for its mesh into `model`: translate,
+ * then rotate, then scale, so a local vertex is scaled, turned and then
+ * moved into place. A missing rotation or scale counts as `0` or `(1, 1)`,
+ * as for sprites. Entities with the same world transform get identical
+ * matrices, which is what lets their meshes share a draw call.
  */
-function createModelMatrix(
+function writeModelMatrix(
+  model: Matrix3x3,
   position: PositionEcsComponent,
   rotation: RotationEcsComponent | null,
   scale: ScaleEcsComponent | null,
-): Matrix3x3 {
-  return Matrix3x3.identity
+): void {
+  model
+    .resetToIdentity()
     .translate(position.world.x, position.world.y)
     .rotate(rotation?.world ?? 0)
     .scale(scale?.world.x ?? 1, scale?.world.y ?? 1);
 }
 
 /**
- * The axis-aligned rectangle around `bounds`' four corners mapped by
- * `matrix`.
+ * Writes the axis-aligned rectangle around `bounds`' four corners mapped by
+ * `matrix` into `result`.
  */
-function transformBounds(matrix: Matrix3x3, bounds: Rect): Rect {
+function transformBounds(matrix: Matrix3x3, bounds: Rect, result: Rect): void {
   const [m0, m1, , m3, m4, , m6, m7] = matrix.matrix;
-  const result: Rect = {
-    min: { x: Infinity, y: Infinity },
-    max: { x: -Infinity, y: -Infinity },
-  };
+  const { min, max } = bounds;
+  const x0 = m0 * min.x + m3 * min.y + m6;
+  const y0 = m1 * min.x + m4 * min.y + m7;
+  const x1 = m0 * max.x + m3 * min.y + m6;
+  const y1 = m1 * max.x + m4 * min.y + m7;
+  const x2 = m0 * min.x + m3 * max.y + m6;
+  const y2 = m1 * min.x + m4 * max.y + m7;
+  const x3 = m0 * max.x + m3 * max.y + m6;
+  const y3 = m1 * max.x + m4 * max.y + m7;
 
-  for (const x of [bounds.min.x, bounds.max.x]) {
-    for (const y of [bounds.min.y, bounds.max.y]) {
-      const worldX = m0 * x + m3 * y + m6;
-      const worldY = m1 * x + m4 * y + m7;
-
-      result.min.x = Math.min(result.min.x, worldX);
-      result.min.y = Math.min(result.min.y, worldY);
-      result.max.x = Math.max(result.max.x, worldX);
-      result.max.y = Math.max(result.max.y, worldY);
-    }
-  }
-
-  return result;
+  result.min.x = Math.min(x0, x1, x2, x3);
+  result.min.y = Math.min(y0, y1, y2, y3);
+  result.max.x = Math.max(x0, x1, x2, x3);
+  result.max.y = Math.max(y0, y1, y2, y3);
 }
 
-function pushMeshRenderCommand(
-  commands: RenderCommand[],
-  mesh: MeshEcsComponent,
-  position: PositionEcsComponent,
-  rotation: RotationEcsComponent | null,
-  scale: ScaleEcsComponent | null,
-  mask: InstanceMask | null,
-): void {
-  const { geometry } = mesh;
+/**
+ * Writes the range a mesh draws this frame, and its world bounds, into its
+ * command: its section's, or, for `section: null`, the whole geometry as it
+ * is now, so a geometry that changes size every frame (a trail) draws all
+ * of it. Bounds are only read for a range that draws something.
+ * @throws An error naming the entity if the mesh names a section its
+ * geometry doesn't have (a later `Geometry.update` can remove sections).
+ */
+function writeMeshRange(command: MeshRenderCommand, entity: number): void {
+  const { geometry, section } = command.mesh;
 
-  if (geometry.vertexCount === 0) {
+  if (section === null) {
+    command.start = 0;
+    command.count = geometry.vertexCount === 0 ? 0 : geometry.elementCount;
+
+    if (command.count > 0) {
+      transformBounds(command.model, geometry.bounds, command.bounds);
+    }
+
     return;
   }
 
-  const model = createModelMatrix(position, rotation, scale);
+  const { sections } = geometry;
 
-  commands.push({
-    kind: 'mesh',
-    mesh,
-    model,
-    bounds: transformBounds(model, geometry.bounds),
-    mask,
-  });
+  if (!Number.isInteger(section) || section < 0 || section >= sections.length) {
+    throw new Error(
+      `Unable to draw the mesh of entity ${entity}: its geometry has no section ${section} (it has ${sections.length} sections).`,
+    );
+  }
+
+  const { start, count, bounds } = sections[section];
+
+  command.start = start;
+  command.count = count;
+
+  if (count > 0) {
+    transformBounds(command.model, bounds, command.bounds);
+  }
+}
+
+/**
+ * Prepares a mesh item's command for this frame, the first time a camera
+ * draws it. The model matrix, range, bounds and mask don't depend on the
+ * camera, so every camera pushes the same command.
+ * @returns The item's command.
+ */
+function prepareMeshCommand(
+  item: DrawItem,
+  { position, rotation, scale, mask }: TextTransform,
+): MeshRenderCommand {
+  const mesh = item.mesh!;
+  let command = item.meshCommand;
+
+  if (!command) {
+    command = {
+      kind: 'mesh',
+      mesh,
+      model: Matrix3x3.identity,
+      start: 0,
+      count: 0,
+      bounds: Rects.zero,
+      mask: null,
+    };
+    item.meshCommand = command;
+  }
+
+  if (item.meshCommandReady) {
+    return command;
+  }
+
+  command.mesh = mesh;
+  command.mask = mask;
+  writeModelMatrix(command.model, position, rotation, scale);
+  writeMeshRange(command, item.entity);
+  item.meshCommandReady = true;
+
+  return command;
 }
 
 const commandBounds: Rect = Rects.zero;
 
 /**
  * A command's world-space bounds: a quad's, computed from its instance
- * components into a shared rect, or a mesh's, computed when it was pushed.
+ * components into a shared rect, or a mesh's, written when its command was
+ * prepared.
  */
 function computeCommandBounds(command: RenderCommand): Rect {
   if (command.kind === 'mesh') {
@@ -435,24 +491,83 @@ function isSameBatch(
   );
 }
 
-/** Draws one mesh with one draw call, through its entity's transform. */
-function drawMesh(
+/**
+ * Whether ranges of a topology can be joined into one draw. Joining two
+ * strip ranges would draw primitives across the join; a list's primitives
+ * are independent.
+ */
+const mergeableTopologies: Record<GeometryTopology, boolean> = {
+  triangles: true,
+  triangleStrip: false,
+  lines: true,
+  lineStrip: false,
+  points: true,
+};
+
+function matricesEqual(a: Matrix3x3, b: Matrix3x3): boolean {
+  const aMatrix = a.matrix;
+  const bMatrix = b.matrix;
+
+  for (let i = 0; i < aMatrix.length; i++) {
+    if (aMatrix[i] !== bMatrix[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Whether a command draws in the same draw call as a run of meshes: a mesh
+ * of the run's geometry, with its material, model matrix and mask, whose
+ * range starts where the run ends, on a topology whose ranges can be
+ * joined. Drawing the joined range draws the same primitives in the same
+ * order as drawing each range on its own, so the picture is the same.
+ * @param command - The command after the run.
+ * @param runFirst - The run's first command.
+ * @param runEnd - The element the run ends before.
+ */
+function canMergeMeshCommand(
+  command: RenderCommand,
+  runFirst: MeshRenderCommand,
+  runEnd: number,
+): command is MeshRenderCommand {
+  return (
+    command.kind === 'mesh' &&
+    command.mesh.geometry === runFirst.mesh.geometry &&
+    command.mesh.material === runFirst.mesh.material &&
+    mergeableTopologies[runFirst.mesh.geometry.topology] &&
+    command.start === runEnd &&
+    command.mask === runFirst.mask &&
+    matricesEqual(command.model, runFirst.model)
+  );
+}
+
+/**
+ * Draws `count` elements of a run of meshes' geometry from `start`, with
+ * one draw call, through the transform and mask of the run's first mesh,
+ * which every mesh in the run shares.
+ */
+function drawMeshRun(
   renderContext: RenderContext,
   projectionMatrix: Matrix3x3,
-  command: MeshRenderCommand,
+  runFirst: MeshRenderCommand,
+  start: number,
+  count: number,
 ): void {
   const { gl } = renderContext;
-  const { geometry, material } = command.mesh;
+  const { geometry, material } = runFirst.mesh;
 
-  material.bindMesh(gl, command.model, projectionMatrix, command.mask);
+  material.bindMesh(gl, runFirst.model, projectionMatrix, runFirst.mask);
   geometry.bind(material);
   enableStraightAlphaBlending(gl);
-  geometry.draw();
+  geometry.drawRange(start, count);
 }
 
 /**
  * Draws a camera's commands in order: each run of quads that batch together
- * as one instanced draw, and each mesh as a draw of its own.
+ * as one instanced draw, and each run of meshes that merge (see
+ * `canMergeMeshCommand`) as one draw.
  * @param renderContext - The render context to draw with.
  * @param projectionMatrix - The camera's world to clip space projection.
  * @param commands - The camera's commands, in draw order.
@@ -474,8 +589,28 @@ function drawCommands(
     const command = commands[i];
 
     if (command.kind === 'mesh') {
-      drawMesh(renderContext, projectionMatrix, command);
-      i++;
+      let runEnd = command.start + command.count;
+      let next = i + 1;
+
+      while (next < commands.length) {
+        const nextCommand = commands[next];
+
+        if (!canMergeMeshCommand(nextCommand, command, runEnd)) {
+          break;
+        }
+
+        runEnd += nextCommand.count;
+        next++;
+      }
+
+      drawMeshRun(
+        renderContext,
+        projectionMatrix,
+        command,
+        command.start,
+        runEnd - command.start,
+      );
+      i = next;
 
       continue;
     }
@@ -529,6 +664,13 @@ interface DrawItem {
   text: TextEcsComponent | null;
   textMesh: TextMeshEcsComponent | null;
   position: PositionEcsComponent;
+  /**
+   * A mesh item's command, created the first time the item holds a mesh and
+   * reused every frame after, so meshes allocate nothing per frame.
+   */
+  meshCommand: MeshRenderCommand | null;
+  /** Whether `meshCommand` has been prepared this frame. */
+  meshCommandReady: boolean;
 }
 
 // Draw items and sort keys, reused across frames so a frame allocates
@@ -591,6 +733,8 @@ function setDrawItem(
       text: null,
       textMesh: null,
       position,
+      meshCommand: null,
+      meshCommandReady: false,
     };
     drawItems[index] = item;
   }
@@ -602,6 +746,13 @@ function setDrawItem(
   item.sprite = null;
   item.text = null;
   item.textMesh = null;
+  item.meshCommandReady = false;
+
+  // Only a mesh item keeps a command, so a removed mesh's geometry isn't
+  // held after its slot goes to a sprite or text.
+  if (kind !== MESH_ITEM_KIND) {
+    item.meshCommand = null;
+  }
 
   return item;
 }
@@ -734,16 +885,11 @@ type PushDrawItemCommands = (
 
 const pushCommandsByKind: Record<DrawItemKind, PushDrawItemCommands> = {
   [MESH_ITEM_KIND]: (commands, item, transform) => {
-    const { position, rotation, scale, mask } = transform;
+    const command = prepareMeshCommand(item, transform);
 
-    pushMeshRenderCommand(
-      commands,
-      item.mesh!,
-      position,
-      rotation,
-      scale,
-      mask,
-    );
+    if (command.count > 0) {
+      commands.push(command);
+    }
   },
   [SPRITE_ITEM_KIND]: (
     commands,
@@ -830,9 +976,13 @@ const drawOrderResolver = createDrawOrderResolver();
 /**
  * Creates a render system that draws every camera's meshes, sprites and
  * text in one draw order. Consecutive quads (in draw order) with the same
- * material, texture and emissive map draw in one instanced draw call; each
- * mesh (see `MeshEcsComponent`) is a draw call of its own, which ends the
- * batch before it. Each camera is projected from its view (see
+ * material, texture and emissive map draw in one instanced draw call. Each
+ * mesh (see `MeshEcsComponent`) draws its geometry's section, or the whole
+ * geometry, and ends the quad batch before it. Consecutive meshes with the
+ * same geometry, material, world transform and mask, drawing ranges that
+ * follow on from one another of a list topology (not a strip), draw in one
+ * draw call; anything sorted between them splits it. Each camera is
+ * projected from its view (see
  * `computeCameraView`), and meshes, sprites, nine-slice regions and glyphs
  * whose bounds are outside that view are skipped before anything is
  * uploaded.

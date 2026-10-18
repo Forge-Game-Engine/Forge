@@ -157,5 +157,53 @@ describe('createDrawOrderResolver', () => {
       expect(indices()).toEqual(withoutYSortChildren);
       expect(withoutYSortChildren).toEqual([1, 0, 2, 3]);
     });
+
+    describe('with setSiblingIndex', () => {
+      let parent: number;
+      let a: number;
+      let b: number;
+      let c: number;
+
+      const resolveHierarchyOrder = (): number[] => {
+        const entities = [parent, a, b, c];
+
+        resolveAll(...entities);
+
+        return [...entities].sort(
+          (left, right) =>
+            resolver.hierarchyIndex(left) - resolver.hierarchyIndex(right),
+        );
+      };
+
+      beforeEach(() => {
+        parent = addEntity(0);
+        a = addEntity(0, parent);
+        b = addEntity(0, parent);
+        c = addEntity(0, parent);
+      });
+
+      it('numbers siblings in the order they were parented', () => {
+        expect(resolveHierarchyOrder()).toEqual([parent, a, b, c]);
+      });
+
+      it('numbers a child moved with setSiblingIndex at its new place', () => {
+        world.setSiblingIndex(c, 1);
+
+        expect(resolveHierarchyOrder()).toEqual([parent, a, c, b]);
+
+        world.setSiblingIndex(c, 0);
+
+        expect(resolveHierarchyOrder()).toEqual([parent, c, a, b]);
+      });
+
+      it('keeps behindParent children in their new sibling order, before the parent', () => {
+        addDrawOrderComponent(world, a, { behindParent: true });
+        addDrawOrderComponent(world, b, { behindParent: true });
+
+        world.setSiblingIndex(b, 0);
+
+        expect(resolveHierarchyOrder()).toEqual([b, a, parent, c]);
+      });
+    });
   });
 });
