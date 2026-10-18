@@ -16,6 +16,9 @@ import {
   createTextureAtlas,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
+// The ship sheet is drawn at the tile sheet's scale, so ships and tiles
+// match.
+import { pixelsPerUnit } from './_create-island-map';
 
 // A few named images from the sheet's packing data
 // (shipsMiscellaneous_sheet.xml), as texel rects from its top-left corner.
@@ -31,13 +34,14 @@ const shipRects = [
   { name: 'dinghyLarge3', x: 588, y: 426, width: 20, height: 38 },
 ];
 
-// Where each vessel sits, and which of its kind's styles it starts on.
+// Where each vessel sits, in world units (tiles), and which of its kind's
+// styles it starts on.
 const vessels = [
-  { kind: 'ship', x: -200, y: 120, angle: -0.4, firstStyle: 0 },
-  { kind: 'ship', x: 40, y: 200, angle: 0.3, firstStyle: 2 },
-  { kind: 'ship', x: 430, y: -60, angle: 1.2, firstStyle: 4 },
-  { kind: 'dinghy', x: -330, y: 60, angle: 0.8, firstStyle: 0 },
-  { kind: 'dinghy', x: 250, y: 150, angle: -0.6, firstStyle: 1 },
+  { kind: 'ship', x: -3.1, y: 1.9, angle: -0.4, firstStyle: 0 },
+  { kind: 'ship', x: 0.6, y: 3.1, angle: 0.3, firstStyle: 2 },
+  { kind: 'ship', x: 6.7, y: -0.9, angle: 1.2, firstStyle: 4 },
+  { kind: 'dinghy', x: -5.2, y: 0.9, angle: 0.8, firstStyle: 0 },
+  { kind: 'dinghy', x: 3.9, y: 2.3, angle: -0.6, firstStyle: 1 },
 ] as const;
 
 const secondsPerStyle = 2;
@@ -81,7 +85,7 @@ export async function createShips(
     addSpriteComponent(
       world,
       entity,
-      createAtlasSprite(atlas, styles[firstStyle].name, { pixelsPerUnit: 1 }),
+      createAtlasSprite(atlas, styles[firstStyle].name, { pixelsPerUnit }),
     );
     addSpriteAnimationComponent(world, entity, {
       animationClipHandle: clipHandles[kind],

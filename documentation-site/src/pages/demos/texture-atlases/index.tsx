@@ -21,8 +21,8 @@ export default function TextureAtlases(): JSX.Element {
           file: 'create-ships.ts',
         },
         {
-          text: 'createAtlasSprite sizes each sprite from its region: at pixelsPerUnit 1, one texel is one world unit.',
-          file: 'create-ships.ts',
+          text: "createAtlasSprite sizes each sprite from its region: at pixelsPerUnit 64, a 64 x 64 tile is one world unit, and the camera's default view is 10 world units tall.",
+          file: 'create-island-map.ts',
         },
         {
           text: 'Every tile shares one texture and every ship another, so the whole map draws in one batch and the ships in a second.',

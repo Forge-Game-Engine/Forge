@@ -10,9 +10,12 @@ import {
 } from '@forge-game-engine/forge/rendering';
 
 // The tile sheet is 16 columns by 6 rows of 64 x 64 texel tiles, with no
-// spacing or margin, so a tile's index is `row * 16 + column`.
+// spacing or margin, so a tile's index is `row * 16 + column`. Drawing 64
+// texels per world unit makes each tile one world unit square, so a tile's
+// column and row are its position.
 const tileSize = 64;
 const sheetColumns = 16;
+export const pixelsPerUnit = tileSize;
 
 const tiles = {
   water: 72,
@@ -46,12 +49,12 @@ function addTile(
   const entity = world.createEntity();
 
   addPositionComponent(world, entity, {
-    local: { x: column * tileSize, y: row * tileSize },
+    local: { x: column, y: row },
   });
   addSpriteComponent(
     world,
     entity,
-    createAtlasSprite(atlas, tile, { pixelsPerUnit: 1 }),
+    createAtlasSprite(atlas, tile, { pixelsPerUnit }),
   );
 }
 

@@ -6,14 +6,15 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
-import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createIslandMap } from './_create-island-map';
 import { createShips } from './_create-ships';
 
 export const createTextureAtlasesGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
-  createCamera(world, { verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS });
+  // The camera shows its default 10 world units vertically, and both sheets
+  // draw 64 texels per world unit, so a tile is one world unit square.
+  createCamera(world);
 
   // Sprites draw in the order their entities were created, so the map's
   // tiles (one atlas) draw in one batch and the ships (another) in a second.
