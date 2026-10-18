@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { addSpriteComponent, spriteId } from './sprite-component.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Vec2 } from '../../math/index.js';
 import { Color } from '../color.js';
 import type { Texture } from '../texture.js';
+import { createTextureRegion, fullTextureRegion } from '../texture-region.js';
 
 const createTexture = (): Texture => ({}) as Texture;
 
@@ -21,8 +21,7 @@ describe('addSpriteComponent', () => {
       texture,
       pivot: { x: 0.5, y: 0.5 },
       tintColor: Color.white,
-      uvOffset: Vec2.zero,
-      uvScale: Vec2.one,
+      region: fullTextureRegion,
       emissive: null,
       material: null,
       category: 1,
@@ -61,7 +60,7 @@ describe('addSpriteComponent', () => {
     expect(world.getComponent(entity, spriteId)).toBe(component);
   });
 
-  it('gives each entity its own pivot, uvOffset, and uvScale vector instances', () => {
+  it('gives each entity its own pivot vector instance', () => {
     const world = new EcsWorld();
     const first = world.createEntity();
     const second = world.createEntity();
@@ -75,7 +74,7 @@ describe('addSpriteComponent', () => {
     );
   });
 
-  it("copies the options' pivot, uvOffset, uvScale and slices, so two components built from one options object don't share them", () => {
+  it("copies the options' pivot and slices, so two components built from one options object don't share them", () => {
     const world = new EcsWorld();
     const first = world.createEntity();
     const second = world.createEntity();
@@ -84,24 +83,61 @@ describe('addSpriteComponent', () => {
       height: 32,
       texture: createTexture(),
       pivot: { x: 0, y: 1 },
-      uvOffset: { x: 0.25, y: 0 },
-      uvScale: { x: 0.25, y: 1 },
       slices: { left: 1, right: 1, top: 1, bottom: 1 },
     };
 
     const firstSprite = addSpriteComponent(world, first, options);
     const secondSprite = addSpriteComponent(world, second, options);
 
-    firstSprite.uvOffset.x = 0.75;
     firstSprite.pivot.y = 0;
 
-    expect(secondSprite.uvOffset).toEqual({ x: 0.25, y: 0 });
     expect(secondSprite.pivot).toEqual({ x: 0, y: 1 });
-    expect(options.uvOffset).toEqual({ x: 0.25, y: 0 });
-    expect(firstSprite.uvScale).not.toBe(options.uvScale);
-    expect(firstSprite.uvScale).toEqual(options.uvScale);
     expect(firstSprite.slices).not.toBe(secondSprite.slices);
     expect(firstSprite.slices).not.toBe(options.slices);
+  });
+
+  it('shares the region it was given, since regions are immutable', () => {
+    const world = new EcsWorld();
+    const region = createTextureRegion({ x: 0.25, y: 0 }, { x: 0.25, y: 1 });
+
+    const sprite = addSpriteComponent(world, world.createEntity(), {
+      width: 32,
+      height: 32,
+      texture: createTexture(),
+      region,
+    });
+
+    expect(sprite.region).toBe(region);
+  });
+
+  it('throws for a nine-sliced sprite with a trimmed region', () => {
+    const world = new EcsWorld();
+
+    expect(() =>
+      addSpriteComponent(world, world.createEntity(), {
+        width: 32,
+        height: 32,
+        texture: createTexture(),
+        region: createTextureRegion(
+          { x: 0, y: 0 },
+          { x: 0.5, y: 0.5 },
+          { offset: { x: 0, y: 0 }, scale: { x: 0.5, y: 1 } },
+        ),
+        slices: { left: 1, right: 1, top: 1, bottom: 1 },
+      }),
+    ).toThrow(/trimmed/);
+  });
+
+  it('defaults to the whole texture, untrimmed', () => {
+    const world = new EcsWorld();
+
+    const sprite = addSpriteComponent(world, world.createEntity(), {
+      width: 32,
+      height: 32,
+      texture: createTexture(),
+    });
+
+    expect(sprite.region).toBe(fullTextureRegion);
   });
 
   it('captures an omitted nine-slice native size from the size the sprite is attached at', () => {

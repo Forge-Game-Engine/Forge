@@ -134,17 +134,17 @@ nine-slice sprite, glyph and animation draws exactly as before (existing
 unit and e2e tests pass with only fixture changes); and the docs describe
 `region`.
 
-| Task                   | Description                                                                                                                                                                                                                                                                                                                                                              | Size |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
-| `TextureRegion` module | `src/rendering/texture-region.ts` with the interface, `TextureRegionTrim`, `createTextureRegion` (validates, copies, freezes), `fullTextureRegion` and `isTextureRegionTrimmed`; export from `src/rendering/index.ts`; unit tests for validation, tolerance, freezing and copying                                                                                        | S    |
-| Sprite component       | Replace `uvOffset`/`uvScale` with `region` (default `fullTextureRegion`); JSDoc on `texture`, `width`, `height`, `pivot` says they describe the untrimmed frame; `addSpriteComponent` keeps cloning `pivot` and stops cloning UV vectors; tests assert the region is shared by reference                                                                                 | S    |
-| Instance data segment  | `bindSpriteInstanceData` writes `region.uvOffset`/`uvScale` to `a_instanceTexRect`. No trim yet                                                                                                                                                                                                                                                                          | S    |
-| Nine-slice             | `computeNineSliceRegions(width, height, pivot, region, slices)`; `NineSliceRegion.region` replaces its UV pair; the render system's `regionSprite` assigns `region`                                                                                                                                                                                                      | M    |
-| Text                   | `GlyphQuad.region`, built in `shape-text.ts` with `createTextureRegion`; `glyph-quad.ts` assigns `glyphSprite.region` in both the effects and fill passes                                                                                                                                                                                                                | S    |
-| `createImageSprite`    | Returns `region` (`fullTextureRegion`, or a `createTextureRegion` for `frameDimensions`)                                                                                                                                                                                                                                                                                 | S    |
-| Animations             | `AnimationClip` takes and exposes `readonly TextureRegion[]`; `OnAnimationFrameChangeEvent` is `ParameterizedForgeEvent<TextureRegion>`; delete `AnimationFrame.ts` and its export; the system assigns `sprite.region = frame`; `createSpriteSheet`, `selectAnimationFrames` and `createAnimation` produce regions; a system unit test for frames of different `uvScale` | M    |
-| Callers and fixtures   | Every test fixture in `src/ui`, `src/particles`, `src/rendering` and `src/text` that spells out `uvOffset`/`uvScale`; the culling tests in `render-system.test.ts` that use `uvOffset.x` as a sprite tag get distinct regions instead; the `spawn-particle.ts` comment                                                                                                   | M    |
-| Docs                   | `sprites.md` (field list, sprite sheet section, "Changing a sprite's image", batching), `nine-slice-sprites.md`, `sprite-animations.md` (frames are regions; the system writes `region`)                                                                                                                                                                                 | S    |
+| Task                   | Description                                                                                                                                                                                                                                                                                                                                                                                           | Size |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| `TextureRegion` module | `src/rendering/texture-region.ts` with the interface, `TextureRegionTrim`, `createTextureRegion` (finite and positive-size checks on both rects, `0` to `1` bounds on the trim rect only; copies, freezes), `fullTextureRegion` and `isTextureRegionTrimmed` (same `1e-6` tolerance); export from `src/rendering/index.ts`; unit tests for validation, tolerance, unbounded UVs, freezing and copying | S    |
+| Sprite component       | Replace `uvOffset`/`uvScale` with `region` (default `fullTextureRegion`); JSDoc on `texture`, `width`, `height`, `pivot` says they describe the untrimmed frame; `addSpriteComponent` keeps cloning `pivot` and stops cloning UV vectors; tests assert the region is shared by reference                                                                                                              | S    |
+| Instance data segment  | `bindSpriteInstanceData` writes `region.uvOffset`/`uvScale` to `a_instanceTexRect`. No trim yet                                                                                                                                                                                                                                                                                                       | S    |
+| Nine-slice             | `computeNineSliceRegions(width, height, pivot, region, slices)`; `NineSliceRegion.region` replaces its UV pair; the render system's `regionSprite` assigns `region`                                                                                                                                                                                                                                   | M    |
+| Text                   | `GlyphQuad.region`, built in `shape-text.ts` with `createTextureRegion`; `glyph-quad.ts` assigns `glyphSprite.region` in both the effects and fill passes                                                                                                                                                                                                                                             | S    |
+| `createImageSprite`    | Returns `region` (`fullTextureRegion`, or a `createTextureRegion` for `frameDimensions`)                                                                                                                                                                                                                                                                                                              | S    |
+| Animations             | `AnimationClip` takes and exposes `readonly TextureRegion[]`; `OnAnimationFrameChangeEvent` is `ParameterizedForgeEvent<TextureRegion>`; delete `AnimationFrame.ts` and its export; the system assigns `sprite.region = frame`; `createSpriteSheet`, `selectAnimationFrames` and `createAnimation` produce regions; a system unit test for frames of different `uvScale`                              | M    |
+| Callers and fixtures   | Every test fixture in `src/ui`, `src/particles`, `src/rendering` and `src/text` that spells out `uvOffset`/`uvScale`; the culling tests in `render-system.test.ts` that use `uvOffset.x` as a sprite tag get distinct regions instead; the `spawn-particle.ts` comment                                                                                                                                | M    |
+| Docs                   | `sprites.md` (field list, sprite sheet section, "Changing a sprite's image", batching), `nine-slice-sprites.md`, `sprite-animations.md` (frames are regions; the system writes `region`)                                                                                                                                                                                                              | S    |
 
 ### Phase 2: Trimmed regions
 
@@ -161,7 +161,7 @@ bounds match the trimmed quad.
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | Trimmed instance data       | `bindSpriteInstanceData` writes the trimmed size and re-expressed pivot (see "Trimming on the CPU"); unit tests: untrimmed output unchanged bit for bit, trimmed, trimmed with `flipX`, with `flipY`                                                                                           | S    |
 | Trimmed bounds              | `computeSpriteInstanceBounds` uses the trimmed quad; unit tests with and without rotation that compare against the corners `sprite.vert` would produce                                                                                                                                         | S    |
-| Nine-slice trim guard       | `computeNineSliceRegions` throws a descriptive error for a trimmed `region`; `addSpriteComponent` runs the same check when `slices` is set, so the common mistake fails where the sprite is made; tests                                                                                        | S    |
+| Nine-slice trim guard       | `computeNineSliceRegions` throws a descriptive error for a trimmed `region`; `addSpriteComponent` also throws when `slices` is set and `region` is trimmed, so the common mistake fails where the sprite is made; one shared helper for the check and message; tests                           | S    |
 | Render system batching test | In `render-system.test.ts`: consecutive sprites with different trimmed regions of one texture produce one instanced draw                                                                                                                                                                       | S    |
 | E2E scene and spec          | `trimmed-sprite-animation` (see "Testing")                                                                                                                                                                                                                                                     | M    |
 | Docs and changelog          | `sprites.md` gains "Trimmed regions" (what trim is, that `width`/`height`/`pivot` are the untrimmed frame's); `nine-slice-sprites.md` says sliced sprites need untrimmed regions; `sprite-animations.md` says a clip's frames share one untrimmed size; `#### Changed` bullets for both phases | S    |
@@ -173,9 +173,9 @@ bounds match the trimmed quad.
 ```ts
 /** Immutable and shared: change a sprite's region by assigning another. */
 export interface TextureRegion {
-  /** Top-left of the sampled rect, 0 to 1 of the texture. Y-down. */
+  /** Top-left of the sampled rect, as a fraction of the texture. Y-down. Unbounded. */
   readonly uvOffset: Readonly<Vector2>;
-  /** Size of the sampled rect, 0 to 1 of the texture. */
+  /** Size of the sampled rect, as a fraction of the texture. > 0, unbounded. */
   readonly uvScale: Readonly<Vector2>;
   /** Top-left of the drawn (trimmed) rect in the untrimmed frame, 0 to 1. Y-down. */
   readonly trimOffset: Readonly<Vector2>;
@@ -203,11 +203,30 @@ export function isTextureRegionTrimmed(region: TextureRegion): boolean;
 
 - copies its vectors and freezes the result and each vector, so a region
   can't change under the sprites that share it;
-- throws a descriptive error when a value isn't finite, a scale isn't
-  greater than `0`, or either rect reaches outside `0` to `1`. The bounds
-  check allows `1e-6` of slack, because fractions computed from texel counts
-  (`column * frameWidth / textureWidth`) can land a rounding error past
-  `1`.
+- throws a descriptive error when a value isn't finite or a scale isn't
+  greater than `0`, for both rects;
+- throws when the **trim** rect reaches outside `0` to `1`, with `1e-6` of
+  slack, because fractions computed from texel counts
+  (`trimX / sourceWidth`) can land a rounding error past `1`. A trim rect is
+  part of its untrimmed frame by definition, so anything outside it is a
+  mistake;
+- doesn't bounds-check the **UV** rect. A UV rect outside `0` to `1` is
+  valid: on a `wrap: 'repeat'` texture, `uvScale` above `1` tiles the image
+  across the sprite and a growing `uvOffset` scrolls it, which
+  `uvOffset`/`uvScale` allow today and Godot's `region_rect` allows too. On
+  a clamped texture the edge texels stretch, as today. Checking that a
+  region lies inside its atlas is the atlas's job: #796's `AtlasRegion`
+  checks it against the texture's size in texels when the atlas is built.
+
+`isTextureRegionTrimmed` compares `trimScale` with `1` using the same `1e-6`
+tolerance, so a region whose trim was computed from texel counts and lands
+within rounding error of the full frame counts as untrimmed (and can be
+nine-sliced).
+
+The issue's task asks `createTextureRegion` to check that "the rects stay
+inside `[0, 1]`". This design keeps that check for the trim rect only (D9):
+applied to the UV rect, it would remove scrolling and tiled sprites, which
+work today.
 
 All four fields are fractions. Pixel rects, untrimmed texel sizes and
 pivots belong to #796's `AtlasRegion extends TextureRegion`, which knows the
@@ -361,10 +380,11 @@ regions of one texture join one instanced draw.
 
 Nine-slice insets are authored against the untrimmed art, so a trimmed
 region has no defined border bands. `computeNineSliceRegions` throws for a
-region where `isTextureRegionTrimmed(region)`, naming the trim, and
-`addSpriteComponent` runs the same check when `slices` is set so the usual
-mistake fails where the sprite is made. The render-time check stays because
-a region can be assigned after the sprite is added. Unity likewise requires
+region where `isTextureRegionTrimmed(region)`, naming the trim. When
+`slices` is set, `addSpriteComponent` also throws for a trimmed `region`, so
+the usual mistake fails where the sprite is made rather than on the first
+draw. The draw-time throw stays because a region can be assigned after the
+sprite is added. Both use one helper so the message is the same. Unity likewise requires
 a full-rect sprite for sliced drawing.
 
 `computeNineSliceRegions` builds its band regions as plain `TextureRegion`
@@ -385,18 +405,25 @@ objects, one per grid cell (tiled segments of a cell share it), reusing
 inset atlas bounds it already computes. Shaping runs only when a text
 changes, so the cost is per change, not per frame. The texel inset leaves a
 positive size for any glyph tile wider than two texels, which every atlas
-`generate-font-atlas.mjs` writes satisfies.
+`generate-font-atlas.mjs` writes satisfies. A malformed atlas (a glyph with
+non-finite bounds, or a tile two texels or less across, so its inset size
+isn't positive) makes `createTextureRegion` throw while that text is
+shaped, instead of drawing a broken quad.
 
 ## Testing
 
 Unit tests (Vitest):
 
-- `texture-region.test.ts`: valid regions, each validation error,
-  the `1e-6` tolerance, frozen result, copied inputs,
-  `isTextureRegionTrimmed`.
+- `texture-region.test.ts`: valid regions; non-finite values and
+  non-positive scales throw for both rects; a trim rect outside `0` to `1`
+  throws, and one within `1e-6` of the edge doesn't; a UV rect outside `0`
+  to `1` (negative `uvOffset`, `uvScale` of `3`) is accepted; frozen result;
+  copied inputs; `isTextureRegionTrimmed` for `(1, 1)`, for a trim within
+  `1e-6` of `1` (untrimmed) and for a real trim.
 - `sprite-component.test.ts`: default is `fullTextureRegion`; a given region
-  is stored by reference; pivot is still cloned; slices with a trimmed
-  region throw.
+  is stored by reference; pivot is still cloned; `addSpriteComponent`
+  throws for `slices` with a trimmed region and doesn't for a region trimmed
+  within the tolerance.
 - `sprite-instance-data-segment.test.ts`: untrimmed output identical to
   today; a trimmed region's size, pivot and tex rect; trimmed with `flipX`
   and `flipY`; bounds for trimmed regions with and without rotation, checked
@@ -409,7 +436,9 @@ Unit tests (Vitest):
 - Sprite animation system test (new): frames of different `uvScale` and
   trim are assigned whole; the assigned object is the clip's frame.
 - `shape-text.test.ts`, `glyph-quad.test.ts`, `text-shaping-system.test.ts`:
-  read `region`.
+  read `region`. `shape-text.test.ts` also shapes text against a malformed
+  font atlas, one glyph with non-finite atlas bounds and one with a
+  zero-size tile, and expects each to throw.
 
 E2E (`write-e2e-test` skill), `trimmed-sprite-animation`:
 
@@ -484,9 +513,11 @@ demo.
   texture matches the sprite's.
 - **Tradeoff**: per-frame computed regions (nine-slice) allocate an object
   with nested vectors instead of two vectors.
-- **Assumptions**: nothing needs to mutate a region in place; code that
-  animated `uvOffset` by hand (a scrolling texture) assigns a new region
-  per change, which is one small allocation.
+- **Assumptions**: nothing needs to mutate a region in place. Code that
+  animated `uvOffset` by hand, such as a scrolling texture on a
+  `wrap: 'repeat'` texture, assigns a new region with the new offset each
+  time it changes. That's one small allocation per change, and the offset
+  can grow past `1` because UV rects aren't bounds-checked (D9).
 
 ### D2. Trim as fractions of the untrimmed frame
 
@@ -579,6 +610,26 @@ demo.
 - **Tradeoff**: they live one or two more releases.
 - **Assumptions**: #811 deletes `createSpriteSheet` and
   `selectAnimationFrames`; open question 3 covers `createAnimation`.
+
+### D9. Bounds-check the trim rect, not the UV rect
+
+- **Options**: (a) check both rects stay inside `0` to `1`, as the issue's
+  task text asks; (b) check only the trim rect, and only that the UV rect
+  is finite with a positive size; (c) check neither.
+- **Chosen**: (b). This deviates from the issue's task text.
+- **Rationale**: a UV rect outside `0` to `1` is meaningful. On a
+  `wrap: 'repeat'` texture it tiles (`uvScale` above `1`) or scrolls (a
+  growing `uvOffset`); `uvOffset`/`uvScale` allow both today and Godot's
+  `region_rect` allows them too, so (a) would remove working behavior. A
+  trim rect describes where the drawn rect sits inside its own untrimmed
+  frame, so outside `0` to `1` is always an authoring mistake, and it also
+  keeps `trimScale` from silently enlarging the quad. Whether a region lies
+  inside its atlas depends on the atlas's texel size, which #796's
+  `AtlasRegion` knows and checks when the atlas is built.
+- **Tradeoff**: a hand-written region that reaches past a clamped
+  texture's edge draws stretched edge texels instead of throwing.
+- **Assumptions**: hand-written regions are rare once atlases (#796, #804)
+  exist.
 
 ## Open questions
 

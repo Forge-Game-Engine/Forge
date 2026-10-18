@@ -249,8 +249,7 @@ function pushSpriteRenderCommands(
     spriteComponent.width,
     spriteComponent.height,
     spriteComponent.pivot,
-    spriteComponent.uvOffset,
-    spriteComponent.uvScale,
+    spriteComponent.region,
     slices,
   );
 
@@ -260,9 +259,9 @@ function pushSpriteRenderCommands(
   const scaleY =
     (scaleComponent?.world.y ?? 1) * (flipComponent?.flipY ? -1 : 1);
 
-  for (const region of regions) {
+  for (const sliceRegion of regions) {
     const regionOffset = Vec2.rotate(
-      { x: region.offset.x * scaleX, y: region.offset.y * scaleY },
+      { x: sliceRegion.offset.x * scaleX, y: sliceRegion.offset.y * scaleY },
       rotationRadians,
     );
 
@@ -276,14 +275,10 @@ function pushSpriteRenderCommands(
 
     const regionSprite: SpriteEcsComponent = {
       ...spriteComponent,
-      width: region.size.x,
-      height: region.size.y,
-      // A fresh vector per region, not a shared constant: `pivot` may be
-      // mutated in place downstream (e.g. by the sprite animation system),
-      // and this object is unique to `regionSprite`.
+      width: sliceRegion.size.x,
+      height: sliceRegion.size.y,
       pivot: { x: 0.5, y: 0.5 },
-      uvOffset: region.uvOffset,
-      uvScale: region.uvScale,
+      region: sliceRegion.region,
     };
 
     commands.push({

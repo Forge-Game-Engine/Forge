@@ -1,4 +1,4 @@
-import { AnimationFrame } from '../types/index.js';
+import type { TextureRegion } from '../../rendering/texture-region.js';
 import { SpriteSheet } from './create-sprite-sheet.js';
 
 /**
@@ -13,8 +13,8 @@ export function selectAnimationFrames(
   spriteSheet: SpriteSheet,
   numberOfFrames: number,
   startFrame: number = 0,
-): AnimationFrame[] {
-  const selectedFrames: AnimationFrame[] = [];
+): TextureRegion[] {
+  const selectedFrames: TextureRegion[] = [];
   const rowWidth = spriteSheet.frames[0].length;
 
   for (let i = 0; i < numberOfFrames; i++) {

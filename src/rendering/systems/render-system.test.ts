@@ -33,6 +33,7 @@ import {
 import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
 import { Color } from '../color';
+import { createTextureRegion, fullTextureRegion } from '../texture-region';
 import type { SpriteMaterial } from '../materials/sprite-material';
 import type { InstanceComponents } from '../renderable';
 import type { Texture } from '../texture';
@@ -142,8 +143,7 @@ describe('createRenderEcsSystem', () => {
     emissive: null,
     material,
     category: 1,
-    uvOffset: Vec2.zero,
-    uvScale: Vec2.zero,
+    region: fullTextureRegion,
     layer: 0,
     ...overrides,
   });
@@ -351,8 +351,7 @@ describe('createRenderEcsSystem', () => {
         {
           offset: Vec2.zero,
           size: { x: 1, y: 1 },
-          uvOffset: Vec2.zero,
-          uvScale: Vec2.one,
+          region: fullTextureRegion,
           embolden: 0,
         },
       ],
@@ -1346,7 +1345,6 @@ describe('createRenderEcsSystem', () => {
         width: 24,
         height: 24,
         pivot: { x: 0.5, y: 0.5 },
-        uvScale: { x: 1, y: 1 },
         slices: { left: 8, right: 8, top: 8, bottom: 8 },
       });
 
@@ -1368,8 +1366,8 @@ describe('createRenderEcsSystem', () => {
       expect(corners).toHaveLength(4);
 
       for (const corner of corners) {
-        expect(corner.uvScale.x).toBeCloseTo(8 / 24);
-        expect(corner.uvScale.y).toBeCloseTo(8 / 24);
+        expect(corner.region.uvScale.x).toBeCloseTo(8 / 24);
+        expect(corner.region.uvScale.y).toBeCloseTo(8 / 24);
       }
     });
 
@@ -1395,15 +1393,13 @@ describe('createRenderEcsSystem', () => {
           {
             offset: { x: 0, y: 0 },
             size: { x: 1, y: 1 },
-            uvOffset: { x: 0, y: 0 },
-            uvScale: { x: 0.1, y: 0.1 },
+            region: createTextureRegion({ x: 0, y: 0 }, { x: 0.1, y: 0.1 }),
             embolden: 0,
           },
           {
             offset: { x: 1, y: 0 },
             size: { x: 1, y: 1 },
-            uvOffset: { x: 0.1, y: 0 },
-            uvScale: { x: 0.1, y: 0.1 },
+            region: createTextureRegion({ x: 0.1, y: 0 }, { x: 0.1, y: 0.1 }),
             embolden: 0,
           },
         ],
@@ -1429,8 +1425,7 @@ describe('createRenderEcsSystem', () => {
     const glyph = {
       offset: Vec2.zero,
       size: { x: 1, y: 1 },
-      uvOffset: Vec2.zero,
-      uvScale: Vec2.one,
+      region: fullTextureRegion,
       embolden: 0,
     };
 
@@ -1499,8 +1494,7 @@ describe('createRenderEcsSystem', () => {
           {
             offset: Vec2.zero,
             size: { x: 1, y: 1 },
-            uvOffset: Vec2.zero,
-            uvScale: Vec2.one,
+            region: fullTextureRegion,
             embolden: 0,
           },
         ],
@@ -1536,6 +1530,11 @@ describe('createRenderEcsSystem', () => {
         (call) => (call[0] as { sprite: SpriteEcsComponent }).sprite,
       );
 
+    // Tells the test's sprites apart by a field culling and draw order
+    // ignore; untagged sprites read as `0`.
+    const tagOf = (sprite: SpriteEcsComponent): number =>
+      sprite.opacityMultiplier ?? 0;
+
     it('skips a sprite just outside the top edge', () => {
       addNarrowCamera();
       const { renderable, bindInstanceData } = createRenderable();
@@ -1563,16 +1562,14 @@ describe('createRenderEcsSystem', () => {
       addNarrowCamera();
       const { renderable, bindInstanceData } = createRenderable();
 
-      addSpriteAt(renderable, { x: 0, y: 2 }, { uvOffset: { x: 2, y: 0 } });
-      addSpriteAt(renderable, { x: -20, y: 0 }, { uvOffset: { x: 0, y: 0 } });
-      addSpriteAt(renderable, { x: 0, y: -2 }, { uvOffset: { x: 1, y: 0 } });
-      addSpriteAt(renderable, { x: 0, y: -20 }, { uvOffset: { x: 3, y: 0 } });
+      addSpriteAt(renderable, { x: 0, y: 2 }, { opacityMultiplier: 2 });
+      addSpriteAt(renderable, { x: -20, y: 0 }, { opacityMultiplier: 0 });
+      addSpriteAt(renderable, { x: 0, y: -2 }, { opacityMultiplier: 1 });
+      addSpriteAt(renderable, { x: 0, y: -20 }, { opacityMultiplier: 3 });
 
       world.update();
 
-      expect(
-        drawnSprites(bindInstanceData).map((sprite) => sprite.uvOffset.x),
-      ).toEqual([2, 1]);
+      expect(drawnSprites(bindInstanceData).map(tagOf)).toEqual([2, 1]);
     });
 
     it("respects the sprite's rotation", () => {
@@ -1585,16 +1582,14 @@ describe('createRenderEcsSystem', () => {
       const upright = addSpriteAt(
         renderable,
         { x: 8, y: 0 },
-        { width: 4, height: 0.2, uvOffset: { x: 1, y: 0 } },
+        { width: 4, height: 0.2, opacityMultiplier: 1 },
       );
 
       addRotationComponent(world, upright, { local: Math.PI / 2 });
 
       world.update();
 
-      expect(
-        drawnSprites(bindInstanceData).map((sprite) => sprite.uvOffset.x),
-      ).toEqual([0]);
+      expect(drawnSprites(bindInstanceData).map(tagOf)).toEqual([0]);
     });
 
     it("respects the sprite's scale", () => {
@@ -1605,16 +1600,14 @@ describe('createRenderEcsSystem', () => {
       const scaled = addSpriteAt(
         renderable,
         { x: 7.5, y: 0 },
-        { uvOffset: { x: 1, y: 0 } },
+        { opacityMultiplier: 1 },
       );
 
       addScaleComponent(world, scaled, { local: { x: 4, y: 4 } });
 
       world.update();
 
-      expect(
-        drawnSprites(bindInstanceData).map((sprite) => sprite.uvOffset.x),
-      ).toEqual([1]);
+      expect(drawnSprites(bindInstanceData).map(tagOf)).toEqual([1]);
     });
 
     it('culls against a moved, zoomed camera', () => {
@@ -1632,13 +1625,11 @@ describe('createRenderEcsSystem', () => {
       // The view spans x in [96.67, 103.33] and y in [-2.5, 2.5].
       addSpriteAt(renderable, { x: 0, y: 0 });
       addSpriteAt(renderable, { x: 100, y: 3.1 });
-      addSpriteAt(renderable, { x: 103.5, y: 0 }, { uvOffset: { x: 1, y: 0 } });
+      addSpriteAt(renderable, { x: 103.5, y: 0 }, { opacityMultiplier: 1 });
 
       world.update();
 
-      expect(
-        drawnSprites(bindInstanceData).map((sprite) => sprite.uvOffset.x),
-      ).toEqual([1]);
+      expect(drawnSprites(bindInstanceData).map(tagOf)).toEqual([1]);
     });
 
     it('culls each camera against its own view', () => {
@@ -1692,8 +1683,7 @@ describe('createRenderEcsSystem', () => {
       const glyph = (x: number): GlyphQuad => ({
         offset: { x, y: 0 },
         size: { x: 1, y: 1 },
-        uvOffset: Vec2.zero,
-        uvScale: Vec2.one,
+        region: fullTextureRegion,
         embolden: 0,
       });
 
@@ -1723,8 +1713,7 @@ describe('createRenderEcsSystem', () => {
             {
               offset: { x: 6.9, y: 0 },
               size: { x: 1, y: 1 },
-              uvOffset: Vec2.zero,
-              uvScale: Vec2.one,
+              region: fullTextureRegion,
               embolden: 0,
             },
           ],
@@ -1813,8 +1802,7 @@ describe('createRenderEcsSystem', () => {
           {
             offset: Vec2.zero,
             size: { x: 1, y: 1 },
-            uvOffset: Vec2.zero,
-            uvScale: Vec2.one,
+            region: fullTextureRegion,
             embolden: 0,
           },
         ],
@@ -2001,8 +1989,7 @@ describe('createRenderEcsSystem', () => {
           {
             offset: Vec2.zero,
             size: { x: 1, y: 1 },
-            uvOffset: Vec2.zero,
-            uvScale: Vec2.one,
+            region: fullTextureRegion,
             embolden: 0,
           },
         ],

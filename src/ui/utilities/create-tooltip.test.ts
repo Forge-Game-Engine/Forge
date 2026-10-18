@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { createTooltip } from './create-tooltip.js';
 import { addPositionComponent } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, Texture, visibilityId } from '../../rendering/index.js';
+import {
+  Color,
+  fullTextureRegion,
+  Texture,
+  visibilityId,
+} from '../../rendering/index.js';
 import { textId } from '../../text/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import {
@@ -21,8 +26,7 @@ const buildSprite = () => ({
   texture: {} as Texture,
   pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
-  uvOffset: { x: 0, y: 0 },
-  uvScale: { x: 1, y: 1 },
+  region: fullTextureRegion,
   emissive: null,
   material: null,
   category: 1,

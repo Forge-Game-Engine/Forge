@@ -1,21 +1,23 @@
 import { ForgeEvent, ParameterizedForgeEvent } from '../../events/index.js';
-import { AnimationFrame } from './AnimationFrame.js';
+import type { TextureRegion } from '../../rendering/texture-region.js';
 
 /**
  * Event type that is raised when the animation frame changes.
  */
 export type OnAnimationFrameChangeEvent =
-  ParameterizedForgeEvent<AnimationFrame>;
+  ParameterizedForgeEvent<TextureRegion>;
 
 /**
- * A sequence of sprite sheet frames that a sprite animation plays in order,
- * looping back to the first frame after the last.
+ * A sequence of frames, each a region of a texture, that a sprite animation
+ * plays in order, looping back to the first frame after the last. Frames
+ * can differ in size and trim: each is drawn inside the sprite's untrimmed
+ * `width`/`height`.
  */
 export class AnimationClip {
   /**
    * The frames of the animation.
    */
-  public readonly frames: AnimationFrame[];
+  public readonly frames: TextureRegion[];
 
   /**
    * The total number of frames in the animation.
@@ -42,7 +44,7 @@ export class AnimationClip {
    * @param frames - The frames of the animation.
    * @throws An error if `frames` is empty.
    */
-  constructor(frames: AnimationFrame[]) {
+  constructor(frames: TextureRegion[]) {
     if (frames.length === 0) {
       throw new Error('Animation must contain at least one frame.');
     }
@@ -53,16 +55,16 @@ export class AnimationClip {
     this.onAnimationStartEvent = new ForgeEvent('AnimationStartEvent');
     this.onAnimationEndEvent = new ForgeEvent('AnimationEndEvent');
     this.onAnimationFrameChangeEvent =
-      new ParameterizedForgeEvent<AnimationFrame>('AnimationFrameChangeEvent');
+      new ParameterizedForgeEvent<TextureRegion>('AnimationFrameChangeEvent');
   }
 
   /**
    * Gets a specific frame of the animation.
    * @param index - The index of the frame to retrieve.
-   * @returns The requested AnimationFrame.
+   * @returns The requested frame.
    * @throws An error if `index` is less than `0` or not less than `frameCount`.
    */
-  public getFrame(index: number): AnimationFrame {
+  public getFrame(index: number): TextureRegion {
     if (index < 0 || index >= this.frames.length) {
       throw new Error('Frame index is out of bounds.');
     }

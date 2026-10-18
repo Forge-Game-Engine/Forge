@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { AnimationClip } from './AnimationClip';
-import { AnimationFrame } from './AnimationFrame';
 import { ForgeEvent, ParameterizedForgeEvent } from '../../events';
+import { createTextureRegion } from '../../rendering/texture-region';
 
 describe('Animation Clip', () => {
-  const mockFrame1 = {} as AnimationFrame;
-  const mockFrame2 = {} as AnimationFrame;
+  const mockFrame1 = createTextureRegion({ x: 0, y: 0 }, { x: 0.5, y: 1 });
+  const mockFrame2 = createTextureRegion({ x: 0.5, y: 0 }, { x: 0.5, y: 1 });
   const mockFrames = [mockFrame1, mockFrame2];
 
   describe('constructor', () => {

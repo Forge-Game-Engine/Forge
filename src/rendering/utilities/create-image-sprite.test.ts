@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createImageSprite } from './create-image-sprite';
 import { Color } from '../color.js';
 import type { Texture } from '../texture.js';
+import { fullTextureRegion } from '../texture-region.js';
 
 const texture = { width: 32, height: 32 } as Texture;
 
@@ -15,8 +16,7 @@ describe('createImageSprite', () => {
       height: 0.32,
       pivot: { x: 0.5, y: 0.5 },
       tintColor: Color.white,
-      uvOffset: { x: 0, y: 0 },
-      uvScale: { x: 1, y: 1 },
+      region: fullTextureRegion,
       emissive: null,
       material: null,
       category: 1,
@@ -25,17 +25,19 @@ describe('createImageSprite', () => {
     });
   });
 
-  it("sets uvScale to one frame's share of the texture when frameDimensions is given", () => {
+  it("sets the region to the top-left frame's share of the texture when frameDimensions is given", () => {
     const sprite = createImageSprite({ width: 64, height: 32 } as Texture, {
       frameDimensions: { x: 16, y: 16 },
     });
 
-    expect(sprite.uvScale).toEqual({ x: 0.25, y: 0.5 });
+    expect(sprite.region.uvOffset).toEqual({ x: 0, y: 0 });
+    expect(sprite.region.uvScale).toEqual({ x: 0.25, y: 0.5 });
+    expect(sprite.region.trimScale).toEqual({ x: 1, y: 1 });
   });
 
-  it('returns fresh vectors on every call', () => {
-    expect(createImageSprite(texture).uvScale).not.toBe(
-      createImageSprite(texture).uvScale,
+  it('returns a fresh pivot on every call', () => {
+    expect(createImageSprite(texture).pivot).not.toBe(
+      createImageSprite(texture).pivot,
     );
   });
 

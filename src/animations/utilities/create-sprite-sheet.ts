@@ -1,15 +1,17 @@
-import { AnimationFrame } from '../types/index.js';
+import {
+  createTextureRegion,
+  type TextureRegion,
+} from '../../rendering/texture-region.js';
 
 /**
- * A sprite sheet sliced into a row-major grid of frames, where each frame's
- * `offset` and `dimensions` are expressed as a percentage (0 to 1) of the
- * sheet's total size.
+ * A sprite sheet sliced into a row-major grid of equally sized, untrimmed
+ * frames, each a region of the sheet's texture.
  */
 export interface SpriteSheet {
   /**
    * The frames of the sprite sheet, indexed as `frames[row][column]`.
    */
-  frames: AnimationFrame[][];
+  frames: TextureRegion[][];
 }
 
 /**
@@ -26,6 +28,10 @@ export function createSpriteSheet(
 ): SpriteSheet {
   const spriteWidth = image.width / columns;
   const spriteHeight = image.height / rows;
+  const frameScale = {
+    x: spriteWidth / image.width,
+    y: spriteHeight / image.height,
+  };
 
   const spriteSheet: SpriteSheet = {
     frames: [],
@@ -38,15 +44,12 @@ export function createSpriteSheet(
     for (let column = 0; column < columns; column++) {
       const offsetX = column * spriteWidth;
 
-      const frame: AnimationFrame = {
-        offset: { x: offsetX / image.width, y: offsetY / image.height },
-        dimensions: {
-          x: spriteWidth / image.width,
-          y: spriteHeight / image.height,
-        },
-      };
-
-      spriteSheet.frames[row].push(frame);
+      spriteSheet.frames[row].push(
+        createTextureRegion(
+          { x: offsetX / image.width, y: offsetY / image.height },
+          frameScale,
+        ),
+      );
     }
   }
 

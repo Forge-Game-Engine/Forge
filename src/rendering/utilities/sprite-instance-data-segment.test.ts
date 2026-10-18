@@ -7,7 +7,11 @@ import { Rect, Rects } from '../../math/index.js';
 import { Color } from '../color.js';
 import type { InstanceComponents } from '../renderable.js';
 import type { SpriteEcsComponent } from '../components/sprite-component.js';
+import { createTextureRegion, fullTextureRegion } from '../texture-region.js';
 
+// Width, height, pivot x and y, then the UV rect's offset and size.
+const SIZE_PIVOT_OFFSET = 5;
+const TEX_RECT_OFFSET = 9;
 const TINT_COLOR_A_OFFSET = 16;
 
 function buildComponents(sprite: SpriteEcsComponent): InstanceComponents {
@@ -33,8 +37,7 @@ describe('spriteInstanceDataSegment.bindInstanceData', () => {
         height: 10,
         pivot: { x: 0.5, y: 0.5 },
         tintColor: new Color(1, 1, 1, 0.8),
-        uvOffset: { x: 0, y: 0 },
-        uvScale: { x: 1, y: 1 },
+        region: fullTextureRegion,
         layer: 0,
         texture: undefined as never,
         emissive: null,
@@ -60,8 +63,7 @@ describe('spriteInstanceDataSegment.bindInstanceData', () => {
         pivot: { x: 0.5, y: 0.5 },
         tintColor: new Color(1, 1, 1, 0.8),
         opacityMultiplier: 0.5,
-        uvOffset: { x: 0, y: 0 },
-        uvScale: { x: 1, y: 1 },
+        region: fullTextureRegion,
         layer: 0,
         texture: undefined as never,
         emissive: null,
@@ -74,6 +76,60 @@ describe('spriteInstanceDataSegment.bindInstanceData', () => {
 
     expect(buffer[TINT_COLOR_A_OFFSET]).toBeCloseTo(0.4);
   });
+
+  const bindSprite = (overrides: Partial<SpriteEcsComponent>): number[] => {
+    const buffer = new Float32Array(
+      spriteInstanceDataSegment.floatsPerInstance,
+    );
+
+    spriteInstanceDataSegment.bindInstanceData(
+      buildComponents({
+        width: 4,
+        height: 2,
+        pivot: { x: 0.2, y: 0.9 },
+        tintColor: Color.white,
+        region: fullTextureRegion,
+        layer: 0,
+        texture: undefined as never,
+        emissive: null,
+        material: null,
+        category: 1,
+        ...overrides,
+      }),
+      buffer,
+      0,
+    );
+
+    return Array.from(buffer.slice(SIZE_PIVOT_OFFSET, TEX_RECT_OFFSET + 4)).map(
+      (value) => Math.round(value * 1e5) / 1e5,
+    );
+  };
+
+  it("writes an untrimmed region's size, pivot and UV rect unchanged", () => {
+    const region = createTextureRegion(
+      { x: 0.25, y: 0.5 },
+      { x: 0.25, y: 0.5 },
+    );
+
+    expect(bindSprite({ region })).toEqual([
+      4, 2, 0.2, 0.9, 0.25, 0.5, 0.25, 0.5,
+    ]);
+  });
+
+  it("draws a trimmed region at its share of the frame, around the frame's pivot", () => {
+    const region = createTextureRegion(
+      { x: 0.5, y: 0 },
+      { x: 0.125, y: 0.25 },
+      { offset: { x: 0.1, y: 0.5 }, scale: { x: 0.5, y: 0.5 } },
+    );
+
+    // The pivot (0.2, 0.9) of the 4 x 2 frame is (0.8, 1.8) in frame
+    // units; the trimmed rect starts at (0.4, 1) and is 2 x 1, so the same
+    // point is (0.2, 0.8) of the trimmed rect.
+    expect(bindSprite({ region })).toEqual([
+      2, 1, 0.2, 0.8, 0.5, 0, 0.125, 0.25,
+    ]);
+  });
 });
 
 describe('computeSpriteInstanceBounds', () => {
@@ -84,8 +140,7 @@ describe('computeSpriteInstanceBounds', () => {
     height: 2,
     pivot: { x: 0.5, y: 0.5 },
     tintColor: new Color(1, 1, 1, 1),
-    uvOffset: { x: 0, y: 0 },
-    uvScale: { x: 1, y: 1 },
+    region: fullTextureRegion,
     layer: 0,
     texture: undefined as never,
     emissive: null,
@@ -216,6 +271,79 @@ describe('computeSpriteInstanceBounds', () => {
       scale: null,
       sprite: buildSprite({ pivot: { x: 0, y: 1 } }),
       flip: { flipX: true, flipY: true },
+      mask: null,
+    };
+
+    expectRectCloseTo(
+      computeSpriteInstanceBounds(components, Rects.zero),
+      boundsDrawnByShader(components),
+    );
+  });
+
+  // The 4 x 2 frame's right half, bottom half: (2, 1) to (4, 2) in frame
+  // units, which is (0, 0) to (2, 1) around the frame's centered pivot.
+  const trimmedRegion = createTextureRegion(
+    { x: 0, y: 0 },
+    { x: 0.5, y: 0.5 },
+    { offset: { x: 0.5, y: 0.5 }, scale: { x: 0.5, y: 0.5 } },
+  );
+
+  it('draws a trimmed region where it sits in the untrimmed frame', () => {
+    const components = buildComponents(buildSprite({ region: trimmedRegion }));
+
+    expectRectCloseTo(boundsDrawnByShader(components), {
+      min: { x: 0, y: 0 },
+      max: { x: 2, y: 1 },
+    });
+    expectRectCloseTo(
+      computeSpriteInstanceBounds(components, Rects.zero),
+      boundsDrawnByShader(components),
+    );
+  });
+
+  it.each([
+    {
+      flip: { flipX: true, flipY: false },
+      expected: { min: { x: -2, y: 0 }, max: { x: 0, y: 1 } },
+    },
+    {
+      flip: { flipX: false, flipY: true },
+      expected: { min: { x: 0, y: -1 }, max: { x: 2, y: 0 } },
+    },
+    {
+      flip: { flipX: true, flipY: true },
+      expected: { min: { x: -2, y: -1 }, max: { x: 0, y: 0 } },
+    },
+  ])(
+    'mirrors a trimmed region around the untrimmed pivot (flipX $flip.flipX, flipY $flip.flipY)',
+    ({ flip, expected }) => {
+      const components: InstanceComponents = {
+        ...buildComponents(buildSprite({ region: trimmedRegion })),
+        flip,
+      };
+
+      expectRectCloseTo(boundsDrawnByShader(components), expected);
+      expectRectCloseTo(
+        computeSpriteInstanceBounds(components, Rects.zero),
+        expected,
+      );
+    },
+  );
+
+  it('matches the quad sprite.vert draws for a trimmed, rotated and scaled sprite', () => {
+    const components: InstanceComponents = {
+      position: { local: { x: 0, y: 0 }, world: { x: 5, y: -2 } },
+      rotation: { local: 1.1, world: 1.1 },
+      scale: { local: { x: -1.5, y: 2 }, world: { x: -1.5, y: 2 } },
+      sprite: buildSprite({
+        pivot: { x: 0.3, y: 0.8 },
+        region: createTextureRegion(
+          { x: 0, y: 0 },
+          { x: 0.5, y: 0.5 },
+          { offset: { x: 0.1, y: 0.2 }, scale: { x: 0.6, y: 0.7 } },
+        ),
+      }),
+      flip: null,
       mask: null,
     };
 

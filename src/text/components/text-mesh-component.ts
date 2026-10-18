@@ -1,11 +1,11 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import type { Vector2 } from '../../math/index.js';
 import type { Color } from '../../rendering/color.js';
+import type { TextureRegion } from '../../rendering/texture-region.js';
 
 /**
- * A single shaped glyph's quad: structurally identical to a
- * `NineSliceRegion` (an offset, a size, and a UV rect into an atlas
- * texture), so it can be pushed through the same render-command machinery
+ * A single shaped glyph's quad: like a `NineSliceRegion` (an offset, a
+ * size, and a region of an atlas texture), so it can be pushed through the same render-command machinery
  * (see `pushTextRenderCommands` in `glyph-quad.ts`).
  */
 export interface GlyphQuad {
@@ -18,11 +18,8 @@ export interface GlyphQuad {
   /** This glyph's rendered size, in world units. */
   size: Vector2;
 
-  /** The top-left corner of this glyph's texture rect in the atlas, 0 to 1. */
-  uvOffset: Vector2;
-
-  /** The width/height of this glyph's texture rect in the atlas, 0 to 1. */
-  uvScale: Vector2;
+  /** The part of the font atlas this glyph draws, untrimmed. */
+  region: TextureRegion;
 
   /**
    * This glyph's fill color from a `<color=...>` rich text tag, replacing
