@@ -97,14 +97,23 @@ describe('shapeText', () => {
     expect(bounds).toEqual({ width: 6, height: 12 });
   });
 
-  it("throws for a glyph whose atlas bounds aren't a valid region", () => {
+  it.each([
+    {
+      name: 'non-finite atlas bounds',
+      atlasBounds: { left: 0, bottom: NaN, right: 0.1, top: 0 },
+    },
+    {
+      name: 'a zero-size atlas tile',
+      atlasBounds: { left: 0.1, bottom: 0.14, right: 0.1, top: 0 },
+    },
+  ])('throws for a glyph with $name', ({ atlasBounds }) => {
     const fontAtlasData = buildFixtureFontAtlasData();
 
     fontAtlasData.glyphs.set(A_CODE_POINT, {
       codePoint: A_CODE_POINT,
       advance: 0.6,
       planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: -0.7 },
-      atlasBounds: { left: 0, bottom: NaN, right: 0.1, top: 0 },
+      atlasBounds,
     });
 
     expect(() => shapeText('A', fontAtlasData, { size: 10 })).toThrow(

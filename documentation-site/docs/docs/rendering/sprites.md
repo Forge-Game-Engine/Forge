@@ -20,7 +20,7 @@ A `SpriteEcsComponent` holds:
 - `pivot`: the point of the sprite placed at the entity's position, from
   `(0, 0)` (top-left) to `(1, 1)` (bottom-right). The sprite rotates and
   scales around it.
-- `uvOffset` and `uvScale`: the region of the texture the sprite draws.
+- `region`: the [texture region](#texture-regions) the sprite draws.
 - `tintColor`: the color the texture is multiplied by.
 - `emissive`: an optional emissive map (see
   [Adding an emissive map](#adding-an-emissive-map)).
@@ -66,7 +66,7 @@ addSpriteComponent(world, entity, spriteOptions);
 ```
 
 `createImageSprite` does no GPU work. `addSpriteComponent` copies the
-options' `pivot`, `uvOffset`, `uvScale` and `slices`, so one
+options' `pivot` and `slices`, and regions can't be changed, so one
 `createImageSprite` result can be added to any number of entities, and
 changing one entity's sprite doesn't change the others.
 
@@ -84,6 +84,43 @@ addSpriteComponent(world, entity, {
 For a sprite whose corners keep their size as it's resized, pass `slices`
 (see [Nine-Slice Sprites](./nine-slice-sprites.md)).
 
+## Texture regions
+
+A [`TextureRegion`](/Forge/docs/api/interfaces/TextureRegion) is the part
+of a texture a sprite draws. It holds:
+
+- `uvOffset` and `uvScale`: the top-left corner and size of the sampled
+  rect, as fractions of the texture's size. `(0, 0)` is the texture's
+  top-left corner.
+- `trimOffset` and `trimScale`: where the sampled rect sits inside the
+  sprite's frame, as fractions of the frame's size. An untrimmed region
+  has `trimOffset` `(0, 0)` and `trimScale` `(1, 1)`, and fills the frame.
+
+A sprite's `region` defaults to
+[`fullTextureRegion`](/Forge/docs/api/variables/fullTextureRegion): the
+whole texture, untrimmed. Create other regions with
+[`createTextureRegion`](/Forge/docs/api/functions/createTextureRegion),
+which throws for a value that isn't finite, a scale that isn't greater
+than `0`, or a trim rect outside the frame. The UV rect can extend past
+`0` to `1`, which tiles or scrolls a texture created with `wrap: 'repeat'`.
+
+```ts
+import { createTextureRegion } from '@forge-game-engine/forge/rendering';
+
+// The right half of the texture.
+const rightHalf = createTextureRegion({ x: 0.5, y: 0 }, { x: 0.5, y: 1 });
+
+addSpriteComponent(world, entity, { ...spriteOptions, region: rightHalf });
+```
+
+Regions can't be changed after they're created, so one region can be
+shared by any number of sprites. To draw another part of the texture,
+assign another region to the sprite's `region`:
+
+```ts
+sprite.region = createTextureRegion({ x: 0, y: 0 }, { x: 0.5, y: 1 });
+```
+
 ## Drawing a frame of a sprite sheet
 
 For a texture that holds several frames, pass the size of one frame in
@@ -100,11 +137,36 @@ const frameSpriteOptions = createImageSprite(sheetTexture, {
 });
 ```
 
-The sprite is sized to one frame, and its `uvScale` is set to the share of
-the texture one frame covers. `uvOffset` is the top-left corner of the
-drawn frame, as a fraction of the texture's size. The
-[sprite animation system](../animations/sprite-animations.md) writes
-`uvOffset` to play an animation.
+The sprite is sized to one frame, and its `region` is the texture's
+top-left frame. The
+[sprite animation system](../animations/sprite-animations.md) assigns
+each frame's region to `region` to play an animation.
+
+## Drawing a trimmed frame
+
+Texture packers trim the transparent border off each frame and record
+where the trimmed rect sat in the original frame. Give the region that
+position as its trim, as fractions of the original frame's size:
+
+```ts
+// A 32 x 32 frame trimmed to the 16 x 16 texels at (16, 0), packed at
+// (32, 0) in a 64 x 32 texture.
+const trimmedFrame = createTextureRegion(
+  { x: 32 / 64, y: 0 },
+  { x: 16 / 64, y: 16 / 32 },
+  {
+    offset: { x: 16 / 32, y: 0 },
+    scale: { x: 16 / 32, y: 16 / 32 },
+  },
+);
+```
+
+The sprite's `width`, `height` and `pivot` describe the untrimmed frame.
+A trimmed region is drawn at its `trimScale` share of `width` and
+`height`, at its `trimOffset` inside the frame, so its art is in the same
+place as in the untrimmed frame, and a `FlipEcsComponent` mirrors it
+around the sprite's `pivot`. Frames trimmed by different amounts can be
+assigned to one sprite without the art moving.
 
 ## Drawing a solid-color sprite
 
@@ -138,8 +200,8 @@ const sprite = addSpriteComponent(
 sprite.texture = secondTexture;
 ```
 
-The sprite's `width`, `height`, `uvOffset` and `uvScale` don't change. Set
-them as well if the new texture has a different size or layout.
+The sprite's `width`, `height` and `region` don't change. Set them as well
+if the new texture has a different size or layout.
 
 ## Choosing which cameras draw a sprite
 
@@ -287,13 +349,13 @@ doesn't need to declare `u_texture`. Give its sprites the render context's
 
 The render system draws consecutive sprites (in draw order) that have the
 same material, texture and emissive map texture in one instanced draw call.
-Their tint, size, frame and emissive color can differ.
+Their tint, size, region and emissive color can differ.
 
 A sprite with a different material or texture between two sprites in the
 draw order splits them into separate draw calls. To draw many sprites in
 few draw calls, give the sprites in a layer the same texture, for example
 by packing their images into one sprite sheet and selecting each image with
-`uvOffset` and `uvScale`.
+its `region`.
 
 ## Hiding and removing a sprite
 

@@ -161,7 +161,7 @@ bounds match the trimmed quad.
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | Trimmed instance data       | `bindSpriteInstanceData` writes the trimmed size and re-expressed pivot (see "Trimming on the CPU"); unit tests: untrimmed output unchanged bit for bit, trimmed, trimmed with `flipX`, with `flipY`                                                                                           | S    |
 | Trimmed bounds              | `computeSpriteInstanceBounds` uses the trimmed quad; unit tests with and without rotation that compare against the corners `sprite.vert` would produce                                                                                                                                         | S    |
-| Nine-slice trim guard       | `computeNineSliceRegions` throws a descriptive error for a trimmed `region`; `addSpriteComponent` also throws when `slices` is set and `region` is trimmed, so the common mistake fails where the sprite is made; one shared helper for the check and message; tests                           | S    |
+| Nine-slice trim guard       | `computeNineSliceRegions` throws a descriptive error for a trimmed `region`; `addSpriteComponent` also throws when `slices` is set and `region` is trimmed, so the common mistake fails where the sprite is made; both check with `isTextureRegionTrimmed`; tests                              | S    |
 | Render system batching test | In `render-system.test.ts`: consecutive sprites with different trimmed regions of one texture produce one instanced draw                                                                                                                                                                       | S    |
 | E2E scene and spec          | `trimmed-sprite-animation` (see "Testing")                                                                                                                                                                                                                                                     | M    |
 | Docs and changelog          | `sprites.md` gains "Trimmed regions" (what trim is, that `width`/`height`/`pivot` are the untrimmed frame's); `nine-slice-sprites.md` says sliced sprites need untrimmed regions; `sprite-animations.md` says a clip's frames share one untrimmed size; `#### Changed` bullets for both phases | S    |
@@ -384,8 +384,9 @@ region where `isTextureRegionTrimmed(region)`, naming the trim. When
 `slices` is set, `addSpriteComponent` also throws for a trimmed `region`, so
 the usual mistake fails where the sprite is made rather than on the first
 draw. The draw-time throw stays because a region can be assigned after the
-sprite is added. Both use one helper so the message is the same. Unity likewise requires
-a full-rect sprite for sliced drawing.
+sprite is added. Both check with `isTextureRegionTrimmed`; each names the
+call that failed in its message. Unity likewise requires a full-rect
+sprite for sliced drawing.
 
 `computeNineSliceRegions` builds its band regions as plain `TextureRegion`
 objects, one per grid cell (tiled segments of a cell share it), reusing
