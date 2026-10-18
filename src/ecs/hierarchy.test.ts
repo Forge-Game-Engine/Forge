@@ -124,6 +124,125 @@ describe('EcsWorld hierarchy', () => {
     });
   });
 
+  describe('setSiblingIndex', () => {
+    let parent: number;
+    let a: number;
+    let b: number;
+    let c: number;
+
+    beforeEach(() => {
+      parent = world.createEntity();
+      [a, b, c] = [
+        world.createEntity(),
+        world.createEntity(),
+        world.createEntity(),
+      ];
+
+      world.setParent(a, parent);
+      world.setParent(b, parent);
+      world.setParent(c, parent);
+    });
+
+    it('moves a child to the front, shifting its siblings', () => {
+      world.setSiblingIndex(c, 0);
+
+      expect(world.getChildren(parent)).toEqual([c, a, b]);
+    });
+
+    it('moves a child between two siblings', () => {
+      const inserted = world.createEntity();
+      world.setParent(inserted, parent);
+
+      world.setSiblingIndex(inserted, 1);
+
+      expect(world.getChildren(parent)).toEqual([a, inserted, b, c]);
+    });
+
+    it('moves a child to the end', () => {
+      world.setSiblingIndex(a, 2);
+
+      expect(world.getChildren(parent)).toEqual([b, c, a]);
+    });
+
+    it('moves a child last when the index is past the end', () => {
+      world.setSiblingIndex(a, 10);
+
+      expect(world.getChildren(parent)).toEqual([b, c, a]);
+    });
+
+    it('does nothing at the child’s current index', () => {
+      world.setSiblingIndex(b, 1);
+
+      expect(world.getChildren(parent)).toEqual([a, b, c]);
+    });
+
+    it('throws for a root entity', () => {
+      expect(() => world.setSiblingIndex(parent, 0)).toThrow(
+        "it's a root entity",
+      );
+    });
+
+    it('throws for an entity that isn’t alive', () => {
+      const removed = world.createEntity();
+      world.removeEntity(removed);
+
+      expect(() => world.setSiblingIndex(removed, 0)).toThrow("isn't alive");
+    });
+
+    it.each([-1, 0.5, Number.NaN, Number.POSITIVE_INFINITY])(
+      'throws for the index %s, leaving the order as it was',
+      (index) => {
+        expect(() => world.setSiblingIndex(a, index)).toThrow(
+          'must be a non-negative integer',
+        );
+        expect(world.getChildren(parent)).toEqual([a, b, c]);
+      },
+    );
+
+    it('reorders the siblings left while their parent is being removed', () => {
+      const moved: number[] = [];
+
+      world.onEntityRemoved.registerListener((entity) => {
+        if (entity === a) {
+          world.setSiblingIndex(c, 0);
+          moved.push(world.getSiblingIndex(c));
+        }
+      });
+
+      world.removeEntity(parent);
+
+      expect(moved).toEqual([0]);
+
+      for (const entity of [parent, a, b, c]) {
+        expect(world.isAlive(entity)).toBe(false);
+      }
+    });
+  });
+
+  describe('getSiblingIndex', () => {
+    it('reads the child’s index in its parent’s children', () => {
+      const parent = world.createEntity();
+      const a = world.createEntity();
+      const b = world.createEntity();
+      world.setParent(a, parent);
+      world.setParent(b, parent);
+
+      expect(world.getSiblingIndex(a)).toBe(0);
+      expect(world.getSiblingIndex(b)).toBe(1);
+
+      world.setSiblingIndex(b, 0);
+
+      expect(world.getSiblingIndex(a)).toBe(1);
+      expect(world.getSiblingIndex(b)).toBe(0);
+    });
+
+    it('throws for a root entity', () => {
+      const root = world.createEntity();
+
+      expect(() => world.getSiblingIndex(root)).toThrow("it's a root entity");
+    });
+  });
+
   describe('the parent component', () => {
     it('can’t be added with addComponent', () => {
       const parent = world.createEntity();

@@ -47,7 +47,9 @@ export interface RigidBodyMassData {
  * @param entity - The entity to resolve.
  * @returns The resolved mass data.
  * @throws An error if `entity` has a `'dynamic'` rigid body but no
- * `ColliderEcsComponent` to take its mass from.
+ * `ColliderEcsComponent` to take its mass from, or its collider can't be on
+ * a dynamic body (`TerrainCollider` and `ChainCollider`, whose
+ * `supportsDynamicBodies` is `false`).
  */
 export function getRigidBodyMassData(
   world: EcsWorld,
@@ -69,6 +71,12 @@ export function getRigidBodyMassData(
   if (collider === null) {
     throw new Error(
       `Dynamic rigid body entity ${formatEntity(entity)} has no ColliderEcsComponent. A dynamic body takes its mass, moment of inertia and center of mass from its collider.`,
+    );
+  }
+
+  if (!collider.collider.supportsDynamicBodies) {
+    throw new Error(
+      `Dynamic rigid body entity ${formatEntity(entity)} has a "${collider.collider.type}" collider, which only static and kinematic bodies can use. Use a circle or polygon collider for a dynamic body.`,
     );
   }
 

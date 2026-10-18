@@ -121,8 +121,9 @@ is 12 pixels of border art. [Anchors and Layout](anchors-and-layout.md)
 covers `anchor` and `anchoredPosition`.
 
 The factories parent each element with `world.setParent`. An element's
-children are laid out and drawn in the order they were parented, and a
-click hits the interactable element drawn on top (see
+children are laid out and drawn in
+[sibling order](../ecs/world.md#ordering-siblings), the order they were
+parented unless `world.setSiblingIndex` moved one, and a click hits the interactable element drawn on top (see
 [Draw Order](../rendering/draw-order.md)).
 
 ## Creating a world-space canvas
