@@ -10,10 +10,10 @@ describe('selectAnimationFrames', () => {
 
     // expected positions: (0,0),(0,1),(0,2),(1,0)
     expect(selected).toHaveLength(4);
-    expect(selected[0].offset.x).toBe(0);
-    expect(selected[1].offset.x).toBe(0.0625);
-    expect(selected[2].offset.x).toBe(0.125);
-    expect(selected[3].offset.x).toBe(0.1875);
+    expect(selected[0].uvOffset.x).toBe(0);
+    expect(selected[1].uvOffset.x).toBe(0.0625);
+    expect(selected[2].uvOffset.x).toBe(0.125);
+    expect(selected[3].uvOffset.x).toBe(0.1875);
   });
 
   it('respects startFrame', () => {
@@ -23,9 +23,9 @@ describe('selectAnimationFrames', () => {
 
     // indices 2,3,4 -> (0,2),(1,0),(1,1)
     expect(selected).toHaveLength(3);
-    expect(selected[0].offset.x).toBe(0.125);
-    expect(selected[1].offset.x).toBe(0.1875);
-    expect(selected[2].offset.x).toBe(0.25);
+    expect(selected[0].uvOffset.x).toBe(0.125);
+    expect(selected[1].uvOffset.x).toBe(0.1875);
+    expect(selected[2].uvOffset.x).toBe(0.25);
   });
 
   it('throws when requested frames exceed sprite sheet', () => {

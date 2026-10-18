@@ -1,5 +1,9 @@
 import { Vec2, Vector2 } from '../../math/index.js';
-import { AnimationClip, AnimationFrame } from '../types/index.js';
+import {
+  createTextureRegion,
+  type TextureRegion,
+} from '../../rendering/texture-region.js';
+import { AnimationClip } from '../types/index.js';
 import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
@@ -15,20 +19,22 @@ function generateAnimationFrames(
   spritesPerRow: number,
   startPositionPercentage: Vector2,
   spriteUVSize: Vector2,
-) {
-  const animationFrames: AnimationFrame[] = [];
+): TextureRegion[] {
+  const animationFrames: TextureRegion[] = [];
 
   for (let i = 0; i < numberOfFrames; i++) {
     const row = Math.floor(i / spritesPerRow);
     const col = i % spritesPerRow;
 
-    animationFrames.push({
-      offset: {
-        x: startPositionPercentage.x + col * spriteUVSize.x,
-        y: startPositionPercentage.y + row * spriteUVSize.y,
-      },
-      dimensions: spriteUVSize,
-    });
+    animationFrames.push(
+      createTextureRegion(
+        {
+          x: startPositionPercentage.x + col * spriteUVSize.x,
+          y: startPositionPercentage.y + row * spriteUVSize.y,
+        },
+        spriteUVSize,
+      ),
+    );
   }
 
   return animationFrames;

@@ -1,5 +1,10 @@
 import { Vector2 } from '../../math/index.js';
 import { NineSliceOptions, SliceScaleMode } from '../nine-slice-options.js';
+import {
+  fullTextureRegion,
+  isTextureRegionTrimmed,
+  TextureRegion,
+} from '../texture-region.js';
 
 /**
  * A single quad, in a sliced sprite's own local sprite-space, that the
@@ -17,11 +22,8 @@ export interface NineSliceRegion {
   /** This region's rendered width/height, in the same unscaled units. */
   size: Vector2;
 
-  /** The top-left corner of this region's texture rect, 0 to 1. */
-  uvOffset: Vector2;
-
-  /** The width/height of this region's texture rect, 0 to 1. */
-  uvScale: Vector2;
+  /** The part of the sprite's texture this region draws, untrimmed. */
+  region: TextureRegion;
 }
 
 const EPSILON = 1e-5;
@@ -183,8 +185,16 @@ function createCellRegions(
           y: ySegment.start + ySegment.size / 2 - pivot.y * height,
         },
         size: { x: xSegment.size, y: ySegment.size },
-        uvOffset: { x: xBand.uvStart, y: yBand.uvStart },
-        uvScale: { x: xBand.uvSize, y: yBand.uvSize },
+        // Built directly rather than with `createTextureRegion`: the bands
+        // are cut from an already validated region, and a band whose
+        // insets cover the whole native size has a zero-width texture
+        // rect, which `createTextureRegion` rejects.
+        region: {
+          uvOffset: { x: xBand.uvStart, y: yBand.uvStart },
+          uvScale: { x: xBand.uvSize, y: yBand.uvSize },
+          trimOffset: fullTextureRegion.trimOffset,
+          trimScale: fullTextureRegion.trimScale,
+        },
       });
     }
   }
@@ -207,8 +217,8 @@ function createCellRegions(
  * @param pivot - The sprite's pivot, normalized to its own size (`(0, 0)`
  * is top-left, `(1, 1)` is bottom-right), matching
  * `SpriteEcsComponent.pivot`.
- * @param uvOffset - The sprite's texture rect offset, 0 to 1.
- * @param uvScale - The sprite's texture rect size, 0 to 1.
+ * @param region - The sprite's texture region, which the bands' texture
+ * rects are cut from.
  * @param slices - The nine-slice configuration. `nativeWidth`/`nativeHeight`
  * are normally already resolved by `createImageSprite`/`addSpriteComponent`;
  * if they're still omitted (e.g. `slices` was assigned to an
@@ -216,15 +226,23 @@ function createCellRegions(
  * samples the intended border art while the sprite is at that size.
  * @returns Up to nine regions, each a quad to draw in place of the sprite's
  * single quad.
+ * @throws An error if `region` is trimmed: the insets are measured against
+ * the untrimmed art, which a trimmed region doesn't hold.
  */
 export function computeNineSliceRegions(
   width: number,
   height: number,
   pivot: Vector2,
-  uvOffset: Vector2,
-  uvScale: Vector2,
+  region: TextureRegion,
   slices: NineSliceOptions,
 ): NineSliceRegion[] {
+  if (isTextureRegionTrimmed(region)) {
+    throw new Error(
+      `Unable to nine-slice a sprite with a trimmed texture region (trim scale (${region.trimScale.x}, ${region.trimScale.y})): its insets are measured against the untrimmed art. Give a sliced sprite an untrimmed region.`,
+    );
+  }
+
+  const { uvOffset, uvScale } = region;
   const {
     left,
     right,

@@ -19,6 +19,7 @@ import {
 import { Random, Vec2, Vector2 } from '../../math/index.js';
 import {
   addVisibilityComponent,
+  fullTextureRegion,
   Sprite,
   spriteId,
   Texture,
@@ -374,8 +375,7 @@ describe('createParticleEcsSystem', () => {
       width: 10,
       height: 10,
       texture: sprite.texture,
-      uvOffset: { x: 0, y: 0 },
-      uvScale: { x: 1, y: 1 },
+      region: fullTextureRegion,
     });
   });
 

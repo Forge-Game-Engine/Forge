@@ -5,6 +5,7 @@ import { EcsWorld } from '../../ecs/index.js';
 import {
   addCameraComponent,
   Color,
+  fullTextureRegion,
   RenderContext,
   Texture,
   visibilityId,
@@ -55,8 +56,7 @@ const buildSprite = () => ({
   texture: {} as Texture,
   pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
-  uvOffset: { x: 0, y: 0 },
-  uvScale: { x: 1, y: 1 },
+  region: fullTextureRegion,
   emissive: null,
   material: null,
   category: 1,

@@ -1,26 +1,59 @@
 import { describe, expect, it } from 'vitest';
 
 import { computeNineSliceRegions } from './compute-nine-slice-regions.js';
+import { createTextureRegion, fullTextureRegion } from '../texture-region.js';
 
 describe('computeNineSliceRegions', () => {
   const centerPivot = { x: 0.5, y: 0.5 };
-  const fullUv = { offset: { x: 0, y: 0 }, scale: { x: 1, y: 1 } };
 
   it('degenerates to a single region matching a non-sliced sprite when there are no insets', () => {
     const regions = computeNineSliceRegions(
       100,
       50,
       centerPivot,
-      fullUv.offset,
-      fullUv.scale,
+      fullTextureRegion,
       { left: 0, right: 0, top: 0, bottom: 0 },
     );
 
     expect(regions).toHaveLength(1);
     expect(regions[0].offset).toEqual({ x: 0, y: 0 });
     expect(regions[0].size).toEqual({ x: 100, y: 50 });
-    expect(regions[0].uvOffset).toEqual({ x: 0, y: 0 });
-    expect(regions[0].uvScale).toEqual({ x: 1, y: 1 });
+    expect(regions[0].region.uvOffset).toEqual({ x: 0, y: 0 });
+    expect(regions[0].region.uvScale).toEqual({ x: 1, y: 1 });
+    expect(regions[0].region.trimScale).toEqual({ x: 1, y: 1 });
+  });
+
+  it("cuts the bands' texture rects from the sprite's region", () => {
+    const region = createTextureRegion({ x: 0.5, y: 0.25 }, { x: 0.5, y: 0.5 });
+    const regions = computeNineSliceRegions(100, 100, centerPivot, region, {
+      left: 10,
+      right: 0,
+      top: 0,
+      bottom: 0,
+    });
+
+    const leftEdge = regions.find((r) => r.size.x === 10);
+
+    expect(leftEdge?.region.uvOffset).toEqual({ x: 0.5, y: 0.25 });
+    expect(leftEdge?.region.uvScale.x).toBeCloseTo(0.05, 5);
+    expect(leftEdge?.region.uvScale.y).toBeCloseTo(0.5, 5);
+  });
+
+  it('throws for a trimmed region, whose insets would miss the untrimmed art', () => {
+    const trimmed = createTextureRegion(
+      { x: 0, y: 0 },
+      { x: 0.5, y: 0.5 },
+      { offset: { x: 0.25, y: 0 }, scale: { x: 0.5, y: 1 } },
+    );
+
+    expect(() =>
+      computeNineSliceRegions(100, 100, centerPivot, trimmed, {
+        left: 10,
+        right: 10,
+        top: 10,
+        bottom: 10,
+      }),
+    ).toThrow(/trimmed texture region/);
   });
 
   it('produces nine regions for a sprite with borders on every side', () => {
@@ -28,8 +61,7 @@ describe('computeNineSliceRegions', () => {
       100,
       100,
       centerPivot,
-      fullUv.offset,
-      fullUv.scale,
+      fullTextureRegion,
       { left: 10, right: 10, top: 10, bottom: 10 },
     );
 
@@ -45,8 +77,7 @@ describe('computeNineSliceRegions', () => {
       200,
       120,
       centerPivot,
-      fullUv.offset,
-      fullUv.scale,
+      fullTextureRegion,
       { left: 8, right: 12, top: 4, bottom: 6 },
     );
 
@@ -82,8 +113,7 @@ describe('computeNineSliceRegions', () => {
         100,
         100,
         pivot,
-        fullUv.offset,
-        fullUv.scale,
+        fullTextureRegion,
         { left: 10, right: 10, top: 10, bottom: 10 },
       );
 
@@ -104,8 +134,7 @@ describe('computeNineSliceRegions', () => {
       10,
       10,
       centerPivot,
-      fullUv.offset,
-      fullUv.scale,
+      fullTextureRegion,
       { left: 8, right: 8, top: 0, bottom: 0 },
     );
 
@@ -123,8 +152,7 @@ describe('computeNineSliceRegions', () => {
       200, // stretched to double the native width
       100,
       centerPivot,
-      { x: 0, y: 0 },
-      { x: 1, y: 1 },
+      fullTextureRegion,
       { left: 10, right: 10, top: 0, bottom: 0, nativeWidth: 100 },
     );
 
@@ -132,7 +160,7 @@ describe('computeNineSliceRegions', () => {
 
     expect(leftEdge).toBeDefined();
     // 10 / 100 native width = 0.1 of the texture, unaffected by the resize.
-    expect(leftEdge!.uvScale.x).toBeCloseTo(0.1, 5);
+    expect(leftEdge!.region.uvScale.x).toBeCloseTo(0.1, 5);
   });
 
   it('stretches the center region into a single segment by default', () => {
@@ -140,8 +168,7 @@ describe('computeNineSliceRegions', () => {
       300,
       100,
       centerPivot,
-      fullUv.offset,
-      fullUv.scale,
+      fullTextureRegion,
       { left: 10, right: 10, top: 0, bottom: 0, nativeWidth: 100 },
     );
 
@@ -158,8 +185,7 @@ describe('computeNineSliceRegions', () => {
       300,
       100,
       centerPivot,
-      fullUv.offset,
-      fullUv.scale,
+      fullTextureRegion,
       {
         left: 10,
         right: 10,
@@ -180,7 +206,7 @@ describe('computeNineSliceRegions', () => {
     for (const tile of tiles) {
       // Every tile samples the same center band texture rect: the full
       // sprite (1.0) minus the two 10/100-native-width border fractions.
-      expect(tile.uvScale.x).toBeCloseTo(0.8, 5);
+      expect(tile.region.uvScale.x).toBeCloseTo(0.8, 5);
     }
 
     const totalTileWidth = tiles.reduce((sum, t) => sum + t.size.x, 0);
@@ -192,8 +218,7 @@ describe('computeNineSliceRegions', () => {
       100,
       300,
       centerPivot,
-      fullUv.offset,
-      fullUv.scale,
+      fullTextureRegion,
       {
         left: 10,
         right: 10,

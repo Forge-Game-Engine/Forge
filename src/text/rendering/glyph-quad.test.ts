@@ -7,6 +7,7 @@ import { Color } from '../../rendering/color.js';
 import { QuadRenderCommand } from '../../rendering/render-command.js';
 import { Renderable } from '../../rendering/renderable.js';
 import type { Texture } from '../../rendering/texture.js';
+import { createTextureRegion } from '../../rendering/texture-region.js';
 import type { TextRenderables } from './create-text-renderables.js';
 import type { TextEcsComponent } from '../components/text-component.js';
 import type {
@@ -57,8 +58,7 @@ function buildTextMesh(glyphs: GlyphQuad[]): TextMeshEcsComponent {
 const glyph: GlyphQuad = {
   offset: { x: 3, y: 4 },
   size: { x: 5, y: 7 },
-  uvOffset: { x: 0.1, y: 0.2 },
-  uvScale: { x: 0.3, y: 0.4 },
+  region: createTextureRegion({ x: 0.1, y: 0.2 }, { x: 0.3, y: 0.4 }),
   embolden: 0,
 };
 
@@ -124,8 +124,7 @@ describe('pushTextRenderCommands', () => {
       width: glyph.size.x,
       height: glyph.size.y,
       pivot: { x: 0.5, y: 0.5 },
-      uvOffset: glyph.uvOffset,
-      uvScale: glyph.uvScale,
+      region: glyph.region,
       tintColor: color,
       layer: 3,
     });

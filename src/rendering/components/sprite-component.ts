@@ -8,6 +8,11 @@ import {
 } from '../nine-slice-options.js';
 import type { SpriteMaterial } from '../materials/sprite-material.js';
 import type { Texture } from '../texture.js';
+import {
+  fullTextureRegion,
+  isTextureRegionTrimmed,
+  TextureRegion,
+} from '../texture-region.js';
 import { withDefaults } from '../../utilities/with-defaults.js';
 
 /**
@@ -16,21 +21,22 @@ import { withDefaults } from '../../utilities/with-defaults.js';
  */
 export interface SpriteRequiredOptions {
   /**
-   * The sprite's width in world units. Scales the unit quad horizontally
-   * before it's rotated and translated to the entity's world position.
+   * The width, in world units, of the sprite's untrimmed frame. A trimmed
+   * `region` draws only its share of it.
    */
   width: number;
 
   /**
-   * The sprite's height in world units. Scales the unit quad vertically
-   * before it's rotated and translated to the entity's world position.
+   * The height, in world units, of the sprite's untrimmed frame. A trimmed
+   * `region` draws only its share of it.
    */
   height: number;
 
   /**
-   * The image the sprite draws, sampled within `uvOffset`/`uvScale`. Assign
-   * another texture to change the image. Consecutive sprites with the same
-   * texture, emissive map and material draw in one instanced draw call.
+   * The image the sprite draws, sampled within `region`. Assign another
+   * texture to change the image. Consecutive sprites with the same texture,
+   * emissive map and material draw in one instanced draw call, whatever
+   * their regions.
    */
   texture: Texture;
 }
@@ -59,11 +65,12 @@ export interface SpriteEmissive {
  */
 export interface SpriteDefaultedOptions {
   /**
-   * The sprite's origin, normalized to the sprite's own size: `(0, 0)` is
+   * The sprite's origin, normalized to its untrimmed frame: `(0, 0)` is
    * the top-left corner, `(0.5, 0.5)` (the default) is the center, and
    * `(1, 1)` is the bottom-right corner, matching the Y-down world.
    * Determines which point of the sprite is placed at, and rotated/scaled
-   * around, the entity's position.
+   * (and flipped) around, the entity's position, wherever a trimmed
+   * `region` sits inside the frame.
    */
   pivot: Vector2;
 
@@ -75,21 +82,13 @@ export interface SpriteDefaultedOptions {
   tintColor: Color;
 
   /**
-   * The top-left corner of the region of the texture to sample, as a
-   * normalized (0 to 1) fraction of the texture's full size. Used with
-   * `uvScale` to select a single frame from a texture atlas/sprite sheet;
-   * updated automatically by the sprite animation system when the sprite
-   * has a `SpriteAnimationEcsComponent`.
+   * The part of `texture` the sprite draws, and where it sits in the
+   * untrimmed frame `width`/`height` describe. Defaults to
+   * `fullTextureRegion` (the whole texture, untrimmed). Regions are
+   * immutable: assign another to change the frame, as the sprite animation
+   * system does for a sprite with a `SpriteAnimationEcsComponent`.
    */
-  uvOffset: Vector2;
-
-  /**
-   * The size of the region of the texture to sample, as a normalized (0 to
-   * 1) fraction of the texture's full width/height. Defaults to `(1, 1)`
-   * (the whole texture). Used with `uvOffset` to select a single frame from
-   * a texture atlas/sprite sheet.
-   */
-  uvScale: Vector2;
+  region: TextureRegion;
 
   /**
    * The sprite's emissive map, or `null` (the default) for none. Assign
@@ -167,12 +166,15 @@ export const spriteId = createComponentId<SpriteEcsComponent>('sprite');
  * @param entity - The entity to attach the component to.
  * @param options - Options for configuring the sprite. `width`, `height`,
  * and `texture` have no sensible default and must always be provided.
- * `pivot`, `uvOffset`, `uvScale` and `slices` are copied, so the component
- * never shares them with `options` or with other sprites built from the same
- * options. If `slices` is set, any omitted `nativeWidth`/`nativeHeight` is
+ * `pivot` and `slices` are copied, so the component never shares them with
+ * `options` or with other sprites built from the same options; `region` is
+ * immutable, so it's shared. If `slices` is set, any omitted
+ * `nativeWidth`/`nativeHeight` is
  * captured from `width`/`height` here, before anything can resize the
  * sprite.
  * @returns The attached component, for further tuning or runtime changes.
+ * @throws An error if `slices` is set and `region` is trimmed: nine-slice
+ * insets are measured against the untrimmed art.
  */
 export function addSpriteComponent(
   world: EcsWorld,
@@ -182,8 +184,7 @@ export function addSpriteComponent(
   const defaultSpriteOptions: SpriteDefaultedOptions = {
     pivot: { x: 0.5, y: 0.5 },
     tintColor: Color.white,
-    uvOffset: Vec2.zero,
-    uvScale: Vec2.one,
+    region: fullTextureRegion,
     emissive: null,
     material: null,
     category: 1,
@@ -195,16 +196,18 @@ export function addSpriteComponent(
     options,
   );
 
-  // Systems write these vectors in place per entity (the sprite animation
-  // system writes each entity's frame into `uvOffset`, UI layout writes
-  // `pivot`), so every component gets its own copies, however `options`
-  // was built: sprites created from one shared options object must never
-  // share a frame or pivot.
+  // UI layout writes `pivot` in place per entity, so every component gets
+  // its own copy, however `options` was built: sprites created from one
+  // shared options object must never share a pivot.
   component.pivot = Vec2.clone(component.pivot);
-  component.uvOffset = Vec2.clone(component.uvOffset);
-  component.uvScale = Vec2.clone(component.uvScale);
 
   if (component.slices) {
+    if (isTextureRegionTrimmed(component.region)) {
+      throw new Error(
+        `Unable to add a nine-sliced sprite to entity "${entity}": its texture region is trimmed, and nine-slice insets are measured against the untrimmed art. Give a sliced sprite an untrimmed region.`,
+      );
+    }
+
     component.slices = resolveNineSliceNativeSize(
       component.slices,
       component.width,

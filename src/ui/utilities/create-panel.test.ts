@@ -3,7 +3,12 @@ import { createLabel } from './create-label.js';
 import { createPanel } from './create-panel.js';
 import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, spriteId, Texture } from '../../rendering/index.js';
+import {
+  Color,
+  fullTextureRegion,
+  spriteId,
+  Texture,
+} from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
 import { UiAnchor } from '../types/ui-anchor.js';
@@ -15,8 +20,7 @@ const buildSprite = () => ({
   texture: {} as Texture,
   pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
-  uvOffset: { x: 0, y: 0 },
-  uvScale: { x: 1, y: 1 },
+  region: fullTextureRegion,
   emissive: null,
   material: null,
   category: 1,

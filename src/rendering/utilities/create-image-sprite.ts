@@ -6,6 +6,7 @@ import {
   resolveNineSliceNativeSize,
 } from '../nine-slice-options.js';
 import type { Texture } from '../texture.js';
+import { createTextureRegion, fullTextureRegion } from '../texture-region.js';
 import { importTexture } from './import-texture.js';
 
 /**
@@ -14,9 +15,9 @@ import { importTexture } from './import-texture.js';
 export interface CreateImageSpriteOptions {
   /**
    * The size of a single frame in the texture, in texels, for sprite
-   * sheets. The sprite is sized to one frame and its `uvScale` selects one
-   * frame's share of the texture. Defaults to the whole texture (a
-   * single-frame sprite).
+   * sheets. The sprite is sized to one frame and its `region` selects the
+   * texture's top-left frame. Defaults to the whole texture (a single-frame
+   * sprite).
    */
   frameDimensions?: Vector2;
 
@@ -47,7 +48,8 @@ export interface CreateImageSpriteOptions {
  * The result has every other field at its default (no emissive map, the
  * render context's sprite material, category `1`); spread it into
  * `addSpriteComponent` with any overrides. `addSpriteComponent` copies its
- * vectors, so one result can be shared by many sprites.
+ * `pivot` and `slices` (and its `region` is immutable), so one result can be
+ * shared by many sprites.
  * @param texture - The texture the sprite draws.
  * @param options - Optional parameters for creating the sprite.
  * @returns The sprite's options.
@@ -69,13 +71,15 @@ export function createImageSprite(
     height: worldHeight,
     pivot: { x: 0.5, y: 0.5 },
     tintColor: Color.white,
-    uvOffset: { x: 0, y: 0 },
-    uvScale: frameDimensions
-      ? {
-          x: frameDimensions.x / texture.width,
-          y: frameDimensions.y / texture.height,
-        }
-      : { x: 1, y: 1 },
+    region: frameDimensions
+      ? createTextureRegion(
+          { x: 0, y: 0 },
+          {
+            x: frameDimensions.x / texture.width,
+            y: frameDimensions.y / texture.height,
+          },
+        )
+      : fullTextureRegion,
     emissive: null,
     material: null,
     category: 1,

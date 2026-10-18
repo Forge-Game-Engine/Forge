@@ -104,8 +104,7 @@ function pushTextEffectsRenderCommands(
       width: glyph.size.x,
       height: glyph.size.y,
       pivot: { x: 0.5, y: 0.5 },
-      uvOffset: glyph.uvOffset,
-      uvScale: glyph.uvScale,
+      region: glyph.region,
       // `msdf-effects.frag` doesn't read `v_tint` at all - the ring/shadow
       // colors it actually draws with come from `textEffects` below - but
       // `SpriteEcsComponent.tintColor` still has to be a `Color`.
@@ -164,8 +163,7 @@ function pushTextFillRenderCommands(
       width: glyph.size.x,
       height: glyph.size.y,
       pivot: { x: 0.5, y: 0.5 },
-      uvOffset: glyph.uvOffset,
-      uvScale: glyph.uvScale,
+      region: glyph.region,
       tintColor: glyph.color ?? color,
       opacityMultiplier: textComponent.opacityMultiplier,
       texture: fontAtlas.texture,

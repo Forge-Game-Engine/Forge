@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { createButton } from './create-button.js';
 import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, spriteId, Texture } from '../../rendering/index.js';
+import {
+  Color,
+  fullTextureRegion,
+  spriteId,
+  Texture,
+} from '../../rendering/index.js';
 import type { FontAtlas } from '../../text/font-atlas/font-atlas.js';
 import { textId } from '../../text/index.js';
 import { uiColorTransitionId } from '../components/ui-color-transition-component.js';
@@ -19,8 +24,7 @@ const buildSprite = () => ({
   texture: {} as Texture,
   pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
-  uvOffset: { x: 0, y: 0 },
-  uvScale: { x: 1, y: 1 },
+  region: fullTextureRegion,
   emissive: null,
   material: null,
   category: 1,

@@ -16,9 +16,9 @@ image with the frames arranged in a grid.
 
 A [`SpriteSheet`](/Forge/docs/api/interfaces/SpriteSheet) holds the frames
 of an image divided into equal rows and columns, as `frames[row][column]`.
-Each frame is an [`AnimationFrame`](/Forge/docs/api/interfaces/AnimationFrame):
-its `offset` and `dimensions` in the image, as fractions (`0` to `1`) of the
-image's width and height.
+Each frame is an untrimmed
+[`TextureRegion`](../rendering/sprites.md#texture-regions): the frame's
+rect in the image, as fractions of the image's width and height.
 
 [`createSpriteSheet`](/Forge/docs/api/functions/createSpriteSheet) takes an
 image or texture and the number of rows and columns:
@@ -32,8 +32,14 @@ const spriteSheet = createSpriteSheet(texture, 1, 6); // 1 row, 6 columns
 ## Animation clips
 
 An [`AnimationClip`](/Forge/docs/api/classes/AnimationClip) is the sequence
-of frames one animation plays, such as a walk or a jump. One sprite sheet
-can hold the frames of several clips.
+of frames one animation plays, such as a walk or a jump, each a
+`TextureRegion` of one texture. One sprite sheet can hold the frames of
+several clips.
+
+A clip's frames can have different sizes in the texture and different
+[trims](../rendering/sprites.md#drawing-a-trimmed-frame), but they share
+one untrimmed frame size: every frame is drawn inside the sprite's `width`
+and `height`.
 
 [`selectAnimationFrames(spriteSheet, count, startFrame)`](/Forge/docs/api/functions/selectAnimationFrames)
 selects `count` frames in row-major order (left to right, then the next row),
@@ -104,8 +110,8 @@ same clip.
 
 [`createSpriteAnimationEcsSystem`](/Forge/docs/api/functions/createSpriteAnimationEcsSystem)
 changes the frame of each entity with a `SpriteAnimationEcsComponent` and a
-sprite. Each time a frame's duration has passed, it writes the offset of the
-frame at `animationFrameIndex` to the sprite's `uvOffset` and moves
+sprite. Each time a frame's duration has passed, it assigns the frame at
+`animationFrameIndex` to the sprite's `region` and moves
 `animationFrameIndex` to the next frame. After the clip's last frame, it
 moves back to frame `0`, so a clip loops for as long as the component is on
 the entity.
@@ -156,4 +162,4 @@ one and the index isn't reset.
 
 Remove the `SpriteAnimationEcsComponent` with
 `world.removeComponent(entity, spriteAnimationId)`. The sprite keeps showing
-the last frame written to its `uvOffset`.
+the last frame assigned to its `region`.

@@ -12,8 +12,8 @@ import { SpriteEcsComponent, spriteId } from '../../rendering/index.js';
  * Creates a new ECS-style sprite animation system. For each entity with a
  * `SpriteAnimationEcsComponent` and a sprite, once
  * `frameDurationMilliseconds / playbackSpeed` has passed since the last frame
- * change (by `time.timeInSeconds`), it writes the offset of the frame at
- * `animationFrameIndex` to the sprite's `uvOffset` and moves
+ * change (by `time.timeInSeconds`), it assigns the frame at
+ * `animationFrameIndex` to the sprite's `region` and moves
  * `animationFrameIndex` to the next frame, back to `0` after the clip's last
  * frame.
  * @param time - The Time instance.
@@ -75,8 +75,7 @@ export const createSpriteAnimationEcsSystem = (
         spriteAnimationComponent.animationFrameIndex++;
       }
 
-      spriteComponent.uvOffset.x = animationFrame.offset.x;
-      spriteComponent.uvOffset.y = animationFrame.offset.y;
+      spriteComponent.region = animationFrame;
 
       spriteAnimationComponent.lastFrameChangeTimeInSeconds =
         time.timeInSeconds;

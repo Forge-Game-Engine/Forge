@@ -49,6 +49,16 @@ an inset is `0`, more when a region tiles), in the same instanced draw
 call as the sprites batched with it (see [Batching](./sprites.md#batching)).
 :::
 
+The grid is cut from the sprite's
+[`region`](./sprites.md#texture-regions). The insets are measured against
+the untrimmed art, so a sliced sprite's region must be untrimmed.
+
+:::caution
+`addSpriteComponent` throws for a sprite with `slices` and a
+[trimmed region](./sprites.md#drawing-a-trimmed-frame), and the render
+system throws when it draws one.
+:::
+
 ## Choosing insets
 
 `left`, `right`, `top` and `bottom` are in the same world units as the

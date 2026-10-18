@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { createScrollView } from './create-scroll-view.js';
 import { EcsWorld } from '../../ecs/index.js';
-import { Color, maskId, spriteId, Texture } from '../../rendering/index.js';
+import {
+  Color,
+  fullTextureRegion,
+  maskId,
+  spriteId,
+  Texture,
+} from '../../rendering/index.js';
 import { contentSizeFitterId } from '../components/content-size-fitter-component.js';
 import { uiAxisLayoutGroupId } from '../components/layout-group-component.js';
 import { rectTransformId } from '../components/rect-transform-component.js';
@@ -15,8 +21,7 @@ const buildSprite = () => ({
   texture: {} as Texture,
   pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
-  uvOffset: { x: 0, y: 0 },
-  uvScale: { x: 1, y: 1 },
+  region: fullTextureRegion,
   emissive: null,
   material: null,
   category: 1,

@@ -32,6 +32,19 @@ const TINT_COLOR_A_OFFSET = 16;
  */
 export const SPRITE_INSTANCE_DATA_FLOATS_PER_INSTANCE = 17;
 
+/**
+ * Re-expresses one axis of a sprite's pivot, normalized to its untrimmed
+ * frame, relative to the trimmed rect its region draws. Both are Y-down, so
+ * the same formula serves both axes.
+ */
+function trimmedPivot(
+  pivot: number,
+  trimOffset: number,
+  trimScale: number,
+): number {
+  return (pivot - trimOffset) / trimScale;
+}
+
 function bindSpriteInstanceData(
   components: InstanceComponents,
   instanceDataBufferArray: Float32Array,
@@ -52,19 +65,31 @@ function bindSpriteInstanceData(
   instanceDataBufferArray[offset + SCALE_Y_OFFSET] =
     (scale?.world.y ?? 1) * (flip?.flipY ? -1 : 1);
 
-  // Sprite dimensions
-  instanceDataBufferArray[offset + WIDTH_OFFSET] = sprite.width;
-  instanceDataBufferArray[offset + HEIGHT_OFFSET] = sprite.height;
+  const { region } = sprite;
 
-  // Sprite pivot
-  instanceDataBufferArray[offset + PIVOT_X_OFFSET] = sprite.pivot.x;
-  instanceDataBufferArray[offset + PIVOT_Y_OFFSET] = sprite.pivot.y;
+  // The drawn quad is the region's trimmed rect: its share of the untrimmed
+  // frame's size, around the sprite's pivot re-expressed relative to that
+  // rect, so the art sits where it does in the untrimmed frame.
+  instanceDataBufferArray[offset + WIDTH_OFFSET] =
+    sprite.width * region.trimScale.x;
+  instanceDataBufferArray[offset + HEIGHT_OFFSET] =
+    sprite.height * region.trimScale.y;
+  instanceDataBufferArray[offset + PIVOT_X_OFFSET] = trimmedPivot(
+    sprite.pivot.x,
+    region.trimOffset.x,
+    region.trimScale.x,
+  );
+  instanceDataBufferArray[offset + PIVOT_Y_OFFSET] = trimmedPivot(
+    sprite.pivot.y,
+    region.trimOffset.y,
+    region.trimScale.y,
+  );
 
-  // Texture coordinates (animation frame or defaults)
-  instanceDataBufferArray[offset + TEX_OFFSET_X_OFFSET] = sprite.uvOffset.x;
-  instanceDataBufferArray[offset + TEX_OFFSET_Y_OFFSET] = sprite.uvOffset.y;
-  instanceDataBufferArray[offset + TEX_SIZE_X_OFFSET] = sprite.uvScale.x;
-  instanceDataBufferArray[offset + TEX_SIZE_Y_OFFSET] = sprite.uvScale.y;
+  // The sampled rect of the texture
+  instanceDataBufferArray[offset + TEX_OFFSET_X_OFFSET] = region.uvOffset.x;
+  instanceDataBufferArray[offset + TEX_OFFSET_Y_OFFSET] = region.uvOffset.y;
+  instanceDataBufferArray[offset + TEX_SIZE_X_OFFSET] = region.uvScale.x;
+  instanceDataBufferArray[offset + TEX_SIZE_Y_OFFSET] = region.uvScale.y;
 
   // Tint color. Alpha additionally folds in `opacityMultiplier`, if set -
   // see its own doc comment on `SpriteEcsComponent` for why that's a
@@ -78,8 +103,9 @@ function bindSpriteInstanceData(
 
 /**
  * Computes the world-space axis-aligned bounds of the quad `sprite.vert`
- * draws for one instance: `sprite`'s `width`/`height` around its `pivot`,
- * scaled (and flipped), rotated and placed at `position.world`, matching
+ * draws for one instance: the trimmed rect of `sprite`'s `region` inside its
+ * `width`/`height`, around its `pivot`, scaled (and flipped), rotated and
+ * placed at `position.world`, matching
  * the instance data `spriteInstanceDataSegment` binds. The render system
  * skips instances whose bounds are outside a camera's view.
  * @param components - The instance's components.
@@ -94,13 +120,16 @@ export function computeSpriteInstanceBounds(
   const { position, rotation, scale, sprite, flip } = components;
   const scaleX = (scale?.world.x ?? 1) * (flip?.flipX ? -1 : 1);
   const scaleY = (scale?.world.y ?? 1) * (flip?.flipY ? -1 : 1);
-  const width = sprite.width * scaleX;
-  const height = sprite.height * scaleY;
+  const { trimOffset, trimScale } = sprite.region;
+  const width = sprite.width * trimScale.x * scaleX;
+  const height = sprite.height * trimScale.y * scaleY;
+  const pivotX = trimmedPivot(sprite.pivot.x, trimOffset.x, trimScale.x);
+  const pivotY = trimmedPivot(sprite.pivot.y, trimOffset.y, trimScale.y);
   // The quad's center and half extents, relative to the pivot, before
   // rotation. A negative scale flips the quad around the pivot, which
   // moves its center but not its extents.
-  const centerX = (0.5 - sprite.pivot.x) * width;
-  const centerY = (0.5 - sprite.pivot.y) * height;
+  const centerX = (0.5 - pivotX) * width;
+  const centerY = (0.5 - pivotY) * height;
   const halfWidth = Math.abs(width) / 2;
   const halfHeight = Math.abs(height) / 2;
   const radians = rotation?.world ?? 0;
@@ -182,7 +211,8 @@ function setupSpriteInstanceAttributes(
  * The instance data segment for the standard sprite vertex shader (`sprite.vert`).
  *
  * Binds position, rotation, scale, size, pivot, texture coordinates and tint
- * from an entity's `SpriteEcsComponent`, and wires them up to the
+ * from an entity's `SpriteEcsComponent` (the size and pivot of its region's
+ * trimmed rect, and the region's UV rect), and wires them up to the
  * `a_instancePosScale` (position and scale), `a_instanceRot`,
  * `a_instanceSizePivot` (size and pivot), `a_instanceTexRect` (UV offset and
  * size) and `a_instanceTint` attributes.

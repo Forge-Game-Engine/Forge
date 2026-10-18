@@ -88,12 +88,37 @@ describe('shapeText', () => {
     // avoid GL_LINEAR sampling across the tile boundary into the next
     // glyph.
     const inset = 1 / 256;
-    expect(glyphs[0].uvOffset.x).toBeCloseTo(inset);
-    expect(glyphs[0].uvOffset.y).toBeCloseTo(inset);
-    expect(glyphs[0].uvScale.x).toBeCloseTo(0.1 - 2 * inset);
-    expect(glyphs[0].uvScale.y).toBeCloseTo(0.14 - 2 * inset);
+    expect(glyphs[0].region.uvOffset.x).toBeCloseTo(inset);
+    expect(glyphs[0].region.uvOffset.y).toBeCloseTo(inset);
+    expect(glyphs[0].region.uvScale.x).toBeCloseTo(0.1 - 2 * inset);
+    expect(glyphs[0].region.uvScale.y).toBeCloseTo(0.14 - 2 * inset);
+    expect(glyphs[0].region.trimScale).toEqual({ x: 1, y: 1 });
 
     expect(bounds).toEqual({ width: 6, height: 12 });
+  });
+
+  it.each([
+    {
+      name: 'non-finite atlas bounds',
+      atlasBounds: { left: 0, bottom: NaN, right: 0.1, top: 0 },
+    },
+    {
+      name: 'a zero-size atlas tile',
+      atlasBounds: { left: 0.1, bottom: 0.14, right: 0.1, top: 0 },
+    },
+  ])('throws for a glyph with $name', ({ atlasBounds }) => {
+    const fontAtlasData = buildFixtureFontAtlasData();
+
+    fontAtlasData.glyphs.set(A_CODE_POINT, {
+      codePoint: A_CODE_POINT,
+      advance: 0.6,
+      planeBounds: { left: 0.05, bottom: 0, right: 0.55, top: -0.7 },
+      atlasBounds,
+    });
+
+    expect(() => shapeText('A', fontAtlasData, { size: 10 })).toThrow(
+      /Unable to create a texture region/,
+    );
   });
 
   it('advances the pen by each glyph advance, scaled by size', () => {

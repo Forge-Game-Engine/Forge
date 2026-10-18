@@ -1,5 +1,6 @@
 import type { Vector2 } from '../../math/index.js';
 import type { Color } from '../../rendering/color.js';
+import { createTextureRegion } from '../../rendering/texture-region.js';
 import type { GlyphQuad } from '../components/text-mesh-component.js';
 import {
   type FontAtlasData,
@@ -337,11 +338,10 @@ function shapeWord(
           y: planeBounds.top * size + glyphHeight / 2,
         },
         size: { x: glyphWidth, y: glyphHeight },
-        uvOffset: { x: atlasLeft, y: atlasTop },
-        uvScale: {
-          x: atlasRight - atlasLeft,
-          y: atlasBottom - atlasTop,
-        },
+        region: createTextureRegion(
+          { x: atlasLeft, y: atlasTop },
+          { x: atlasRight - atlasLeft, y: atlasBottom - atlasTop },
+        ),
         color: styles.colors[styleIndex],
         embolden: isBold ? styles.boldEmbolden : 0,
       });

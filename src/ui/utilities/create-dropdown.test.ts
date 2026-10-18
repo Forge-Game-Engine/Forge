@@ -3,6 +3,7 @@ import { createDropdown } from './create-dropdown.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   Color,
+  fullTextureRegion,
   isVisibleInHierarchy,
   Texture,
   visibilityId,
@@ -22,8 +23,7 @@ const buildSprite = () => ({
   texture: {} as Texture,
   pivot: { x: 0.5, y: 0.5 },
   tintColor: Color.white,
-  uvOffset: { x: 0, y: 0 },
-  uvScale: { x: 1, y: 1 },
+  region: fullTextureRegion,
   emissive: null,
   material: null,
   category: 1,
