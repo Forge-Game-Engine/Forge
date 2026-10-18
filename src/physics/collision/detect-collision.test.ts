@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { detectCollision } from './detect-collision.js';
+import { ChainCollider } from '../colliders/chain-collider.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { Collider } from '../colliders/collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
@@ -21,6 +22,20 @@ function rectangle(width: number, height: number): PolygonCollider {
 
 function body(position: Vector2, collider: Collider): CollisionBody {
   return { position, rotation: 0, collider };
+}
+
+/**
+ * Solid below `y = 0` from `x = -100` to `100`.
+ */
+function chainFloor(): ChainCollider {
+  return new ChainCollider([
+    [
+      { x: -100, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 50 },
+      { x: -100, y: 50 },
+    ],
+  ]);
 }
 
 describe('detectCollision', () => {
@@ -140,14 +155,72 @@ describe('detectCollision', () => {
     expect(manifold.normal.y).toBeCloseTo(-1);
   });
 
-  it('should throw an error for an unregistered collider pair', () => {
-    const bodyA = body({ x: 0, y: 0 }, new CircleCollider(1));
-    const fakeBody = {
-      position: Vec2.zero,
-      rotation: 0,
-      collider: { type: 'unknown' } as unknown as Collider,
-    };
+  describe('chains', () => {
+    const floor = chainFloor;
 
-    expect(() => detectCollision(bodyA, fakeBody)).toThrow();
+    it('should dispatch circle-chain collisions', () => {
+      const [manifold] = detectCollision(
+        body({ x: 0, y: -0.5 }, new CircleCollider(1)),
+        body(Vec2.zero, floor()),
+      );
+
+      expect(manifold).toBeDefined();
+      expect(manifold.normal.y).toBeCloseTo(1);
+    });
+
+    it('should dispatch chain-circle collisions, flipping the normal', () => {
+      const [manifold] = detectCollision(
+        body(Vec2.zero, floor()),
+        body({ x: 0, y: -0.5 }, new CircleCollider(1)),
+      );
+
+      expect(manifold).toBeDefined();
+      expect(manifold.normal.y).toBeCloseTo(-1);
+    });
+
+    it('should dispatch polygon-chain collisions', () => {
+      const [manifold] = detectCollision(
+        body({ x: 0, y: -0.5 }, rectangle(2, 2)),
+        body(Vec2.zero, floor()),
+      );
+
+      expect(manifold).toBeDefined();
+      expect(manifold.normal.y).toBeCloseTo(1);
+    });
+
+    it('should dispatch chain-polygon collisions, flipping the normal', () => {
+      const [manifold] = detectCollision(
+        body(Vec2.zero, floor()),
+        body({ x: 0, y: -0.5 }, rectangle(2, 2)),
+      );
+
+      expect(manifold).toBeDefined();
+      expect(manifold.normal.y).toBeCloseTo(-1);
+    });
+  });
+
+  describe('pairs of shapes that cannot be dynamic', () => {
+    const terrain = (): TerrainCollider =>
+      new TerrainCollider(
+        [
+          { x: -100, y: 0 },
+          { x: 100, y: 0 },
+        ],
+        50,
+      );
+    it.each([
+      ['terrain-terrain', terrain, terrain],
+      ['chain-chain', chainFloor, chainFloor],
+      ['chain-terrain', chainFloor, terrain],
+      ['terrain-chain', terrain, chainFloor],
+    ])(
+      'should return no manifolds for overlapping %s pairs',
+      (_name, createA, createB) => {
+        const bodyA = body(Vec2.zero, createA());
+        const bodyB = body({ x: 10, y: 10 }, createB());
+
+        expect(detectCollision(bodyA, bodyB)).toEqual([]);
+      },
+    );
   });
 });

@@ -33,8 +33,11 @@ hit is the closest. Each hit has:
 - `normal`: the collider's outward surface normal at `point`.
 - `distance`: the distance from `start` to `point`.
 
-`raycast` tests circle, polygon and terrain colliders. A ray can enter a
-terrain from any side, including from below.
+`raycast` tests circle, polygon, terrain and chain colliders. A ray can
+enter a terrain from any side, including from below. A ray hits a
+[chain](./chain-colliders.md#raycasting-against-a-chain) only where it
+enters solid, so a ray that starts inside a chain's solid doesn't hit the
+edge it leaves by.
 
 :::caution
 `raycast` skips every collider whose `aabb` doesn't overlap the ray, and

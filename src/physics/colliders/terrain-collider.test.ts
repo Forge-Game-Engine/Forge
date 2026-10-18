@@ -84,11 +84,11 @@ describe('TerrainCollider', () => {
         100,
       );
 
-      expect(collider.surface).toHaveLength(2);
-      expect(collider.surface[0].start.x).toBeCloseTo(0);
-      expect(collider.surface[0].end.x).toBeCloseTo(10);
-      expect(collider.surface[1].start.x).toBeCloseTo(10);
-      expect(collider.surface[1].end.x).toBeCloseTo(20);
+      expect(collider.surface.edges).toHaveLength(2);
+      expect(collider.surface.edges[0].start.x).toBeCloseTo(0);
+      expect(collider.surface.edges[0].end.x).toBeCloseTo(10);
+      expect(collider.surface.edges[1].start.x).toBeCloseTo(10);
+      expect(collider.surface.edges[1].end.x).toBeCloseTo(20);
     });
 
     it('should give every surface edge a unit normal pointing away from the slab', () => {
@@ -104,10 +104,10 @@ describe('TerrainCollider', () => {
         100,
       );
 
-      expect(collider.surface[0].normal.x).toBeCloseTo(-Math.SQRT1_2);
-      expect(collider.surface[0].normal.y).toBeCloseTo(-Math.SQRT1_2);
+      expect(collider.surface.edges[0].normal.x).toBeCloseTo(-Math.SQRT1_2);
+      expect(collider.surface.edges[0].normal.y).toBeCloseTo(-Math.SQRT1_2);
 
-      for (const edge of collider.surface) {
+      for (const edge of collider.surface.edges) {
         expect(Vec2.magnitude(edge.normal)).toBeCloseTo(1);
         expect(edge.normal.y).toBeLessThan(0);
       }
@@ -123,8 +123,24 @@ describe('TerrainCollider', () => {
         100,
       );
 
-      expect(collider.surface[0].end).toBe(collider.points[1]);
-      expect(collider.surface[1].start).toBe(collider.points[1]);
+      expect(collider.surface.edges[0].end).toBe(collider.points[1]);
+      expect(collider.surface.edges[1].start).toBe(collider.points[1]);
+    });
+
+    it('should have zero mass data and not support dynamic bodies', () => {
+      const collider = new TerrainCollider(
+        [
+          { x: 0, y: 0 },
+          { x: 10, y: -5 },
+          { x: 20, y: 0 },
+        ],
+        100,
+      );
+
+      expect(collider.supportsDynamicBodies).toBe(false);
+      expect(collider.mass).toBe(0);
+      expect(collider.momentOfInertia).toBe(0);
+      expect(collider.localCenterOfMass).toEqual({ x: 0, y: 0 });
     });
   });
 
@@ -139,7 +155,7 @@ describe('TerrainCollider', () => {
       );
 
       const slab = buildTerrainEdgeSlab(
-        collider.surface[0],
+        collider.surface.edges[0],
         collider.bottomY,
         Vec2.zero,
         0,
@@ -152,8 +168,8 @@ describe('TerrainCollider', () => {
         { x: 0, y: 50 },
       ]);
       expect(calculateSignedArea(slab.vertices)).toBeGreaterThan(0);
-      expect(slab.normals[0]).toEqual(collider.surface[0].normal);
-      expect(slab.normals[0]).not.toBe(collider.surface[0].normal);
+      expect(slab.normals[0]).toEqual(collider.surface.edges[0].normal);
+      expect(slab.normals[0]).not.toBe(collider.surface.edges[0].normal);
       expect(slab.normals[1].x).toBeCloseTo(1);
       expect(slab.normals[1].y).toBeCloseTo(0);
       expect(slab.normals[2].x).toBeCloseTo(0);
@@ -172,7 +188,7 @@ describe('TerrainCollider', () => {
       );
 
       const slab = buildTerrainEdgeSlab(
-        collider.surface[0],
+        collider.surface.edges[0],
         collider.bottomY,
         Vec2.zero,
         0,
@@ -195,7 +211,7 @@ describe('TerrainCollider', () => {
       );
 
       const slab = buildTerrainEdgeSlab(
-        collider.surface[0],
+        collider.surface.edges[0],
         collider.bottomY,
         { x: 100, y: -200 },
         -Math.PI / 2,

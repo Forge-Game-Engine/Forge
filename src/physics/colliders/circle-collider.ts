@@ -16,6 +16,7 @@ function calculateCircleMomentOfInertia(radius: number, mass: number): number {
  */
 export class CircleCollider extends Collider {
   public readonly type = 'circle';
+  public readonly supportsDynamicBodies = true;
   public radius: number;
 
   /**

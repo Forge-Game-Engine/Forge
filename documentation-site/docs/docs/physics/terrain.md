@@ -48,8 +48,10 @@ increasing `x`, or a `depth` that isn't positive. `depth` is the distance
 from the lowest point (the one with the greatest `y`) to the slab's bottom
 edge.
 
-A terrain is static: its entity has no `RigidBodyEcsComponent` (see
-[Body types](./rigid-bodies.md#body-types)).
+A terrain is for static and kinematic bodies: give its entity no
+`RigidBodyEcsComponent`, or a `'static'` or `'kinematic'` one (see
+[Body types](./rigid-bodies.md#body-types)). A terrain has no mass, and a
+`'dynamic'` body with a `TerrainCollider` throws when it is simulated.
 
 ## Colliding with terrain
 
@@ -66,18 +68,13 @@ points only as closely as the ground's shape needs.
 :::caution
 A terrain is one-sided. A body that gets below the surface is pushed back
 up through it, and a body below the slab's bottom edge doesn't collide with
-it. Use a `PolygonCollider` for a ceiling or for a platform that bodies hit
-from below. A ray can still hit the terrain from any side (see
-[Raycasting](./raycasting.md)).
+it. Use a [`ChainCollider`](./chain-colliders.md) for walls, ceilings,
+overhangs or platforms that bodies hit from below. A ray can still hit the
+terrain from any side (see [Raycasting](./raycasting.md)).
 :::
 
-:::caution
-Two `TerrainCollider`s whose bounds overlap throw an error in
-`createNarrowPhaseEcsSystem`, which has no test between two terrains. Give
-terrains that touch or overlap a `category` and `mask` that exclude each
-other (see
-[Filtering which colliders collide](./collisions.md#filtering-which-colliders-collide)).
-:::
+Two `TerrainCollider`s, or a `TerrainCollider` and a `ChainCollider`, never
+collide with each other.
 
 A fast circle can sink into or pass through the surface within one tick;
 [Continuous Collision Detection](./continuous-collision-detection.md) stops

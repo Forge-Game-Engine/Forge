@@ -98,9 +98,10 @@ world.removeParent(child); // child is a root entity again
   transform, so the child takes the same offset under its new parent. It
   throws if either entity isn't alive, or if the new parent is the child itself
   or one of its descendants.
-- `getChildren` lists the children in the order they were parented. Removing a
-  child, or moving it to another parent, keeps the rest in order. The list is
-  the world's own, and changes as children come and go, so copy it
+- `getChildren` lists the children in sibling order (see
+  [Ordering siblings](#ordering-siblings)). Removing a child, or moving it to
+  another parent, keeps the rest in order. The list is the world's own, and
+  changes as children come and go, so copy it
   (`[...world.getChildren(parent)]`) before removing or reparenting children in
   a loop.
 - To keep a child when its parent is removed, call `removeParent` (or
@@ -109,6 +110,31 @@ world.removeParent(child); // child is a root entity again
 The parent is stored as a `ParentEcsComponent` (`parentId`), so systems can
 query for it, but only the world writes it: adding it with `addComponent` or
 removing it with `removeComponent` throws.
+
+### Ordering siblings
+
+A parent's children have an order, the order `getChildren` returns them in.
+Children draw in this order (see
+[Draw Order](../rendering/draw-order.md)), and UI layout groups arrange them
+in it. `setParent` appends a child, so children start in the order they were
+parented. To place a child elsewhere, call
+[`setSiblingIndex`](/Forge/docs/api/classes/EcsWorld#setsiblingindex) after
+parenting it:
+
+```ts
+world.setParent(first, parent);
+world.setParent(second, parent);
+world.setParent(inserted, parent); // [first, second, inserted]
+
+world.setSiblingIndex(inserted, 1); // [first, inserted, second]
+world.getSiblingIndex(inserted); // 1
+```
+
+- `setSiblingIndex` moves the child to `index` and shifts the siblings from
+  that index on one place later. An `index` at or past the last sibling moves
+  the child last.
+- Both methods throw for an entity that has no parent. `setSiblingIndex` also
+  throws for an `index` that's negative or not an integer.
 
 ## Adding a component to the entity
 

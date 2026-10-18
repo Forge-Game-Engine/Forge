@@ -39,6 +39,7 @@ function validateConvexity(vertices: readonly Vector2[]): void {
  */
 export class PolygonCollider extends Collider {
   public readonly type = 'polygon';
+  public readonly supportsDynamicBodies = true;
   public readonly vertices: readonly Vector2[];
   public readonly normals: readonly Vector2[];
 

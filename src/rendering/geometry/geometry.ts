@@ -42,6 +42,53 @@ export type GeometryTopology =
 export type GeometryIndices = Uint16Array | Uint32Array;
 
 /**
+ * A range of a {@link Geometry}'s elements, written with
+ * {@link GeometryOptions.sections} or {@link GeometryUpdate.sections}. An
+ * element is an index position if the geometry has indices, or else a
+ * vertex.
+ */
+export interface GeometrySectionOptions {
+  /**
+   * The first element of the range. For `'triangles'` a multiple of 3, and
+   * for `'lines'` a multiple of 2, so the range starts on a whole primitive.
+   */
+  start: number;
+
+  /**
+   * The number of elements in the range. `0` is allowed and draws nothing.
+   * For `'triangles'` a multiple of 3, and for `'lines'` a multiple of 2.
+   */
+  count: number;
+}
+
+/**
+ * A range of a {@link Geometry}'s elements that a mesh can draw on its own
+ * (see `MeshEcsComponent.section`), with bounds of its own to be culled
+ * with. Read them from {@link Geometry.sections}.
+ */
+export interface GeometrySection {
+  /** The first element of the range. */
+  readonly start: number;
+
+  /** The number of elements in the range. */
+  readonly count: number;
+
+  /**
+   * The axis-aligned rectangle around the x and y of the `a_position` of
+   * every vertex the section draws, in the space the vertices are in.
+   * Computed when first read after the section is written, or after
+   * {@link Geometry.update} changes `a_position`, the indices or
+   * `vertexCount`, and kept until then. A zero-size rectangle at the origin
+   * when `count` is `0`. The indices themselves aren't checked when they're
+   * written, so an index at or past the vertex count throws here.
+   * @throws An error if the geometry has no `a_position` attribute of 2 or
+   * more components, or an index in the section points at or past
+   * {@link Geometry.vertexCount}.
+   */
+  readonly bounds: Rect;
+}
+
+/**
  * The vertex data and topology of a {@link Geometry}.
  */
 export interface GeometryOptions {
@@ -60,10 +107,22 @@ export interface GeometryOptions {
 
   /** The primitives the geometry is drawn as. Defaults to `'triangles'`. */
   topology?: GeometryTopology;
+
+  /**
+   * Ranges of the geometry's elements that meshes can draw on their own
+   * (see {@link Geometry.sections}). Each has to fit inside the indices (or
+   * the vertices, without indices) and start and end on a whole primitive.
+   * Defaults to none.
+   */
+  sections?: readonly GeometrySectionOptions[];
 }
 
-const defaultGeometryOptions: { topology: GeometryTopology } = {
+const defaultGeometryOptions: {
+  topology: GeometryTopology;
+  sections: readonly GeometrySectionOptions[];
+} = {
   topology: 'triangles',
+  sections: [],
 };
 
 /**
@@ -89,6 +148,15 @@ export interface GeometryUpdate {
    * Leave out to keep the indices the geometry has.
    */
   indices?: GeometryIndices;
+
+  /**
+   * New sections, replacing all of the geometry's (see
+   * {@link Geometry.sections}), checked against the indices (or the
+   * `vertexCount`, without indices) the update leaves the geometry with.
+   * Leave out to keep the current sections, which are checked the same way,
+   * so an update that would leave one out of range throws.
+   */
+  sections?: readonly GeometrySectionOptions[];
 }
 
 const defaultGeometryUpdate: {
@@ -99,6 +167,19 @@ const defaultGeometryUpdate: {
 
 /** The attribute {@link Geometry.bounds} reads vertex positions from. */
 const positionAttributeName = 'a_position';
+
+/**
+ * The number of elements a section's `start` and `count` must be multiples
+ * of, so it holds whole primitives. A strip's primitives share elements, so
+ * any range of one is whole.
+ */
+const sectionAlignments: Record<GeometryTopology, number> = {
+  triangles: 3,
+  triangleStrip: 1,
+  lines: 2,
+  lineStrip: 1,
+  points: 1,
+};
 
 const glTopologyNames: Record<
   GeometryTopology,
@@ -142,6 +223,85 @@ interface BufferState<TData extends Float32Array | GeometryIndices> {
 interface AttributeState extends BufferState<Float32Array> {
   readonly name: string;
   readonly size: number;
+}
+
+/**
+ * A section of a {@link Geometry}, holding its bounds once they're
+ * computed.
+ */
+class Section implements GeometrySection {
+  public readonly start: number;
+  public readonly count: number;
+
+  private readonly _computeBounds: (section: Section) => Rect;
+  private _bounds: Rect | null = null;
+
+  constructor(
+    { start, count }: GeometrySectionOptions,
+    computeBounds: (section: Section) => Rect,
+  ) {
+    this.start = start;
+    this.count = count;
+    this._computeBounds = computeBounds;
+  }
+
+  get bounds(): Rect {
+    this._bounds ??= this._computeBounds(this);
+
+    return this._bounds;
+  }
+
+  /** Forgets the computed bounds, after the data they came from changed. */
+  public clearBounds(): void {
+    this._bounds = null;
+  }
+}
+
+/**
+ * Throws if a section isn't a whole number of primitives inside a
+ * geometry's elements.
+ * @param sections - The sections to check.
+ * @param elementCount - The number of elements the sections index into.
+ * @param elementName - What the elements are, for errors.
+ * @param topology - The geometry's topology.
+ * @param action - What the caller was doing, for errors.
+ * @throws An error naming the first section that's invalid.
+ */
+function validateSections(
+  sections: readonly GeometrySectionOptions[],
+  elementCount: number,
+  elementName: 'indices' | 'vertices',
+  topology: GeometryTopology,
+  action: 'create' | 'update',
+): void {
+  const alignment = sectionAlignments[topology];
+
+  for (const [index, { start, count }] of sections.entries()) {
+    const section = `section ${index} (start ${start}, count ${count})`;
+
+    if (
+      !Number.isInteger(start) ||
+      !Number.isInteger(count) ||
+      start < 0 ||
+      count < 0
+    ) {
+      throw new Error(
+        `Unable to ${action} geometry: ${section} needs a start and count that are non-negative integers.`,
+      );
+    }
+
+    if (start + count > elementCount) {
+      throw new Error(
+        `Unable to ${action} geometry: ${section} ends past its ${elementCount} ${elementName}.`,
+      );
+    }
+
+    if (start % alignment !== 0 || count % alignment !== 0) {
+      throw new Error(
+        `Unable to ${action} geometry: ${section} isn't whole ${topology}, so its start and count need to be multiples of ${alignment}.`,
+      );
+    }
+  }
 }
 
 /**
@@ -211,8 +371,10 @@ export class Geometry {
   private readonly _vaoCache: Map<WebGLProgram, WebGLVertexArrayObject> =
     new Map();
   private readonly _rebuild: () => void;
+  private readonly _computeSectionBounds: (section: Section) => Rect;
   private _vertexCount: number;
   private _bounds: Rect | null = null;
+  private _sections: readonly Section[];
 
   /**
    * Creates a geometry from vertex data, uploading each attribute, and the
@@ -221,17 +383,31 @@ export class Geometry {
    * @param renderContext - The render context to create the geometry in.
    * @param options - The vertex data and topology.
    * @throws An error if an attribute's data isn't a whole number of
-   * vertices, or the attributes hold different numbers of vertices.
+   * vertices, the attributes hold different numbers of vertices, or a
+   * section isn't a non-negative integer range of whole primitives inside
+   * the indices (or the vertices, without indices).
    */
   constructor(renderContext: RenderContext, options: GeometryOptions) {
-    const { attributes, indices, topology } = withDefaults(
+    const { attributes, indices, topology, sections } = withDefaults(
       defaultGeometryOptions,
       options,
+    );
+    const vertexCount = getVertexCount(attributes);
+
+    validateSections(
+      sections,
+      indices ? indices.length : vertexCount,
+      indices ? 'indices' : 'vertices',
+      topology,
+      'create',
     );
 
     this._renderContext = renderContext;
     this.topology = topology;
-    this._vertexCount = getVertexCount(attributes);
+    this._vertexCount = vertexCount;
+    this._computeSectionBounds = (section): Rect =>
+      this._computeSectionBoundsOf(section);
+    this._sections = this._createSections(sections);
     this._attributes = attributes.map(({ name, data, size }) => ({
       name,
       size,
@@ -293,6 +469,25 @@ export class Geometry {
   }
 
   /**
+   * The geometry's sections, in the order the constructor or
+   * {@link Geometry.update} wrote them: ranges of its elements, each with
+   * bounds of its own, that a mesh can draw and be culled by on its own (see
+   * `MeshEcsComponent.section`). Empty for a geometry without sections.
+   */
+  get sections(): readonly GeometrySection[] {
+    return this._sections;
+  }
+
+  /**
+   * The number of elements the geometry draws: its index count if it has
+   * indices, or else {@link Geometry.vertexCount}. Sections and
+   * {@link Geometry.drawRange} count in elements.
+   */
+  get elementCount(): number {
+    return this._indices ? this._indices.length : this._vertexCount;
+  }
+
+  /**
    * Reads how many components per vertex an attribute has.
    * @param name - The attribute's name.
    * @returns The attribute's `size`, or `null` if the geometry has no
@@ -329,6 +524,35 @@ export class Geometry {
    * nothing while the WebGL context is lost.
    */
   public draw(): void {
+    this.drawRange(0, this.elementCount);
+  }
+
+  /**
+   * Draws `count` of the geometry's elements from `start`, as its
+   * {@link Geometry.topology}: indices from position `start` if it has
+   * indices, or else vertices from vertex `start`. {@link Geometry.bind} it
+   * with the material to draw with first. Draws nothing while the WebGL
+   * context is lost.
+   * @param start - The first element to draw.
+   * @param count - The number of elements to draw.
+   * @throws An error if `start` and `count` aren't non-negative integers, or
+   * the range ends past {@link Geometry.elementCount}.
+   */
+  public drawRange(start: number, count: number): void {
+    const { elementCount } = this;
+
+    if (
+      !Number.isInteger(start) ||
+      !Number.isInteger(count) ||
+      start < 0 ||
+      count < 0 ||
+      start + count > elementCount
+    ) {
+      throw new Error(
+        `Unable to draw geometry range (start ${start}, count ${count}): it needs non-negative integers that end inside the geometry's ${elementCount} elements.`,
+      );
+    }
+
     if (this._renderContext.isContextLost) {
       return;
     }
@@ -337,16 +561,16 @@ export class Geometry {
     const mode = gl[glTopologyNames[this.topology]];
 
     if (!this._indices) {
-      gl.drawArrays(mode, 0, this._vertexCount);
+      gl.drawArrays(mode, start, count);
 
       return;
     }
 
     gl.drawElements(
       mode,
-      this._indices.length,
+      count,
       this._getIndexType(this._indices),
-      0,
+      start * this._indices.data.BYTES_PER_ELEMENT,
     );
   }
 
@@ -398,26 +622,38 @@ export class Geometry {
    * @param update - The new vertex data.
    * @throws An error if `vertexCount` isn't a non-negative integer, an
    * attribute is named that the geometry doesn't have, an attribute holds
-   * fewer than `vertexCount` vertices, or indices are given to a geometry
-   * created without them.
+   * fewer than `vertexCount` vertices, indices are given to a geometry
+   * created without them, or a section (given, or kept when `sections` is
+   * left out) isn't a non-negative integer range of whole primitives inside
+   * the elements the update leaves. A throwing update changes nothing.
    */
   public update(update: GeometryUpdate): void {
-    const { vertexCount, attributes, indices } = withDefaults(
+    const { vertexCount, attributes, indices, sections } = withDefaults(
       defaultGeometryUpdate,
       update,
     );
 
-    this._validateUpdate(vertexCount, attributes, indices);
+    this._validateUpdate(vertexCount, attributes, indices, sections);
 
     const updatedAttributes = this._attributes.filter(({ name }) =>
       Object.hasOwn(attributes, name),
     );
-
-    if (
+    const positionsChanged =
       vertexCount !== this._vertexCount ||
-      Object.hasOwn(attributes, positionAttributeName)
-    ) {
+      Object.hasOwn(attributes, positionAttributeName);
+
+    if (positionsChanged) {
       this._bounds = null;
+    }
+
+    if (positionsChanged || indices) {
+      for (const section of this._sections) {
+        section.clearBounds();
+      }
+    }
+
+    if (sections) {
+      this._sections = this._createSections(sections);
     }
 
     this._vertexCount = vertexCount;
@@ -476,6 +712,7 @@ export class Geometry {
     vertexCount: number,
     attributes: Readonly<Record<string, Float32Array>>,
     indices: GeometryIndices | undefined,
+    sections: readonly GeometrySectionOptions[] | undefined,
   ): void {
     if (!Number.isInteger(vertexCount) || vertexCount < 0) {
       throw new Error(
@@ -508,26 +745,116 @@ export class Geometry {
         'Unable to update geometry: it was created without indices, so it cannot be given them.',
       );
     }
+
+    validateSections(
+      sections ?? this._sections,
+      this._getUpdatedElementCount(vertexCount, indices),
+      this._indices ? 'indices' : 'vertices',
+      this.topology,
+      'update',
+    );
+  }
+
+  /**
+   * The {@link Geometry.elementCount} an update leaves the geometry with.
+   * @param vertexCount - The update's vertex count.
+   * @param indices - The update's indices, if it gives any.
+   * @returns The number of elements.
+   */
+  private _getUpdatedElementCount(
+    vertexCount: number,
+    indices: GeometryIndices | undefined,
+  ): number {
+    if (!this._indices) {
+      return vertexCount;
+    }
+
+    return indices ? indices.length : this._indices.length;
+  }
+
+  private _createSections(
+    sections: readonly GeometrySectionOptions[],
+  ): readonly Section[] {
+    return sections.map(
+      (section) => new Section(section, this._computeSectionBounds),
+    );
   }
 
   private _findAttribute(name: string): AttributeState | undefined {
     return this._attributes.find((attribute) => attribute.name === name);
   }
 
-  private _computeBounds(): Rect {
+  /**
+   * Finds the `a_position` attribute that bounds are computed from.
+   * @param description - What's being computed, for errors.
+   * @returns The attribute.
+   * @throws An error if the geometry has no `a_position`, or it has fewer
+   * than 2 components.
+   */
+  private _getPositionAttribute(description: string): AttributeState {
     const position = this._findAttribute(positionAttributeName);
 
     if (!position) {
       throw new Error(
-        `Unable to compute the geometry's bounds: it has no "${positionAttributeName}" attribute.`,
+        `Unable to compute ${description}: it has no "${positionAttributeName}" attribute.`,
       );
     }
 
     if (position.size < 2) {
       throw new Error(
-        `Unable to compute the geometry's bounds: its "${positionAttributeName}" attribute needs at least 2 components (x and y), but it has ${position.size}.`,
+        `Unable to compute ${description}: its "${positionAttributeName}" attribute needs at least 2 components (x and y), but it has ${position.size}.`,
       );
     }
+
+    return position;
+  }
+
+  /**
+   * Computes a section's bounds from the positions of the vertices it
+   * draws: those its indices point at, or its own range of vertices.
+   * @param section - The section.
+   * @returns The section's bounds.
+   * @throws An error if the geometry has no usable `a_position`, or an
+   * index points at or past the vertex count.
+   */
+  private _computeSectionBoundsOf(section: Section): Rect {
+    const description = `the bounds of the geometry's section ${this._sections.indexOf(section)}`;
+    const { data, size } = this._getPositionAttribute(description);
+    const { start, count } = section;
+
+    if (count === 0) {
+      return Rects.zero;
+    }
+
+    const indices = this._indices?.data ?? null;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    for (let element = start; element < start + count; element++) {
+      const vertex = indices ? indices[element] : element;
+
+      if (vertex >= this._vertexCount) {
+        throw new Error(
+          `Unable to compute ${description}: index ${element} points at vertex ${vertex}, but the geometry has ${this._vertexCount} vertices.`,
+        );
+      }
+
+      const x = data[vertex * size];
+      const y = data[vertex * size + 1];
+
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+
+    return { min: { x: minX, y: minY }, max: { x: maxX, y: maxY } };
+  }
+
+  private _computeBounds(): Rect {
+    const position = this._getPositionAttribute("the geometry's bounds");
 
     if (this._vertexCount === 0) {
       return Rects.zero;

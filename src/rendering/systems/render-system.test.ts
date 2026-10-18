@@ -19,7 +19,11 @@ import {
   maxDrawOrder,
   MeshEcsComponent,
 } from '../components';
-import type { Geometry } from '../geometry/geometry';
+import type {
+  Geometry,
+  GeometrySection,
+  GeometryTopology,
+} from '../geometry/geometry';
 import type { MeshMaterial } from '../materials/mesh-material';
 import {
   addSpriteComponent,
@@ -1647,27 +1651,59 @@ describe('createRenderEcsSystem', () => {
 
     const unitBounds = { min: { x: -0.5, y: -0.5 }, max: { x: 0.5, y: 0.5 } };
 
+    interface TestGeometryOptions {
+      bounds?: Rect;
+      vertexCount?: number;
+      elementCount?: number;
+      sections?: GeometrySection[];
+      topology?: GeometryTopology;
+    }
+
+    /**
+     * A geometry whose draws are recorded as `mesh:<tag>`, or, when it has
+     * sections, as `mesh:<tag>:<start>+<count>`. Its fields can be changed
+     * between updates, as `Geometry.update` would change them.
+     */
+    const createGeometry = (
+      tag: string,
+      options: TestGeometryOptions = {},
+    ): Geometry => {
+      const vertexCount = options.vertexCount ?? 3;
+
+      return {
+        vertexCount,
+        elementCount: options.elementCount ?? vertexCount,
+        bounds: options.bounds ?? unitBounds,
+        sections: options.sections ?? [],
+        topology: options.topology ?? 'triangles',
+        getAttributeSize: (): number => 2,
+        bind: vi.fn(),
+        drawRange: vi.fn((start: number, count: number) =>
+          drawCalls.push(
+            options.sections ? `mesh:${tag}:${start}+${count}` : `mesh:${tag}`,
+          ),
+        ),
+      } as unknown as Geometry;
+    };
+
+    const createMaterial = (): MeshMaterial =>
+      ({ bindMesh: vi.fn() }) as unknown as MeshMaterial;
+
     const addMeshEntity = (
       tag: string,
       position: { x: number; y: number } = Vec2.zero,
-      options: {
-        bounds?: Rect;
-        vertexCount?: number;
+      options: TestGeometryOptions & {
         category?: number;
         layer?: number;
         entity?: number;
+        geometry?: Geometry;
+        material?: MeshMaterial;
+        section?: number | null;
       } = {},
     ): TestMesh => {
       const entity = options.entity ?? world.createEntity();
-      const bindMesh = vi.fn();
-      const geometry = {
-        vertexCount: options.vertexCount ?? 3,
-        bounds: options.bounds ?? unitBounds,
-        getAttributeSize: (): number => 2,
-        bind: vi.fn(),
-        draw: vi.fn(() => drawCalls.push(`mesh:${tag}`)),
-      } as unknown as Geometry;
-      const material = { bindMesh } as unknown as MeshMaterial;
+      const geometry = options.geometry ?? createGeometry(tag, options);
+      const material = options.material ?? createMaterial();
 
       if (options.entity === undefined) {
         addPositionComponent(world, entity, { local: position });
@@ -1678,9 +1714,14 @@ describe('createRenderEcsSystem', () => {
         material,
         category: options.category,
         layer: options.layer,
+        section: options.section,
       });
 
-      return { entity, mesh, bindMesh };
+      return {
+        entity,
+        mesh,
+        bindMesh: (material as unknown as { bindMesh: Mock }).bindMesh,
+      };
     };
 
     beforeEach(() => {
@@ -1968,7 +2009,7 @@ describe('createRenderEcsSystem', () => {
 
       const blendOrder = (mockGl.blendFuncSeparate as Mock).mock
         .invocationCallOrder[0];
-      const drawOrder = (mesh.geometry.draw as Mock).mock
+      const drawOrder = (mesh.geometry.drawRange as Mock).mock
         .invocationCallOrder[0];
 
       expect(mockGl.blendFuncSeparate).toHaveBeenCalledWith(
@@ -1995,6 +2036,339 @@ describe('createRenderEcsSystem', () => {
       world.update();
 
       expect(drawCalls).toEqual(['mesh:restored']);
+    });
+
+    describe('sections', () => {
+      /** `count` sections of 6 elements each, back to back. */
+      const createSections = (
+        count: number,
+        bounds: Rect = unitBounds,
+      ): GeometrySection[] =>
+        Array.from({ length: count }, (_, index) => ({
+          start: index * 6,
+          count: 6,
+          bounds,
+        }));
+
+      it('draws the whole geometry as it is each frame for section null', () => {
+        addCameraEntity();
+        const { mesh } = addMeshEntity('whole', Vec2.zero, {
+          vertexCount: 4,
+          elementCount: 6,
+        });
+
+        world.update();
+
+        expect(mesh.geometry.drawRange).toHaveBeenLastCalledWith(0, 6);
+
+        // The geometry grows after the mesh was added, as a trail's does.
+        Object.assign(mesh.geometry, { vertexCount: 8, elementCount: 12 });
+        world.update();
+
+        expect(mesh.geometry.drawRange).toHaveBeenLastCalledWith(0, 12);
+      });
+
+      it("draws only its section's range", () => {
+        addCameraEntity();
+        const geometry = createGeometry('walls', {
+          elementCount: 12,
+          sections: createSections(2),
+        });
+
+        addMeshEntity('second', Vec2.zero, { geometry, section: 1 });
+        world.update();
+
+        expect(drawCalls).toEqual(['mesh:walls:6+6']);
+      });
+
+      it("culls a section by its own bounds, not the geometry's", () => {
+        addNarrowCamera();
+        const far = { min: { x: 100, y: 100 }, max: { x: 101, y: 101 } };
+        const geometry = createGeometry('walls', {
+          elementCount: 12,
+          bounds: { min: { x: -1, y: -1 }, max: { x: 101, y: 101 } },
+          sections: [
+            { start: 0, count: 6, bounds: far },
+            { start: 6, count: 6, bounds: unitBounds },
+          ],
+        });
+
+        addMeshEntity('far', Vec2.zero, { geometry, section: 0 });
+        addMeshEntity('near', { x: 0, y: 10 }, { geometry, section: 1 });
+        world.update();
+
+        expect(drawCalls).toEqual([]);
+
+        addMeshEntity('near-origin', Vec2.zero, { geometry, section: 1 });
+        world.update();
+
+        expect(drawCalls).toEqual(['mesh:walls:6+6']);
+      });
+
+      it("places a section's bounds with its entity's rotation and scale", () => {
+        addNarrowCamera();
+        const geometry = createGeometry('walls', {
+          elementCount: 6,
+          sections: [
+            {
+              start: 0,
+              count: 6,
+              bounds: { min: { x: 0, y: -0.1 }, max: { x: 1, y: 0.1 } },
+            },
+          ],
+        });
+        const { entity } = addMeshEntity(
+          'turned',
+          { x: 0, y: -6.5 },
+          { geometry, section: 0 },
+        );
+
+        world.update();
+
+        expect(drawCalls).toEqual([]);
+
+        addRotationComponent(world, entity, { local: Math.PI / 2 });
+        addScaleComponent(world, entity, { local: { x: 2, y: 2 } });
+        world.update();
+
+        expect(drawCalls).toEqual(['mesh:walls:0+6']);
+      });
+
+      it('throws when drawing a section a later update removed, naming the entity', () => {
+        addCameraEntity();
+        const geometry = createGeometry('walls', {
+          elementCount: 12,
+          sections: createSections(2),
+        });
+        const { entity } = addMeshEntity('second', Vec2.zero, {
+          geometry,
+          section: 1,
+        });
+
+        Object.assign(geometry, { sections: createSections(1) });
+
+        expect(() => world.update()).toThrow(
+          `Unable to draw the mesh of entity ${entity}: its geometry has no section 1 (it has 1 sections).`,
+        );
+      });
+
+      it('draws nothing for a section of no elements', () => {
+        addCameraEntity();
+        const geometry = createGeometry('walls', {
+          elementCount: 6,
+          sections: [{ start: 0, count: 0, bounds: unitBounds }],
+        });
+
+        addMeshEntity('empty', Vec2.zero, { geometry, section: 0 });
+        world.update();
+
+        expect(drawCalls).toEqual([]);
+      });
+
+      it('reuses the same model matrix across frames and cameras', () => {
+        addCameraEntity();
+        addCameraEntity();
+        const { bindMesh } = addMeshEntity('shared');
+
+        world.update();
+        world.update();
+
+        expect(bindMesh).toHaveBeenCalledTimes(4);
+
+        const models = bindMesh.mock.calls.map(([, model]) => model as unknown);
+
+        expect(new Set(models).size).toBe(1);
+      });
+    });
+
+    describe('merging neighboring meshes', () => {
+      const createWalls = (
+        count: number,
+        topology: GeometryTopology = 'triangles',
+        bounds: Rect = unitBounds,
+      ): { geometry: Geometry; material: MeshMaterial } => ({
+        geometry: createGeometry('walls', {
+          elementCount: count * 6,
+          topology,
+          sections: Array.from({ length: count }, (_, index) => ({
+            start: index * 6,
+            count: 6,
+            bounds,
+          })),
+        }),
+        material: createMaterial(),
+      });
+
+      const addWall = (
+        walls: { geometry: Geometry; material: MeshMaterial },
+        section: number,
+        position: { x: number; y: number } = Vec2.zero,
+      ): number =>
+        addMeshEntity(`wall-${section}`, position, { ...walls, section })
+          .entity;
+
+      it('draws neighboring sections of one geometry, consecutive in draw order, in one call', () => {
+        addCameraEntity();
+        const walls = createWalls(3);
+
+        addWall(walls, 0);
+        addWall(walls, 1);
+        addWall(walls, 2);
+        world.update();
+
+        expect(drawCalls).toEqual(['mesh:walls:0+18']);
+      });
+
+      it('splits the call around a sprite sorted between the sections', () => {
+        addCameraEntity();
+        const { renderable } = createRenderable();
+        const walls = createWalls(3);
+
+        const first = addWall(walls, 0);
+        const sprite = addSpriteEntity(renderable, 0);
+        const second = addWall(walls, 1);
+        const third = addWall(walls, 2);
+
+        addDrawOrderComponent(world, first, { order: 0 });
+        addDrawOrderComponent(world, sprite, { order: 1 });
+        addDrawOrderComponent(world, second, { order: 2 });
+        addDrawOrderComponent(world, third, { order: 2 });
+        world.update();
+
+        expect(drawCalls).toEqual([
+          'mesh:walls:0+6',
+          'quads:1',
+          'mesh:walls:6+12',
+        ]);
+      });
+
+      it('does not merge sections drawn with different model matrices', () => {
+        addCameraEntity();
+        const walls = createWalls(2);
+
+        addWall(walls, 0);
+        addWall(walls, 1, { x: 1, y: 0 });
+        world.update();
+
+        expect(drawCalls).toEqual(['mesh:walls:0+6', 'mesh:walls:6+6']);
+      });
+
+      it('does not merge sections drawn through different masks', () => {
+        addCameraEntity();
+        const walls = createWalls(2);
+
+        addWall(walls, 0);
+
+        const parent = addMaskedParent();
+
+        world.setParent(addWall(walls, 1), parent);
+        world.update();
+
+        expect(drawCalls).toEqual(['mesh:walls:0+6', 'mesh:walls:6+6']);
+      });
+
+      it('merges children of one masked parent without masks of their own', () => {
+        addCameraEntity();
+        const walls = createWalls(2);
+        const parent = addMaskedParent();
+
+        world.setParent(addWall(walls, 0), parent);
+        world.setParent(addWall(walls, 1), parent);
+        world.update();
+
+        expect(drawCalls).toEqual(['mesh:walls:0+12']);
+      });
+
+      it('does not merge sections drawn with different materials', () => {
+        addCameraEntity();
+        const walls = createWalls(2);
+
+        addWall(walls, 0);
+        addWall({ ...walls, material: createMaterial() }, 1);
+        world.update();
+
+        expect(drawCalls).toEqual(['mesh:walls:0+6', 'mesh:walls:6+6']);
+      });
+
+      it('splits the call around a culled middle section', () => {
+        addNarrowCamera();
+        const geometry = createGeometry('walls', {
+          elementCount: 18,
+          sections: [
+            { start: 0, count: 6, bounds: unitBounds },
+            {
+              start: 6,
+              count: 6,
+              bounds: { min: { x: 100, y: 0 }, max: { x: 101, y: 1 } },
+            },
+            { start: 12, count: 6, bounds: unitBounds },
+          ],
+        });
+        const walls = { geometry, material: createMaterial() };
+
+        addWall(walls, 0);
+        addWall(walls, 1);
+        addWall(walls, 2);
+        world.update();
+
+        expect(drawCalls).toEqual(['mesh:walls:0+6', 'mesh:walls:12+6']);
+      });
+
+      it('does not merge sections drawn in descending order, or with a gap between them', () => {
+        addCameraEntity();
+        const walls = createWalls(4);
+
+        addWall(walls, 1);
+        addWall(walls, 0);
+        addWall(walls, 3);
+        world.update();
+
+        expect(drawCalls).toEqual([
+          'mesh:walls:6+6',
+          'mesh:walls:0+6',
+          'mesh:walls:18+6',
+        ]);
+      });
+
+      it('does not merge two meshes drawing the whole of one geometry', () => {
+        addCameraEntity();
+        const geometry = createGeometry('whole');
+        const material = createMaterial();
+
+        addMeshEntity('first', Vec2.zero, { geometry, material });
+        addMeshEntity('second', Vec2.zero, { geometry, material });
+        world.update();
+
+        expect(drawCalls).toEqual(['mesh:whole', 'mesh:whole']);
+      });
+
+      it.each<GeometryTopology>(['triangleStrip', 'lineStrip'])(
+        'never merges %s sections',
+        (topology) => {
+          addCameraEntity();
+          const walls = createWalls(2, topology);
+
+          addWall(walls, 0);
+          addWall(walls, 1);
+          world.update();
+
+          expect(drawCalls).toEqual(['mesh:walls:0+6', 'mesh:walls:6+6']);
+        },
+      );
+
+      it.each<GeometryTopology>(['lines', 'points'])(
+        'merges %s sections',
+        (topology) => {
+          addCameraEntity();
+          const walls = createWalls(2, topology);
+
+          addWall(walls, 0);
+          addWall(walls, 1);
+          world.update();
+
+          expect(drawCalls).toEqual(['mesh:walls:0+12']);
+        },
+      );
     });
   });
 });
