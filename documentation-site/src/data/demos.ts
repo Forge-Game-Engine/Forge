@@ -16,7 +16,7 @@ export const demos: Demo[] = [
     slug: 'space-shooter',
     title: 'Space Shooter',
     description:
-      'Fly a ship through an asteroid field and shoot it apart, with bloom, glowing bullet trails, a blurred background, sprite-sheet explosions and audio buses.',
+      'Fly a ship through an asteroid field and shoot it apart, with bloom, glowing bullets, a blurred background, sprite-sheet explosions and audio buses.',
     categories: ['games'],
   },
   {
