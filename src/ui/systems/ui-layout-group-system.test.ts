@@ -144,6 +144,33 @@ describe('createUiLayoutGroupEcsSystem', () => {
       }
     });
 
+    it('lays the children out in their new sibling order after setSiblingIndex', () => {
+      const world = new EcsWorld();
+      const group = createGroupEntity(world, 300, 100);
+
+      addHorizontalLayoutGroupComponent(world, group);
+
+      const a = createChild(world, group, { x: 50, y: 50 });
+      const b = createChild(world, group, { x: 50, y: 50 });
+      const c = createChild(world, group, { x: 50, y: 50 });
+
+      world.addSystem(createUiLayoutGroupEcsSystem());
+      world.update();
+
+      world.setSiblingIndex(c, 0);
+      world.update();
+
+      for (const [entity, expectedX] of [
+        [c, 0],
+        [a, 100],
+        [b, 200],
+      ] as const) {
+        expect(
+          world.getComponent(entity, rectTransformId)!.anchoredPosition,
+        ).toEqual({ x: expectedX, y: 0 });
+      }
+    });
+
     it("leaves a child's own size alone when childControlWidth/Height are false", () => {
       const world = new EcsWorld();
       const group = createGroupEntity(world, 300, 100);
