@@ -123,30 +123,42 @@ sprite.region = createTextureRegion({ x: 0, y: 0 }, { x: 0.5, y: 1 });
 
 ## Drawing a frame of a sprite sheet
 
-For a texture that holds several frames, pass the size of one frame in
-texels as `frameDimensions`:
+For a texture that holds several frames, cut it into a
+[grid atlas](./texture-atlases.md#creating-a-grid-atlas) and create the
+sprite from one of its cells with `createAtlasSprite`:
 
 ```ts
+import {
+  createAtlasSprite,
+  createGridTextureAtlas,
+} from '@forge-game-engine/forge/rendering';
+
 const sheetTexture = await renderContext.textureCache.getOrLoad('hero.png', {
   filter: 'nearest',
 });
+const sheetAtlas = createGridTextureAtlas(sheetTexture, {
+  cellWidth: 32,
+  cellHeight: 32,
+});
 
-const frameSpriteOptions = createImageSprite(sheetTexture, {
-  frameDimensions: { x: 32, y: 32 },
+const frameSpriteOptions = createAtlasSprite(sheetAtlas, 0, {
   pixelsPerUnit: 32,
 });
 ```
 
-The sprite is sized to one frame, and its `region` is the texture's
-top-left frame. The
-[sprite animation system](../animations/sprite-animations.md) assigns
-each frame's region to `region` to play an animation.
+The sprite is sized to one cell, and its `region` is the atlas's first
+cell. The [sprite animation system](../animations/sprite-animations.md)
+assigns each frame's region to `region` to play an animation.
+[Texture Atlases](./texture-atlases.md) covers atlases of packed, named
+images.
 
 ## Drawing a trimmed frame
 
 Texture packers trim the transparent border off each frame and record
-where the trimmed rect sat in the original frame. Give the region that
-position as its trim, as fractions of the original frame's size:
+where the trimmed rect sat in the original frame. A
+[texture atlas](./texture-atlases.md#trimmed-regions-and-pivots) builds
+trimmed regions from those texel values. Without an atlas, give the region
+that position as its trim, as fractions of the original frame's size:
 
 ```ts
 // A 32 x 32 frame trimmed to the 16 x 16 texels at (16, 0), packed at
@@ -354,8 +366,9 @@ Their tint, size, region and emissive color can differ.
 A sprite with a different material or texture between two sprites in the
 draw order splits them into separate draw calls. To draw many sprites in
 few draw calls, give the sprites in a layer the same texture, for example
-by packing their images into one sprite sheet and selecting each image with
-its `region`.
+by packing their images into one
+[texture atlas](./texture-atlases.md) and selecting each image with its
+`region`.
 
 ## Hiding and removing a sprite
 

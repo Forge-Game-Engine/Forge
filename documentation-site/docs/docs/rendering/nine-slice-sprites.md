@@ -59,6 +59,25 @@ the untrimmed art, so a sliced sprite's region must be untrimmed.
 system throws when it draws one.
 :::
 
+## Slicing a region of an atlas
+
+To slice one image of a [texture atlas](./texture-atlases.md), pass
+`slices` to
+[`createAtlasSprite`](/Forge/docs/api/functions/createAtlasSprite):
+
+```ts
+import { createAtlasSprite } from '@forge-game-engine/forge/rendering';
+
+const panelSprite = createAtlasSprite(uiAtlas, 'panel', {
+  pixelsPerUnit: 1,
+  slices: { left: 12, right: 12, top: 12, bottom: 12 },
+});
+```
+
+The grid is cut from the region's rect, so the corners and edges sample
+only that region. The native size defaults to the region's world size, its
+`sourceSize` divided by `pixelsPerUnit`.
+
 ## Choosing insets
 
 `left`, `right`, `top` and `bottom` are in the same world units as the
@@ -78,7 +97,7 @@ texture: the left border samples `left / nativeWidth` of the texture,
 however wide the sprite is drawn.
 
 When they're omitted, `createImageSprite` sets them to the texture's world
-size, and `addSpriteComponent` sets them to the sprite's `width` and
+size, `createAtlasSprite` to the region's world size, and `addSpriteComponent` sets them to the sprite's `width` and
 `height` when it's attached. They don't change when the sprite is resized
 later, by game code or by a [UI](../ui/index.md) layout.
 

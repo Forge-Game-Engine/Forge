@@ -323,6 +323,9 @@ thresholded
 thresholding
 thumbstick
 tileable
+tileset
+tilesets
+Tilesheet
 Tinos
 tintable
 tokuyoshi

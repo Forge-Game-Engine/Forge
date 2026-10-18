@@ -28,13 +28,15 @@ import { AssetRegistry } from '@forge-game-engine/forge/asset-loading';
 import {
   addSpriteAnimationComponent,
   AnimationClip,
-  createAnimation,
   createSpriteAnimationEcsSystem,
 } from '@forge-game-engine/forge/animations';
 
 const animationRegistry = new AssetRegistry<AnimationClip>();
 
-const runHandle = animationRegistry.register('run', createAnimation(1, 6));
+const runHandle = animationRegistry.register(
+  'run',
+  new AnimationClip(runSheetAtlas.regions.slice(0, 6)),
+);
 
 addSpriteAnimationComponent(world, entity, {
   animationClipHandle: runHandle,

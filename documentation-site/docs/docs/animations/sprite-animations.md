@@ -14,19 +14,19 @@ image with the frames arranged in a grid.
 
 <img src={SpriteSheetStandard} alt="Sprite sheet" width="1000" />
 
-A [`SpriteSheet`](/Forge/docs/api/interfaces/SpriteSheet) holds the frames
-of an image divided into equal rows and columns, as `frames[row][column]`.
-Each frame is an untrimmed
-[`TextureRegion`](../rendering/sprites.md#texture-regions): the frame's
-rect in the image, as fractions of the image's width and height.
-
-[`createSpriteSheet`](/Forge/docs/api/functions/createSpriteSheet) takes an
-image or texture and the number of rows and columns:
+A sprite sheet is cut into frames with
+[`createGridTextureAtlas`](../rendering/texture-atlases.md#creating-a-grid-atlas),
+given the size of one frame in texels. Its `regions` are the frames in
+row-major order (left to right, then the next row down), each an untrimmed
+[`TextureRegion`](../rendering/sprites.md#texture-regions) of the sheet:
 
 ```ts
-import { createSpriteSheet } from '@forge-game-engine/forge/animations';
+import { createGridTextureAtlas } from '@forge-game-engine/forge/rendering';
 
-const spriteSheet = createSpriteSheet(texture, 1, 6); // 1 row, 6 columns
+const sheetAtlas = createGridTextureAtlas(texture, {
+  cellWidth: 32,
+  cellHeight: 32,
+});
 ```
 
 ## Animation clips
@@ -41,17 +41,13 @@ A clip's frames can have different sizes in the texture and different
 one untrimmed frame size: every frame is drawn inside the sprite's `width`
 and `height`.
 
-[`selectAnimationFrames(spriteSheet, count, startFrame)`](/Forge/docs/api/functions/selectAnimationFrames)
-selects `count` frames in row-major order (left to right, then the next row),
-starting at frame index `startFrame` (default `0`):
+A run of consecutive frames is a slice of the atlas's `regions`. This clip
+plays 6 frames, starting at frame index `2`:
 
 ```ts
-import {
-  AnimationClip,
-  selectAnimationFrames,
-} from '@forge-game-engine/forge/animations';
+import { AnimationClip } from '@forge-game-engine/forge/animations';
 
-const clip = new AnimationClip(selectAnimationFrames(spriteSheet, 6, 2));
+const clip = new AnimationClip(sheetAtlas.regions.slice(2, 2 + 6));
 ```
 
 For a sheet of 2 rows and 5 columns, that selects these frames:
@@ -61,14 +57,17 @@ For a sheet of 2 rows and 5 columns, that selects these frames:
 [x][x][x][ ][ ]
 ```
 
+Frames that aren't consecutive are picked by index, for example
+`[4, 5, 12, 13].map((index) => sheetAtlas.getRegionAt(index))`.
+
 ## Playing a clip on an entity
 
 Clips are stored in an [`AssetRegistry`](/Forge/docs/api/classes/AssetRegistry).
 A [`SpriteAnimationEcsComponent`](/Forge/docs/api/interfaces/SpriteAnimationEcsComponent)
 refers to its clip by the handle `register` returns. The entity also needs a
-sprite whose size is one frame: pass the frame's size in texels as
-`frameDimensions` to `createImageSprite` (see
-[Sprites](../rendering/sprites.md)).
+sprite whose size is one frame: create it from one of the atlas's frames
+with `createAtlasSprite` (see
+[Texture Atlases](../rendering/texture-atlases.md#creating-a-sprite-from-a-region)).
 
 ```ts
 import { AssetRegistry } from '@forge-game-engine/forge/asset-loading';
@@ -76,24 +75,23 @@ import {
   addSpriteAnimationComponent,
   AnimationClip,
   createSpriteAnimationEcsSystem,
-  createSpriteSheet,
-  selectAnimationFrames,
 } from '@forge-game-engine/forge/animations';
 import {
   addSpriteComponent,
-  createImageSprite,
+  createAtlasSprite,
+  createGridTextureAtlas,
 } from '@forge-game-engine/forge/rendering';
+
+const sheetAtlas = createGridTextureAtlas(texture, {
+  cellWidth: 32,
+  cellHeight: 32,
+});
 
 const entity = world.createEntity();
 
-addSpriteComponent(
-  world,
-  entity,
-  createImageSprite(texture, { frameDimensions: { x: 32, y: 32 } }),
-);
+addSpriteComponent(world, entity, createAtlasSprite(sheetAtlas, 0));
 
-const spriteSheet = createSpriteSheet(texture, 2, 5);
-const idleClip = new AnimationClip(selectAnimationFrames(spriteSheet, 5));
+const idleClip = new AnimationClip(sheetAtlas.regions.slice(0, 5));
 
 const animationClips = new AssetRegistry<AnimationClip>();
 const idleClipHandle = animationClips.register('idle', idleClip);

@@ -34,6 +34,8 @@ import { RenderContext } from '../render-context';
 import { RenderTarget } from '../render-target';
 import { Color } from '../color';
 import { createTextureRegion, fullTextureRegion } from '../texture-region';
+import { createGridTextureAtlas } from '../texture-atlas';
+import { createAtlasSprite } from '../utilities/create-atlas-sprite';
 import type { SpriteMaterial } from '../materials/sprite-material';
 import type { InstanceComponents } from '../renderable';
 import type { Texture } from '../texture';
@@ -492,6 +494,37 @@ describe('createRenderEcsSystem', () => {
     );
 
     expect(bindOffsets).toEqual([0, spriteFloatsPerInstance]);
+  });
+
+  it('batches consecutive sprites from different regions of one atlas into a single draw call', () => {
+    addCameraEntity();
+    const { renderable, bindInstanceData } = createRenderable();
+    const atlas = createGridTextureAtlas({ width: 64, height: 32 } as Texture, {
+      cellWidth: 16,
+      cellHeight: 16,
+    });
+
+    for (const [index, cell] of [0, 3, 6].entries()) {
+      addSpriteEntity(renderable, index, {
+        ...createAtlasSprite(atlas, cell),
+        material: renderable,
+      });
+    }
+
+    world.update();
+
+    expect(mockGl.drawArraysInstanced).toHaveBeenCalledTimes(1);
+    expect(mockGl.drawArraysInstanced).toHaveBeenCalledWith(undefined, 0, 6, 3);
+
+    const drawnRegions = bindInstanceData.mock.calls.map(
+      ([components]) => (components as InstanceComponents).sprite.region,
+    );
+
+    expect(drawnRegions).toEqual([
+      atlas.regions[0],
+      atlas.regions[3],
+      atlas.regions[6],
+    ]);
   });
 
   describe('draw order', () => {
