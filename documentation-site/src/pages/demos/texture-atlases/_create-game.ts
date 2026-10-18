@@ -1,3 +1,4 @@
+import { createSpriteAnimationEcsSystem } from '@forge-game-engine/forge/animations';
 import {
   createCamera,
   createCameraEcsSystem,
@@ -8,7 +9,6 @@ import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createIslandMap } from './_create-island-map';
 import { createShips } from './_create-ships';
-import { createShipStyleEcsSystem } from './_ship-style.system';
 
 export const createTextureAtlasesGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
@@ -18,10 +18,10 @@ export const createTextureAtlasesGame = async (): Promise<Game> => {
   // Sprites draw in the order their entities were created, so the map's
   // tiles (one atlas) draw in one batch and the ships (another) in a second.
   await createIslandMap(world, renderContext);
-  await createShips(world, renderContext);
+  const shipClips = await createShips(world, renderContext);
 
   world.addSystem(createCameraEcsSystem(time));
-  world.addSystem(createShipStyleEcsSystem(time));
+  world.addSystem(createSpriteAnimationEcsSystem(time, shipClips));
   world.addSystem(createTransformEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
 

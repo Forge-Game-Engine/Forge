@@ -16,6 +16,9 @@ draws, for every camera entity, the sprites, text and meshes whose
 - [Sprites](./sprites.md): the `SpriteEcsComponent`, which draws a texture
   at an entity's position, and [nine-slice sprites](./nine-slice-sprites.md),
   which resize without stretching their corners.
+- [Texture atlases](./texture-atlases.md): one texture cut into named or
+  indexed regions, such as a packed atlas or a sprite sheet's grid, and
+  sprites made from those regions.
 - [Draw order](./draw-order.md): which sprite, text or mesh is drawn on top
   where they overlap.
 - [Cameras](./world-units-and-cameras.md): the `CameraEcsComponent`, which

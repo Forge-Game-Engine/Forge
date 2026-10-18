@@ -3,8 +3,6 @@ import { createTextureAtlasesGame } from './_create-game';
 import gameCode from '!!raw-loader!./_create-game';
 import createIslandMapCode from '!!raw-loader!./_create-island-map';
 import createShipsCode from '!!raw-loader!./_create-ships';
-import shipStyleComponentCode from '!!raw-loader!./_ship-style.component';
-import shipStyleSystemCode from '!!raw-loader!./_ship-style.system';
 
 import { DemoPage } from '@site/src/components/demo-page';
 
@@ -31,8 +29,8 @@ export default function TextureAtlases(): JSX.Element {
           file: 'create-game.ts',
         },
         {
-          text: 'Each ship changes style by assigning another region of the atlas to its sprite.',
-          file: 'ship-style.system.ts',
+          text: "Each kind of ship's regions are an animation clip, so the sprite animation system assigns each ship another region every two seconds.",
+          file: 'create-ships.ts',
         },
       ]}
       docLinks={[
@@ -41,6 +39,10 @@ export default function TextureAtlases(): JSX.Element {
           to: '/docs/docs/rendering/texture-atlases',
         },
         { label: 'Sprites', to: '/docs/docs/rendering/sprites' },
+        {
+          label: 'Sprite Animations',
+          to: '/docs/docs/animations/sprite-animations',
+        },
       ]}
       fileGroups={[
         {
@@ -65,23 +67,8 @@ export default function TextureAtlases(): JSX.Element {
             {
               name: 'create-ships.ts',
               summary:
-                'Builds an atlas of named ships from texel rects and places them by name.',
+                'Builds an atlas of named ships from texel rects, and animates each ship through its kind of regions.',
               content: createShipsCode,
-            },
-          ],
-        },
-        {
-          title: 'Changing regions',
-          files: [
-            {
-              name: 'ship-style.component.ts',
-              summary: 'The regions a ship cycles through.',
-              content: shipStyleComponentCode,
-            },
-            {
-              name: 'ship-style.system.ts',
-              summary: "Assigns each ship's next region to its sprite.",
-              content: shipStyleSystemCode,
             },
           ],
         },

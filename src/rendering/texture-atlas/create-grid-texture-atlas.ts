@@ -143,10 +143,9 @@ export function createGridTextureAtlas(
     );
   }
 
-  const { columns, rows } = withDefaults(
-    { columns: fittingColumns, rows: fittingRows },
-    options,
-  );
+  // The counts default to what fits, so their defaults depend on the texture.
+  const defaultGridCounts = { columns: fittingColumns, rows: fittingRows };
+  const { columns, rows } = withDefaults(defaultGridCounts, options);
 
   validateCountFits('columns', columns, fittingColumns, texture.width);
   validateCountFits('rows', rows, fittingRows, texture.height);
