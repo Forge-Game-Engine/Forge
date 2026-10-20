@@ -25,7 +25,9 @@ name: Claude
 # the repository and a `CLAUDE_CODE_OAUTH_TOKEN` secret (`claude setup-token`).
 # The `CLAUDE_LABELER_APP_SLUG` variable names the GitHub App that
 # claude-unblock.yml labels issues with; its labels are the only ones from a
-# bot that start a run.
+# bot that start a run. Its `@claude` comments are the only bot comments that
+# do: claude-pr-review.yml posts one when its review of a pull request a label
+# run opened requests changes, which starts a run that addresses the review.
 
 on:
   issues:
@@ -80,13 +82,17 @@ jobs:
 
   claude:
     # Skips bots (including Claude's own comments), so a run can't start
-    # another one. The one exception is a `claude` label added by the
-    # labeler App, which is how claude-unblock.yml starts a run. A label run
-    # starts only once the gate has found every dependency closed.
+    # another one. The exceptions are the labeler App's `claude` label, which
+    # is how claude-unblock.yml starts a run, and its `@claude` comment on a
+    # pull request, which is how claude-pr-review.yml starts a fix round. A
+    # label run starts only once the gate has found every dependency closed.
     needs: gate
     if: >-
       !cancelled() && (
         (github.event_name == 'issues' && needs.gate.result == 'success' && needs.gate.outputs.blocked == 'false') ||
+        (github.event_name == 'issue_comment' && github.event.sender.type == 'Bot' &&
+          github.event.sender.login == format('{0}[bot]', vars.CLAUDE_LABELER_APP_SLUG) &&
+          contains(github.event.comment.body, '@claude')) ||
         (github.event.sender.type != 'Bot' && (
           (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
           (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||

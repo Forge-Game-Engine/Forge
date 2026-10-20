@@ -162,6 +162,14 @@ unattended:
   again automatically: run `pr-reviewer` locally to review new commits. An
   `@claude` mention on a pull request starts an implementing run
   (`claude.yml`) that pushes to its branch, not a review.
+- **A label run's pull request gets one automatic fix round.** When step 9
+  requests changes on a pull request that a label run opened, the
+  review workflow comments `@claude` on it as the labeler App (the only bot
+  whose comments start `claude.yml`). That run fixes the failing findings,
+  answers the review's questions, and lists what it did in its tracking
+  comment. Its pushes don't start another review, and a person's pull
+  request is never fixed automatically. So the human review (step 8)
+  usually comes after this round.
 - **Subagents run in the foreground.** Both Claude workflows set
   `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS`. A headless run ends as soon as the
   main agent ends its turn, so a subagent started in the background (the
