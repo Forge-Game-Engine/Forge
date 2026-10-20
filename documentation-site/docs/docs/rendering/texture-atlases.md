@@ -311,9 +311,12 @@ atlas's region object. Its `width` and `height` are the region's
 frame. Its `pivot` is a copy of the
 region's.
 
-A sprite animation assigns each frame's region to the sprite's `region`
-and leaves `width`, `height` and `pivot` as they are, so every frame of a
-clip is drawn inside the size and pivot of the sprite it plays on.
+A sprite animation assigns each frame's region to the sprite's `region`,
+and its clip's texture to the sprite's `texture`, and leaves `width`,
+`height` and `pivot` as they are, so every frame of a clip is drawn inside
+the size and pivot of the sprite it plays on.
+[`createAtlasAnimationClip`](../animations/sprite-animations.md#animation-clips)
+throws for frames whose untrimmed sizes or pivots differ.
 
 ## Nine-slicing an atlas region
 
