@@ -468,4 +468,94 @@ describe('parseTexturePackerAtlas', () => {
       );
     });
   });
+
+  describe('reading animations', () => {
+    const withAnimations = (animations: unknown): Json => ({
+      ...hashJson({ hero_idle_1: trimmedFrame() }),
+      animations,
+    });
+
+    it('has no sequences when the file has no animations', () => {
+      expect(parseTexturePackerAtlas(hashJson()).sequences.size).toBe(0);
+    });
+
+    it('reads each animation into a sequence, in file order', () => {
+      const data = parseTexturePackerAtlas(
+        withAnimations({
+          idle: ['hero_idle_1', 'hero_idle_0'],
+          spin: ['coin'],
+        }),
+      );
+
+      expect([...data.sequences]).toEqual([
+        ['idle', ['hero_idle_1', 'hero_idle_0']],
+        ['spin', ['coin']],
+      ]);
+      expect(Object.isFrozen(data.sequences.get('idle'))).toBe(true);
+    });
+
+    it('reads animations whose names are object keys elsewhere', () => {
+      const data = parseTexturePackerAtlas(
+        withAnimations(JSON.parse('{"__proto__": ["coin"]}')),
+      );
+
+      expect(data.sequences.get('__proto__')).toEqual(['coin']);
+    });
+
+    it('throws for animations that are not an object', () => {
+      expectInvalid(
+        withAnimations(['coin']),
+        'animations must be an object, got an array.',
+      );
+    });
+
+    it('throws for an animation with an empty name', () => {
+      expectInvalid(
+        withAnimations({ '': ['coin'] }),
+        'animations has an animation with an empty name.',
+      );
+    });
+
+    it("throws for an animation that isn't an array", () => {
+      expectInvalid(
+        withAnimations({ spin: 'coin' }),
+        'animations["spin"] must be an array of frame names, got "coin".',
+      );
+    });
+
+    it('throws for an empty animation', () => {
+      expectInvalid(
+        withAnimations({ spin: [] }),
+        'animations["spin"] is empty. An animation must list at least one frame.',
+      );
+    });
+
+    it("throws for an entry that isn't a frame name", () => {
+      expectInvalid(
+        withAnimations({ spin: ['coin', 3] }),
+        'animations["spin"][1] must be a frame name, got 3.',
+      );
+      expectInvalid(
+        withAnimations({ spin: [''] }),
+        'animations["spin"][0] must be a frame name, got "".',
+      );
+    });
+
+    it("throws for an entry that isn't a frame, suggesting close names", () => {
+      expectInvalid(
+        withAnimations({ idle: ['hero_idle_0', 'hero_idle_2.png'] }),
+        'animations["idle"][1] ("hero_idle_2.png") isn\'t a frame. Did you mean "hero_idle_0", "hero_idle_1"?',
+      );
+    });
+
+    it('throws for more than 100 000 entries across all animations', () => {
+      expectInvalid(
+        withAnimations({
+          a: Array.from({ length: 60_000 }, () => 'coin'),
+          b: Array.from({ length: 60_000 }, () => 'coin'),
+        }),
+        'animations lists more than the 100000 frames a file may have.',
+      );
+    });
+  });
 });

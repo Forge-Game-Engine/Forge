@@ -9,8 +9,10 @@ import { createTextureRegion, type TextureRegion } from '../texture-region.js';
  *
  * `sourceSize` and `pivot` are read once, by `createAtlasSprite`, to size
  * and place the sprite. A sprite animation only assigns each frame's region
- * to the sprite's `region`, so the frames of one clip draw inside the size
- * and pivot of the sprite they play on.
+ * to the sprite's `region`, with its clip's texture, so the frames of one
+ * clip draw inside the size and pivot of the sprite they play on;
+ * `createAtlasAnimationClip` rejects frames whose untrimmed size or pivot
+ * differ.
  */
 export interface AtlasRegion extends TextureRegion {
   /**

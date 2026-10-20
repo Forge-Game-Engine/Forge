@@ -79,4 +79,16 @@ describe('createTexturePackerAtlas', () => {
       }),
     ).toThrow("but the data's image is 64x32 (meta.size)");
   });
+
+  it("gives the atlas the file's animations as sequences", () => {
+    const atlas = createTexturePackerAtlas(
+      { width: 64, height: 32 } as Texture,
+      parseTexturePackerAtlas({
+        ...(json('1', 1) as Record<string, unknown>),
+        animations: { idle: ['hero_idle_0', 'hero_idle_0'] },
+      }),
+    );
+
+    expect(atlas.getSequence('idle')).toEqual(['hero_idle_0', 'hero_idle_0']);
+  });
 });

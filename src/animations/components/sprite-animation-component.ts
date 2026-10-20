@@ -8,7 +8,13 @@ import { withDefaults } from '../../utilities/with-defaults.js';
  */
 export interface SpriteAnimationRequiredOptions {
   /**
-   * Handle for the active `AnimationClip` in the `AssetRegistry` passed to `createSpriteAnimationEcsSystem`.
+   * Handle for the active `AnimationClip` in the `AssetRegistry` passed to
+   * `createSpriteAnimationEcsSystem`. Assign another to change the clip,
+   * even one of another atlas: the system writes the new clip's texture and
+   * first frame to the sprite at the next frame change. Reset
+   * `animationFrameIndex` with it, and set `lastFrameChangeTimeInSeconds`
+   * to `Number.NEGATIVE_INFINITY` to show the new clip on the system's next
+   * update.
    */
   animationClipHandle: number;
 }
@@ -37,6 +43,8 @@ export interface SpriteAnimationDefaultedOptions {
 
   /**
    * The `Time.timeInSeconds` value when the displayed frame last changed. Updated automatically by `createSpriteAnimationEcsSystem`.
+   * Set it to `Number.NEGATIVE_INFINITY` to end the displayed frame at once,
+   * such as when changing `animationClipHandle`.
    */
   lastFrameChangeTimeInSeconds: number;
 }

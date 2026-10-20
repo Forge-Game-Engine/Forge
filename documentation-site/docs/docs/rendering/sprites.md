@@ -215,6 +215,13 @@ sprite.texture = secondTexture;
 The sprite's `width`, `height` and `region` don't change. Set them as well
 if the new texture has a different size or layout.
 
+:::note
+The sprite animation system writes the `texture` and `region` of a sprite
+whose entity has a `SpriteAnimationEcsComponent` on each frame change, so
+an animated sprite's image is changed by
+[changing its clip](../animations/sprite-animations.md#changing-the-clip).
+:::
+
 ## Choosing which cameras draw a sprite
 
 A camera draws a sprite when the sprite's `category` and the camera's

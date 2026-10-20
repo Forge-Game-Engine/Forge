@@ -28,6 +28,7 @@ import { AssetRegistry } from '@forge-game-engine/forge/asset-loading';
 import {
   addSpriteAnimationComponent,
   AnimationClip,
+  createAtlasAnimationClip,
   createSpriteAnimationEcsSystem,
 } from '@forge-game-engine/forge/animations';
 
@@ -35,7 +36,7 @@ const animationRegistry = new AssetRegistry<AnimationClip>();
 
 const runHandle = animationRegistry.register(
   'run',
-  new AnimationClip(runSheetAtlas.regions.slice(0, 6)),
+  createAtlasAnimationClip(runSheetAtlas, [0, 1, 2, 3, 4, 5]),
 );
 
 addSpriteAnimationComponent(world, entity, {

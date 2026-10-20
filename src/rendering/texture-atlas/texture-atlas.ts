@@ -5,7 +5,11 @@ import {
   type AtlasRegionRect,
   createAtlasRegion,
 } from './atlas-region.js';
-import { suggestNames } from './suggest-names.js';
+import {
+  describeMissingName,
+  describeMissingRegionNames,
+  findMissingNames,
+} from './suggest-names.js';
 
 /**
  * One texture and the named regions cut from it. Sprites made from any of
@@ -46,6 +50,15 @@ export interface TextureAtlas {
   readonly scale: number;
 
   /**
+   * Named frame lists, such as the animations an atlas packer detected,
+   * each a list of region names in play order. Pass one to
+   * `createAtlasAnimationClip` to build a clip from it. Empty unless the
+   * atlas was created with `sequences` (a TexturePacker file's
+   * `animations`).
+   */
+  readonly sequences: ReadonlyMap<string, readonly string[]>;
+
+  /**
    * Looks up a region by name.
    * @param name - The region's name.
    * @returns The region.
@@ -69,6 +82,15 @@ export interface TextureAtlas {
    * `regions.length - 1`.
    */
   getRegionAt(index: number): AtlasRegion;
+
+  /**
+   * Looks up a sequence by name.
+   * @param name - The sequence's name.
+   * @returns The sequence's region names, in play order.
+   * @throws An error if there is no sequence with this name, naming up to
+   * three close ones, or saying the atlas has no sequences.
+   */
+  getSequence(name: string): readonly string[];
 }
 
 /**
@@ -80,28 +102,18 @@ export interface CreateTextureAtlasOptions {
    * packed from (see {@link TextureAtlas.scale}). Defaults to `1`.
    */
   scale?: number;
+
+  /**
+   * Named lists of region names (see {@link TextureAtlas.sequences}).
+   * Copied, so changing the map or its lists later doesn't change the
+   * atlas. Defaults to none.
+   */
+  sequences?: ReadonlyMap<string, readonly string[]>;
 }
 
-const defaultCreateTextureAtlasOptions = { scale: 1 };
-
-const describeNames = (names: readonly string[]): string =>
-  names.map((name) => `"${name}"`).join(', ');
-
-const describeMissingName = (
-  name: string,
-  names: readonly string[],
-): string => {
-  const suggestions = suggestNames(name, names);
-
-  if (suggestions.length > 0) {
-    return `Did you mean ${describeNames(suggestions)}?`;
-  }
-
-  const shownNames = describeNames(names.slice(0, 3));
-  const moreNames = names.length > 3 ? ', ...' : '';
-  const regionWord = names.length === 1 ? 'region' : 'regions';
-
-  return `The atlas has ${names.length} ${regionWord}, named ${shownNames}${moreNames}.`;
+const defaultCreateTextureAtlasOptions: Required<CreateTextureAtlasOptions> = {
+  scale: 1,
+  sequences: new Map(),
 };
 
 const validateNames = (rects: readonly AtlasRegionRect[]): void => {
@@ -124,6 +136,40 @@ const validateNames = (rects: readonly AtlasRegionRect[]): void => {
   }
 };
 
+const copySequences = (
+  sequences: ReadonlyMap<string, readonly string[]>,
+  hasRegion: (name: string) => boolean,
+  names: readonly string[],
+): ReadonlyMap<string, readonly string[]> => {
+  const copied = new Map<string, readonly string[]>();
+
+  for (const [sequenceName, frames] of sequences) {
+    if (sequenceName.length === 0) {
+      throw new Error(
+        'Unable to create a texture atlas: it has a sequence with an empty name.',
+      );
+    }
+
+    if (frames.length === 0) {
+      throw new Error(
+        `Unable to create a texture atlas: its sequence "${sequenceName}" is empty. A sequence must list at least one region.`,
+      );
+    }
+
+    const missing = findMissingNames(frames, hasRegion);
+
+    if (missing.length > 0) {
+      throw new Error(
+        `Unable to create a texture atlas: in its sequence "${sequenceName}", ${describeMissingRegionNames(missing, names)}`,
+      );
+    }
+
+    copied.set(sequenceName, Object.freeze([...frames]));
+  }
+
+  return copied;
+};
+
 /**
  * Creates a {@link TextureAtlas} from texel rects, such as an atlas
  * packer's output. Each rect becomes an {@link AtlasRegion} whose UVs land
@@ -142,14 +188,18 @@ const validateNames = (rects: readonly AtlasRegionRect[]): void => {
  * isn't a finite number greater than `0`, `rects` is empty, a name is empty or used twice, or a rect is invalid (a texel value
  * that isn't a whole number, a negative position, a size that isn't
  * greater than `0`, a rect outside the texture or its untrimmed frame, or a
- * pivot that isn't finite).
+ * pivot that isn't finite), or a sequence has an empty name, is empty, or
+ * lists a name that isn't a region's.
  */
 export function createTextureAtlas(
   texture: Texture,
   rects: readonly AtlasRegionRect[],
   options: CreateTextureAtlasOptions = {},
 ): TextureAtlas {
-  const { scale } = withDefaults(defaultCreateTextureAtlasOptions, options);
+  const { scale, sequences: givenSequences } = withDefaults(
+    defaultCreateTextureAtlasOptions,
+    options,
+  );
 
   if (texture.width === 0 || texture.height === 0) {
     throw new Error(
@@ -176,11 +226,18 @@ export function createTextureAtlas(
   );
   const regionsByName = new Map(regions.map((region) => [region.name, region]));
   const names = regions.map((region) => region.name);
+  const sequences = copySequences(
+    givenSequences,
+    (name) => regionsByName.has(name),
+    names,
+  );
+  const sequenceNames = [...sequences.keys()];
 
   return Object.freeze({
     texture,
     regions,
     scale,
+    sequences,
     getRegion: (name: string): AtlasRegion => {
       const region = regionsByName.get(name);
 
@@ -201,6 +258,23 @@ export function createTextureAtlas(
       }
 
       return regions[index];
+    },
+    getSequence: (name: string): readonly string[] => {
+      const sequence = sequences.get(name);
+
+      if (sequence) {
+        return sequence;
+      }
+
+      if (sequenceNames.length === 0) {
+        throw new Error(
+          `Unable to find sequence "${name}" in the texture atlas: it has no sequences.`,
+        );
+      }
+
+      throw new Error(
+        `Unable to find sequence "${name}" in the texture atlas. ${describeMissingName(name, sequenceNames, 'sequence')}`,
+      );
     },
   });
 }

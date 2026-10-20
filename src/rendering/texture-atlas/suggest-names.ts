@@ -50,3 +50,81 @@ export function suggestNames(
     .slice(0, maxSuggestions)
     .map(({ name }) => name);
 }
+
+/**
+ * Lists names for an error message, each in double quotes.
+ * @param names - The names to list.
+ * @returns The names, comma-separated.
+ */
+export function describeNames(names: readonly string[]): string {
+  return names.map((name) => `"${name}"`).join(', ');
+}
+
+/**
+ * Describes what a missing name might have meant, for the sentence after an
+ * error's "not found" sentence: the close names, or else how many names
+ * there are and the first three.
+ * @param name - The name that wasn't found.
+ * @param names - The names that exist.
+ * @param itemWord - What one name names, such as `'region'` or
+ * `'sequence'`. An `s` is added for any count but one.
+ * @returns The sentence.
+ */
+export function describeMissingName(
+  name: string,
+  names: readonly string[],
+  itemWord: string = 'region',
+): string {
+  const suggestions = suggestNames(name, names);
+
+  if (suggestions.length > 0) {
+    return `Did you mean ${describeNames(suggestions)}?`;
+  }
+
+  const shownNames = describeNames(names.slice(0, 3));
+  const moreNames = names.length > 3 ? ', ...' : '';
+  const countedWord = names.length === 1 ? itemWord : `${itemWord}s`;
+
+  return `The atlas has ${names.length} ${countedWord}, named ${shownNames}${moreNames}.`;
+}
+
+/**
+ * Finds the names in a list of region names or indices that aren't
+ * regions.
+ * @param frames - Region names, or indices, which are skipped.
+ * @param hasRegion - Whether a region has a name.
+ * @returns The missing names, once each, in the order they first appear.
+ */
+export function findMissingNames(
+  frames: readonly (string | number)[],
+  hasRegion: (name: string) => boolean,
+): string[] {
+  const missing = frames.filter(
+    (frame): frame is string => typeof frame === 'string' && !hasRegion(frame),
+  );
+
+  return [...new Set(missing)];
+}
+
+/**
+ * Describes region names that weren't found, for the end of an error
+ * message: "the atlas has no region named ..." and what each name might
+ * have meant.
+ * @param missing - The names that weren't found, at least one.
+ * @param names - Every region's name.
+ * @returns The sentences.
+ */
+export function describeMissingRegionNames(
+  missing: readonly string[],
+  names: readonly string[],
+): string {
+  if (missing.length === 1) {
+    return `the atlas has no region named "${missing[0]}". ${describeMissingName(missing[0], names)}`;
+  }
+
+  const details = missing
+    .map((name) => `"${name}": ${describeMissingName(name, names)}`)
+    .join(' ');
+
+  return `the atlas has no regions named ${describeNames(missing)}. ${details}`;
+}

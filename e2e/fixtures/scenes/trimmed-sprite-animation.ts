@@ -5,6 +5,8 @@ import {
   AnimationClip,
   AssetRegistry,
   Color,
+  createAtlasAnimationClip,
+  createAtlasSprite,
   createCamera,
   createCanvas,
   createPresentEcsSystem,
@@ -12,11 +14,12 @@ import {
   createRenderEcsSystem,
   createSpriteAnimationEcsSystem,
   createTexture,
-  createTextureRegion,
+  createTexturePackerAtlas,
   createTransformEcsSystem,
   EcsWorld,
+  getAtlasRegionNames,
+  parseTexturePackerAtlas,
   spriteId,
-  TextureRegion,
   Time,
 } from '../../../src/index.js';
 import { PixelBounds } from './input-scene-helpers.js';
@@ -42,28 +45,34 @@ const markerFill = '#00ff40';
 const pivot = { x: 0.25, y: 0.75 };
 
 /**
- * One packed frame: where its trimmed rect sits in the untrimmed frame, and
- * where it was packed in the atlas texture, both in texels.
+ * One packed frame: its name, where its trimmed rect sits in the untrimmed
+ * frame, and where it was packed in the atlas texture, both in texels.
  */
 interface PackedFrame {
+  name: string;
   trim: { left: number; top: number; width: number; height: number };
   atlas: { left: number; top: number };
 }
 
-// Frame 0 is untrimmed; frames 1 and 2 are trimmed to different rects, as
-// an atlas packer trims transparent borders, and packed side by side.
+// `run_0` is untrimmed; `run_1` and `run_2` are trimmed to different rects,
+// as an atlas packer trims transparent borders, and packed side by side.
+// They're listed `run_2` first, so the order a TexturePacker hash keeps
+// isn't the frame order.
 const packedFrames: PackedFrame[] = [
   {
+    name: 'run_2',
+    trim: { left: 18, top: 2, width: 12, height: 18 },
+    atlas: { left: 48, top: 0 },
+  },
+  {
+    name: 'run_0',
     trim: { left: 0, top: 0, width: 32, height: 32 },
     atlas: { left: 0, top: 0 },
   },
   {
+    name: 'run_1',
     trim: { left: 16, top: 0, width: 16, height: 16 },
     atlas: { left: 32, top: 0 },
-  },
-  {
-    trim: { left: 18, top: 2, width: 12, height: 18 },
-    atlas: { left: 48, top: 0 },
   },
 ];
 const atlasSize = { width: 64, height: 32 };
@@ -77,8 +86,10 @@ const spritePositionsX = [-200, 0, 200];
 export type TrimmedSpriteMarkerBounds = (PixelBounds | null)[];
 
 /**
- * The scene's handle: a reference sprite showing frame 0 and two sprites
- * playing a clip of differently trimmed frames, one frame apart.
+ * The scene's handle: a reference sprite showing `run_0` and two sprites
+ * playing clips of differently trimmed frames, one frame apart. The first
+ * plays the frames `getAtlasRegionNames` finds, the second the atlas's
+ * `run` sequence.
  */
 export interface TrimmedSpriteAnimationSceneHandle extends SceneHandle {
   /** How far apart the sprites are, in world units. */
@@ -87,8 +98,8 @@ export interface TrimmedSpriteAnimationSceneHandle extends SceneHandle {
   readonly devicePixelsPerUnit: number;
   /** The milliseconds each frame of the clip is shown. */
   readonly frameDurationMilliseconds: number;
-  /** The index in the clip of the frame each animated sprite shows. */
-  readonly animatedFrameIndices: number[];
+  /** The name of the atlas region each animated sprite shows. */
+  readonly animatedRegionNames: string[];
   /**
    * The instance count of every `drawArraysInstanced` call made during the
    * last `step()` - one entry per instanced draw call.
@@ -134,23 +145,40 @@ function drawAtlasSource(): HTMLCanvasElement {
 }
 
 /**
- * Builds a frame's region from its texel rects.
+ * Builds the atlas's TexturePacker "JSON (Hash)" file, as TexturePacker
+ * writes it with "Auto-detect animations" on: one trimmed frame per packed
+ * frame, keyed by name, and the `run` animation listing them in order.
+ * @returns The parsed JSON.
  */
-function createFrameRegion({ trim, atlas }: PackedFrame): TextureRegion {
-  return createTextureRegion(
-    { x: atlas.left / atlasSize.width, y: atlas.top / atlasSize.height },
-    { x: trim.width / atlasSize.width, y: trim.height / atlasSize.height },
-    {
-      offset: {
-        x: trim.left / frameSizeInTexels,
-        y: trim.top / frameSizeInTexels,
+function createTexturePackerJson(): unknown {
+  const frames = Object.fromEntries(
+    packedFrames.map(({ name, trim, atlas }) => [
+      name,
+      {
+        frame: { x: atlas.left, y: atlas.top, w: trim.width, h: trim.height },
+        rotated: false,
+        trimmed: true,
+        spriteSourceSize: {
+          x: trim.left,
+          y: trim.top,
+          w: trim.width,
+          h: trim.height,
+        },
+        sourceSize: { w: frameSizeInTexels, h: frameSizeInTexels },
+        pivot,
       },
-      scale: {
-        x: trim.width / frameSizeInTexels,
-        y: trim.height / frameSizeInTexels,
-      },
-    },
+    ]),
   );
+
+  return {
+    frames,
+    animations: { run: ['run_0', 'run_1', 'run_2'] },
+    meta: {
+      image: 'run.png',
+      size: { w: atlasSize.width, h: atlasSize.height },
+      scale: '1',
+    },
+  };
 }
 
 /**
@@ -182,10 +210,13 @@ function includePixel(
 }
 
 /**
- * Builds a scene with one atlas texture holding three packed frames of one
- * untrimmed frame, the last two trimmed differently. A reference sprite
- * shows the untrimmed frame; two sprites play all three frames, one frame
- * apart, through the sprite animation system. Every frame holds a marker at
+ * Builds a scene with one TexturePacker atlas holding three packed frames
+ * of one untrimmed frame, the last two trimmed differently. A reference
+ * sprite shows the untrimmed frame; two sprites play all three frames, one
+ * frame apart, through the sprite animation system: one a clip of the
+ * names `getAtlasRegionNames` finds, the other a clip of the atlas's `run`
+ * sequence, starting on a blank texture the animation system replaces with
+ * the clip's. Every frame holds a marker at
  * the same place in the untrimmed frame, so a correctly drawn trimmed frame
  * puts it exactly where the reference sprite's is. Wraps the context's
  * `drawArraysInstanced` to count the instanced draw calls a frame makes.
@@ -227,10 +258,30 @@ export const createScene: CreateScene = (
   const texture = createTexture(renderContext, drawAtlasSource(), {
     filter: 'nearest',
   });
-  const frames = packedFrames.map(createFrameRegion);
+  // A blank texture of the atlas's size, with no marker on it.
+  const placeholderSource = document.createElement('canvas');
+
+  placeholderSource.width = atlasSize.width;
+  placeholderSource.height = atlasSize.height;
+
+  const placeholderTexture = createTexture(renderContext, placeholderSource, {
+    filter: 'nearest',
+  });
+  const atlas = createTexturePackerAtlas(
+    texture,
+    parseTexturePackerAtlas(createTexturePackerJson()),
+  );
   const clips = new AssetRegistry<AnimationClip>();
-  const clip = new AnimationClip(frames);
-  const clipHandle = clips.register('trimmed', clip);
+  const clipHandles = [
+    clips.register(
+      'by-name',
+      createAtlasAnimationClip(atlas, getAtlasRegionNames(atlas, 'run_')),
+    ),
+    clips.register(
+      'sequence',
+      createAtlasAnimationClip(atlas, atlas.getSequence('run')),
+    ),
+  ];
   const spriteSize = frameSizeInTexels / pixelsPerUnit;
   const animatedEntities: number[] = [];
 
@@ -239,12 +290,15 @@ export const createScene: CreateScene = (
     const animatedFrameIndex = index - 1;
 
     addPositionComponent(world, entity, { local: { x, y: 0 } });
+
+    // The sequence's sprite starts on another texture: the sprite
+    // animation system switches it to the clip's on the first frame.
+    const startTexture =
+      animatedFrameIndex === 1 ? placeholderTexture : texture;
+
     addSpriteComponent(world, entity, {
-      texture,
-      width: spriteSize,
-      height: spriteSize,
-      pivot,
-      region: frames[Math.max(0, animatedFrameIndex)],
+      ...createAtlasSprite(atlas, 'run_0', { pixelsPerUnit }),
+      texture: startTexture,
     });
 
     if (animatedFrameIndex < 0) {
@@ -252,7 +306,7 @@ export const createScene: CreateScene = (
     }
 
     addSpriteAnimationComponent(world, entity, {
-      animationClipHandle: clipHandle,
+      animationClipHandle: clipHandles[animatedFrameIndex],
       animationFrameIndex: animatedFrameIndex,
       frameDurationMilliseconds,
     });
@@ -282,12 +336,21 @@ export const createScene: CreateScene = (
       return renderContext.height / verticalWorldUnits;
     },
 
-    get animatedFrameIndices(): number[] {
-      return animatedEntities.map((entity) =>
-        clip.frames.indexOf(
-          world.getComponentRequired(entity, spriteId).region,
-        ),
-      );
+    get animatedRegionNames(): string[] {
+      return animatedEntities.map((entity) => {
+        const { region } = world.getComponentRequired(entity, spriteId);
+        const atlasRegion = atlas.regions.find(
+          (candidate) => candidate === region,
+        );
+
+        if (!atlasRegion) {
+          throw new Error(
+            `Entity ${entity} shows a region that isn't one of the atlas's.`,
+          );
+        }
+
+        return atlasRegion.name;
+      });
     },
 
     get lastFrameInstancedDraws(): readonly number[] {

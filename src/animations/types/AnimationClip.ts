@@ -1,4 +1,5 @@
 import { ForgeEvent, ParameterizedForgeEvent } from '../../events/index.js';
+import type { Texture } from '../../rendering/texture.js';
 import type { TextureRegion } from '../../rendering/texture-region.js';
 
 /**
@@ -8,16 +9,26 @@ export type OnAnimationFrameChangeEvent =
   ParameterizedForgeEvent<TextureRegion>;
 
 /**
- * A sequence of frames, each a region of a texture, that a sprite animation
- * plays in order, looping back to the first frame after the last. Frames
- * can differ in size and trim: each is drawn inside the sprite's untrimmed
- * `width`/`height`.
+ * A sequence of frames, all regions of one texture, that a sprite animation
+ * plays in order, looping back to the first frame after the last. A sprite
+ * playing the clip draws its `texture`: the sprite animation system writes
+ * it to the sprite's `texture` with each frame's `region`. Frames can differ
+ * in trim: each is drawn inside the sprite's untrimmed `width`/`height`.
+ *
+ * Build a clip from an atlas with `createAtlasAnimationClip`, which also
+ * checks that its frames share one untrimmed size and pivot. The
+ * constructor takes the regions as given.
  */
 export class AnimationClip {
   /**
-   * The frames of the animation.
+   * The texture every frame is a region of.
    */
-  public readonly frames: TextureRegion[];
+  public readonly texture: Texture;
+
+  /**
+   * The frames of the animation, in play order.
+   */
+  public readonly frames: readonly TextureRegion[];
 
   /**
    * The total number of frames in the animation.
@@ -40,16 +51,19 @@ export class AnimationClip {
   public readonly onAnimationFrameChangeEvent: OnAnimationFrameChangeEvent;
 
   /**
-   * Creates an instance of Animation.
-   * @param frames - The frames of the animation.
+   * Creates an animation clip.
+   * @param texture - The texture the frames are regions of.
+   * @param frames - The frames of the animation, in play order. The array
+   * is copied.
    * @throws An error if `frames` is empty.
    */
-  constructor(frames: TextureRegion[]) {
+  constructor(texture: Texture, frames: readonly TextureRegion[]) {
     if (frames.length === 0) {
       throw new Error('Animation must contain at least one frame.');
     }
 
-    this.frames = frames;
+    this.texture = texture;
+    this.frames = Object.freeze([...frames]);
     this.frameCount = frames.length;
 
     this.onAnimationStartEvent = new ForgeEvent('AnimationStartEvent');
