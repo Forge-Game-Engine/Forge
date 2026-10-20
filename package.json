@@ -93,6 +93,12 @@
         "default": "./dist/text/index.js"
       }
     },
+    "./tilemaps": {
+      "import": {
+        "types": "./dist/tilemaps/index.d.ts",
+        "default": "./dist/tilemaps/index.js"
+      }
+    },
     "./timer": {
       "import": {
         "types": "./dist/timer/index.d.ts",
