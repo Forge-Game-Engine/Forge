@@ -95,10 +95,9 @@ A rect without `sourceWidth` and `sourceHeight` is untrimmed. `pivot`
 defaults to `(0.5, 0.5)`, and may lie outside `0` to `1`. The `pivot` above
 is the bottom center of the frame, for example a character's feet.
 
-A sprite made from a trimmed region has the untrimmed frame's size, and
-its pivot is a point of the untrimmed frame. The packed rect is drawn at
-its place inside that frame, so frames trimmed by different amounts draw
-their art in the same place.
+A sprite made from a trimmed region is sized and pivoted by the untrimmed
+frame (see [Creating a sprite from a region](#creating-a-sprite-from-a-region)),
+so frames trimmed by different amounts draw their art in the same place.
 
 ## Creating a grid atlas
 
