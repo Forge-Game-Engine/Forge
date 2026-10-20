@@ -48,6 +48,13 @@ jobs:
 
       - name: Run Claude Code
         uses: anthropics/claude-code-action@v1
+        env:
+          # The Agent tool starts subagents in the background by default. In
+          # this headless run, the main agent then ends its turn to wait for
+          # one, the action takes that as the end of the session, and the job
+          # exits with the subagent killed and nothing done. Run every
+          # subagent in the foreground instead.
+          CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: '1'
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # Pull requests the `claude` label opens (claude.yml) are reviewed
