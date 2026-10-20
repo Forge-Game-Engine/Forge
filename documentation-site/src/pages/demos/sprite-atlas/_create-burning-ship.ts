@@ -23,7 +23,8 @@ export const burningShipPosition = { x: 60, y: 130 };
 const pixelsPerUnit = 1;
 
 // Where the flames and the blast sit on the ship, in the ship's frame, so
-// they turn with it.
+// their positions turn with it. They have no rotation of their own, so they
+// stay upright: fire rises up the screen whichever way the ship faces.
 const flames = [
   { x: -12, y: -18, firstFrame: 0 },
   { x: 14, y: 30, firstFrame: 1 },

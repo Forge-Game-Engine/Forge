@@ -391,8 +391,8 @@ Padding and extrusion in the export protect the samplers that don't stay
 inside a region: a [custom sprite shader](./sprites.md#drawing-sprites-with-a-custom-shader)
 that samples `v_texCoord` without clamping it to `v_texBounds`, a
 [mesh](./meshes.md) textured with the atlas's texture, and an atlas
-created with `createTextureAtlas` from a texture loaded with
-`wrap: 'repeat'` (`TextureAtlasCache` always loads `'clamp'` textures).
+built over a texture loaded with `wrap: 'repeat'` (`TextureAtlasCache`
+always loads `'clamp'` textures).
 With `'linear'` filtering, and at a camera zoom that doesn't map texels to
 whole pixels, those blend the texels next to a region into its edges.
 Extrusion repeats each image's edge texels into the texels around it, and
