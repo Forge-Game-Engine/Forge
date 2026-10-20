@@ -9,6 +9,7 @@ import {
 } from '../../math/index.js';
 import { ChainCollider } from '../../physics/colliders/chain-collider.js';
 import { calculateSignedArea } from '../../physics/colliders/polygon-math.js';
+import { maxCellCoordinate, minCellCoordinate } from '../cells/chunk-key.js';
 import { fillTiles, setTile } from '../cells/edit-tiles.js';
 import { forEachTile } from '../cells/read-tiles.js';
 import {
@@ -154,6 +155,19 @@ describe('buildTilemapCollisionLoops, orthogonal', () => {
     ]);
   });
 
+  it.each([
+    ['last', maxCellCoordinate],
+    ['first', minCellCoordinate],
+  ])('outlines a tile in the layer’s %s cell', (_name, cell) => {
+    const layer = createLayer(orthogonal);
+
+    setTile(layer, cell, cell, full);
+
+    expectLoopsClose(buildTilemapCollisionLoops(layer), [
+      orthogonal.getCellPolygon(cell, cell),
+    ]);
+  });
+
   it('gives a row of tiles one loop of 4 edges', () => {
     const layer = createLayer(orthogonal);
 
@@ -275,6 +289,32 @@ describe('buildTilemapCollisionLoops, orthogonal', () => {
     expectLoopsClose(loops, [
       orthogonal.getCellPolygon(0, 0),
       orthogonal.getCellPolygon(1, 1),
+    ]);
+    expect(() => new ChainCollider(loops)).not.toThrow();
+  });
+
+  it('orders two loops starting at the same vertex by their next vertex', () => {
+    const layer = createLayer(orthogonal);
+
+    // The slope fills its cell's bottom-right half and, flipped vertically,
+    // the top-right half of the next cell, so the two only touch at the
+    // top of their shared side.
+    setTile(layer, 0, 0, slope);
+    setTile(layer, 1, 0, collisionTestTile(slopeTileIndex, { flipY: true }));
+
+    const loops = buildTilemapCollisionLoops(layer);
+
+    expectLoopsClose(loops, [
+      [
+        { x: 16, y: 0 },
+        { x: 32, y: 0 },
+        { x: 32, y: 16 },
+      ],
+      [
+        { x: 16, y: 0 },
+        { x: 16, y: 16 },
+        { x: 0, y: 16 },
+      ],
     ]);
     expect(() => new ChainCollider(loops)).not.toThrow();
   });

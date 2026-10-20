@@ -403,6 +403,61 @@ describe('createTileSet collision shapes', () => {
       /isn’t strictly convex when turned by the transform bits flip Y, once snapped/,
     );
   });
+
+  it('names a transpose in the transform bits of a variant that fails', () => {
+    // The shape above, transposed: B is now half a step from a grid line
+    // in x, which the transpose moves into y before flip Y mirrors it.
+    const unit = createOrthogonalGridLayout({ cellWidth: 1, cellHeight: 1 });
+    const unitStep = 1 / 65_536;
+    const atSteps = (x: number, y: number): Vector2 => ({
+      x: x * unitStep - 0.5,
+      y: y * unitStep - 0.5,
+    });
+
+    expect(() =>
+      createWithCollision(
+        [
+          atSteps(0.5, 0),
+          atSteps(0.75, 5),
+          atSteps(1.5, 10),
+          atSteps(65_536, 10),
+          atSteps(65_536, 0),
+        ],
+        unit,
+      ),
+    ).toThrow(
+      /isn’t strictly convex when turned by the transform bits flip Y, transpose, once snapped/,
+    );
+  });
+
+  it('names a flip X in the transform bits of a variant that fails', () => {
+    // B is half a step from a grid line in both x and y, beside the corner
+    // cut along x + y = 65,531 steps. Untransformed it snaps outwards; flipped
+    // in only one axis it snaps onto the cut, and is dropped; flipped in both
+    // it snaps inwards, into a reflex point.
+    const unit = createOrthogonalGridLayout({ cellWidth: 1, cellHeight: 1 });
+    const unitStep = 1 / 65_536;
+    const atSteps = (x: number, y: number): Vector2 => ({
+      x: x * unitStep - 0.5,
+      y: y * unitStep - 0.5,
+    });
+
+    expect(() =>
+      createWithCollision(
+        [
+          atSteps(0, 0),
+          atSteps(65_536, 0),
+          atSteps(65_536, 65_531),
+          atSteps(65_533.5, 65_533.5),
+          atSteps(65_531, 65_536),
+          atSteps(0, 65_536),
+        ],
+        unit,
+      ),
+    ).toThrow(
+      /isn’t strictly convex when turned by the transform bits flip X, flip Y, once snapped/,
+    );
+  });
 });
 
 describe('getTileData', () => {

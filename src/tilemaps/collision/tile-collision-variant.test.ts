@@ -136,6 +136,27 @@ describe('snapTileCollisionPolygon', () => {
 
     expect(snapped).toHaveLength(3);
   });
+
+  it('merges a last point that snaps onto the first', () => {
+    const snapped = snapTileCollisionPolygon(
+      square,
+      [
+        { x: -8, y: -8 },
+        { x: 8, y: -8 },
+        { x: 8, y: 8 },
+        { x: -8, y: 8 },
+        { x: -8, y: -8 + 1e-6 },
+      ],
+      0,
+    );
+
+    expect(snapped).toEqual([
+      { x: 0, y: 0 },
+      { x: steps, y: 0 },
+      { x: steps, y: steps },
+      { x: 0, y: steps },
+    ]);
+  });
 });
 
 describe('describeSnappedShapeProblem', () => {
