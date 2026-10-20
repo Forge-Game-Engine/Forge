@@ -82,6 +82,23 @@ describe('getTileImageRect', () => {
     );
   });
 
+  it('gives a cell-sized tile exactly the edges its neighbors start at', () => {
+    const tileSet = createTileSet({
+      layout: createOrthogonalGridLayout({ cellWidth: 0.1, cellHeight: 0.3 }),
+      sources: [createTestSource(1, 1)],
+    });
+    const tile = packTile({ source: 0, tile: 0 });
+
+    for (let column = -3; column < 40; column++) {
+      const rect = getTileImageRect(tileSet, column, 7, tile);
+
+      expect(getTileImageRect(tileSet, column + 1, 7, tile).min.x).toBe(
+        rect.max.x,
+      );
+      expect(getTileImageRect(tileSet, column, 8, tile).min.y).toBe(rect.max.y);
+    }
+  });
+
   it('throws for a tile the tile set does not have', () => {
     const tileSet = createTileSet({
       layout: createOrthogonalGridLayout({ cellWidth: 16, cellHeight: 16 }),

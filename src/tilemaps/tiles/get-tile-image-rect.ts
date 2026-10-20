@@ -30,12 +30,22 @@ export function getTileImageRect(
 
   const { textureOrigin } = getTileData(tileSet, tile);
   const { tileWidth, tileHeight } = tileSet.sources[getTileSourceIndex(tile)];
-  const bounds = tileSet.layout.getCellFootprintBounds(column, row);
-  const left = bounds.min.x + textureOrigin.x;
-  const bottom = bounds.max.y + textureOrigin.y;
+  const { layout } = tileSet;
+  const bounds = layout.getCellFootprintBounds(column, row);
 
+  // Each edge is measured from the footprint edge it lines up with, rather
+  // than as `left + tileWidth`, so a cell-sized tile gets its footprint's
+  // edges exactly: the layout computes neighbors' shared edges from the
+  // same integer cell corners, and a rounding difference between them
+  // would show as a crack between drawn tiles.
   return {
-    min: { x: left, y: bottom - tileHeight },
-    max: { x: left + tileWidth, y: bottom },
+    min: {
+      x: bounds.min.x + textureOrigin.x,
+      y: bounds.min.y + textureOrigin.y - (tileHeight - layout.cellHeight),
+    },
+    max: {
+      x: bounds.max.x + textureOrigin.x + (tileWidth - layout.cellWidth),
+      y: bounds.max.y + textureOrigin.y,
+    },
   };
 }

@@ -45,6 +45,10 @@ import {
   msdfFillVertexShader,
   msdfVertexShader,
 } from '../../text/rendering/shaders/index.js';
+import {
+  tilemapFragmentShader,
+  tilemapVertexShader,
+} from '../../tilemaps/rendering/shaders/index.js';
 
 /**
  * Creates and initializes a ShaderCache instance with predefined shader includes and shaders.
@@ -103,7 +107,9 @@ export function createShaderCache(): ShaderCache {
     .addShader(new ForgeShaderSource(msdfFillVertexShader))
     .addShader(new ForgeShaderSource(msdfFillFragmentShader))
     .addShader(new ForgeShaderSource(msdfEffectsFragmentShader))
-    .addShader(new ForgeShaderSource(msdfVertexShader));
+    .addShader(new ForgeShaderSource(msdfVertexShader))
+    .addShader(new ForgeShaderSource(tilemapVertexShader))
+    .addShader(new ForgeShaderSource(tilemapFragmentShader));
 
   return shaderCache;
 }

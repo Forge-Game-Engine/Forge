@@ -1,5 +1,6 @@
 import type { RenderContext } from '../render-context.js';
 import type { Texture } from '../texture.js';
+import { computeRegionInset } from '../utilities/compute-region-inset.js';
 import { Material } from './material.js';
 import { includesShader, maskShaderIncludeName } from './shader-includes.js';
 import { UniformValue } from './uniform-value.js';
@@ -26,28 +27,6 @@ const reservedUniformSources: ReadonlyMap<string, string> = new Map([
     "the size and `wrap` of each sprite's texture",
   ],
 ]);
-
-/**
- * How far, in UV, a sprite samples inside its region of `texture`: half a
- * texel for a texture whose `wrap` is `'clamp'`, so linear filtering never
- * blends in the texels next to the region (a neighboring frame in a sheet),
- * the way it never reaches past a whole clamped texture's edges. A
- * repeating texture isn't inset, so a region that tiles or scrolls it still
- * wraps around.
- * @param texture - The sprites' texture.
- * @returns The inset, in UV, as `(x, y)`.
- */
-function computeRegionInset(texture: Texture): Float32Array {
-  if (
-    texture.wrap === 'repeat' ||
-    texture.width === 0 ||
-    texture.height === 0
-  ) {
-    return new Float32Array([0, 0]);
-  }
-
-  return new Float32Array([0.5 / texture.width, 0.5 / texture.height]);
-}
 
 /**
  * A material that draws sprites: `sprite.vert`, which positions each
