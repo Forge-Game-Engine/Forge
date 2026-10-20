@@ -162,6 +162,11 @@ unattended:
   again automatically: run `pr-reviewer` locally to review new commits. An
   `@claude` mention on a pull request starts an implementing run
   (`claude.yml`) that pushes to its branch, not a review.
+- **Subagents run in the foreground.** Both Claude workflows set
+  `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS`. A headless run ends as soon as the
+  main agent ends its turn, so a subagent started in the background (the
+  `Agent` tool's default) is killed before it finishes, and the run stops
+  after "Gather context" with no branch, comment or pull request.
 - **Each agent asks only for what its workflow allows.** `design-author`,
   `solution-reviewer` and `pr-reviewer` run inside the workflows above, so
   every command they tell themselves to run must be in that workflow's
