@@ -76,7 +76,7 @@ const panelSprite = createAtlasSprite(uiAtlas, 'panel', {
 
 The grid is cut from the region's rect, so the corners and edges sample
 only that region. The native size defaults to the region's world size, its
-`sourceSize` divided by `pixelsPerUnit`.
+`sourceSize` divided by the atlas's `scale` and by `pixelsPerUnit`.
 
 ## Choosing insets
 
