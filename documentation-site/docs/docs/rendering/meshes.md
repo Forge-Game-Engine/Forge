@@ -5,7 +5,8 @@ sidebar_position: 6.75
 # Meshes
 
 A mesh is a [geometry](./geometry.md) of any shape drawn on an entity, such
-as terrain, a trail or a custom shape. The render system draws meshes in the
+as terrain, a trail, a chunk of a [tilemap layer](../tilemaps/index.md#rendering)
+or a custom shape. The render system draws meshes in the
 same [draw order](./draw-order.md) as sprites and text, so a mesh can be
 behind one sprite and in front of another.
 
@@ -242,4 +243,5 @@ doesn't dispose the geometry, so a geometry that several entities draw
 sections of is disposed after removing all of their meshes. A component that creates its own geometry
 disposes it from its
 [remove hook](../ecs/component.md#releasing-what-a-component-holds), as
-[trails](./trails.md) do.
+[trails](./trails.md) and
+[tilemap layers](../tilemaps/index.md#removing-a-drawn-layer) do.

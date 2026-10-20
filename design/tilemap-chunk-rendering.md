@@ -174,8 +174,6 @@ export interface TilemapRenderStateEcsComponent {
   readonly builtFrom: TilemapLayerEcsComponent | null;
   /** The `version` of `builtFrom` the meshes show; -1 before the first build. */
   readonly builtVersion: number;
-  /** The tile set the materials were made for. */
-  readonly builtTileSet: TileSet | null;
   /** The `category` and draw `layer` last copied onto every chunk mesh. */
   readonly appliedCategory: number;
   readonly appliedDrawLayer: number;
@@ -267,14 +265,12 @@ for each (entity, layer) in the query result:
     clear state.materials
     state.builtFrom = layer; state.builtVersion = -1
 
-  if state.builtTileSet !== layer.tileSet:      // setTileSet, which also stamps every chunk
-    clear state.materials; state.builtTileSet = layer.tileSet
-
-  if layer.version !== state.builtVersion:
+  if layer.version !== state.builtVersion:     // setTileSet also stamps every chunk
     for each chunk in layer.chunks.values():
       if chunk.changedAt > state.builtVersion: rebuildChunk(entity, layer, state, chunk)
     for each mesh in state.meshes whose chunk key isn't in layer.chunks:
       remove its entity, dispose its geometry, drop it
+    drop the material of every source no mesh draws any more
     state.builtVersion = layer.version
 
   if layer.category !== state.appliedCategory or layer.layer !== state.appliedDrawLayer:

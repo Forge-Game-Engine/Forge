@@ -5,11 +5,9 @@ a map is one entity with a
 [`TilemapLayerEcsComponent`](/Forge/docs/api/interfaces/TilemapLayerEcsComponent),
 which holds a packed tile per cell, and a
 [`TileSet`](/Forge/docs/api/interfaces/TileSet), which says what each tile
-looks like and how the cells are laid out.
-
-:::note
-`createRenderEcsSystem` doesn't draw `TilemapLayerEcsComponent`s.
-:::
+looks like and how the cells are laid out. The tilemap render system draws
+each layer as [meshes](../rendering/meshes.md), one per chunk of cells and
+tile set source (see [Rendering](#rendering)).
 
 ## Tile sets
 
@@ -103,12 +101,13 @@ addPositionComponent(world, ground);
 const groundLayer = addTilemapLayerComponent(world, ground, { tileSet });
 ```
 
-`tintColor`, `category` and `layer` mean what they mean on a sprite.
+`tintColor`, `category` and `layer` mean what they mean on a sprite (see
+[Tint, category and draw layer](#tint-category-and-draw-layer)).
 
 A map with several layers is a root entity with one child entity per
 layer. Later siblings draw on top of earlier ones, and
 `DrawOrderEcsComponent` sorts a layer between other things, as for any
-entity (see [Draw order](../rendering/draw-order.md)):
+entity (see [Drawing layers with sprites](#drawing-layers-with-sprites)):
 
 ```ts
 const map = world.createEntity();
@@ -350,11 +349,150 @@ const worldPoint = view.viewportToWorld(mouse.position);
 const { column, row } = worldToCell(world, ground, worldPoint);
 ```
 
+## Rendering
+
+### Registering the tilemap render system
+
+[`createTilemapRenderEcsSystem`](/Forge/docs/api/functions/createTilemapRenderEcsSystem)
+builds the meshes of every entity that has a `TilemapLayerEcsComponent` and
+a `PositionEcsComponent`, and `createRenderEcsSystem` draws them. Register
+it after the systems that edit tiles, so an edited tile shows on the same
+frame, and before `createTransformEcsSystem`, so a new chunk mesh gets its
+world transform on the frame it's created:
+
+```ts
+import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import { createRenderEcsSystem } from '@forge-game-engine/forge/rendering';
+import { createTilemapRenderEcsSystem } from '@forge-game-engine/forge/tilemaps';
+
+world.addSystem(tileEditingSystem);
+world.addSystem(createTilemapRenderEcsSystem(renderContext));
+world.addSystem(createTransformEcsSystem());
+world.addSystem(createRenderEcsSystem(renderContext));
+```
+
+### Chunk meshes
+
+The system builds one mesh for each chunk and each source whose tiles the
+chunk holds, two triangles per tile. Each mesh is one draw call, and a
+mesh whose tiles are all outside the camera's view isn't drawn. A layer of
+one source costs one draw call per chunk on screen.
+
+The system keeps what it built in a
+[`TilemapRenderStateEcsComponent`](/Forge/docs/api/interfaces/TilemapRenderStateEcsComponent)
+on the layer entity, and on each update rebuilds only the chunks that
+changed:
+
+- A cell function call that changes a chunk rewrites the vertices of that
+  chunk's meshes in place. It creates a mesh, and its GPU buffers, only
+  for a source the chunk didn't hold before, and removes the mesh of a
+  source the chunk no longer holds.
+- The first update after a layer is added builds every chunk at once, so
+  the first frame that draws a large map takes longer than the frames
+  after it.
+- An update where no tile changed writes no vertices.
+- Vertex data takes at least 128 bytes per tile in memory, and as much
+  again on the GPU.
+
+### Chunk entities
+
+Each mesh is on its own entity, a
+[`MeshEcsComponent`](/Forge/docs/api/interfaces/MeshEcsComponent) on a
+child of the layer entity with an identity position, rotation and scale, so
+the layer's transform places the tiles. The system keeps these children in
+row-major chunk order among themselves, and a chunk's meshes in source
+order. Don't edit, reorder, reparent or remove them: the system is the only
+code that writes them.
+
+A layer entity can have children of its own, such as props. A child added
+to the layer comes after the chunk entities in sibling order, so it draws
+on top of the tiles. The system places a new chunk entity next to the
+other chunk entities, so a child of the game's keeps its place before or
+after them. To draw a child under the tiles, move it before them with
+`world.setSiblingIndex(child, 0)` or give it a lower
+`DrawOrderEcsComponent` order.
+
+### Drawing layers with sprites
+
+Chunk meshes sort with sprites, text and other meshes by the same keys as
+any child of the layer entity (see [Draw order](../rendering/draw-order.md)):
+
+1. The layer's draw `layer` comes first, as for a sprite.
+2. The layer entity's world order comes next, so a layer with a lower
+   `DrawOrderEcsComponent` order than a sprite draws behind it.
+3. Under a camera with `ySort`, Y comes next. Every chunk entity is at the
+   layer entity's position, so a layer sorts as a whole by its sort unit's
+   Y, not tile by tile (see
+   [Sorting by height on screen](../rendering/draw-order.md#sorting-by-height-on-screen)).
+4. Hierarchy order comes last: a layer entity created, or placed among its
+   siblings, before a sprite's entity draws behind it.
+
+Hiding the layer entity hides its tiles, and the masks on it and its
+ancestors clip them, as for its other children.
+
+### Drawing order inside a layer
+
+Inside one source's mesh, tiles draw in row-major cell order, and chunk
+meshes draw in row-major chunk order, so overlapping tiles draw back to
+front: an isometric wall in row `5` covers the tile behind it in row `4`.
+A tile outside the placement limits in
+[Tile image placement](#tile-image-placement) can draw in the wrong order
+against its neighbors.
+
+A chunk's meshes draw source by source, so every tile of source `1` in a
+chunk draws after every tile of source `0` in the same chunk, whatever their
+rows. Two tiles from different sources that overlap, such as walls from two
+sheets in an isometric layer, can draw in the wrong order. Keep tiles that
+overlap each other in one source, or put them in separate layers.
+
+### Tint, category and draw layer
+
+A layer's `tintColor`, `category` and `layer` are fields of its
+`TilemapLayerEcsComponent`, and a change to them shows from the system's
+next update:
+
+- `tintColor` multiplies the color of every tile, alpha included.
+- `category` is matched against each camera's `cullingMask`, so a camera
+  whose mask doesn't include it draws none of the layer's tiles.
+- `layer` is the draw layer the layer's tiles sort by.
+
+```ts
+import { Color } from '@forge-game-engine/forge/rendering';
+
+groundLayer.tintColor = new Color(1, 1, 1, 0.5);
+```
+
+### Texture filtering
+
+Each tile samples only its own region of its source's texture, inset by
+half a texel, as sprites do (see
+[Filtering at region edges](../rendering/texture-atlases.md#filtering-at-region-edges)).
+So no line shows between tiles with `'nearest'` filtering at a fractional
+camera position or zoom, or with `'linear'` filtering, and a tileset needs
+no extruded or spaced tiles. With `'linear'` filtering, each tile's edge
+shows its own edge texels, not a blend with the next cell's tile.
+
+A texture whose `wrap` is `'repeat'` isn't inset, so give tileset textures
+the default `'clamp'`.
+
+### Removing a drawn layer
+
+Removing the layer entity removes its chunk entities and disposes their
+geometries. So does removing its `TilemapLayerEcsComponent` or its
+`PositionEcsComponent`, on the system's next update. Adding a new
+`TilemapLayerEcsComponent` to the entity replaces the old layer's meshes
+with the new layer's on the system's next update.
+
+Removing the tilemap render system, or stopping the world, leaves every
+layer's meshes as they were last built: they're still drawn, and edits to
+the layer don't change them.
+
 ## Reacting to changes
 
-A system that builds something from a layer, such as colliders or a
-navigation grid, finds what changed with the layer's `version` and each
-chunk's `changedAt`. `version` goes up by one on every cell function call
+A system that builds something from a layer, such as the tilemap render
+system, colliders or a navigation grid, finds what changed with the layer's
+`version` and each chunk's `changedAt`. `version` goes up by one on every
+cell function call
 that changes a cell, and the call sets `changedAt` on every chunk it
 changed to the new `version`. A call that changes nothing leaves both
 alone.
@@ -371,8 +509,10 @@ per chunk. On each update:
    last version, removes what it built for chunks that are no longer in
    `chunks`, and records `version`.
 
-Nothing on the layer is cleared, so any number of systems track the same
-layer without hiding changes from each other.
+The tilemap render system follows these steps with its
+`TilemapRenderStateEcsComponent`. Nothing on the layer is cleared, so any
+number of systems track the same layer without hiding changes from each
+other.
 
 :::caution
 Adding a `TilemapLayerEcsComponent` to an entity that has one replaces the

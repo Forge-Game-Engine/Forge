@@ -208,6 +208,13 @@ export const demos: Demo[] = [
     categories: ['rendering'],
   },
   {
+    slug: 'tilemaps',
+    title: 'Tilemaps',
+    description:
+      'Walk between the layers of an orthogonal tilemap, switch to an isometric map with tall walls, and paint, erase and inspect tiles with the mouse.',
+    categories: ['rendering'],
+  },
+  {
     slug: 'sprite-atlas',
     title: 'Sprite Atlas',
     description:

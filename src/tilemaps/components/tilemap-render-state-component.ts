@@ -29,8 +29,8 @@ export interface TilemapChunkMesh {
 
   /**
    * The mesh's geometry: two triangles per tile, in row-major cell order.
-   * Owned by the tilemap render system, which disposes it when the mesh is
-   * removed.
+   * Created by the tilemap render system, and disposed when the system
+   * drops the mesh or the render state that lists it is removed.
    */
   readonly geometry: Geometry;
 
@@ -52,13 +52,14 @@ export interface TilemapChunkMesh {
 
 /**
  * What `createTilemapRenderEcsSystem` built for one tilemap layer, on the
- * layer entity. The system adds it the first time it draws the layer, and
+ * layer entity. The system adds it the first time it updates the layer, and
  * is the only code that writes it: read it, don't write it.
  *
  * Removing it, or removing the layer entity, removes every chunk mesh
- * entity it lists and disposes their geometries. The system removes it
- * itself when the entity loses its `TilemapLayerEcsComponent` or
- * `PositionEcsComponent`.
+ * entity it lists and disposes their geometries; the system builds the
+ * layer again on its next tick if the layer is still there. The system
+ * removes it itself, on its next tick, when the entity has lost its
+ * `TilemapLayerEcsComponent` or `PositionEcsComponent`.
  */
 export interface TilemapRenderStateEcsComponent {
   /**
@@ -79,8 +80,8 @@ export interface TilemapRenderStateEcsComponent {
 
   /**
    * Every chunk mesh, in the order their entities are among the layer's
-   * children: by chunk row, then chunk column, then source index, which
-   * draws them back to front.
+   * children: by chunk row, then chunk column, then source index. Chunks
+   * in that order draw back to front.
    */
   readonly meshes: readonly TilemapChunkMesh[];
 

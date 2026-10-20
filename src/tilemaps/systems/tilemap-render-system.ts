@@ -68,15 +68,17 @@ const asWritableMesh = (mesh: TilemapChunkMesh): WritableTilemapChunkMesh =>
  * and every tileset source its tiles use, it builds a mesh of two triangles
  * per tile and draws it through a `MeshEcsComponent` on a child entity of
  * the layer entity, so the render system draws one call per visible
- * (chunk, source), sorted with sprites by the layer entity's draw order,
- * visibility and masks. Chunk meshes stay in row-major chunk order among
- * the layer's children and write their tiles in row-major cell order, so
- * tiles that overlap (isometric walls, tall tiles) draw back to front.
+ * (chunk, source), sorted with sprites and text by the layer entity's draw
+ * order, and hidden and masked with the layer entity. Chunk entities stay
+ * in row-major chunk order among themselves in the layer's children, and
+ * each mesh writes its tiles in row-major cell order, so tiles of one
+ * source that overlap (isometric walls, tall tiles) draw back to front.
  *
  * Each tick it rebuilds only the chunks whose tiles changed since it last
- * saw the layer, writing their geometry in place with `Geometry.update`, so
- * editing tiles creates no GL objects. It copies the layer's `category` and
- * draw `layer` onto its meshes and its `tintColor` onto their materials.
+ * saw the layer, writing an existing mesh's geometry in place with
+ * `Geometry.update`, so an edit creates GL objects only for a chunk or
+ * source that had no mesh. It copies the layer's `category` and draw
+ * `layer` onto its meshes and its `tintColor` onto their materials.
  * It's the only writer of the chunk entities, their meshes and the layer's
  * `TilemapRenderStateEcsComponent`, where it keeps what it built.
  *
@@ -85,10 +87,11 @@ const asWritableMesh = (mesh: TilemapChunkMesh): WritableTilemapChunkMesh =>
  * entities get their world transform in the frame they're created;
  * `createRenderEcsSystem` draws them.
  *
- * Removing a layer entity, its `TilemapLayerEcsComponent` or its
- * `PositionEcsComponent` removes its chunk entities and disposes their
- * geometries. To catch a layer or position removed from a live entity,
- * each tick starts with an `EcsWorld.query` of every render state, which
+ * Removing a layer entity removes its chunk entities and disposes their
+ * geometries; removing its `TilemapLayerEcsComponent` or its
+ * `PositionEcsComponent` does the same on the system's next tick. To catch
+ * a layer or position removed from a live entity, each tick starts with an
+ * `EcsWorld.query` of every render state, which
  * builds new arrays on every call: fine for the few layer entities a game
  * has, but not a pattern for components that many entities carry. Removing
  * this system or stopping the world leaves every layer drawn as it was
