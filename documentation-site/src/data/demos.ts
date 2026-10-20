@@ -208,6 +208,13 @@ export const demos: Demo[] = [
     categories: ['rendering'],
   },
   {
+    slug: 'sprite-atlas',
+    title: 'Sprite Atlas',
+    description:
+      'Props, animated trimmed flames and a nine-sliced UI panel, all drawn by name from one TexturePacker atlas in one batch per camera.',
+    categories: ['rendering', 'animations'],
+  },
+  {
     slug: 'text',
     title: 'Text Rendering',
     description:
