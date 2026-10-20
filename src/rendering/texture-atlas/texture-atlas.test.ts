@@ -293,4 +293,103 @@ describe('createTextureAtlas', () => {
       );
     });
   });
+
+  describe('sequences', () => {
+    const rects = [
+      rect({ name: 'run_0' }),
+      rect({ name: 'run_1' }),
+      rect({ name: 'jump_0' }),
+    ];
+
+    it('has no sequences by default', () => {
+      const atlas = createTextureAtlas(texture, rects);
+
+      expect(atlas.sequences.size).toBe(0);
+      expect(() => atlas.getSequence('run')).toThrow(
+        'Unable to find sequence "run" in the texture atlas: it has no sequences.',
+      );
+    });
+
+    it('looks up a sequence by name', () => {
+      const atlas = createTextureAtlas(texture, rects, {
+        sequences: new Map([
+          ['run', ['run_0', 'run_1', 'run_0']],
+          ['jump', ['jump_0']],
+        ]),
+      });
+
+      expect(atlas.getSequence('run')).toEqual(['run_0', 'run_1', 'run_0']);
+      expect(atlas.getSequence('jump')).toEqual(['jump_0']);
+      expect([...atlas.sequences.keys()]).toEqual(['run', 'jump']);
+    });
+
+    it('throws for a missing sequence, suggesting close names', () => {
+      const atlas = createTextureAtlas(texture, rects, {
+        sequences: new Map([
+          ['run', ['run_0']],
+          ['jump', ['jump_0']],
+        ]),
+      });
+
+      expect(() => atlas.getSequence('rnu')).toThrow(
+        'Unable to find sequence "rnu" in the texture atlas. Did you mean "run"?',
+      );
+      expect(() => atlas.getSequence('spaceship')).toThrow(
+        'The atlas has 2 sequences, named "run", "jump".',
+      );
+    });
+
+    it('copies the sequences and freezes each list', () => {
+      const run = ['run_0', 'run_1'];
+      const sequences = new Map([['run', run]]);
+      const atlas = createTextureAtlas(texture, rects, { sequences });
+
+      run.push('jump_0');
+      sequences.set('jump', ['jump_0']);
+
+      expect(atlas.getSequence('run')).toEqual(['run_0', 'run_1']);
+      expect(Object.isFrozen(atlas.getSequence('run'))).toBe(true);
+      expect(atlas.sequences.has('jump')).toBe(false);
+    });
+
+    it('throws for a sequence with an empty name', () => {
+      expect(() =>
+        createTextureAtlas(texture, rects, {
+          sequences: new Map([['', ['run_0']]]),
+        }),
+      ).toThrow(
+        'Unable to create a texture atlas: it has a sequence with an empty name.',
+      );
+    });
+
+    it('throws for an empty sequence', () => {
+      expect(() =>
+        createTextureAtlas(texture, rects, {
+          sequences: new Map([['run', []]]),
+        }),
+      ).toThrow(
+        'Unable to create a texture atlas: its sequence "run" is empty. A sequence must list at least one region.',
+      );
+    });
+
+    it("throws for a sequence that lists a name that isn't a region's", () => {
+      expect(() =>
+        createTextureAtlas(texture, rects, {
+          sequences: new Map([['run', ['run_0', 'run_2']]]),
+        }),
+      ).toThrow(
+        'Unable to create a texture atlas: in its sequence "run", the atlas has no region named "run_2". Did you mean "run_0", "run_1"?',
+      );
+    });
+
+    it('lists every missing name of a sequence in one error', () => {
+      expect(() =>
+        createTextureAtlas(texture, rects, {
+          sequences: new Map([['run', ['run_2', 'run_0', 'jump_1', 'run_2']]]),
+        }),
+      ).toThrow(
+        'in its sequence "run", the atlas has no regions named "run_2", "jump_1". "run_2": Did you mean',
+      );
+    });
+  });
 });

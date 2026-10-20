@@ -5,8 +5,8 @@ import { createTextureAtlas, type TextureAtlas } from './texture-atlas.js';
 /**
  * Creates a {@link TextureAtlas} from a parsed TexturePacker file and the
  * texture of the image exported with it. Each frame becomes a region with
- * its trim and pivot, and the file's `meta.scale` becomes the atlas's
- * `scale`. Use this for JSON a game already has; `TextureAtlasCache` loads
+ * its trim and pivot, the file's `meta.scale` becomes the atlas's `scale`,
+ * and its `animations` become the atlas's `sequences`. Use this for JSON a game already has; `TextureAtlasCache` loads
  * both files from URLs and calls it.
  * @param texture - The texture of the atlas image. It must be the size the
  * file declares (`meta.size`).
@@ -29,5 +29,8 @@ export function createTexturePackerAtlas(
     );
   }
 
-  return createTextureAtlas(texture, data.regions, { scale: data.scale });
+  return createTextureAtlas(texture, data.regions, {
+    scale: data.scale,
+    sequences: data.sequences,
+  });
 }

@@ -3,6 +3,7 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addSpriteAnimationComponent,
   AnimationClip,
+  createAtlasAnimationClip,
 } from '@forge-game-engine/forge/animations';
 import { AssetRegistry } from '@forge-game-engine/forge/asset-loading';
 import {
@@ -11,9 +12,9 @@ import {
 } from '@forge-game-engine/forge/common';
 import {
   addSpriteComponent,
-  AtlasRegion,
   createAtlasSprite,
   createTextureAtlas,
+  getAtlasRegionNames,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 // The ship sheet is drawn at the tile sheet's scale, so ships and tiles
@@ -66,18 +67,27 @@ export async function createShips(
   );
   const atlas = createTextureAtlas(texture, shipRects);
 
-  // Every region whose name starts with the kind, in the atlas's order.
-  const stylesOf = (kind: string): AtlasRegion[] =>
-    atlas.regions.filter((region) => region.name.startsWith(kind));
+  // Every region whose name starts with the kind, in natural order:
+  // 'ship (1)', 'ship (2)', ...
+  const styleNames = {
+    ship: getAtlasRegionNames(atlas, 'ship'),
+    dinghy: getAtlasRegionNames(atlas, 'dinghy'),
+  };
 
   const clips = new AssetRegistry<AnimationClip>();
   const clipHandles = {
-    ship: clips.register('ship', new AnimationClip(stylesOf('ship'))),
-    dinghy: clips.register('dinghy', new AnimationClip(stylesOf('dinghy'))),
+    ship: clips.register(
+      'ship',
+      createAtlasAnimationClip(atlas, styleNames.ship),
+    ),
+    dinghy: clips.register(
+      'dinghy',
+      createAtlasAnimationClip(atlas, styleNames.dinghy),
+    ),
   };
 
   for (const { kind, x, y, angle, firstStyle } of vessels) {
-    const styles = stylesOf(kind);
+    const styles = styleNames[kind];
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, { local: { x, y } });
@@ -85,7 +95,7 @@ export async function createShips(
     addSpriteComponent(
       world,
       entity,
-      createAtlasSprite(atlas, styles[firstStyle].name, { pixelsPerUnit }),
+      createAtlasSprite(atlas, styles[firstStyle], { pixelsPerUnit }),
     );
     addSpriteAnimationComponent(world, entity, {
       animationClipHandle: clipHandles[kind],

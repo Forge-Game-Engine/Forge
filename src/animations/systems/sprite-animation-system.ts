@@ -4,7 +4,7 @@ import {
   spriteAnimationId,
 } from '../components/index.js';
 import { EcsSystem } from '../../ecs/index.js';
-import { AnimationClip } from '../index.js';
+import { AnimationClip } from '../types/index.js';
 import { AssetRegistry } from '../../asset-loading/asset-registry.js';
 import { SpriteEcsComponent, spriteId } from '../../rendering/index.js';
 
@@ -12,10 +12,13 @@ import { SpriteEcsComponent, spriteId } from '../../rendering/index.js';
  * Creates a new ECS-style sprite animation system. For each entity with a
  * `SpriteAnimationEcsComponent` and a sprite, once
  * `frameDurationMilliseconds / playbackSpeed` has passed since the last frame
- * change (by `time.timeInSeconds`), it assigns the frame at
- * `animationFrameIndex` to the sprite's `region` and moves
- * `animationFrameIndex` to the next frame, back to `0` after the clip's last
- * frame.
+ * change (by `time.timeInSeconds`), it assigns the clip's `texture` to the
+ * sprite's `texture` and the frame at `animationFrameIndex` to its
+ * `region`, and moves `animationFrameIndex` to the next frame, back to `0`
+ * after the clip's last frame. Both are written together, so the sprite
+ * never draws one clip's region on another texture, and a sprite given a
+ * clip of another atlas draws that atlas from the clip's first frame. The
+ * sprite's `width`, `height`, `pivot` and `emissive` are left alone.
  * @param time - The Time instance.
  * @param animationRegistry - The registry containing animation clips.
  * @returns An ECS system that updates sprite animations.
@@ -75,6 +78,7 @@ export const createSpriteAnimationEcsSystem = (
         spriteAnimationComponent.animationFrameIndex++;
       }
 
+      spriteComponent.texture = animationClip.texture;
       spriteComponent.region = animationFrame;
 
       spriteAnimationComponent.lastFrameChangeTimeInSeconds =

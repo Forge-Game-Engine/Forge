@@ -6,9 +6,10 @@ animation, each with its own component and system:
 - [Sprite animations](./sprite-animations.md): a
   [`SpriteAnimationEcsComponent`](/Forge/docs/api/interfaces/SpriteAnimationEcsComponent)
   plays an [`AnimationClip`](/Forge/docs/api/classes/AnimationClip), a
-  sequence of frames from a sprite sheet, on an entity's sprite.
+  sequence of frames that are regions of one texture atlas, on an entity's
+  sprite.
   [`createSpriteAnimationEcsSystem`](/Forge/docs/api/functions/createSpriteAnimationEcsSystem)
-  changes the sprite's frame.
+  changes the sprite's frame and texture.
 - [Property animations](./property-animations.md): an
   [`AnimationEcsComponent`](/Forge/docs/api/interfaces/AnimationEcsComponent)
   holds animated properties, each moving a number from a start value to an

@@ -168,8 +168,13 @@ same `dataUrl` was already requested with another `imageUrl` or `filter`.
 :::
 
 In the hash form, frames whose names are whole numbers (`"0"`, `"12"`)
-come first in `regions`, in numeric order. Look regions up by name, or
-export as "JSON (Array)" when their order matters.
+come first in `regions`, in numeric order. Look regions up by name,
+[list numbered regions](#finding-numbered-regions) with
+`getAtlasRegionNames`, or export as "JSON (Array)" when their order
+matters.
+
+The file's optional `animations` object becomes the atlas's
+[sequences](#sequences).
 
 ## Creating an atlas from TexturePacker JSON
 
@@ -228,6 +233,58 @@ texture:
 sprite.region = itemsAtlas.getRegion('gem');
 ```
 
+## Finding numbered regions
+
+[`getAtlasRegionNames(atlas, prefix)`](/Forge/docs/api/functions/getAtlasRegionNames)
+returns the names of the regions that start with `prefix`, in natural
+order: runs of digits compare as numbers, so `run_2` comes before `run_10`
+and `run_9.png` before `run_10.png`.
+
+```ts
+import { getAtlasRegionNames } from '@forge-game-engine/forge/rendering';
+
+// ['run_0', 'run_1', ..., 'run_10']
+const runFrames = getAtlasRegionNames(heroAtlas, 'run_');
+```
+
+The prefix is matched as written and is case-sensitive: `'run'` also
+matches `runner_0`, so include the separator. `''` returns every name.
+`getAtlasRegionNames` throws if no name starts with `prefix`, listing up to
+three close names.
+
+## Sequences
+
+An atlas's [`sequences`](/Forge/docs/api/interfaces/TextureAtlas#sequences)
+are named lists of region names, each in play order, such as the
+animations TexturePacker writes when its "Auto-detect animations" option is
+on. `TextureAtlasCache` and `createTexturePackerAtlas` read them from the
+file's `animations` object, keeping each list's order.
+[`getSequence(name)`](/Forge/docs/api/interfaces/TextureAtlas#getsequence)
+returns one:
+
+```ts
+const runFrames = heroAtlas.getSequence('run');
+```
+
+`getSequence` throws for a missing name, listing up to three close names.
+An atlas without sequences has an empty `sequences` map.
+
+An atlas built from rects gets sequences from `createTextureAtlas`'s
+`sequences` option:
+
+```ts
+const heroAtlas = createTextureAtlas(texture, heroRects, {
+  sequences: new Map([['run', ['run_0', 'run_1', 'run_2']]]),
+});
+```
+
+:::caution
+`createTextureAtlas` throws if a sequence has an empty name, lists no
+regions, or lists a name that isn't a region's.
+`parseTexturePackerAtlas` throws the same way for an animation in the file,
+naming the animation and the position of the entry.
+:::
+
 ## Creating a sprite from a region
 
 [`createAtlasSprite(atlas, region, options)`](/Forge/docs/api/functions/createAtlasSprite)
@@ -254,9 +311,12 @@ atlas's region object. Its `width` and `height` are the region's
 frame. Its `pivot` is a copy of the
 region's.
 
-A sprite animation assigns each frame's region to the sprite's `region`
-and leaves `width`, `height` and `pivot` as they are, so every frame of a
-clip is drawn inside the size and pivot of the sprite it plays on.
+A sprite animation assigns each frame's region to the sprite's `region`,
+and its clip's texture to the sprite's `texture`, and leaves `width`,
+`height` and `pivot` as they are, so every frame of a clip is drawn inside
+the size and pivot of the sprite it plays on.
+[`createAtlasAnimationClip`](../animations/sprite-animations.md#animation-clips)
+throws for frames whose untrimmed sizes or pivots differ.
 
 ## Nine-slicing an atlas region
 

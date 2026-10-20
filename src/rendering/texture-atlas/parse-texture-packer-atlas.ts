@@ -1,4 +1,5 @@
 import type { AtlasRegionRect } from './atlas-region.js';
+import { describeMissingName } from './suggest-names.js';
 
 /**
  * The contents of a TexturePacker "JSON (Hash)" or "JSON (Array)" file, as
@@ -33,6 +34,13 @@ export interface TexturePackerAtlasData {
    * export as "JSON (Array)" when order matters.
    */
   readonly regions: readonly Readonly<AtlasRegionRect>[];
+
+  /**
+   * The file's named frame lists (its top-level `animations`), each a list
+   * of frame names in play order, in the file's order. Empty when the file
+   * has none.
+   */
+  readonly sequences: ReadonlyMap<string, readonly string[]>;
 }
 
 /**
@@ -458,6 +466,83 @@ const parseFrames = (
   return parseFrameHash(frames, atlasSize);
 };
 
+const readSequence = (
+  value: unknown,
+  path: string,
+  frameNames: ReadonlySet<string>,
+): readonly string[] => {
+  if (!Array.isArray(value)) {
+    return fail(
+      `${path} must be an array of frame names, got ${describeValue(value)}.`,
+    );
+  }
+
+  if (value.length === 0) {
+    return fail(`${path} is empty. An animation must list at least one frame.`);
+  }
+
+  return Object.freeze(
+    value.map((entry: unknown, index) => {
+      const entryPath = `${path}[${index}]`;
+
+      if (typeof entry !== 'string' || entry.length === 0) {
+        return fail(
+          `${entryPath} must be a frame name, got ${describeValue(entry)}.`,
+        );
+      }
+
+      if (!frameNames.has(entry)) {
+        return fail(
+          `${entryPath} (${JSON.stringify(entry)}) isn't a frame. ${describeMissingName(entry, [...frameNames], 'frame')}`,
+        );
+      }
+
+      return entry;
+    }),
+  );
+};
+
+/**
+ * Reads the optional top-level `animations` object, which TexturePacker
+ * writes when animations are defined or "Auto-detect animations" is on:
+ * each key an animation's name, each value its frame names in play order.
+ */
+const readSequences = (
+  root: JsonRecord,
+  regions: readonly Readonly<AtlasRegionRect>[],
+): ReadonlyMap<string, readonly string[]> => {
+  const sequences = new Map<string, readonly string[]>();
+
+  if (root['animations'] === undefined) {
+    return sequences;
+  }
+
+  const animations = readRecord(root['animations'], 'animations');
+  const frameNames = new Set(regions.map(({ name }) => name));
+  let frameCount = 0;
+
+  for (const [name, value] of Object.entries(animations)) {
+    if (name.length === 0) {
+      fail('animations has an animation with an empty name.');
+    }
+
+    frameCount += Array.isArray(value) ? value.length : 0;
+
+    if (frameCount > maxFrameCount) {
+      fail(
+        `animations lists more than the ${maxFrameCount} frames a file may have.`,
+      );
+    }
+
+    sequences.set(
+      name,
+      readSequence(value, `animations[${JSON.stringify(name)}]`, frameNames),
+    );
+  }
+
+  return sequences;
+};
+
 /**
  * Reads a TexturePacker "JSON (Hash)" or "JSON (Array)" file, the format
  * TexturePacker, free-tex-packer and Aseprite's sprite sheet export write,
@@ -472,31 +557,36 @@ const parseFrames = (
  * since TexturePacker's is Y-down with `(0, 0)` at the untrimmed frame's
  * top-left, like Forge's; without one, the region pivots at its center.
  * Frame names are kept as written, extension included (turn on "Trim
- * sprite names" in TexturePacker to drop `.png`). Fields this doesn't
- * list, such as `animations`, `duration` and `meta.frameTags`, are
- * ignored.
+ * sprite names" in TexturePacker to drop `.png`). The optional top-level
+ * `animations` object, which maps an animation's name to its frame names
+ * in play order, becomes `sequences`. Fields this doesn't list, such as
+ * `duration` and `meta.frameTags`, are ignored.
  *
  * Rotated frames aren't supported: export with rotation off. Multi-page
  * files aren't either: export each page as its own file.
  * @param json - The parsed JSON file.
- * @returns The file's image size, scale and frame rects, frozen.
+ * @returns The file's image size, scale, frame rects and animations,
+ * frozen.
  * @throws An error, starting `Invalid TexturePacker atlas JSON:` and naming
  * the frame and field, if the file isn't an object with `frames` and
  * `meta.size`, `frames` is empty or has more than 100 000 frames, a field
  * has the wrong type or a value out of range, a frame is rotated or
  * reaches past `meta.size`, a trim doesn't fit its `sourceSize`, a
  * `spriteSourceSize` size doesn't match its `frame`, two frames share a
- * name, or it's a multi-page file.
+ * name, it's a multi-page file, or `animations` isn't an object of
+ * non-empty lists of frame names (or lists more than 100 000 in all).
  */
 export function parseTexturePackerAtlas(json: unknown): TexturePackerAtlasData {
   const root = readRecord(json, 'the root');
   const meta = readRecord(root['meta'], 'meta');
   const size = readSize(meta);
+  const regions = Object.freeze(parseFrames(root, size));
 
   return Object.freeze({
     imageName: readImageName(meta),
     size,
     scale: readScale(meta),
-    regions: Object.freeze(parseFrames(root, size)),
+    regions,
+    sequences: readSequences(root, regions),
   });
 }

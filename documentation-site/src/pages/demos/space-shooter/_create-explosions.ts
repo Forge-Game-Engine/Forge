@@ -3,6 +3,7 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addSpriteAnimationComponent,
   AnimationClip,
+  createAtlasAnimationClip,
 } from '@forge-game-engine/forge/animations';
 import { AssetRegistry } from '@forge-game-engine/forge/asset-loading';
 import {
@@ -62,10 +63,11 @@ export async function createExplosionSpawner(
     category: renderLayer,
   };
 
-  const animationClip = new AnimationClip(
-    atlas.regions.slice(
-      explosionStartFrame,
-      explosionStartFrame + explosionFrameCount,
+  const animationClip = createAtlasAnimationClip(
+    atlas,
+    Array.from(
+      { length: explosionFrameCount },
+      (_, index) => explosionStartFrame + index,
     ),
   );
 

@@ -36,7 +36,9 @@ export interface SpriteRequiredOptions {
    * The image the sprite draws, sampled within `region`. Assign another
    * texture to change the image. Consecutive sprites with the same texture,
    * emissive map and material draw in one instanced draw call, whatever
-   * their regions.
+   * their regions. While the entity has a `SpriteAnimationEcsComponent`,
+   * the sprite animation system writes its clip's texture here with each
+   * frame's `region`: change the image by changing the clip.
    */
   texture: Texture;
 }
@@ -85,8 +87,9 @@ export interface SpriteDefaultedOptions {
    * The part of `texture` the sprite draws, and where it sits in the
    * untrimmed frame `width`/`height` describe. Defaults to
    * `fullTextureRegion` (the whole texture, untrimmed). Regions are
-   * immutable: assign another to change the frame, as the sprite animation
-   * system does for a sprite with a `SpriteAnimationEcsComponent`.
+   * immutable: assign another to change the frame. While the entity has a
+   * `SpriteAnimationEcsComponent`, the sprite animation system writes each
+   * frame here, with its clip's `texture`.
    */
   region: TextureRegion;
 

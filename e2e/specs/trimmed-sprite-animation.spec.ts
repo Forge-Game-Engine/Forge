@@ -20,7 +20,7 @@ const captureFrame = (page: Page) =>
 
     return {
       markers: scene.measureMarkerBounds(),
-      frameIndices: scene.animatedFrameIndices,
+      regionNames: scene.animatedRegionNames,
       instancedDraws: [...scene.lastFrameInstancedDraws],
       spriteSpacingInWorldUnits: scene.spriteSpacingInWorldUnits,
       devicePixelsPerUnit: scene.devicePixelsPerUnit,
@@ -76,16 +76,26 @@ test.describe('A sprite animation of trimmed frames', () => {
   test('keeps the art in place on every frame, in one batch', async ({
     page,
   }) => {
-    const shownFrames = new Set<number>();
+    // The frames the first animated sprite shows, each once per change.
+    const shownFrames: string[] = [];
 
-    // Two loops of the three-frame clip.
-    for (let step = 0; step < 6; step++) {
+    // `Time` clamps each step after the first to under a frame's duration,
+    // so frames change every step or two: ten steps cover more than a loop
+    // of the three-frame clip.
+    for (let step = 0; step < 10; step++) {
       const frame = await test.step(`render clip frame ${step}`, () =>
         captureFrame(page));
+      const [byName, bySequence] = frame.regionNames;
 
-      for (const index of frame.frameIndices) {
-        shownFrames.add(index);
+      if (shownFrames.at(-1) !== byName) {
+        shownFrames.push(byName);
       }
+
+      await test.step(`assert the clips stay one frame apart on frame ${step}`, () => {
+        const nextFrame = (Number(byName.slice('run_'.length)) + 1) % 3;
+
+        expect(bySequence).toBe(`run_${nextFrame}`);
+      });
 
       await test.step(`assert the markers line up on frame ${step}`, () => {
         const [reference, ...animated] = frame.markers;
@@ -120,8 +130,15 @@ test.describe('A sprite animation of trimmed frames', () => {
       });
     }
 
-    await test.step('assert the animated sprites showed every frame', () => {
-      expect([...shownFrames].sort()).toEqual([0, 1, 2]);
+    await test.step('assert the clip played its frames in natural order', () => {
+      // The atlas lists `run_2` first, so a clip in the atlas's order would
+      // show it before `run_0`.
+      expect(shownFrames.slice(0, 4)).toEqual([
+        'run_0',
+        'run_1',
+        'run_2',
+        'run_0',
+      ]);
     });
   });
 });
