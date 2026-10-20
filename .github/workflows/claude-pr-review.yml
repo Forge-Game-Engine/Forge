@@ -3,10 +3,18 @@ name: Claude PR review
 # Opening a pull request (or marking a draft ready for review) starts a
 # Claude Code run that reviews it with the `pr-reviewer` agent
 # (.claude/agents/pr-reviewer.md) and posts the checklist as a comment, with
-# inline comments on the lines it flags. It runs once per pull request, never
-# pushes, approves or blocks merging. Nothing reviews a pull request again
-# automatically: to review new commits, run the `pr-reviewer` agent locally.
-# (An `@claude` mention starts claude.yml's implementing run, not a review.)
+# inline comments on the lines it flags. It never pushes, approves or blocks
+# merging, and nothing reviews a pull request again automatically: to review
+# new commits, run the `pr-reviewer` agent locally. (An `@claude` mention
+# starts claude.yml's implementing run, not a review.)
+#
+# When the review of a pull request that a `claude` label run just opened
+# requests changes, the labeler App comments `@claude` on it, which starts
+# claude.yml's run to address the review. A comment made with GITHUB_TOKEN
+# wouldn't start a workflow. The App needs read and write access to Issues
+# (see claude-unblock.yml), which covers comments on pull requests. Only the
+# `opened` review does this, and the fix run's pushes don't start another
+# review, so a pull request gets one automatic fix round.
 #
 # Requires the Claude GitHub App (https://github.com/apps/claude) installed on
 # the repository and a `CLAUDE_CODE_OAUTH_TOKEN` secret (`claude setup-token`).
@@ -72,3 +80,40 @@ jobs:
             --model claude-opus-5-5
             --effort high
             --allowedTools "Agent,Task,Read,Grep,Glob,Write,mcp__github_inline_comment__create_inline_comment,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*)"
+
+      # Reads the report the review step wrote, and only an exact verdict
+      # line counts, so a finding that quotes the verdict can't trigger it.
+      - name: Check whether the review requested changes
+        id: verdict
+        if: >-
+          github.event.action == 'opened' &&
+          github.event.pull_request.user.login == 'claude[bot]'
+        run: |
+          if [ -f /tmp/forge-review.md ] && grep -qxF '**Verdict:** CHANGES REQUESTED' /tmp/forge-review.md; then
+            echo "changes-requested=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changes-requested=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create the labeler App's token
+        id: labeler
+        if: steps.verdict.outputs.changes-requested == 'true'
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.CLAUDE_LABELER_APP_ID }}
+          private-key: ${{ secrets.CLAUDE_LABELER_PRIVATE_KEY }}
+
+      - name: Ask Claude to address the review
+        if: steps.verdict.outputs.changes-requested == 'true'
+        env:
+          GH_TOKEN: ${{ steps.labeler.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment "$PR" --body "@claude Address the Forge review above and its inline comments.
+
+          - Fix every finding the review marks as failing, and push the fixes to this pull request's branch.
+          - Answer each question the review asks. Change the code when the answer shows it's wrong.
+          - Leave the review's "Needs a manual check" items for a person.
+
+          No new review will run after your pushes. So in your tracking comment, list each finding and question with what you did about it."
