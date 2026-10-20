@@ -19,7 +19,15 @@ in vec3 a_instanceEmissive;   // emissive color
 // Uniforms for projection/camera:
 uniform mat3 u_projection; // 2D projection/camera matrix
 
+// How far, in UV, the rect a sprite samples sits inside its region on each
+// side: half a texel of a texture whose wrap is 'clamp', so linear filtering
+// never reaches the texels next to the region, and zero for one that repeats.
+uniform vec2 u_regionInset;
+
 out vec2 v_texCoord;
+// The rect to clamp `v_texCoord` to before sampling, as min (xy) and max
+// (zw). highp, since half a texel is below mediump's step on large textures.
+flat out highp vec4 v_texBounds;
 out vec4 v_tint;
 out vec3 v_emissive;
 
@@ -67,6 +75,16 @@ void main() {
 
     gl_Position = vec4(projected.xy, 0.0, 1.0);
     v_texCoord = a_instanceTexRect.xy + a_texCoord * a_instanceTexRect.zw;
+
+    // Inset around the rect's center, so a rect narrower than a texel (a
+    // nine-slice band can be) collapses to its center line instead of
+    // giving `clamp` a minimum above its maximum. Without an inset the
+    // bounds are the rect itself, which `v_texCoord` never leaves.
+    vec2 texHalfSize = a_instanceTexRect.zw * 0.5;
+    vec2 texCenter = a_instanceTexRect.xy + texHalfSize;
+    vec2 boundsHalfSize = max(texHalfSize - u_regionInset, vec2(0.0));
+    v_texBounds = vec4(texCenter - boundsHalfSize, texCenter + boundsHalfSize);
+
     v_tint = a_instanceTint;
     v_emissive = a_instanceEmissive;
 

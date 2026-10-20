@@ -192,12 +192,15 @@ and `createButton` as their `sprite`.
 insets are measured against the untrimmed art.
 :::
 
-## Padding between regions
+## Filtering at region edges
 
-Regions sample their exact texel edges. With `'linear'` filtering, a
-texture sampled at a region's edge blends in the texels just outside it,
-so a region packed directly against another can show a line of its
-neighbor's color along its edges. To avoid it, pack the atlas with spacing
-between regions (and set `spacing` to match for a grid atlas), have the
-packer extrude each region's edge texels, or load the texture with
-`filter: 'nearest'` for pixel art.
+A sprite drawing a region of a texture whose `wrap` is `'clamp'` (the
+default) samples only that region: its outermost half texel repeats the
+region's edge texels, the way a whole clamped texture repeats its own. So
+with `'linear'` filtering, at any scale, a region never blends in its
+neighbors in the sheet, and tiles cut from a sheet with no spacing between
+them draw side by side without seams. A sprite's emissive map is sampled
+inside the same rect, so give it the texture's size.
+
+A region of a texture whose `wrap` is `'repeat'` isn't limited this way, so
+that its UV rect can tile or scroll the texture.

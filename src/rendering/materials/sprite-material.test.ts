@@ -8,7 +8,7 @@ import {
   spriteFragmentShader,
   spriteVertexShader,
 } from '../shaders/index.js';
-import { Texture } from '../texture.js';
+import { createTexture, Texture } from '../texture.js';
 import { createSpriteMaterial } from './sprite-material.js';
 
 const proceduralFragmentShader = `#version 300 es
@@ -62,6 +62,7 @@ describe('SpriteMaterial', () => {
       uniform1i: vi.fn(),
       uniform1fv: vi.fn(),
       uniform1f: vi.fn(),
+      uniform2fv: vi.fn(),
       uniformMatrix3fv: vi.fn(),
       activeTexture: vi.fn(),
       bindTexture: vi.fn(),
@@ -110,6 +111,76 @@ describe('SpriteMaterial', () => {
       ).toThrow('set by the render system');
     },
   );
+
+  it('does not let u_regionInset be set, since the render system sets it from the texture', () => {
+    const material = createSpriteMaterial(renderContext, 'sprite.frag');
+
+    expect(() =>
+      material.setUniform('u_regionInset', new Float32Array([0, 0])),
+    ).toThrow('set by the render system');
+  });
+
+  describe('u_regionInset', () => {
+    const createSizedTexture = (wrap: 'clamp' | 'repeat'): Texture => {
+      const source = document.createElement('canvas');
+
+      source.width = 200;
+      source.height = 50;
+
+      return createTexture(renderContext, source, { wrap });
+    };
+
+    beforeEach(() => {
+      activeUniforms = [
+        { name: 'u_regionInset', type: 0x8b50 /* FLOAT_VEC2 */ },
+      ];
+    });
+
+    it("insets a clamped texture's regions by half a texel, so filtering stays inside them", () => {
+      const material = createSpriteMaterial(renderContext, 'sprite.frag');
+
+      material.bindSprites(
+        gl,
+        createSizedTexture('clamp'),
+        renderContext.blackTexture,
+      );
+
+      expect(gl.uniform2fv).toHaveBeenCalledWith(
+        { name: 'u_regionInset' },
+        new Float32Array([0.5 / 200, 0.5 / 50]),
+      );
+    });
+
+    it("doesn't inset a repeating texture's regions, so they still wrap around", () => {
+      const material = createSpriteMaterial(renderContext, 'sprite.frag');
+
+      material.bindSprites(
+        gl,
+        createSizedTexture('repeat'),
+        renderContext.blackTexture,
+      );
+
+      expect(gl.uniform2fv).toHaveBeenCalledWith(
+        { name: 'u_regionInset' },
+        new Float32Array([0, 0]),
+      );
+    });
+
+    it("doesn't inset an empty texture", () => {
+      const material = createSpriteMaterial(renderContext, 'sprite.frag');
+
+      material.bindSprites(
+        gl,
+        new Texture(renderContext),
+        renderContext.blackTexture,
+      );
+
+      expect(gl.uniform2fv).toHaveBeenCalledWith(
+        { name: 'u_regionInset' },
+        new Float32Array([0, 0]),
+      );
+    });
+  });
 
   it("binds the sprites' texture and emissive map to the samplers its shader declares", () => {
     activeUniforms = [

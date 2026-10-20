@@ -132,3 +132,8 @@ A tiled region repeats a whole number of times: the region's size divided
 by its size at the native size, rounded to the nearest whole number, at
 least `1`. Each tile is stretched to fill the region exactly, so no tile is
 cut off. A sprite drawn at its native size draws each region once.
+
+On a texture whose `wrap` is `'clamp'`, each region samples only its own
+part of the texture, so with `'linear'` filtering a stretched or tiled
+region repeats its own edge texels rather than blending in the corner or
+edge beside it.

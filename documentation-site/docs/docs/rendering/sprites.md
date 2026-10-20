@@ -302,7 +302,8 @@ precision mediump float;
 uniform sampler2D u_texture;
 uniform float u_fade;
 
-in vec2 v_texCoord;
+in highp vec2 v_texCoord;
+flat in highp vec4 v_texBounds;
 in vec4 v_tint;
 in vec3 v_emissive;
 out vec4 fragColor;
@@ -310,7 +311,8 @@ out vec4 fragColor;
 #pragma forge include(mask)
 
 void main() {
-  vec4 color = texture(u_texture, v_texCoord) * v_tint;
+  highp vec2 texCoord = clamp(v_texCoord, v_texBounds.xy, v_texBounds.zw);
+  vec4 color = texture(u_texture, texCoord) * v_tint;
 
   fragColor = vec4(
     color.rgb,
@@ -331,9 +333,18 @@ addSpriteComponent(world, entity, {
 });
 ```
 
-The fragment shader receives three inputs from the sprite vertex shader:
+The fragment shader receives these inputs from the sprite vertex shader:
 
 - `v_texCoord`: the UV within the sprite's region of its texture.
+- `v_texBounds`: the rect to clamp `v_texCoord` to before sampling the
+  texture or emissive map, with its minimum in `xy` and maximum in `zw`.
+  Declare it `flat in highp vec4`. For a texture whose `wrap` is
+  `'clamp'`, it's the region inset by half a texel, so linear filtering
+  never blends in the texels around the region in a sheet (see
+  [Texture Atlases](./texture-atlases.md#filtering-at-region-edges)). For a
+  `'repeat'` texture it's the region itself. Effects computed from the UV
+  rather than sampled (a gradient across the sprite) can keep using
+  `v_texCoord`.
 - `v_tint`: the sprite's `tintColor`, with its alpha multiplied by the
   sprite's `opacityMultiplier` when that's set.
 - `v_emissive`: the RGB of the sprite's emissive color (black without an

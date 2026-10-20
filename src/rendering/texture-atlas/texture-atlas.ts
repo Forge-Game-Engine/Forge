@@ -101,10 +101,11 @@ const validateNames = (rects: readonly AtlasRegionRect[]): void => {
 /**
  * Creates a {@link TextureAtlas} from texel rects, such as an atlas
  * packer's output. Each rect becomes an {@link AtlasRegion} whose UVs land
- * on the rect's exact texel edges, with no half-texel inset: keeping
- * neighboring regions from bleeding into each other under linear filtering
- * is up to the atlas's layout (spacing or extruded edges between regions)
- * or `'nearest'` filtering.
+ * on the rect's exact texel edges, with no half-texel inset, so a sprite
+ * draws the whole rect. A sprite drawing a region of a texture whose `wrap`
+ * is `'clamp'` samples only inside it, so neighboring regions don't bleed
+ * into each other under linear filtering, even with no spacing between
+ * them.
  * @param texture - The texture the regions are cut from. Its size is read
  * now, to convert texels to UVs.
  * @param rects - The regions, in texels, measured from the texture's

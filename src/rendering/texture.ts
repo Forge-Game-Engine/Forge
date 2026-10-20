@@ -15,8 +15,10 @@ export type TextureFilter = 'linear' | 'nearest';
 
 /**
  * What a texture returns outside `[0, 1]`: `'clamp'` repeats its edge
- * texels (so a sprite frame never bleeds into its neighbor in a sheet), and
- * `'repeat'` tiles it.
+ * texels, and `'repeat'` tiles it. A sprite drawing a region of a
+ * `'clamp'` texture also repeats the region's edge texels, so with linear
+ * filtering a frame never bleeds into its neighbor in a sheet; a region of
+ * a `'repeat'` texture can tile or scroll it instead.
  */
 export type TextureWrap = 'clamp' | 'repeat';
 

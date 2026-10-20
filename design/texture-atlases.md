@@ -674,6 +674,16 @@ spacing, margin })`: a uniform grid of regions named by index.
 - **Tradeoff**: a linear-filtered atlas packed with no spacing bleeds
   neighbors at region edges; the docs explain spacing and extrusion.
 - **Assumptions**: the milestone's documentation issue covers padding.
+- **Revised in review**: the tradeoff showed up in the demo: Kenney's tile
+  sheet, drawn at a fractional scale, showed a seam of transparent
+  neighbor texels at every water tile's edge. The UVs stay on exact texel
+  edges, but sprite sampling now clamps to the region inset by half a texel
+  for a `'clamp'` texture (`v_texBounds` in `sprite.vert`), the way Godot's
+  `region_filter_clip_enabled` does. It gives what Godot 4's TileSet
+  `use_texture_padding` gives, without a padded copy of the texture.
+  `'repeat'` textures aren't clamped, so their regions can still tile and
+  scroll. This keeps `TextureWrap`'s promise that a `'clamp'` frame never
+  bleeds into its neighbor, which held for whole textures but not regions.
 
 ### D6. Grid `spacing` and `margin` are single numbers counted like Tiled
 

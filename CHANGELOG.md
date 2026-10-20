@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Fixed
 
 - **physics:** Two `TerrainCollider`s whose bounds overlap no longer throw in `createNarrowPhaseEcsSystem`. Terrain and chain colliders never collide with each other, so they no longer need a `category` and `mask` that exclude each other
+- **rendering:** A sprite drawing a region of a texture whose `wrap` is `'clamp'` (an atlas region, a frame of a sheet, a nine-slice band) no longer blends in the texels around the region under `'linear'` filtering, which showed as seams between tiles cut from a sheet with no spacing and drawn at a fractional scale. Sampling now stops half a texel inside the region, which repeats its edge texels the way a whole clamped texture repeats its own; `'repeat'` textures are unchanged, so their regions still tile and scroll. Stretched or tiled nine-slice bands repeat their own edge texels instead of blending into the band next to them. Custom sprite fragment shaders receive the clamp rect as `flat in highp vec4 v_texBounds` (min in `xy`, max in `zw`): sample at `clamp(v_texCoord, v_texBounds.xy, v_texBounds.zw)` to get the same fix. `u_regionInset`, which the render system sets from each batch's texture, joins `u_texture` and `u_emissiveTexture` as a sprite material uniform that `setUniform` rejects
 
 ## [0.26.2] - 2026-10-12
 
