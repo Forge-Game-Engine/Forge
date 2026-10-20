@@ -92,4 +92,19 @@ describe('getTileImageRect', () => {
       getTileImageRect(tileSet, 0, 0, packTile({ source: 0, tile: 1 })),
     ).toThrow(/tile 1 doesn't exist/);
   });
+
+  it('throws for a cell outside the supported range', () => {
+    const tileSet = createTileSet({
+      layout: createOrthogonalGridLayout({ cellWidth: 16, cellHeight: 16 }),
+      sources: [createTestSource(1, 1)],
+    });
+    const tile = packTile({ source: 0, tile: 0 });
+
+    expect(() => getTileImageRect(tileSet, 0.5, 0, tile)).toThrow(
+      /must be whole numbers/,
+    );
+    expect(() => getTileImageRect(tileSet, 0, 2 ** 30, tile)).toThrow(
+      /must be whole numbers/,
+    );
+  });
 });

@@ -207,12 +207,15 @@ const createSource = (
   layout: GridLayout,
   defaultTileData: TileData,
 ): TileSetSource => {
+  // The tile size defaults to the layout's cell size, so the defaults are
+  // built per tile set.
+  const defaultSourceOptions = {
+    tileWidth: layout.cellWidth,
+    tileHeight: layout.cellHeight,
+    tiles: new Map<number, TileDataOptions>(),
+  };
   const { atlas, tileWidth, tileHeight, tiles } = withDefaults(
-    {
-      tileWidth: layout.cellWidth,
-      tileHeight: layout.cellHeight,
-      tiles: new Map<number, TileDataOptions>(),
-    },
+    defaultSourceOptions,
     options,
   );
 

@@ -1,4 +1,5 @@
 import { Rect } from '../../math/index.js';
+import { assertCell } from '../cells/chunk-key.js';
 import { getTileData, TileSet } from '../tile-set/tile-set.js';
 import { getTileSourceIndex } from './packed-tile-bits.js';
 
@@ -15,7 +16,8 @@ import { getTileSourceIndex } from './packed-tile-bits.js';
  * @param row - The cell's row.
  * @param tile - The packed tile.
  * @returns A new `Rect` holding the image's bounds, in layer-local space.
- * @throws An error if `tile` is `emptyTile` or malformed, or names a source
+ * @throws An error if `column` or `row` isn't a whole number from `-2^30`
+ * to `2^30 - 1`, or `tile` is `emptyTile` or malformed, or names a source
  * or tile index the tile set doesn't have.
  */
 export function getTileImageRect(
@@ -24,6 +26,8 @@ export function getTileImageRect(
   row: number,
   tile: number,
 ): Rect {
+  assertCell('find the image of the tile', column, row);
+
   const { textureOrigin } = getTileData(tileSet, tile);
   const { tileWidth, tileHeight } = tileSet.sources[getTileSourceIndex(tile)];
   const bounds = tileSet.layout.getCellFootprintBounds(column, row);
