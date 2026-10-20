@@ -19,7 +19,7 @@ const EPSILON = 1e-9;
 const PARAMETER_EPSILON = 1e-9;
 
 /**
- * A static outline collider for level geometry: one or more closed loops of
+ * A static outline collider for level geometry: any number of closed loops of
  * points in the entity's local space, such as the outline of a tile layer's
  * solid tiles.
  *
@@ -68,16 +68,14 @@ export class ChainCollider extends Collider {
    * @param loops - The closed loops, in the entity's local space, each
    * wound with positive signed area around solid and negative signed area
    * around a hole. Don't repeat a loop's first point at its end.
-   * @throws An error if there are no loops, a loop has fewer than 3 points,
+   * An empty list is valid: the collider has no edges and collides with
+   * nothing, as a tile layer with no solid tiles does.
+   * @throws An error if a loop has fewer than 3 points,
    * two consecutive points of a loop (including its last and first) are the
    * same, a loop has zero signed area, or two edges cross or overlap
    * anywhere but at a point that is a vertex of both.
    */
   constructor(loops: readonly (readonly Vector2[])[]) {
-    if (loops.length === 0) {
-      throw new Error('ChainCollider requires at least 1 loop, received 0.');
-    }
-
     loops.forEach(validateLoop);
 
     super(0, 0, Vec2.zero);
@@ -93,6 +91,16 @@ export class ChainCollider extends Collider {
   }
 
   public computeAabb(position: Vector2, rotation: number): Aabb {
+    // With no edges the bounds are empty (an infinite min and a negative
+    // infinite max), which transformBounds would turn into NaN. The empty
+    // box overlaps nothing, so the broad phase never pairs the collider.
+    if (this.outline.edges.length === 0) {
+      return {
+        min: { x: Infinity, y: Infinity },
+        max: { x: -Infinity, y: -Infinity },
+      };
+    }
+
     return transformBounds(this.outline.bounds, position, rotation);
   }
 }
