@@ -125,6 +125,33 @@ cameraPosition.local.x = targetPosition.local.x;
 cameraPosition.local.y = targetPosition.local.y;
 ```
 
+## Converting points between local and world space
+
+[`localToWorldPoint`](/Forge/docs/api/functions/localToWorldPoint) maps a
+point in an entity's local space to world space, and
+[`worldToLocalPoint`](/Forge/docs/api/functions/worldToLocalPoint) maps a
+world point into an entity's local space:
+
+```ts
+import {
+  localToWorldPoint,
+  worldToLocalPoint,
+} from '@forge-game-engine/forge/common';
+
+const muzzle = localToWorldPoint(world, ship, { x: 20, y: 0 });
+const pointInShip = worldToLocalPoint(world, ship, worldPoint);
+```
+
+`localToWorldPoint` scales the point by the entity's `scale.world`, rotates
+it by `rotation.world` and adds `position.world`, which is how the transform
+system places a child in its parent. `worldToLocalPoint` does the reverse.
+The entity needs a `PositionEcsComponent`; without a rotation or scale, they
+count as `0` and `(1, 1)`.
+
+Both read the `world` values the transform system wrote on its last update,
+so a point converted after changing an entity's `local` value and before the
+transform system runs uses the previous world transform.
+
 ## Marking a transform static
 
 Set `isStatic: true` on a `PositionEcsComponent` whose entity never moves.

@@ -150,15 +150,18 @@ describe('cell functions', () => {
       // Columns -40 to 29 and rows -40 to 29 span chunks -2 to 0 on each axis.
       fillTiles(layer, -40, -40, 70, 70, grass);
 
-      const chunkCoordinates = [...layer.chunks.values()]
-        .map(({ column, row }) => `${column},${row}`)
-        .sort();
-
-      expect(chunkCoordinates).toEqual(
-        [-2, -1, 0]
-          .flatMap((row) => [-2, -1, 0].map((column) => `${column},${row}`))
-          .sort(),
+      const chunkCoordinates = [...layer.chunks.values()].map(
+        ({ column, row }) => `${column},${row}`,
       );
+
+      expect(new Set(chunkCoordinates)).toEqual(
+        new Set(
+          [-2, -1, 0].flatMap((row) =>
+            [-2, -1, 0].map((column) => `${column},${row}`),
+          ),
+        ),
+      );
+      expect(chunkCoordinates).toHaveLength(9);
       expect(contentsOf(layer).size).toBe(70 * 70);
       expect(getTile(layer, -40, -40)).toBe(grass);
       expect(getTile(layer, 29, 29)).toBe(grass);
@@ -308,9 +311,7 @@ describe('cell functions', () => {
     ): void => {
       const { built } = consumer.state();
 
-      expect([...built.keys()].sort()).toEqual(
-        [...current.chunks.keys()].sort(),
-      );
+      expect(new Set(built.keys())).toEqual(new Set(current.chunks.keys()));
 
       for (const [key, chunk] of current.chunks) {
         expect(built.get(key)).toEqual(chunk.tiles);
@@ -389,15 +390,15 @@ describe('cell functions', () => {
       world.removeComponent(entity, tilemapLayerId);
       consumers.forEach((consumer) => consumer.look());
 
-      const readded = addTilemapLayerComponent(world, entity, {
+      const addedAgain = addTilemapLayerComponent(world, entity, {
         tileSet: createTestTileSet(),
       });
 
-      setTile(readded, 5, 5, grass);
+      setTile(addedAgain, 5, 5, grass);
       consumers.forEach((consumer) => consumer.look());
 
-      expectInStep(eager, readded);
-      expectInStep(lazy, readded);
+      expectInStep(eager, addedAgain);
+      expectInStep(lazy, addedAgain);
     });
   });
 

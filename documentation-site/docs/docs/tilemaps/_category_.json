@@ -1,0 +1,11 @@
+{
+  "label": "Tilemaps",
+  "position": 19,
+  "link": {
+    "type": "doc",
+    "id": "docs/tilemaps/index"
+  },
+  "customProps": {
+    "icon": "tilemaps"
+  }
+}

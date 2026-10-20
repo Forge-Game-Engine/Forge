@@ -3,7 +3,10 @@ import {
   createIsometricGridLayout,
   createOrthogonalGridLayout,
 } from '../../math/index.js';
-import { createGridTextureAtlas } from '../../rendering/texture-atlas/index.js';
+import {
+  type AtlasRegion,
+  createGridTextureAtlas,
+} from '../../rendering/texture-atlas/index.js';
 import {
   createTestSource,
   createTestTileSet,
@@ -177,10 +180,15 @@ describe('createTileSet', () => {
   });
 
   it('throws for an atlas with more than 1,048,576 regions', () => {
-    const atlas = createGridTextureAtlas(textureOfSize(1025, 1024), {
-      cellWidth: 1,
-      cellHeight: 1,
-    });
+    // Only the number of regions matters, so the stand-in's list is sparse
+    // rather than a million real regions.
+    const atlas = {
+      ...createGridTextureAtlas(textureOfSize(16, 16), {
+        cellWidth: 16,
+        cellHeight: 16,
+      }),
+      regions: new Array<AtlasRegion>(1_048_577),
+    };
 
     expect(() => createTileSet({ layout, sources: [{ atlas }] })).toThrow(
       /at most 1048576 tiles/,
