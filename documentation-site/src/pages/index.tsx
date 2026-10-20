@@ -79,6 +79,12 @@ const engineModules: EngineModule[] = [
     to: '/docs/docs/particles',
   },
   {
+    title: 'Tilemaps',
+    description: 'Tile sets and chunked tile layers on a grid',
+    icon: 'tilemaps',
+    to: '/docs/docs/tilemaps',
+  },
+  {
     title: 'Transforms',
     description: 'Parent and child hierarchies',
     icon: 'transforms',

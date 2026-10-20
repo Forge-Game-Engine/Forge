@@ -325,6 +325,8 @@ thresholded
 thresholding
 thumbstick
 tileable
+tilemap
+tilemaps
 tileset
 tilesets
 Tilesheet

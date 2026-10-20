@@ -11,6 +11,7 @@ export * from './lifecycle/index.js';
 export * from './math/index.js';
 export * from './rendering/index.js';
 export * from './text/index.js';
+export * from './tilemaps/index.js';
 export * from './timer/index.js';
 export * from './ui/index.js';
 export * from './utilities/index.js';
