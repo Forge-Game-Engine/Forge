@@ -1,9 +1,14 @@
 import {
   addPositionComponent,
   addSpriteComponent,
+  Axis1dAction,
+  Axis2dAction,
+  CameraEcsComponent,
+  cameraId,
   Color,
   createAtlasSprite,
   createCamera,
+  createCameraEcsSystem,
   createCanvas,
   createGridTextureAtlas,
   createPresentEcsSystem,
@@ -12,6 +17,15 @@ import {
   createTexture,
   createTransformEcsSystem,
   EcsWorld,
+  getCameraView,
+  KeyboardAxis2dBinding,
+  KeyboardInputSource,
+  keyCodes,
+  MouseAxis1dBinding,
+  MouseInputSource,
+  PositionEcsComponent,
+  positionId,
+  registerInputs,
   Time,
 } from '../../../src/index.js';
 import { CreateScene, SceneHandle } from './scene.js';
@@ -34,15 +48,32 @@ const tileSizeInWorldUnits = 64;
 const pixelsPerUnit = cellSize / tileSizeInWorldUnits;
 const verticalWorldUnits = 651;
 
-// The block of tiles, drawn edge to edge around the center of the screen.
+// The block of tiles, drawn edge to edge around the world's origin.
 const blockColumns = 6;
 const blockRows = 4;
+const blockHalfWidth = (blockColumns * tileSizeInWorldUnits) / 2;
+const blockHalfHeight = (blockRows * tileSizeInWorldUnits) / 2;
 
-/** What the block of tiles drew. */
+// The center of the tile right of and below the block's center, in world
+// units: the pixel every other pixel in the block is compared with.
+const referenceTileCenter = {
+  x: tileSizeInWorldUnits / 2,
+  y: tileSizeInWorldUnits / 2,
+};
+
+/** The block of tiles' extent along one row of the canvas, as drawn. */
+export interface RenderedBlockSpan {
+  /** The leftmost pixel in the row drawn in the tiles' color. */
+  left: number;
+  /** The rightmost pixel in the row drawn in the tiles' color. */
+  right: number;
+}
+
+/** What the block of tiles drew, and where the camera was. */
 export interface RegionEdgesMeasurement {
   /**
-   * The fraction (`0` to `1`) of the pixels inside the block that differ
-   * from the pixel at the center of a tile.
+   * The fraction (`0` to `1`) of the pixels inside the block (and on the
+   * canvas) that differ from the pixel at the center of a tile.
    */
   mismatchInsideBlock: number;
   /**
@@ -50,9 +81,25 @@ export interface RegionEdgesMeasurement {
    * outside the block, showing the tiles drew at all.
    */
   tileDiffersFromBackground: boolean;
+  /**
+   * The block's extent, in device pixels, along the row through the
+   * reference tile's center, found by scanning the presented canvas for the
+   * tile's color, or `null` if no pixel in the row has it.
+   */
+  renderedBlock: RenderedBlockSpan | null;
+  /** The camera's zoom. */
+  zoom: number;
+  /** The camera's local position. */
+  cameraPosition: { x: number; y: number };
+  /** The canvas's device pixels per world unit at zoom `1`. */
+  devicePixelsPerUnitAtZoomOne: number;
 }
 
-/** The scene's handle: a block of tiles cut from a sheet by a grid atlas. */
+/**
+ * The scene's handle: a block of tiles cut from a sheet by a grid atlas,
+ * seen through a camera zoomed by the mouse wheel and panned by the arrow
+ * keys.
+ */
 export interface TextureAtlasRegionEdgesSceneHandle extends SceneHandle {
   /**
    * Reads the presented canvas. Must run in the same `page.evaluate` task
@@ -102,11 +149,16 @@ function pixelsDiffer(
   return false;
 }
 
+const clampToCanvas = (value: number, size: number): number =>
+  Math.min(Math.max(value, 0), size);
+
 /**
  * Builds a scene that tiles one cell of a linearly filtered sheet, whose
  * neighbors in the sheet are transparent, edge to edge at a fractional
- * scale. Each tile should sample only its own cell, so the block draws as
- * one solid color, with no seams where the tiles meet.
+ * scale, under a camera the mouse wheel zooms and the arrow keys pan. Each
+ * tile should sample only its own cell at every zoom and camera position,
+ * so the block draws as one solid color, with no seams where the tiles
+ * meet.
  * @param container - The element to render the scene's canvas into.
  * @returns The scene's handle.
  */
@@ -120,8 +172,29 @@ export const createScene: CreateScene = (
     preserveDrawingBuffer: true,
   });
 
-  createCamera(world, {
-    isStatic: true,
+  const zoomInput = new Axis1dAction('zoom');
+  const panInput = new Axis2dAction('pan');
+  const inputManager = registerInputs(world, time, {
+    axis1dActions: [zoomInput],
+    axis2dActions: [panInput],
+  });
+  const mouseInputSource = new MouseInputSource(inputManager, canvas);
+  const keyboardInputSource = new KeyboardInputSource(inputManager);
+
+  mouseInputSource.axis1dBindings.add(new MouseAxis1dBinding(zoomInput));
+  keyboardInputSource.axis2dBindings.add(
+    new KeyboardAxis2dBinding(
+      panInput,
+      keyCodes.arrowUp,
+      keyCodes.arrowDown,
+      keyCodes.arrowRight,
+      keyCodes.arrowLeft,
+    ),
+  );
+
+  const cameraEntity = createCamera(world, {
+    zoomInput,
+    panInput,
     clearColor: new Color(0.05, 0.05, 0.05),
     verticalWorldUnits,
   });
@@ -152,6 +225,7 @@ export const createScene: CreateScene = (
     }
   }
 
+  world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTransformEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
@@ -185,29 +259,40 @@ export const createScene: CreateScene = (
         canvas.width,
         canvas.height,
       );
-      const devicePixelsPerUnit = renderContext.height / verticalWorldUnits;
       const offsetOf = (x: number, y: number): number =>
         (y * canvas.width + x) * 4;
 
-      // The block's pixels, kept two pixels in from its outer edges, which
-      // land partway through pixels.
-      const halfWidth =
-        (blockColumns * tileSizeInWorldUnits * devicePixelsPerUnit) / 2;
-      const halfHeight =
-        (blockRows * tileSizeInWorldUnits * devicePixelsPerUnit) / 2;
-      const left = Math.ceil(canvas.width / 2 - halfWidth) + 2;
-      const right = Math.floor(canvas.width / 2 + halfWidth) - 2;
-      const top = Math.ceil(canvas.height / 2 - halfHeight) + 2;
-      const bottom = Math.floor(canvas.height / 2 + halfHeight) - 2;
+      // Where the camera puts the block, converted from the view's CSS
+      // pixels to the drawing buffer's device pixels.
+      const view = getCameraView(world, cameraEntity, renderContext);
+      const toDevicePixels = (worldX: number, worldY: number) => {
+        const viewport = view.worldToViewport({ x: worldX, y: worldY });
 
-      // The center of the tile right of and below the block's center.
-      const tileCenterInPixels =
-        (tileSizeInWorldUnits / 2) * devicePixelsPerUnit;
-      const reference = offsetOf(
-        Math.round(canvas.width / 2 + tileCenterInPixels),
-        Math.round(canvas.height / 2 + tileCenterInPixels),
+        return {
+          x: viewport.x * renderContext.pixelRatio,
+          y: viewport.y * renderContext.pixelRatio,
+        };
+      };
+      const blockMin = toDevicePixels(-blockHalfWidth, -blockHalfHeight);
+      const blockMax = toDevicePixels(blockHalfWidth, blockHalfHeight);
+
+      // The block's pixels on the canvas, kept two pixels in from its outer
+      // edges, which land partway through pixels.
+      const left = clampToCanvas(Math.ceil(blockMin.x) + 2, canvas.width);
+      const right = clampToCanvas(Math.floor(blockMax.x) - 2, canvas.width);
+      const top = clampToCanvas(Math.ceil(blockMin.y) + 2, canvas.height);
+      const bottom = clampToCanvas(Math.floor(blockMax.y) - 2, canvas.height);
+
+      const referencePixel = toDevicePixels(
+        referenceTileCenter.x,
+        referenceTileCenter.y,
       );
-      const background = offsetOf(left - 10, top - 10);
+      const referenceRow = Math.round(referencePixel.y);
+      const reference = offsetOf(Math.round(referencePixel.x), referenceRow);
+      const background = offsetOf(
+        clampToCanvas(Math.floor(blockMin.x) - 10, canvas.width - 1),
+        clampToCanvas(Math.floor(blockMin.y) - 10, canvas.height - 1),
+      );
 
       let mismatches = 0;
       let pixels = 0;
@@ -219,9 +304,45 @@ export const createScene: CreateScene = (
         }
       }
 
+      let renderedLeft = -1;
+      let renderedRight = -1;
+
+      for (let x = 0; x < canvas.width; x++) {
+        if (!pixelsDiffer(data, offsetOf(x, referenceRow), reference)) {
+          if (renderedLeft === -1) {
+            renderedLeft = x;
+          }
+
+          renderedRight = x;
+        }
+      }
+
+      const camera = world.getComponent<CameraEcsComponent>(
+        cameraEntity,
+        cameraId,
+      );
+      const cameraPosition = world.getComponent<PositionEcsComponent>(
+        cameraEntity,
+        positionId,
+      );
+
+      if (!camera || !cameraPosition) {
+        throw new Error('The camera entity lost its components');
+      }
+
       return {
-        mismatchInsideBlock: mismatches / pixels,
+        mismatchInsideBlock: pixels === 0 ? 1 : mismatches / pixels,
         tileDiffersFromBackground: pixelsDiffer(data, reference, background),
+        renderedBlock:
+          renderedLeft === -1
+            ? null
+            : { left: renderedLeft, right: renderedRight },
+        zoom: camera.zoom,
+        cameraPosition: {
+          x: cameraPosition.local.x,
+          y: cameraPosition.local.y,
+        },
+        devicePixelsPerUnitAtZoomOne: renderContext.height / verticalWorldUnits,
       };
     },
   };
