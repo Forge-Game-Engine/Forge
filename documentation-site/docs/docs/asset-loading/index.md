@@ -30,3 +30,6 @@ Other modules have their own caches.
 [`FontAtlasCache`](/Forge/docs/api/classes/FontAtlasCache) loads each font
 atlas from two URLs, so it has its own `getOrLoad({ metricsUrl, imageUrl })`
 instead (see [Loading a Font Atlas](../text/loading-a-font-atlas.md)).
+[`TextureAtlasCache`](/Forge/docs/api/classes/TextureAtlasCache) does the
+same for texture atlases, with `getOrLoad({ dataUrl, imageUrl })` (see
+[Loading a TexturePacker atlas](../rendering/texture-atlases.md#loading-a-texturepacker-atlas)).

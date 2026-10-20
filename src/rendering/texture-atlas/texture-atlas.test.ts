@@ -206,6 +206,32 @@ describe('createTextureAtlas', () => {
     expect(atlas.regions.map((region) => region.name)).toEqual(['b', 'a', 'c']);
   });
 
+  describe('scale', () => {
+    it('defaults to 1', () => {
+      expect(createTextureAtlas(texture, [rect()]).scale).toBe(1);
+      expect(
+        createTextureAtlas(texture, [rect()], { scale: undefined }).scale,
+      ).toBe(1);
+    });
+
+    it('keeps the given scale and leaves the regions in whole texels', () => {
+      const atlas = createTextureAtlas(texture, [rect()], { scale: 2 });
+
+      expect(atlas.scale).toBe(2);
+      expect(atlas.regions[0].sourceSize).toEqual({ x: 16, y: 8 });
+      expect(atlas.regions[0].uvScale).toEqual({ x: 16 / 128, y: 8 / 64 });
+    });
+
+    it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])(
+      'throws for a scale of %s',
+      (scale) => {
+        expect(() => createTextureAtlas(texture, [rect()], { scale })).toThrow(
+          `Unable to create a texture atlas: its scale (${scale}) must be a finite number greater than 0.`,
+        );
+      },
+    );
+  });
+
   describe('lookups', () => {
     const atlas = createTextureAtlas(texture, [
       rect({ name: 'hero_idle_0' }),

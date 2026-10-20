@@ -1,3 +1,4 @@
+import { withDefaults } from '../../utilities/with-defaults.js';
 import type { Texture } from '../texture.js';
 import {
   type AtlasRegion,
@@ -33,6 +34,18 @@ export interface TextureAtlas {
   readonly regions: readonly AtlasRegion[];
 
   /**
+   * How many texels of the texture make up one pixel of the art it was
+   * packed from: `2` for an atlas exported at twice the art's size (an
+   * `@2x` export), `0.5` for one exported at half size, `1` otherwise.
+   * Regions stay in whole texels of the texture; `createAtlasSprite`
+   * divides a region's `sourceSize` by `scale` when it sizes the sprite, so
+   * one `pixelsPerUnit` gives the same world size at every export scale.
+   * Unrelated to a region's `trimScale`, which is the share of its
+   * untrimmed frame the packed rect covers.
+   */
+  readonly scale: number;
+
+  /**
    * Looks up a region by name.
    * @param name - The region's name.
    * @returns The region.
@@ -57,6 +70,19 @@ export interface TextureAtlas {
    */
   getRegionAt(index: number): AtlasRegion;
 }
+
+/**
+ * Options for {@link createTextureAtlas}.
+ */
+export interface CreateTextureAtlasOptions {
+  /**
+   * How many texels of the texture make up one pixel of the art it was
+   * packed from (see {@link TextureAtlas.scale}). Defaults to `1`.
+   */
+  scale?: number;
+}
+
+const defaultCreateTextureAtlasOptions = { scale: 1 };
 
 const describeNames = (names: readonly string[]): string =>
   names.map((name) => `"${name}"`).join(', ');
@@ -110,9 +136,10 @@ const validateNames = (rects: readonly AtlasRegionRect[]): void => {
  * now, to convert texels to UVs.
  * @param rects - The regions, in texels, measured from the texture's
  * top-left corner. Their order is kept in `regions`.
+ * @param options - Optional parameters for creating the atlas.
  * @returns The atlas, frozen, along with its `regions` and every region.
- * @throws An error if the texture's `width` or `height` is `0`, `rects` is
- * empty, a name is empty or used twice, or a rect is invalid (a texel value
+ * @throws An error if the texture's `width` or `height` is `0`, `scale`
+ * isn't a finite number greater than `0`, `rects` is empty, a name is empty or used twice, or a rect is invalid (a texel value
  * that isn't a whole number, a negative position, a size that isn't
  * greater than `0`, a rect outside the texture or its untrimmed frame, or a
  * pivot that isn't finite).
@@ -120,10 +147,19 @@ const validateNames = (rects: readonly AtlasRegionRect[]): void => {
 export function createTextureAtlas(
   texture: Texture,
   rects: readonly AtlasRegionRect[],
+  options: CreateTextureAtlasOptions = {},
 ): TextureAtlas {
+  const { scale } = withDefaults(defaultCreateTextureAtlasOptions, options);
+
   if (texture.width === 0 || texture.height === 0) {
     throw new Error(
       `Unable to create a texture atlas: its texture is ${texture.width} x ${texture.height} texels. Create the atlas once the texture has an image.`,
+    );
+  }
+
+  if (!Number.isFinite(scale) || scale <= 0) {
+    throw new Error(
+      `Unable to create a texture atlas: its scale (${scale}) must be a finite number greater than 0.`,
     );
   }
 
@@ -144,6 +180,7 @@ export function createTextureAtlas(
   return Object.freeze({
     texture,
     regions,
+    scale,
     getRegion: (name: string): AtlasRegion => {
       const region = regionsByName.get(name);
 

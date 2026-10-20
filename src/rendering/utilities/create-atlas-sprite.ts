@@ -10,8 +10,10 @@ import { importTexture } from './import-texture.js';
  */
 export interface CreateAtlasSpriteOptions {
   /**
-   * How many texels of the atlas texture span one world unit. Defaults to
-   * `100`, as for `createImageSprite`.
+   * How many pixels of the art span one world unit, counted at the art's
+   * own size: in an atlas whose `scale` is `2`, two texels make up one art
+   * pixel, so the same `pixelsPerUnit` gives the same world size at every
+   * export scale. Defaults to `100`, as for `createImageSprite`.
    */
   pixelsPerUnit?: number;
 
@@ -28,7 +30,7 @@ export interface CreateAtlasSpriteOptions {
 /**
  * Computes the options of a sprite that draws one region of a texture
  * atlas. The sprite is sized to the region's untrimmed frame
- * (`sourceSize / pixelsPerUnit`), so a trimmed region draws its share of
+ * (`sourceSize / atlas.scale / pixelsPerUnit`), so a trimmed region draws its share of
  * it, and takes the region's pivot. Does no GL work.
  *
  * The result's `region` is the atlas's region object itself, and its
@@ -64,8 +66,8 @@ export function createAtlasSprite(
 
   const { worldWidth, worldHeight } = importTexture(atlas.texture, {
     pixelsPerUnit,
-    width: atlasRegion.sourceSize.x,
-    height: atlasRegion.sourceSize.y,
+    width: atlasRegion.sourceSize.x / atlas.scale,
+    height: atlasRegion.sourceSize.y / atlas.scale,
   });
 
   return buildSpriteOptions(

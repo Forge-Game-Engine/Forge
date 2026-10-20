@@ -4,7 +4,10 @@ import { Color } from '../color.js';
 import { addSpriteComponent } from '../components/sprite-component.js';
 import type { Texture } from '../texture.js';
 import { createGridTextureAtlas } from '../texture-atlas/create-grid-texture-atlas.js';
-import { createTextureAtlas } from '../texture-atlas/texture-atlas.js';
+import {
+  createTextureAtlas,
+  type TextureAtlas,
+} from '../texture-atlas/texture-atlas.js';
 import { createAtlasSprite } from './create-atlas-sprite.js';
 
 const texture = { width: 128, height: 64 } as Texture;
@@ -134,5 +137,54 @@ describe('createAtlasSprite', () => {
     expect(sprite.region.uvScale).toEqual({ x: 32 / 100, y: 32 / 100 });
     expect(sprite.width).toBe(1);
     expect(sprite.height).toBe(1);
+  });
+
+  describe("the atlas's scale", () => {
+    const scaledAtlas = (scale: number): TextureAtlas =>
+      createTextureAtlas(
+        texture,
+        [
+          {
+            name: 'hero',
+            x: 0,
+            y: 0,
+            width: 40,
+            height: 60,
+            sourceWidth: 64,
+            sourceHeight: 64,
+            trimX: 12,
+            trimY: 4,
+          },
+          { name: 'panel', x: 64, y: 0, width: 48, height: 32 },
+        ],
+        { scale },
+      );
+
+    it.each([
+      { scale: 2, expected: 2 },
+      { scale: 0.5, expected: 8 },
+    ])(
+      "divides the region's untrimmed size by a scale of $scale",
+      ({ scale, expected }) => {
+        const sprite = createAtlasSprite(scaledAtlas(scale), 'hero', {
+          pixelsPerUnit: 16,
+        });
+
+        expect(sprite.width).toBe(expected);
+        expect(sprite.height).toBe(expected);
+      },
+    );
+
+    it('resolves a nine-slice native size at the scaled world size', () => {
+      const sprite = createAtlasSprite(scaledAtlas(2), 'panel', {
+        pixelsPerUnit: 2,
+        slices: { left: 4, right: 4, top: 4, bottom: 4 },
+      });
+
+      expect(sprite.width).toBe(12);
+      expect(sprite.height).toBe(8);
+      expect(sprite.slices?.nativeWidth).toBe(12);
+      expect(sprite.slices?.nativeHeight).toBe(8);
+    });
   });
 });
