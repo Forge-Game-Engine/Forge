@@ -12,13 +12,13 @@ the people below. Thank you to all of them.
   - [UI Pack](https://kenney.nl/assets/ui-pack): the buttons, sliders, text
     inputs and panels in the UI demos.
   - [Fantasy UI Borders](https://kenney.nl/assets/fantasy-ui-borders): the
-    frames in the nine-slice and masks demos.
+    frames in the nine-slice, masks and sprite atlas demos.
   - [Particle Pack](https://kenney.nl/assets/particle-pack): the particle
     textures in the particles demo.
   - [Pattern Pack](https://kenney.nl/assets/pattern-pack): the backgrounds in
     the physics demos.
   - [Pirate Pack](https://kenney.nl/assets/pirate-pack): the sprites in the
-    pirate battle demo.
+    pirate battle, texture atlases and sprite atlas demos.
   - [Puzzle Pack 2](https://kenney.nl/assets/puzzle-pack-2): the sprites in
     the brick breaker demo.
   - [Rolling Ball Assets](https://kenney.nl/assets/rolling-ball-assets): the
