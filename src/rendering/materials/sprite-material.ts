@@ -11,6 +11,45 @@ export const spriteTextureUniformName = 'u_texture';
 export const spriteEmissiveTextureUniformName = 'u_emissiveTexture';
 
 /**
+ * The `vec2` `sprite.vert` insets each sprite's sampled rect by, in UV: half
+ * a texel of the sprite's texture when its `wrap` is `'clamp'`, and zero
+ * when it's `'repeat'`.
+ */
+export const spriteRegionInsetUniformName = 'u_regionInset';
+
+/** What sets each uniform the render system owns, for error messages. */
+const reservedUniformSources: ReadonlyMap<string, string> = new Map([
+  [spriteTextureUniformName, "each sprite's `texture`"],
+  [spriteEmissiveTextureUniformName, "each sprite's `emissive` map"],
+  [
+    spriteRegionInsetUniformName,
+    "the size and `wrap` of each sprite's texture",
+  ],
+]);
+
+/**
+ * How far, in UV, a sprite samples inside its region of `texture`: half a
+ * texel for a texture whose `wrap` is `'clamp'`, so linear filtering never
+ * blends in the texels next to the region (a neighboring frame in a sheet),
+ * the way it never reaches past a whole clamped texture's edges. A
+ * repeating texture isn't inset, so a region that tiles or scrolls it still
+ * wraps around.
+ * @param texture - The sprites' texture.
+ * @returns The inset, in UV, as `(x, y)`.
+ */
+function computeRegionInset(texture: Texture): Float32Array {
+  if (
+    texture.wrap === 'repeat' ||
+    texture.width === 0 ||
+    texture.height === 0
+  ) {
+    return new Float32Array([0, 0]);
+  }
+
+  return new Float32Array([0.5 / texture.width, 0.5 / texture.height]);
+}
+
+/**
  * A material that draws sprites: `sprite.vert`, which positions each
  * sprite's quad from its instance data, paired with a fragment shader. Give
  * one to `SpriteEcsComponent.material` to draw a sprite with a custom
@@ -19,7 +58,9 @@ export const spriteEmissiveTextureUniformName = 'u_emissiveTexture';
  * The render system binds each sprite's `texture` to `u_texture` and its
  * emissive map (or `renderContext.blackTexture`) to `u_emissiveTexture`,
  * if the fragment shader declares them, so sprites with different textures
- * share one material. Those two uniforms can't be set on the material.
+ * share one material. It also sets `u_regionInset` from the texture, which
+ * `sprite.vert` uses to compute `v_texBounds`. Those three uniforms can't
+ * be set on the material.
  *
  * The fragment shader must include `mask`
  * (`#pragma forge include(mask)`) and multiply its output alpha by
@@ -61,17 +102,16 @@ export class SpriteMaterial extends Material {
    * Sets a uniform's value, as {@link Material.setUniform} does.
    * @param name - The uniform's name.
    * @param value - The value to upload.
-   * @throws An error for `u_texture` and `u_emissiveTexture`, which the
-   * render system sets from each sprite, and under the same conditions as
-   * {@link Material.setUniform}.
+   * @throws An error for `u_texture`, `u_emissiveTexture` and
+   * `u_regionInset`, which the render system sets from each sprite, and
+   * under the same conditions as {@link Material.setUniform}.
    */
   public override setUniform(name: string, value: UniformValue): void {
-    if (
-      name === spriteTextureUniformName ||
-      name === spriteEmissiveTextureUniformName
-    ) {
+    const source = reservedUniformSources.get(name);
+
+    if (source !== undefined) {
       throw new Error(
-        `Uniform "${name}" of a sprite material is set by the render system from each sprite's ${name === spriteTextureUniformName ? '`texture`' : '`emissive` map'}; change the sprite instead.`,
+        `Uniform "${name}" of a sprite material is set by the render system from ${source}; change the sprite instead.`,
       );
     }
 
@@ -82,7 +122,8 @@ export class SpriteMaterial extends Material {
    * Binds the material to draw sprites with `texture` and `emissiveTexture`.
    * Called by the render system for each batch.
    * @param gl - The WebGL2 rendering context.
-   * @param texture - The sprites' texture, bound to `u_texture`.
+   * @param texture - The sprites' texture, bound to `u_texture`. Its size
+   * and `wrap` set `u_regionInset`.
    * @param emissiveTexture - The sprites' emissive map, bound to
    * `u_emissiveTexture`.
    * @returns The first texture unit the material left free.
@@ -92,6 +133,11 @@ export class SpriteMaterial extends Material {
     texture: Texture,
     emissiveTexture: Texture,
   ): number {
+    this.storeUniform(
+      spriteRegionInsetUniformName,
+      computeRegionInset(texture),
+    );
+
     if (this._declaresTexture) {
       this.storeUniform(spriteTextureUniformName, texture);
     }
@@ -107,10 +153,14 @@ export class SpriteMaterial extends Material {
 /**
  * Creates a material that draws sprites with a custom fragment shader,
  * paired with `sprite.vert`. The shader receives `v_texCoord` (the sprite's
- * frame UVs), `v_tint` (its tint, with `opacityMultiplier` in alpha) and
- * `v_emissive` (its emissive color), and can declare `u_texture` and
- * `u_emissiveTexture` to sample the sprite's texture and emissive map. It
- * must include `mask` and multiply its output alpha by
+ * frame UVs), `flat in highp vec4 v_texBounds` (the rect to clamp
+ * `v_texCoord` to before sampling, min in `xy` and max in `zw`), `v_tint`
+ * (its tint, with `opacityMultiplier` in alpha) and `v_emissive` (its
+ * emissive color), and can declare `u_texture` and `u_emissiveTexture` to
+ * sample the sprite's texture and emissive map. Sampling them at
+ * `clamp(v_texCoord, v_texBounds.xy, v_texBounds.zw)` keeps linear
+ * filtering from blending in the texels around the sprite's region of a
+ * sheet. It must include `mask` and multiply its output alpha by
  * `maskCoverage()`. Declare and set any other uniforms it needs on
  * the returned material.
  * @param renderContext - The render context to draw with.

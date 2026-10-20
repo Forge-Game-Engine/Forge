@@ -79,9 +79,12 @@ The third argument to `createTexture`, and the second to
   default) blends neighboring texels, for smooth edges. `'nearest'` picks
   the closest texel, for crisp pixel art.
 - `wrap` sets what the texture returns outside `[0, 1]`. `'clamp'` (the
-  default) repeats the edge texels, so a frame of a sprite sheet never
-  samples its neighbor. `'repeat'` tiles the texture, for a texture repeated
-  across a surface such as a [terrain layer](../physics/terrain.md).
+  default) repeats the edge texels. A sprite drawing a region of a
+  `'clamp'` texture repeats the region's edge texels too, so a frame of a
+  sprite sheet never samples its neighbor (see
+  [Texture Atlases](./texture-atlases.md#filtering-at-region-edges)).
+  `'repeat'` tiles the texture, for a texture repeated across a surface
+  such as a [terrain layer](../physics/terrain.md).
 
 ```ts
 const pixelArtTexture = createTexture(renderContext, pixelArtImage, {

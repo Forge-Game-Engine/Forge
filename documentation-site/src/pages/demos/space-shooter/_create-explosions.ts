@@ -3,8 +3,6 @@ import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import {
   addSpriteAnimationComponent,
   AnimationClip,
-  createSpriteSheet,
-  selectAnimationFrames,
 } from '@forge-game-engine/forge/animations';
 import { AssetRegistry } from '@forge-game-engine/forge/asset-loading';
 import {
@@ -23,12 +21,12 @@ import {
 import { Vec2, Vector2 } from '@forge-game-engine/forge/math';
 import {
   addSpriteComponent,
-  createImageSprite,
+  createAtlasSprite,
+  createGridTextureAtlas,
   RenderContext,
 } from '@forge-game-engine/forge/rendering';
 
-const explosionRows = 5;
-const explosionColumns = 6;
+const explosionCellSize = 517;
 const explosionStartFrame = 1;
 const explosionFrameCount = 26;
 const explosionFrameDurationMilliseconds = 20;
@@ -54,28 +52,20 @@ export async function createExplosionSpawner(
     getAssetUrl('img/space-shooter/Effect_Explosion_1_517x517.png'),
   );
 
+  const atlas = createGridTextureAtlas(texture, {
+    cellWidth: explosionCellSize,
+    cellHeight: explosionCellSize,
+  });
+
   const explosionSprite = {
-    ...createImageSprite(texture, {
-      pixelsPerUnit: 1,
-      frameDimensions: {
-        x: texture.width / explosionColumns,
-        y: texture.height / explosionRows,
-      },
-    }),
+    ...createAtlasSprite(atlas, explosionStartFrame, { pixelsPerUnit: 1 }),
     category: renderLayer,
   };
 
-  const spriteSheet = createSpriteSheet(
-    texture,
-    explosionRows,
-    explosionColumns,
-  );
-
   const animationClip = new AnimationClip(
-    selectAnimationFrames(
-      spriteSheet,
-      explosionFrameCount,
+    atlas.regions.slice(
       explosionStartFrame,
+      explosionStartFrame + explosionFrameCount,
     ),
   );
 

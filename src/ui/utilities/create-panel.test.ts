@@ -5,6 +5,8 @@ import { positionId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   Color,
+  createAtlasSprite,
+  createTextureAtlas,
   fullTextureRegion,
   spriteId,
   Texture,
@@ -135,6 +137,33 @@ describe('createPanel', () => {
     expect(panelSprite.slices).toMatchObject({
       nativeWidth: 24,
       nativeHeight: 24,
+    });
+  });
+
+  it('takes a nine-sliced atlas sprite unchanged', () => {
+    const world = new EcsWorld();
+    const parent = world.createEntity();
+    const atlas = createTextureAtlas({ width: 128, height: 64 } as Texture, [
+      { name: 'icon', x: 0, y: 0, width: 16, height: 16 },
+      { name: 'panel', x: 64, y: 0, width: 48, height: 32 },
+    ]);
+    const sprite = createAtlasSprite(atlas, 'panel', {
+      pixelsPerUnit: 1,
+      slices: { left: 8, right: 8, top: 8, bottom: 8 },
+    });
+
+    const panel = createPanel(world, parent, {
+      sprite,
+      anchor: UiAnchor.topLeft({ x: 300, y: 120 }),
+    });
+
+    const panelSprite = world.getComponentRequired(panel, spriteId);
+
+    expect(panelSprite.texture).toBe(atlas.texture);
+    expect(panelSprite.region).toBe(atlas.getRegion('panel'));
+    expect(panelSprite.slices).toMatchObject({
+      nativeWidth: 48,
+      nativeHeight: 32,
     });
   });
 });

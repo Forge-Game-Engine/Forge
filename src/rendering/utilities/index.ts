@@ -1,4 +1,5 @@
 export * from './compute-nine-slice-regions.js';
+export * from './create-atlas-sprite.js';
 export * from './create-camera.js';
 export * from './create-canvas.js';
 export * from './create-image-sprite.js';

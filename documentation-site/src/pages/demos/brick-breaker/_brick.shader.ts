@@ -7,14 +7,15 @@ precision mediump float;
 uniform sampler2D u_texture;
 uniform float u_time;
 
-in vec2 v_texCoord;
+in highp vec2 v_texCoord;
+flat in highp vec4 v_texBounds;
 in vec4 v_tint;
 out vec4 fragColor;
 
 #pragma forge include(mask)
 
 void main() {
-  vec4 tex = texture(u_texture, v_texCoord);
+  vec4 tex = texture(u_texture, clamp(v_texCoord, v_texBounds.xy, v_texBounds.zw));
   vec3 color = tex.rgb * v_tint.rgb;
 
   // Glossy highlight near the top of the brick, like light reflecting off a curved surface.

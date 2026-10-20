@@ -63,7 +63,8 @@ export interface NineSliceOptions {
    *
    * When omitted, it's captured once from the sprite's size at the moment
    * it's created by `createImageSprite` (the imported texture's world width)
-   * or attached by `addSpriteComponent` - never from its later, possibly
+   * or `createAtlasSprite` (the atlas region's world width), or attached by
+   * `addSpriteComponent` - never from its later, possibly
    * resized `width`. A sprite resized by a layout system (every
    * `@forge-game-engine/forge/ui` element) or by game code therefore keeps
    * sampling the same border art no matter how large it's drawn. Set it

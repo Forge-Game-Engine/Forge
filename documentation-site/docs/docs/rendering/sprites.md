@@ -123,30 +123,42 @@ sprite.region = createTextureRegion({ x: 0, y: 0 }, { x: 0.5, y: 1 });
 
 ## Drawing a frame of a sprite sheet
 
-For a texture that holds several frames, pass the size of one frame in
-texels as `frameDimensions`:
+For a texture that holds several frames, cut it into a
+[grid atlas](./texture-atlases.md#creating-a-grid-atlas) and create the
+sprite from one of its cells with `createAtlasSprite`:
 
 ```ts
+import {
+  createAtlasSprite,
+  createGridTextureAtlas,
+} from '@forge-game-engine/forge/rendering';
+
 const sheetTexture = await renderContext.textureCache.getOrLoad('hero.png', {
   filter: 'nearest',
 });
+const sheetAtlas = createGridTextureAtlas(sheetTexture, {
+  cellWidth: 32,
+  cellHeight: 32,
+});
 
-const frameSpriteOptions = createImageSprite(sheetTexture, {
-  frameDimensions: { x: 32, y: 32 },
+const frameSpriteOptions = createAtlasSprite(sheetAtlas, 0, {
   pixelsPerUnit: 32,
 });
 ```
 
-The sprite is sized to one frame, and its `region` is the texture's
-top-left frame. The
-[sprite animation system](../animations/sprite-animations.md) assigns
-each frame's region to `region` to play an animation.
+The sprite is sized to one cell, and its `region` is the atlas's first
+cell. The [sprite animation system](../animations/sprite-animations.md)
+assigns each frame's region to `region` to play an animation.
+[Texture Atlases](./texture-atlases.md) covers atlases of packed, named
+images.
 
 ## Drawing a trimmed frame
 
 Texture packers trim the transparent border off each frame and record
-where the trimmed rect sat in the original frame. Give the region that
-position as its trim, as fractions of the original frame's size:
+where the trimmed rect sat in the original frame. A
+[texture atlas](./texture-atlases.md#trimmed-regions-and-pivots) builds
+trimmed regions from those texel values. Without an atlas, give the region
+that position as its trim, as fractions of the original frame's size:
 
 ```ts
 // A 32 x 32 frame trimmed to the 16 x 16 texels at (16, 0), packed at
@@ -290,7 +302,8 @@ precision mediump float;
 uniform sampler2D u_texture;
 uniform float u_fade;
 
-in vec2 v_texCoord;
+in highp vec2 v_texCoord;
+flat in highp vec4 v_texBounds;
 in vec4 v_tint;
 in vec3 v_emissive;
 out vec4 fragColor;
@@ -298,7 +311,8 @@ out vec4 fragColor;
 #pragma forge include(mask)
 
 void main() {
-  vec4 color = texture(u_texture, v_texCoord) * v_tint;
+  highp vec2 texCoord = clamp(v_texCoord, v_texBounds.xy, v_texBounds.zw);
+  vec4 color = texture(u_texture, texCoord) * v_tint;
 
   fragColor = vec4(
     color.rgb,
@@ -319,9 +333,18 @@ addSpriteComponent(world, entity, {
 });
 ```
 
-The fragment shader receives three inputs from the sprite vertex shader:
+The fragment shader receives these inputs from the sprite vertex shader:
 
 - `v_texCoord`: the UV within the sprite's region of its texture.
+- `v_texBounds`: the rect to clamp `v_texCoord` to before sampling the
+  texture or emissive map, with its minimum in `xy` and maximum in `zw`.
+  Declare it `flat in highp vec4`. For a texture whose `wrap` is
+  `'clamp'`, it's the region inset by half a texel, so linear filtering
+  never blends in the texels around the region in a sheet (see
+  [Texture Atlases](./texture-atlases.md#filtering-at-region-edges)). For a
+  `'repeat'` texture it's the region itself. Effects computed from the UV
+  rather than sampled (a gradient across the sprite) can keep using
+  `v_texCoord`.
 - `v_tint`: the sprite's `tintColor`, with its alpha multiplied by the
   sprite's `opacityMultiplier` when that's set.
 - `v_emissive`: the RGB of the sprite's emissive color (black without an
@@ -354,8 +377,9 @@ Their tint, size, region and emissive color can differ.
 A sprite with a different material or texture between two sprites in the
 draw order splits them into separate draw calls. To draw many sprites in
 few draw calls, give the sprites in a layer the same texture, for example
-by packing their images into one sprite sheet and selecting each image with
-its `region`.
+by packing their images into one
+[texture atlas](./texture-atlases.md) and selecting each image with its
+`region`.
 
 ## Hiding and removing a sprite
 

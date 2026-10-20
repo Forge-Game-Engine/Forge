@@ -40,13 +40,16 @@ precision mediump float;
 
 uniform sampler2D u_texture;
 
-in vec2 v_texCoord;
+in highp vec2 v_texCoord;
+flat in highp vec4 v_texBounds;
 out vec4 fragColor;
 
 #pragma forge include(mask)
 
 void main() {
-  fragColor = vec4(texture(u_texture, v_texCoord).rgb, maskCoverage());
+  highp vec2 texCoord = clamp(v_texCoord, v_texBounds.xy, v_texBounds.zw);
+
+  fragColor = vec4(texture(u_texture, texCoord).rgb, maskCoverage());
 }
 `;
 

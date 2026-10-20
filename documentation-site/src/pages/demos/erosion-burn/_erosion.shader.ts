@@ -10,14 +10,15 @@ uniform sampler2D u_burnGradient;
 uniform float u_burnProgress;
 uniform float u_edgeWidth;
 
-in vec2 v_texCoord;
+in highp vec2 v_texCoord;
+flat in highp vec4 v_texBounds;
 in vec4 v_tint;
 out vec4 fragColor;
 
 #pragma forge include(mask)
 
 void main() {
-  vec4 tex = texture(u_texture, v_texCoord);
+  vec4 tex = texture(u_texture, clamp(v_texCoord, v_texBounds.xy, v_texBounds.zw));
   float noise = texture(u_noiseTexture, v_texCoord).r;
 
   // Pixels whose noise value has fallen below the burn line have been consumed by the fire.

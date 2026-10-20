@@ -25,16 +25,6 @@ describe('createImageSprite', () => {
     });
   });
 
-  it("sets the region to the top-left frame's share of the texture when frameDimensions is given", () => {
-    const sprite = createImageSprite({ width: 64, height: 32 } as Texture, {
-      frameDimensions: { x: 16, y: 16 },
-    });
-
-    expect(sprite.region.uvOffset).toEqual({ x: 0, y: 0 });
-    expect(sprite.region.uvScale).toEqual({ x: 0.25, y: 0.5 });
-    expect(sprite.region.trimScale).toEqual({ x: 1, y: 1 });
-  });
-
   it('returns a fresh pivot on every call', () => {
     expect(createImageSprite(texture).pivot).not.toBe(
       createImageSprite(texture).pivot,
@@ -66,16 +56,6 @@ describe('createImageSprite', () => {
     expect(sprite.height).toBe(32);
   });
 
-  it('applies pixelsPerUnit to frameDimensions instead of the full texture size', () => {
-    const sprite = createImageSprite(texture, {
-      frameDimensions: { x: 16, y: 8 },
-      pixelsPerUnit: 4,
-    });
-
-    expect(sprite.width).toBe(4);
-    expect(sprite.height).toBe(2);
-  });
-
   it('defaults an omitted nine-slice native size to the imported world size', () => {
     const sprite = createImageSprite(texture, {
       pixelsPerUnit: 1,
@@ -92,14 +72,13 @@ describe('createImageSprite', () => {
     });
   });
 
-  it('applies pixelsPerUnit and frameDimensions to the default nine-slice native size', () => {
+  it('applies pixelsPerUnit to the default nine-slice native size', () => {
     const sprite = createImageSprite(texture, {
-      frameDimensions: { x: 16, y: 8 },
       pixelsPerUnit: 4,
       slices: { left: 1, right: 1, top: 1, bottom: 1 },
     });
 
-    expect(sprite.slices).toMatchObject({ nativeWidth: 4, nativeHeight: 2 });
+    expect(sprite.slices).toMatchObject({ nativeWidth: 8, nativeHeight: 8 });
   });
 
   it('keeps an explicit nine-slice native size', () => {

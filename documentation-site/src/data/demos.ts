@@ -201,6 +201,13 @@ export const demos: Demo[] = [
     categories: ['rendering'],
   },
   {
+    slug: 'texture-atlases',
+    title: 'Texture Atlases',
+    description:
+      'An island map drawn tile by tile from a grid atlas, and ships picked by name from a packed atlas, each atlas in one draw call.',
+    categories: ['rendering'],
+  },
+  {
     slug: 'text',
     title: 'Text Rendering',
     description:

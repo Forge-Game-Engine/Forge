@@ -1,26 +1,14 @@
-import type { Vector2 } from '../../math/index.js';
-import { Color } from '../color.js';
 import type { SpriteEcsComponent } from '../components/sprite-component.js';
-import {
-  NineSliceOptions,
-  resolveNineSliceNativeSize,
-} from '../nine-slice-options.js';
+import type { NineSliceOptions } from '../nine-slice-options.js';
 import type { Texture } from '../texture.js';
-import { createTextureRegion, fullTextureRegion } from '../texture-region.js';
+import { fullTextureRegion } from '../texture-region.js';
+import { buildSpriteOptions } from './build-sprite-options.js';
 import { importTexture } from './import-texture.js';
 
 /**
  * Options for {@link createImageSprite}.
  */
 export interface CreateImageSpriteOptions {
-  /**
-   * The size of a single frame in the texture, in texels, for sprite
-   * sheets. The sprite is sized to one frame and its `region` selects the
-   * texture's top-left frame. Defaults to the whole texture (a single-frame
-   * sprite).
-   */
-  frameDimensions?: Vector2;
-
   /**
    * Nine-slice configuration, for a sprite whose corners should stay a
    * fixed size while its edges/center stretch or tile. Omit for a normal,
@@ -40,10 +28,11 @@ export interface CreateImageSpriteOptions {
 }
 
 /**
- * Computes a sprite's options from a texture: its world size from
- * `pixelsPerUnit` (and `frameDimensions`, for a sprite sheet), the share of
- * the texture one frame covers, and nine-slice native sizes. Does no GL
- * work, so any number of sprites can be created from one texture.
+ * Computes the options of a sprite that draws a whole texture: its world
+ * size from `pixelsPerUnit`, and nine-slice native sizes. Does no GL work,
+ * so any number of sprites can be created from one texture. To draw one
+ * frame of a sprite sheet or one image of a packed atlas, make a
+ * `TextureAtlas` and use `createAtlasSprite`.
  *
  * The result has every other field at its default (no emissive map, the
  * render context's sprite material, category `1`); spread it into
@@ -58,33 +47,17 @@ export function createImageSprite(
   texture: Texture,
   options: CreateImageSpriteOptions = {},
 ): SpriteEcsComponent {
-  const { frameDimensions, slices, pixelsPerUnit } = options;
+  const { slices, pixelsPerUnit } = options;
   const { worldWidth, worldHeight } = importTexture(texture, {
     pixelsPerUnit,
-    width: frameDimensions?.x,
-    height: frameDimensions?.y,
   });
 
-  return {
+  return buildSpriteOptions(
     texture,
-    width: worldWidth,
-    height: worldHeight,
-    pivot: { x: 0.5, y: 0.5 },
-    tintColor: Color.white,
-    region: frameDimensions
-      ? createTextureRegion(
-          { x: 0, y: 0 },
-          {
-            x: frameDimensions.x / texture.width,
-            y: frameDimensions.y / texture.height,
-          },
-        )
-      : fullTextureRegion,
-    emissive: null,
-    material: null,
-    category: 1,
-    layer: 0,
-    slices:
-      slices && resolveNineSliceNativeSize(slices, worldWidth, worldHeight),
-  };
+    fullTextureRegion,
+    worldWidth,
+    worldHeight,
+    { x: 0.5, y: 0.5 },
+    slices,
+  );
 }
