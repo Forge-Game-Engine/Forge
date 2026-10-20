@@ -14,6 +14,7 @@ anthropics
 Aoboshi
 Arimo
 artboard
+aseprite
 astc
 atlased
 attw
@@ -295,6 +296,7 @@ slerp
 slevesque
 Seidel
 smaa
+smartupdate
 Smashicons
 smoothstep
 snorm

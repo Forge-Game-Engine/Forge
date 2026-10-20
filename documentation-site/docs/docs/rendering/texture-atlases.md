@@ -17,6 +17,9 @@ A [`TextureAtlas`](/Forge/docs/api/interfaces/TextureAtlas) holds:
 - `regions`: the atlas's
   [`AtlasRegion`](/Forge/docs/api/interfaces/AtlasRegion)s, in the order
   they were given.
+- `scale`: how many texels of the texture make up one pixel of the art it
+  was packed from. It's `1` unless the atlas was exported at another size
+  (see [Export scale](#export-scale)).
 
 An `AtlasRegion` is a [`TextureRegion`](./sprites.md#texture-regions) (its
 UV rect and trim) with three more fields:
@@ -118,6 +121,91 @@ They're untrimmed and pivoted at their center.
 a partial column or row at the right or bottom edge is left out. Give them
 to cut fewer.
 
+## Loading a TexturePacker atlas
+
+[`TextureAtlasCache`](/Forge/docs/api/classes/TextureAtlasCache) loads an
+atlas from a TexturePacker "JSON (Hash)" or "JSON (Array)" file and the
+image exported with it. free-tex-packer and Aseprite's sprite sheet export
+write the same format. Pass the URLs your bundler gives you for both files:
+
+```ts
+import { TextureAtlasCache } from '@forge-game-engine/forge/rendering';
+import heroDataUrl from './hero.json?url';
+import heroImageUrl from './hero.png';
+
+const atlasCache = new TextureAtlasCache(renderContext);
+
+const heroAtlas = await atlasCache.getOrLoad(
+  { dataUrl: heroDataUrl, imageUrl: heroImageUrl },
+  { filter: 'nearest' },
+);
+```
+
+Each frame in the file becomes a region named by its key (hash) or its
+`filename` (array), with the frame's trim and `pivot`. Names are kept as
+written, so a frame exported as `hero_idle_0.png` is looked up as
+`'hero_idle_0.png'`; TexturePacker's "Trim sprite names" option drops the
+extension. The texture comes from `renderContext.textureCache`, so an atlas
+and a sprite loaded from the same image with the same `filter` share one
+texture. `filter` defaults
+to `'linear'`; pixel art needs `'nearest'`.
+
+Atlases are cached by `dataUrl`: later and concurrent calls return the same
+atlas, and `atlasCache.get(dataUrl)` returns one that has finished loading.
+
+Export the atlas with these settings:
+
+- Rotation off. A rotated frame throws.
+- Premultiplied alpha off. Forge uploads textures with straight alpha, and
+  can't tell from the PNG that its colors were premultiplied.
+- One image per file. A multi-page file throws; export each page as its own
+  file and load each as its own atlas.
+
+:::caution
+The promise rejects if the JSON is invalid (the message names the frame
+and field), if the image's size isn't the file's `meta.size`, or if the
+same `dataUrl` was already requested with another `imageUrl` or `filter`.
+:::
+
+In the hash form, frames whose names are whole numbers (`"0"`, `"12"`)
+come first in `regions`, in numeric order. Look regions up by name, or
+export as "JSON (Array)" when their order matters.
+
+## Creating an atlas from TexturePacker JSON
+
+[`parseTexturePackerAtlas`](/Forge/docs/api/functions/parseTexturePackerAtlas)
+reads JSON a game already has, such as a bundler's JSON import, into texel
+rects. [`createTexturePackerAtlas`](/Forge/docs/api/functions/createTexturePackerAtlas)
+makes an atlas from them and the image's texture:
+
+```ts
+import {
+  createTexturePackerAtlas,
+  parseTexturePackerAtlas,
+} from '@forge-game-engine/forge/rendering';
+import heroJson from './hero.json';
+
+const texture = await renderContext.textureCache.getOrLoad(heroImageUrl);
+
+const heroAtlas = createTexturePackerAtlas(
+  texture,
+  parseTexturePackerAtlas(heroJson),
+);
+```
+
+`createTexturePackerAtlas` throws if the texture isn't the size the file
+declares, and sets the atlas's `scale` from the file's `meta.scale`.
+
+## Export scale
+
+An atlas exported at twice the art's size (an `@2x` export) has a `scale`
+of `2`: its regions are twice as many texels as the art's pixels.
+`TextureAtlasCache` and `createTexturePackerAtlas` read it from the file's
+`meta.scale`; pass `{ scale }` as `createTextureAtlas`'s third argument
+for an atlas built from rects. `createAtlasSprite` divides region sizes by
+it, so the same `pixelsPerUnit` gives sprites the same world size at every
+export scale.
+
 ## Looking up a region
 
 - [`getRegion(name)`](/Forge/docs/api/interfaces/TextureAtlas#getregion)
@@ -161,8 +249,9 @@ addSpriteComponent(
 
 The sprite's `texture` is the atlas's texture and its `region` is the
 atlas's region object. Its `width` and `height` are the region's
-`sourceSize` divided by `pixelsPerUnit` (default `100`), so a trimmed
-region draws its share of the untrimmed frame. Its `pivot` is a copy of the
+`sourceSize` divided by the atlas's `scale` and by `pixelsPerUnit`
+(default `100`), so a trimmed region draws its share of the untrimmed
+frame. Its `pivot` is a copy of the
 region's.
 
 A sprite animation assigns each frame's region to the sprite's `region`
