@@ -95,6 +95,11 @@ A rect without `sourceWidth` and `sourceHeight` is untrimmed. `pivot`
 defaults to `(0.5, 0.5)`, and may lie outside `0` to `1`. The `pivot` above
 is the bottom center of the frame, for example a character's feet.
 
+A sprite made from a trimmed region has the untrimmed frame's size, and
+its pivot is a point of the untrimmed frame. The packed rect is drawn at
+its place inside that frame, so frames trimmed by different amounts draw
+their art in the same place.
+
 ## Creating a grid atlas
 
 [`createGridTextureAtlas`](/Forge/docs/api/functions/createGridTextureAtlas)
@@ -153,13 +158,7 @@ to `'linear'`; pixel art needs `'nearest'`.
 Atlases are cached by `dataUrl`: later and concurrent calls return the same
 atlas, and `atlasCache.get(dataUrl)` returns one that has finished loading.
 
-Export the atlas with these settings:
-
-- Rotation off. A rotated frame throws.
-- Premultiplied alpha off. Forge uploads textures with straight alpha, and
-  can't tell from the PNG that its colors were premultiplied.
-- One image per file. A multi-page file throws; export each page as its own
-  file and load each as its own atlas.
+Export the atlas with the [settings below](#exporting-an-atlas).
 
 :::caution
 The promise rejects if the JSON is invalid (the message names the frame
@@ -175,6 +174,24 @@ matters.
 
 The file's optional `animations` object becomes the atlas's
 [sequences](#sequences).
+
+## Exporting an atlas
+
+Export an atlas from TexturePacker, free-tex-packer or Aseprite with these
+settings:
+
+- Data format "JSON (Hash)" or "JSON (Array)", with one image per file. A
+  multi-page file throws; export each page as its own file and load each
+  as its own atlas.
+- Rotation off. A rotated frame throws.
+- Premultiplied alpha off. Forge uploads textures with straight alpha, and
+  can't tell from the PNG that its colors were premultiplied.
+- Trimming on, except for images a sprite
+  [nine-slices](#nine-slicing-an-atlas-region), which must be packed
+  untrimmed.
+- 2 px of padding between images and 1 px of extrusion around each, for
+  the samplers that don't stay inside a region (see
+  [Filtering at region edges](#filtering-at-region-edges)).
 
 ## Creating an atlas from TexturePacker JSON
 
@@ -341,6 +358,23 @@ and `createButton` as their `sprite`.
 insets are measured against the untrimmed art.
 :::
 
+## Batching sprites from one atlas
+
+Sprites made from one atlas have the same texture, so a camera draws
+consecutive ones (in its draw order) in one instanced draw call, as long
+as their material and emissive map texture match too (see
+[Batching](./sprites.md#batching)). A nine-sliced sprite's quads join the
+same batch.
+
+Each camera draws its own batches: the sprites of a
+[UI canvas](../ui/index.md), drawn by its own camera, are a separate
+batch from the world's. Within one camera, anything drawn between two atlas
+sprites with another texture splits them into two batches: a sprite of
+another texture, text (drawn with its font atlas's texture) or a mesh.
+Sprites draw by `layer` first (see [Draw Order](./draw-order.md)), so
+giving the sprites of other textures their own `layer` draws them before
+or after the atlas's sprites instead of between them.
+
 ## Filtering at region edges
 
 A sprite drawing a region of a texture whose `wrap` is `'clamp'` (the
@@ -353,3 +387,14 @@ inside the same rect, so give it the texture's size.
 
 A region of a texture whose `wrap` is `'repeat'` isn't limited this way, so
 that its UV rect can tile or scroll the texture.
+
+Padding and extrusion in the export protect the samplers that don't stay
+inside a region: a [custom sprite shader](./sprites.md#drawing-sprites-with-a-custom-shader)
+that samples `v_texCoord` without clamping it to `v_texBounds`, a
+[mesh](./meshes.md) textured with the atlas's texture, and an atlas
+created with `createTextureAtlas` from a texture loaded with
+`wrap: 'repeat'` (`TextureAtlasCache` always loads `'clamp'` textures).
+With `'linear'` filtering, and at a camera zoom that doesn't map texels to
+whole pixels, those blend the texels next to a region into its edges.
+Extrusion repeats each image's edge texels into the texels around it, and
+padding keeps the next image beyond them.

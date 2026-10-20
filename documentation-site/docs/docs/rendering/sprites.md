@@ -385,8 +385,8 @@ A sprite with a different material or texture between two sprites in the
 draw order splits them into separate draw calls. To draw many sprites in
 few draw calls, give the sprites in a layer the same texture, for example
 by packing their images into one
-[texture atlas](./texture-atlases.md) and selecting each image with its
-`region`.
+[texture atlas](./texture-atlases.md#batching-sprites-from-one-atlas) and
+selecting each image with its `region`.
 
 ## Hiding and removing a sprite
 

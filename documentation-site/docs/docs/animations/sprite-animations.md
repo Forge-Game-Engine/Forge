@@ -101,6 +101,10 @@ const jumpClip = createAtlasAnimationClip(
 );
 ```
 
+A packer trims each frame by its own amount and keeps the size of the
+image it was cut from as the untrimmed size, so draw an animation's frames
+on images of one size and give them one pivot before packing them.
+
 ## Playing a clip on an entity
 
 Clips are stored in an [`AssetRegistry`](/Forge/docs/api/classes/AssetRegistry).
