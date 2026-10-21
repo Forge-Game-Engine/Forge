@@ -31,14 +31,30 @@ const createChunk = (
 });
 
 /**
- * Writes `tile` into the cells of `area` that are inside `chunk`, keeping
- * its `tileCount` in step.
+ * What a write puts into a rectangle of cells.
+ */
+interface AreaWrite {
+  /** The cells written. */
+  readonly area: GridCellRange;
+
+  /** The tile to write into a cell of `area`. */
+  readonly tileAt: (column: number, row: number) => number;
+
+  /**
+   * Whether every tile written is `emptyTile`, so a chunk the layer doesn't
+   * have needn't be created.
+   */
+  readonly clears: boolean;
+}
+
+/**
+ * Writes the cells of a write's area that are inside `chunk`, keeping its
+ * `tileCount` in step.
  * @returns Whether any cell changed.
  */
 const writeCellsInChunk = (
   chunk: WritableTilemapChunk,
-  area: GridCellRange,
-  tile: number,
+  { area, tileAt }: AreaWrite,
 ): boolean => {
   const chunkMinColumn = chunk.column * tilemapChunkSize;
   const chunkMinRow = chunk.row * tilemapChunkSize;
@@ -49,11 +65,11 @@ const writeCellsInChunk = (
   );
   const minRow = Math.max(area.minRow, chunkMinRow);
   const maxRow = Math.min(area.maxRow, chunkMinRow + tilemapChunkSize - 1);
-  const countChange = tile === emptyTile ? -1 : 1;
   let changed = false;
 
   for (let row = minRow; row <= maxRow; row++) {
     for (let column = minColumn; column <= maxColumn; column++) {
+      const tile = tileAt(column, row);
       const index = getCellIndex(column, row);
       const previous = chunk.tiles[index];
 
@@ -65,8 +81,10 @@ const writeCellsInChunk = (
 
       // Only a cell that goes from empty to a tile, or from a tile to
       // empty, changes the count; replacing one tile with another doesn't.
-      if (previous === emptyTile || tile === emptyTile) {
-        chunk.tileCount += countChange;
+      if (previous === emptyTile) {
+        chunk.tileCount++;
+      } else if (tile === emptyTile) {
+        chunk.tileCount--;
       }
 
       chunk.tiles[index] = tile;
@@ -77,22 +95,21 @@ const writeCellsInChunk = (
 };
 
 /**
- * Writes `tile` into the part of `area` inside one chunk, creating the
- * chunk if it needs one and removing it if it ends up empty.
+ * Writes the part of a write's area inside one chunk, creating the chunk if
+ * it needs one and removing it if it ends up empty.
  * @returns Whether any cell changed.
  */
 const writeChunkArea = (
   layer: WritableTilemapLayer,
   chunkColumn: number,
   chunkRow: number,
-  area: GridCellRange,
-  tile: number,
+  write: AreaWrite,
   stamp: number,
 ): boolean => {
   const key = getChunkKey(chunkColumn, chunkRow);
   const existing = layer.chunks.get(key);
 
-  if (!existing && tile === emptyTile) {
+  if (!existing && write.clears) {
     return false;
   }
 
@@ -100,7 +117,7 @@ const writeChunkArea = (
     ? asWritableChunk(existing)
     : createChunk(chunkColumn, chunkRow);
 
-  if (!writeCellsInChunk(chunk, area, tile)) {
+  if (!writeCellsInChunk(chunk, write)) {
     return false;
   }
 
@@ -116,14 +133,11 @@ const writeChunkArea = (
 };
 
 /**
- * Writes `tile` into every cell of a non-empty, validated area, and moves
- * the layer to its next version if any cell changed.
+ * Writes every cell of a non-empty, validated area, and moves the layer to
+ * its next version if any cell changed.
  */
-const writeArea = (
-  layer: TilemapLayerEcsComponent,
-  area: GridCellRange,
-  tile: number,
-): void => {
+const writeArea = (layer: TilemapLayerEcsComponent, write: AreaWrite): void => {
+  const { area } = write;
   const writableLayer = asWritableLayer(layer);
   const stamp = layer.version + 1;
   const lastChunkRow = toChunkCoordinate(area.maxRow);
@@ -141,20 +155,47 @@ const writeArea = (
       chunkColumn++
     ) {
       changed =
-        writeChunkArea(
-          writableLayer,
-          chunkColumn,
-          chunkRow,
-          area,
-          tile,
-          stamp,
-        ) || changed;
+        writeChunkArea(writableLayer, chunkColumn, chunkRow, write, stamp) ||
+        changed;
     }
   }
 
   if (changed) {
     writableLayer.version = stamp;
   }
+};
+
+/**
+ * The write of one tile into every cell of an area.
+ */
+const fillWrite = (area: GridCellRange, tile: number): AreaWrite => ({
+  area,
+  tileAt: () => tile,
+  clears: tile === emptyTile,
+});
+
+/**
+ * Throws if a rectangle's size isn't two whole numbers of `0` or more.
+ */
+const assertAreaSize = (
+  action: string,
+  column: number,
+  row: number,
+  columns: number,
+  rows: number,
+): void => {
+  if (
+    Number.isInteger(columns) &&
+    Number.isInteger(rows) &&
+    columns >= 0 &&
+    rows >= 0
+  ) {
+    return;
+  }
+
+  throw new Error(
+    `Unable to ${action} at (${column}, ${row}): the size (${columns} x ${rows}) must be whole numbers of 0 or more.`,
+  );
 };
 
 const assertTileFits = (
@@ -194,8 +235,10 @@ export function setTile(
   assertTileFits(layer, tile, `set the tile at (${column}, ${row})`);
   writeArea(
     layer,
-    { minColumn: column, minRow: row, maxColumn: column, maxRow: row },
-    tile,
+    fillWrite(
+      { minColumn: column, minRow: row, maxColumn: column, maxRow: row },
+      tile,
+    ),
   );
 }
 
@@ -215,8 +258,10 @@ export function clearTile(
   assertCell('clear the tile', column, row);
   writeArea(
     layer,
-    { minColumn: column, minRow: row, maxColumn: column, maxRow: row },
-    emptyTile,
+    fillWrite(
+      { minColumn: column, minRow: row, maxColumn: column, maxRow: row },
+      emptyTile,
+    ),
   );
 }
 
@@ -247,18 +292,7 @@ export function fillTiles(
   tile: number,
 ): void {
   assertCell('fill tiles', column, row);
-
-  if (
-    !Number.isInteger(columns) ||
-    !Number.isInteger(rows) ||
-    columns < 0 ||
-    rows < 0
-  ) {
-    throw new Error(
-      `Unable to fill tiles at (${column}, ${row}): the size (${columns} x ${rows}) must be whole numbers of 0 or more.`,
-    );
-  }
-
+  assertAreaSize('fill tiles', column, row, columns, rows);
   assertTileFits(layer, tile, `fill tiles at (${column}, ${row})`);
 
   if (columns === 0 || rows === 0) {
@@ -269,7 +303,86 @@ export function fillTiles(
   const maxRow = row + rows - 1;
 
   assertCell('fill tiles', maxColumn, maxRow);
-  writeArea(layer, { minColumn: column, minRow: row, maxColumn, maxRow }, tile);
+  writeArea(
+    layer,
+    fillWrite({ minColumn: column, minRow: row, maxColumn, maxRow }, tile),
+  );
+}
+
+/**
+ * Writes a rectangle of tiles from a row-major array, `columns` wide and
+ * `rows` tall, starting at `(column, row)`: `tiles[r * columns + c]` goes to
+ * the cell `(column + c, row + r)`, and an `emptyTile` entry clears its
+ * cell. Like Unity's `Tilemap.SetTilesBlock`, the whole block is one change:
+ * the layer's `version` goes up by one at most, and every chunk it changed
+ * is stamped with the new value. Writing a block equal to what the cells
+ * hold changes nothing. Use it to stamp a prefabricated room or to load a
+ * layer from a file.
+ * @param layer - The layer.
+ * @param column - The column of the rectangle's left edge.
+ * @param row - The row of the rectangle's top edge.
+ * @param columns - How many columns the block has, `0` or more.
+ * @param rows - How many rows the block has, `0` or more.
+ * @param tiles - The `columns * rows` packed tiles (or `emptyTile`s),
+ * row-major. Read during the call only.
+ * @throws An error, without changing the layer, if a cell of the rectangle
+ * is outside `-2^30` to `2^30 - 1`, `column`, `row`, `columns` or `rows`
+ * isn't a whole number, `columns` or `rows` is negative, `tiles.length`
+ * isn't `columns * rows`, or a tile is malformed or names a source or tile
+ * index the layer's tile set doesn't have (the message names its cell).
+ */
+export function setTileBlock(
+  layer: TilemapLayerEcsComponent,
+  column: number,
+  row: number,
+  columns: number,
+  rows: number,
+  tiles: ArrayLike<number>,
+): void {
+  const action = 'set a block of tiles';
+
+  assertCell(action, column, row);
+  assertAreaSize(action, column, row, columns, rows);
+
+  if (tiles.length !== columns * rows) {
+    throw new Error(
+      `Unable to ${action} at (${column}, ${row}): a ${columns} x ${rows} block needs ${columns * rows} tiles, but ${tiles.length} were given.`,
+    );
+  }
+
+  // A block repeats a few tiles many times, so each distinct tile is
+  // checked once.
+  const checked = new Set<number>();
+
+  for (let index = 0; index < tiles.length; index++) {
+    const tile = tiles[index];
+
+    if (checked.has(tile)) {
+      continue;
+    }
+
+    assertTileFits(
+      layer,
+      tile,
+      `${action}: the tile for (${column + (index % columns)}, ${row + Math.floor(index / columns)}) is wrong`,
+    );
+    checked.add(tile);
+  }
+
+  if (columns === 0 || rows === 0) {
+    return;
+  }
+
+  const maxColumn = column + columns - 1;
+  const maxRow = row + rows - 1;
+
+  assertCell(action, maxColumn, maxRow);
+  writeArea(layer, {
+    area: { minColumn: column, minRow: row, maxColumn, maxRow },
+    tileAt: (cellColumn, cellRow) =>
+      tiles[(cellRow - row) * columns + (cellColumn - column)],
+    clears: false,
+  });
 }
 
 /**

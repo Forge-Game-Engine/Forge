@@ -1,0 +1,314 @@
+{
+  "backgroundcolor": "#80112233",
+  "compressionlevel": -1,
+  "height": 3,
+  "infinite": false,
+  "layers": [
+    {
+      "data": [
+        1, 2, 2147483649, 3,
+        1073741825, 536870913, 0, 4,
+        0, 10, 11, 0
+      ],
+      "height": 3,
+      "id": 1,
+      "name": "Ground",
+      "opacity": 1,
+      "properties": [
+        { "name": "speed", "type": "float", "value": 0.5 }
+      ],
+      "type": "tilelayer",
+      "visible": true,
+      "width": 4,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": 2,
+      "layers": [
+        {
+          "data": [
+            0, 0, 0, 0,
+            4, 4, 0, 0,
+            0, 0, 0, 0
+          ],
+          "height": 3,
+          "id": 3,
+          "name": "Walls",
+          "offsety": 16,
+          "opacity": 1,
+          "type": "tilelayer",
+          "visible": true,
+          "width": 4,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "data": [
+            0, 0, 4, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0
+          ],
+          "height": 3,
+          "id": 4,
+          "name": "Decor",
+          "opacity": 0.5,
+          "tintcolor": "#0000ff",
+          "type": "tilelayer",
+          "visible": false,
+          "width": 4,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "draworder": "topdown",
+          "id": 5,
+          "name": "Objects",
+          "objects": [
+            {
+              "height": 32,
+              "id": 1,
+              "name": "Door",
+              "properties": [
+                { "name": "locked", "type": "bool", "value": true }
+              ],
+              "rotation": 90,
+              "type": "door",
+              "visible": true,
+              "width": 16,
+              "x": 32,
+              "y": 16
+            },
+            {
+              "height": 0,
+              "id": 2,
+              "name": "Spawn",
+              "point": true,
+              "rotation": 0,
+              "type": "",
+              "visible": true,
+              "width": 0,
+              "x": 24,
+              "y": 40
+            },
+            {
+              "height": 0,
+              "id": 3,
+              "name": "Zone",
+              "polygon": [
+                { "x": 0, "y": 0 },
+                { "x": 16, "y": 0 },
+                { "x": 8, "y": 8 }
+              ],
+              "rotation": -30,
+              "type": "",
+              "visible": false,
+              "width": 0,
+              "x": 4,
+              "y": 6
+            },
+            {
+              "ellipse": true,
+              "height": 6,
+              "id": 4,
+              "name": "Pond",
+              "rotation": 0,
+              "type": "",
+              "visible": true,
+              "width": 8,
+              "x": 4,
+              "y": 4
+            },
+            {
+              "gid": 2147483658,
+              "height": 32,
+              "id": 5,
+              "name": "Lamp",
+              "rotation": 0,
+              "type": "",
+              "visible": true,
+              "width": 16,
+              "x": 48,
+              "y": 48
+            },
+            {
+              "height": 16,
+              "id": 6,
+              "name": "Sign",
+              "rotation": 0,
+              "text": {
+                "color": "#ff00ff00",
+                "halign": "center",
+                "text": "Hello",
+                "wrap": true
+              },
+              "type": "",
+              "visible": true,
+              "width": 64,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": 7,
+              "properties": [
+                { "name": "gold", "type": "int", "value": 50 }
+              ],
+              "template": "../templates/chest.tj",
+              "x": 16,
+              "y": 48
+            },
+            {
+              "height": 0,
+              "id": 8,
+              "name": "Path",
+              "polyline": [
+                { "x": 0, "y": 0 },
+                { "x": 4, "y": 4 }
+              ],
+              "rotation": 0,
+              "type": "",
+              "visible": true,
+              "width": 0,
+              "x": 1,
+              "y": 2
+            },
+            {
+              "capsule": true,
+              "height": 4,
+              "id": 9,
+              "name": "Pill",
+              "rotation": 0,
+              "type": "",
+              "visible": true,
+              "width": 10,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "offsetx": 2,
+          "offsety": 3,
+          "opacity": 1,
+          "type": "objectgroup",
+          "visible": true,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "name": "Buildings",
+      "offsetx": 8,
+      "offsety": -4,
+      "opacity": 0.5,
+      "tintcolor": "#ff0000",
+      "type": "group",
+      "visible": true,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": 6,
+      "image": "sky.png",
+      "name": "Sky",
+      "opacity": 1,
+      "type": "imagelayer",
+      "visible": true,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "data": [
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0
+      ],
+      "height": 3,
+      "id": 7,
+      "name": "Ground",
+      "opacity": 1,
+      "type": "tilelayer",
+      "visible": true,
+      "width": 4,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "nextlayerid": 8,
+  "nextobjectid": 10,
+  "orientation": "orthogonal",
+  "properties": [
+    { "name": "boss", "type": "object", "value": 1 },
+    { "name": "empty", "type": "color", "value": "" },
+    { "name": "gravity", "type": "float", "value": 9.5 },
+    { "name": "level", "type": "int", "value": 3 },
+    { "name": "music", "type": "file", "value": "../music/theme.ogg" },
+    { "name": "style", "propertytype": "Style", "type": "class", "value": {} },
+    { "name": "tint", "type": "color", "value": "#ff336699" },
+    { "name": "title", "type": "string", "value": "Keep" }
+  ],
+  "renderorder": "right-down",
+  "tiledversion": "1.11.0",
+  "tileheight": 16,
+  "tilesets": [
+    {
+      "columns": 2,
+      "firstgid": 1,
+      "image": "terrain.png",
+      "imageheight": 32,
+      "imagewidth": 32,
+      "margin": 0,
+      "name": "terrain",
+      "spacing": 0,
+      "tilecount": 4,
+      "tileheight": 16,
+      "tiles": [
+        {
+          "id": 0,
+          "properties": [
+            { "name": "kind", "type": "string", "value": "grass" }
+          ]
+        },
+        {
+          "animation": [
+            { "duration": 200, "tileid": 1 },
+            { "duration": 300, "tileid": 2 }
+          ],
+          "id": 1
+        },
+        {
+          "id": 3,
+          "objectgroup": {
+            "draworder": "index",
+            "id": 2,
+            "name": "",
+            "objects": [
+              {
+                "height": 16,
+                "id": 1,
+                "name": "",
+                "rotation": 0,
+                "type": "",
+                "visible": true,
+                "width": 16,
+                "x": 0,
+                "y": 0
+              }
+            ],
+            "opacity": 1,
+            "type": "objectgroup",
+            "visible": true,
+            "x": 0,
+            "y": 0
+          }
+        }
+      ],
+      "tilewidth": 16
+    },
+    {
+      "firstgid": 10,
+      "source": "../tilesets/props.tsj"
+    }
+  ],
+  "tilewidth": 16,
+  "type": "map",
+  "version": "1.10",
+  "width": 4
+}

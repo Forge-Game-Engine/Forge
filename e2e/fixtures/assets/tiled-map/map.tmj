@@ -1,0 +1,81 @@
+{
+  "compressionlevel": -1,
+  "height": 2,
+  "infinite": false,
+  "layers": [
+    {
+      "data": [
+        1, 0, 2147483649, 0, 1073741825, 0, 536870913, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+      ],
+      "height": 2,
+      "id": 1,
+      "name": "Markers",
+      "opacity": 1,
+      "type": "tilelayer",
+      "visible": true,
+      "width": 12,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "data": [
+        0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+      ],
+      "height": 2,
+      "id": 2,
+      "name": "Twin",
+      "opacity": 1,
+      "type": "tilelayer",
+      "visible": true,
+      "width": 12,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": 3,
+      "layers": [
+        {
+          "data": [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+          ],
+          "height": 2,
+          "id": 4,
+          "name": "Shifted",
+          "offsety": 8,
+          "opacity": 1,
+          "type": "tilelayer",
+          "visible": true,
+          "width": 12,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "name": "Group",
+      "offsety": 8,
+      "opacity": 1,
+      "type": "group",
+      "visible": true,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "nextlayerid": 5,
+  "nextobjectid": 1,
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "tiledversion": "1.11.0",
+  "tileheight": 16,
+  "tilesets": [
+    {
+      "firstgid": 1,
+      "source": "tiles.tsj"
+    }
+  ],
+  "tilewidth": 16,
+  "type": "map",
+  "version": "1.10",
+  "width": 12
+}

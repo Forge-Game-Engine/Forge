@@ -64,7 +64,7 @@ describe('getTileImageRect', () => {
     ).toEqual({ min: { x: -8, y: -4 }, max: { x: 24, y: 20 } });
   });
 
-  it('keeps the rect for every transform', () => {
+  it('keeps the rect of a square tile for every transform', () => {
     const tileSet = createTileSet({
       layout: createOrthogonalGridLayout({ cellWidth: 16, cellHeight: 16 }),
       sources: [createTestSource(1, 1)],
@@ -80,6 +80,45 @@ describe('getTileImageRect', () => {
     ).toEqual(
       getTileImageRect(tileSet, 0, 0, packTile({ source: 0, tile: 0 })),
     );
+  });
+
+  describe.each([
+    [false, false],
+    [true, false],
+    [false, true],
+    [true, true],
+  ])('for a 16 x 32 tile with flipX %s and flipY %s', (flipX, flipY) => {
+    const tileSet = createTileSet({
+      layout: createOrthogonalGridLayout({ cellWidth: 16, cellHeight: 16 }),
+      sources: [
+        createTestSource(1, 1, {
+          tileHeight: 32,
+          tiles: new Map([[0, { textureOrigin: { x: 2, y: -1 } }]]),
+        }),
+      ],
+    });
+
+    it('keeps the rect without transpose', () => {
+      expect(
+        getTileImageRect(
+          tileSet,
+          1,
+          1,
+          packTile({ source: 0, tile: 0, flipX, flipY }),
+        ),
+      ).toEqual({ min: { x: 18, y: -1 }, max: { x: 34, y: 31 } });
+    });
+
+    it('swaps the width and height with transpose, keeping the bottom-left corner', () => {
+      expect(
+        getTileImageRect(
+          tileSet,
+          1,
+          1,
+          packTile({ source: 0, tile: 0, flipX, flipY, transpose: true }),
+        ),
+      ).toEqual({ min: { x: 18, y: 15 }, max: { x: 50, y: 31 } });
+    });
   });
 
   it('gives a cell-sized tile exactly the edges its neighbors start at', () => {

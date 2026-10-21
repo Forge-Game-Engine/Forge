@@ -184,8 +184,12 @@ const addSideEdge = (
 
 /**
  * Builds the outline of a layer's solid tiles: the union of every
- * non-empty cell's `TileData.collision` shape, moved by the cell's flip and
- * transpose bits the way they move its image. Neighbors' shared edges are
+ * non-empty cell's `TileData.collision` shape, moved by the cell's
+ * transform bits within the cell footprint's bounds (transpose, then flip
+ * X, then flip Y, in the bounds' normalized coordinates). For a square tile
+ * that turns the shape with the image; a transposed non-square tile's
+ * image turns out of its footprint, but its shape stays in it, since a
+ * tile collides with its own cell only. Neighbors' shared edges are
  * removed, so bodies sliding along the outline never catch on a seam
  * between tiles, and straight runs are one edge, so a floor of 20 tiles is
  * one edge.

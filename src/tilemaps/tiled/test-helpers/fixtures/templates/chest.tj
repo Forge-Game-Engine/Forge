@@ -1,0 +1,21 @@
+{
+  "object": {
+    "gid": 1073741827,
+    "height": 32,
+    "id": 1,
+    "name": "Chest",
+    "properties": [
+      { "name": "gold", "type": "int", "value": 10 },
+      { "name": "trapped", "type": "bool", "value": false }
+    ],
+    "rotation": 0,
+    "type": "chest",
+    "visible": true,
+    "width": 16
+  },
+  "tileset": {
+    "firstgid": 1,
+    "source": "../tilesets/props.tsj"
+  },
+  "type": "template"
+}

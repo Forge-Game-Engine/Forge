@@ -17,6 +17,7 @@ import {
   clearTiles,
   fillTiles,
   setTile,
+  setTileBlock,
   setTileSet,
 } from './edit-tiles.js';
 import { forEachTile, getTile } from './read-tiles.js';
@@ -472,6 +473,104 @@ describe('cell functions', () => {
 
       expect(layer.tileSet).toBe(smaller);
       expect(getTile(layer, 0, 0)).toBe(grass);
+    });
+  });
+
+  describe('setTileBlock', () => {
+    it('writes a row-major block across chunk boundaries at negative cells', () => {
+      // A 3 x 2 block straddling the chunks around the origin.
+      const tiles = [grass, emptyTile, water, water, grass, emptyTile];
+
+      setTileBlock(layer, -2, -1, 3, 2, tiles);
+
+      expect(contentsOf(layer)).toEqual(
+        new Map([
+          ['-2,-1', grass],
+          ['0,-1', water],
+          ['-2,0', water],
+          ['-1,0', grass],
+        ]),
+      );
+      // The block's only cell in chunk (0, 0) is empty, so that chunk isn't
+      // created.
+      expect(layer.chunks.size).toBe(3);
+    });
+
+    it('clears the cells of empty entries, removing the chunks it empties', () => {
+      fillTiles(layer, 0, 0, 2, 2, grass);
+      setTileBlock(layer, 0, 0, 2, 2, [emptyTile, emptyTile, emptyTile, water]);
+
+      expect(contentsOf(layer)).toEqual(new Map([['1,1', water]]));
+
+      setTileBlock(layer, 1, 1, 1, 1, new Uint32Array([emptyTile]));
+
+      expect(layer.chunks.size).toBe(0);
+    });
+
+    it('adds one to version and stamps exactly the chunks it changed', () => {
+      setTile(layer, 40, 0, grass);
+      setTileBlock(layer, 0, 0, 2, 1, [grass, water]);
+
+      expect(layer.version).toBe(2);
+
+      const chunkAt = (column: number): number =>
+        [...layer.chunks.values()].find((chunk) => chunk.column === column)
+          ?.changedAt ?? -1;
+
+      expect(chunkAt(0)).toBe(2);
+      expect(chunkAt(1)).toBe(1);
+
+      // The block reaches into chunk 1, but writes what's already there.
+      setTileBlock(layer, 30, 0, 11, 1, [
+        water,
+        ...new Array<number>(9).fill(emptyTile),
+        grass,
+      ]);
+
+      expect(layer.version).toBe(3);
+      expect(chunkAt(0)).toBe(3);
+      expect(chunkAt(1)).toBe(1);
+    });
+
+    it('changes nothing for a block equal to what the cells hold', () => {
+      setTileBlock(layer, 5, 5, 2, 1, [grass, water]);
+      setTileBlock(layer, 5, 5, 2, 1, [grass, water]);
+      setTileBlock(layer, 100, 100, 2, 1, [emptyTile, emptyTile]);
+      setTileBlock(layer, 0, 0, 0, 3, []);
+
+      expect(layer.version).toBe(1);
+      expect(layer.chunks.size).toBe(1);
+    });
+
+    it('throws for a bad tile without changing the layer, naming its cell', () => {
+      expect(() =>
+        setTileBlock(layer, 10, 20, 2, 2, [
+          grass,
+          grass,
+          grass,
+          packTile({ source: 3, tile: 0 }),
+        ]),
+      ).toThrow(
+        "Unable to set a block of tiles: the tile for (11, 21) is wrong: its source 3 doesn't exist, the tile set has 2 sources.",
+      );
+      expect(layer.chunks.size).toBe(0);
+      expect(layer.version).toBe(0);
+    });
+
+    it('throws for a length that is not columns * rows', () => {
+      expect(() => setTileBlock(layer, 0, 0, 2, 2, [grass])).toThrow(
+        'Unable to set a block of tiles at (0, 0): a 2 x 2 block needs 4 tiles, but 1 were given.',
+      );
+    });
+
+    it('throws for a negative size or a block past the supported range', () => {
+      expect(() => setTileBlock(layer, 0, 0, -1, 0, [])).toThrow(
+        /whole numbers of 0 or more/,
+      );
+      expect(() =>
+        setTileBlock(layer, 2 ** 30 - 1, 0, 2, 1, [grass, grass]),
+      ).toThrow(/must be whole numbers from/);
+      expect(layer.chunks.size).toBe(0);
     });
   });
 });

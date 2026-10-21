@@ -252,6 +252,40 @@ describe('writeChunkVertices', () => {
     );
   });
 
+  it('turns a transposed tall tile on its side instead of stretching it', () => {
+    const tileSet = createTileSet({
+      layout: orthogonal16(),
+      sources: [createTestSource(1, 1, { tileHeight: 32 })],
+    });
+    const layer = createLayer(tileSet);
+
+    setTile(
+      layer,
+      0,
+      0,
+      packTile({ source: 0, tile: 0, transpose: true, flipX: true }),
+    );
+
+    const { arrays } = write(layer, getChunk(layer, 0, 0));
+
+    // The 16 x 32 image turned clockwise covers 32 x 16, its bottom-left
+    // corner on the cell's.
+    expect(quadPositions(arrays, 0)).toEqual([
+      { x: 0, y: 0 },
+      { x: 32, y: 0 },
+      { x: 32, y: 16 },
+      { x: 0, y: 16 },
+    ]);
+    // The top-left corner shows the image's bottom-left, the top-right its
+    // top-left: a quarter turn clockwise.
+    expect(quadTexCoords(arrays, 0)).toEqual([
+      { x: 0, y: 1 },
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 1, y: 1 },
+    ]);
+  });
+
   it('draws only the trimmed part of a trimmed region, moved by the transform', () => {
     // A 16 x 16 frame whose content is the 8 x 4 rect at (4, 2), packed at
     // the texture's top-left corner.
