@@ -1,5 +1,13 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  Mock,
+  MockInstance,
+  vi,
+} from 'vitest';
 import {
   addPositionComponent,
   addRotationComponent,
@@ -8,6 +16,7 @@ import {
   positionId,
   rotationId,
   scaleId,
+  Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { createOrthogonalGridLayout } from '../../math/index.js';
@@ -22,11 +31,15 @@ import {
   createRenderContext,
   RenderContext,
 } from '../../rendering/render-context.js';
-import { createGridTextureAtlas } from '../../rendering/texture-atlas/index.js';
+import {
+  createGridTextureAtlas,
+  createTextureAtlas,
+} from '../../rendering/texture-atlas/index.js';
 import { Texture } from '../../rendering/texture.js';
 import { getChunkKey } from '../cells/chunk-key.js';
 import {
   clearTile,
+  clearTiles,
   fillTiles,
   setTile,
   setTileSet,
@@ -41,7 +54,11 @@ import {
   TilemapRenderStateEcsComponent,
   tilemapRenderStateId,
 } from '../components/tilemap-render-state-component.js';
-import { createTileSet, TileSet } from '../tile-set/tile-set.js';
+import {
+  createTileSet,
+  TileDataOptions,
+  TileSet,
+} from '../tile-set/tile-set.js';
 import { packTile } from '../tiles/packed-tile.js';
 import { createTilemapRenderEcsSystem } from './tilemap-render-system.js';
 
@@ -85,6 +102,8 @@ describe('createTilemapRenderEcsSystem', () => {
   let terrainTexture: Texture;
   let rockTexture: Texture;
   let tileSet: TileSet;
+  let time: Time;
+  let now: number;
 
   const createTexture = (width: number, height: number): Texture => {
     const texture = new Texture(renderContext);
@@ -97,7 +116,11 @@ describe('createTilemapRenderEcsSystem', () => {
     return texture;
   };
 
-  const createTwoSourceTileSet = (terrain: Texture, rocks: Texture): TileSet =>
+  const createTwoSourceTileSet = (
+    terrain: Texture,
+    rocks: Texture,
+    terrainTiles?: ReadonlyMap<number, TileDataOptions>,
+  ): TileSet =>
     createTileSet({
       layout: createOrthogonalGridLayout({ cellWidth: 16, cellHeight: 16 }),
       sources: [
@@ -106,6 +129,7 @@ describe('createTilemapRenderEcsSystem', () => {
             cellWidth: 16,
             cellHeight: 16,
           }),
+          tiles: terrainTiles,
         },
         {
           atlas: createGridTextureAtlas(rocks, {
@@ -166,7 +190,11 @@ describe('createTilemapRenderEcsSystem', () => {
     vi.spyOn(canvas, 'getContext').mockReturnValue(gl);
     renderContext = createRenderContext(canvas);
     world = new EcsWorld();
-    system = createTilemapRenderEcsSystem(renderContext);
+    // `Time.update` clamps each step, so the tests set the time directly.
+    now = 0;
+    time = new Time();
+    vi.spyOn(time, 'timeInMilliseconds', 'get').mockImplementation(() => now);
+    system = createTilemapRenderEcsSystem(renderContext, time);
     world.addSystem(system);
     terrainTexture = createTexture(32, 32);
     rockTexture = createTexture(32, 16);
@@ -627,7 +655,7 @@ describe('createTilemapRenderEcsSystem', () => {
     // Systems hold no state: a new system over the same components carries
     // on from what is recorded on the layer.
     world.removeSystem(system);
-    world.addSystem(createTilemapRenderEcsSystem(renderContext));
+    world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
 
     const update = vi.spyOn(Geometry.prototype, 'update');
 
@@ -679,5 +707,457 @@ describe('createTilemapRenderEcsSystem', () => {
       true,
     );
     expect([mesh.chunkColumn, mesh.chunkRow]).toEqual([-2, 2]);
+  });
+
+  describe('animated tiles', () => {
+    // Terrain tile 3 animates: 100 ms of its own image (the atlas's
+    // bottom-right quarter), then 100 ms of tile 1's (its top-right).
+    const water = packTile({ source: 0, tile: 3 });
+    const waterFrames = new Map<number, TileDataOptions>([
+      [
+        3,
+        {
+          animation: [
+            { tile: 3, durationMilliseconds: 100 },
+            { tile: 1, durationMilliseconds: 100 },
+          ],
+        },
+      ],
+    ]);
+    const ownImage = { x: 0.5, y: 0.5 };
+    const secondFrame = { x: 0.5, y: 0 };
+
+    let update: MockInstance<Geometry['update']>;
+
+    beforeEach(() => {
+      tileSet = createTwoSourceTileSet(
+        terrainTexture,
+        rockTexture,
+        waterFrames,
+      );
+      update = vi.spyOn(Geometry.prototype, 'update');
+    });
+
+    /** The texture coordinate of a quad's top-left corner. */
+    const topLeftTexCoord = (
+      mesh: TilemapChunkMesh,
+      quad: number,
+    ): { x: number; y: number } => ({
+      x: mesh.texCoords[quad * 8],
+      y: mesh.texCoords[quad * 8 + 1],
+    });
+
+    const tick = (milliseconds: number): void => {
+      now = milliseconds;
+      world.update();
+    };
+
+    it('never updates a layer without animated tiles, however much time passes', () => {
+      const { entity, layer } = addLayer();
+
+      fillTiles(layer, 0, 0, 4, 4, grass);
+      tick(0);
+      update.mockClear();
+
+      for (const milliseconds of [100, 250, 1e6]) {
+        tick(milliseconds);
+      }
+
+      expect(update).not.toHaveBeenCalled();
+      expect(getState(entity).nextFrameChangeTime).toBe(Infinity);
+    });
+
+    it('rewrites the quads of an animated tile, in only the meshes that hold it, when its frame changes', () => {
+      const { entity, layer } = addLayer();
+
+      setTile(layer, 0, 0, grass);
+      setTile(layer, 1, 0, water);
+      setTile(layer, 2, 0, rock);
+      setTile(layer, 40, 0, water);
+      setTile(layer, 80, 0, grass);
+      tick(0);
+
+      const [terrain, rocks, second, staticChunk] = getMeshes(entity);
+
+      expect(topLeftTexCoord(terrain, 1)).toEqual(ownImage);
+      expect([...terrain.animatedQuads]).toEqual([1]);
+      expect(rocks.animatedTiles).toEqual([]);
+      expect(staticChunk.animatedTiles).toEqual([]);
+      expect(getState(entity).nextFrameChangeTime).toBe(100);
+
+      update.mockClear();
+      tick(99);
+
+      expect(update).not.toHaveBeenCalled();
+
+      const grassBefore = [...terrain.texCoords.subarray(0, 8)];
+
+      tick(100);
+
+      expect(update.mock.contexts).toEqual([terrain.geometry, second.geometry]);
+
+      for (const [{ attributes }] of update.mock.calls) {
+        expect(Object.keys(attributes ?? {})).toEqual([
+          'a_texCoord',
+          'a_texRect',
+        ]);
+      }
+
+      expect(topLeftTexCoord(terrain, 1)).toEqual(secondFrame);
+      expect(topLeftTexCoord(second, 0)).toEqual(secondFrame);
+      expect([...terrain.texCoords.subarray(0, 8)]).toEqual(grassBefore);
+      expect(getState(entity)).toMatchObject({
+        animationTime: 100,
+        nextFrameChangeTime: 200,
+      });
+      expect(layer.version).toBe(5);
+    });
+
+    it('leaves the meshes whose animated tiles kept their frame when another tile’s frame changes', () => {
+      // Terrain tile 2 changes frame every 50 ms, water every 100 ms.
+      const ripple = packTile({ source: 0, tile: 2 });
+
+      tileSet = createTwoSourceTileSet(
+        terrainTexture,
+        rockTexture,
+        new Map([
+          ...waterFrames,
+          [
+            2,
+            {
+              animation: [
+                { tile: 2, durationMilliseconds: 50 },
+                { tile: 0, durationMilliseconds: 50 },
+              ],
+            },
+          ],
+        ]),
+      );
+
+      const { entity, layer } = addLayer();
+
+      setTile(layer, 0, 0, water);
+      setTile(layer, 1, 0, ripple);
+      setTile(layer, 40, 0, water);
+      tick(0);
+
+      const [both, waterOnly] = getMeshes(entity);
+
+      expect(getState(entity).nextFrameChangeTime).toBe(50);
+
+      update.mockClear();
+      tick(50);
+
+      expect(update.mock.contexts).toEqual([both.geometry]);
+      expect(topLeftTexCoord(both, 0)).toEqual(ownImage);
+      expect(topLeftTexCoord(both, 1)).toEqual({ x: 0, y: 0 });
+      expect(topLeftTexCoord(waterOnly, 0)).toEqual(ownImage);
+      expect(getState(entity).nextFrameChangeTime).toBe(100);
+    });
+
+    it('throws, naming the tile, for a mesh that lists a tile its layer’s tile set doesn’t animate', () => {
+      const { entity, layer } = addLayer();
+
+      setTile(layer, 0, 0, water);
+      tick(0);
+
+      // A render state that no longer matches its layer, which only code
+      // other than the system could leave behind.
+      Object.assign(getMeshes(entity)[0], { animatedTiles: [grass] });
+
+      expect(() => {
+        tick(100);
+      }).toThrow(
+        `Unable to animate the tile ${grass} of a tilemap layer: it has no animation in the layer's tile set.`,
+      );
+    });
+
+    it('uploads nothing on a tick whose delta is a whole number of cycles', () => {
+      const { entity, layer } = addLayer();
+
+      setTile(layer, 0, 0, water);
+      tick(50);
+      update.mockClear();
+      tick(250);
+
+      expect(update).not.toHaveBeenCalled();
+      expect(topLeftTexCoord(getMeshes(entity)[0], 0)).toEqual(ownImage);
+      expect(getState(entity).nextFrameChangeTime).toBe(300);
+    });
+
+    it('lands on the right frame after a large delta', () => {
+      const { entity, layer } = addLayer();
+
+      setTile(layer, 0, 0, water);
+      tick(0);
+      tick(200 * 1000 + 150);
+
+      expect(topLeftTexCoord(getMeshes(entity)[0], 0)).toEqual(secondFrame);
+
+      tick(200 * 5000 + 10);
+
+      expect(topLeftTexCoord(getMeshes(entity)[0], 0)).toEqual(ownImage);
+    });
+
+    it('keeps two layers sharing a tile set on the same frame, even when added at different times', () => {
+      const first = addLayer();
+
+      setTile(first.layer, 0, 0, water);
+      tick(0);
+      tick(120);
+
+      const second = addLayer();
+
+      setTile(
+        second.layer,
+        5,
+        5,
+        packTile({ source: 0, tile: 3, flipX: true }),
+      );
+
+      const shown = (): unknown[] =>
+        [first.entity, second.entity].map((entity) =>
+          topLeftTexCoord(getMeshes(entity)[0], 0),
+        );
+
+      for (const milliseconds of [130, 199, 200, 260, 310, 1e5 + 101]) {
+        tick(milliseconds);
+
+        const frame =
+          Math.floor(milliseconds / 100) % 2 === 0 ? ownImage : secondFrame;
+
+        // The second layer's tile is flipped, so its top-left samples the
+        // top-right of the same frame.
+        expect(shown()).toEqual([frame, { x: frame.x + 0.5, y: frame.y }]);
+      }
+    });
+
+    it('rebuilds a chunk edited on the tick its frame changes once, with the current frame', () => {
+      const { entity, layer } = addLayer();
+
+      setTile(layer, 0, 0, water);
+      tick(0);
+      update.mockClear();
+      setTile(layer, 1, 0, grass);
+      tick(100);
+
+      const [mesh] = getMeshes(entity);
+
+      expect(update).toHaveBeenCalledOnce();
+      expect(update.mock.calls[0][0].indices).toBeDefined();
+      expect(topLeftTexCoord(mesh, 0)).toEqual(secondFrame);
+    });
+
+    it('starts animating a static chunk an animated tile is painted into, and stops when the last is cleared', () => {
+      const { entity, layer } = addLayer();
+
+      setTile(layer, 0, 0, grass);
+      tick(0);
+
+      expect(getState(entity).nextFrameChangeTime).toBe(Infinity);
+
+      setTile(layer, 1, 0, water);
+      tick(10);
+
+      expect(getState(entity).nextFrameChangeTime).toBe(100);
+
+      update.mockClear();
+      tick(100);
+
+      expect(update).toHaveBeenCalledOnce();
+      expect(topLeftTexCoord(getMeshes(entity)[0], 1)).toEqual(secondFrame);
+
+      clearTile(layer, 1, 0);
+      tick(150);
+      update.mockClear();
+      tick(200);
+      tick(1000);
+
+      expect(update).not.toHaveBeenCalled();
+      expect(getState(entity).nextFrameChangeTime).toBe(Infinity);
+    });
+
+    it('moves the quad, and the mesh’s bounds, for a frame trimmed differently', () => {
+      tileSet = createTileSet({
+        layout: createOrthogonalGridLayout({ cellWidth: 16, cellHeight: 16 }),
+        sources: [
+          {
+            atlas: createTextureAtlas(terrainTexture, [
+              { name: 'full', x: 0, y: 0, width: 16, height: 16 },
+              {
+                name: 'trimmed',
+                x: 16,
+                y: 0,
+                width: 8,
+                height: 4,
+                sourceWidth: 16,
+                sourceHeight: 16,
+                trimX: 4,
+                trimY: 2,
+              },
+            ]),
+            tiles: new Map([
+              [
+                0,
+                {
+                  animation: [
+                    { tile: 0, durationMilliseconds: 100 },
+                    { tile: 1, durationMilliseconds: 100 },
+                  ],
+                },
+              ],
+            ]),
+          },
+        ],
+      });
+
+      const { entity, layer } = addLayer();
+
+      setTile(layer, 0, 0, packTile({ source: 0, tile: 0 }));
+      tick(0);
+
+      const [mesh] = getMeshes(entity);
+
+      expect(mesh.geometry.bounds).toEqual({
+        min: { x: 0, y: 0 },
+        max: { x: 16, y: 16 },
+      });
+
+      update.mockClear();
+      tick(100);
+
+      expect(Object.keys(update.mock.calls[0][0].attributes ?? {})).toContain(
+        'a_position',
+      );
+      expect(mesh.geometry.bounds).toEqual({
+        min: { x: 4, y: 2 },
+        max: { x: 12, y: 6 },
+      });
+    });
+
+    it('uses the new tile set’s animations after setTileSet', () => {
+      const { entity, layer } = addLayer();
+
+      setTile(layer, 0, 0, water);
+      tick(0);
+      setTileSet(
+        layer,
+        createTwoSourceTileSet(
+          terrainTexture,
+          rockTexture,
+          new Map([
+            [
+              3,
+              {
+                animation: [
+                  { tile: 0, durationMilliseconds: 30 },
+                  { tile: 2, durationMilliseconds: 30 },
+                ],
+              },
+            ],
+          ]),
+        ),
+      );
+      tick(40);
+
+      expect(topLeftTexCoord(getMeshes(entity)[0], 0)).toEqual({
+        x: 0,
+        y: 0.5,
+      });
+      expect(getState(entity).nextFrameChangeTime).toBe(60);
+    });
+
+    it.each([
+      [
+        'setTileSet to a tile set where the tile has no animation',
+        (layer: TilemapLayerEcsComponent): void => {
+          setTileSet(
+            layer,
+            createTwoSourceTileSet(terrainTexture, rockTexture),
+          );
+        },
+        ownImage,
+      ],
+      [
+        'replacing the tile with setTile',
+        (layer: TilemapLayerEcsComponent): void => {
+          setTile(layer, 0, 0, dirt);
+        },
+        secondFrame,
+      ],
+    ])(
+      'draws the cell’s new tile after %s on a tick its old frame changes',
+      (_, edit, image) => {
+        const { entity, layer } = addLayer();
+
+        setTile(layer, 0, 0, water);
+        tick(0);
+        edit(layer);
+
+        expect(() => {
+          tick(100);
+        }).not.toThrow();
+        expect(topLeftTexCoord(getMeshes(entity)[0], 0)).toEqual(image);
+        expect(getState(entity).nextFrameChangeTime).toBe(Infinity);
+      },
+    );
+
+    it('releases the mesh after clearTiles on a tick a frame changes', () => {
+      const { entity, layer } = addLayer();
+
+      setTile(layer, 0, 0, water);
+      tick(0);
+
+      const [mesh] = getMeshes(entity);
+
+      clearTiles(layer);
+
+      expect(() => {
+        tick(100);
+      }).not.toThrow();
+      expect(world.isAlive(mesh.entity)).toBe(false);
+      expect(getState(entity)).toMatchObject({
+        meshes: [],
+        nextFrameChangeTime: Infinity,
+      });
+    });
+
+    it('updates nothing while time stands still', () => {
+      const { layer } = addLayer();
+
+      setTile(layer, 0, 0, water);
+      tick(60);
+      update.mockClear();
+
+      for (let i = 0; i < 10; i++) {
+        tick(60);
+      }
+
+      expect(update).not.toHaveBeenCalled();
+    });
+
+    it('shows the frame written while the context was lost once it is restored', () => {
+      const { entity, layer } = addLayer();
+
+      setTile(layer, 0, 0, water);
+      tick(0);
+
+      const [mesh] = getMeshes(entity);
+
+      contextLost = true;
+      canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+      tick(100);
+
+      const bufferSubData = gl.bufferSubData as Mock;
+
+      bufferSubData.mockClear();
+      contextLost = false;
+      canvas.dispatchEvent(new Event('webglcontextrestored'));
+
+      expect(topLeftTexCoord(mesh, 0)).toEqual(secondFrame);
+      expect(
+        bufferSubData.mock.calls.some((call) => call[2] === mesh.texCoords),
+      ).toBe(true);
+    });
   });
 });

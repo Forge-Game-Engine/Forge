@@ -197,7 +197,7 @@ export const createScene: CreateScene = (
 
   const layer = addTilemapLayerComponent(world, layerEntity, { tileSet });
 
-  world.addSystem(createTilemapRenderEcsSystem(renderContext));
+  world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
   world.addSystem(createTransformEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
 

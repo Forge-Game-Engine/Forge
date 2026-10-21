@@ -13,7 +13,9 @@ import {
   getTileIndex,
   getTileSourceIndex,
   getTileTransformBits,
+  withoutTransformBits,
 } from '../tiles/packed-tile-bits.js';
+import { getFrameIndexAt } from '../tiles/tile-animation-timing.js';
 import {
   applyTileTransform,
   invertTileTransform,
@@ -99,13 +101,35 @@ const lerpEdge = (min: number, max: number, t: number): number => {
 };
 
 /**
- * Writes one tile's quad at `quad`.
+ * Writes `value` at `index` of `array`.
+ * @returns Whether the value there was different.
+ */
+const writeChanged = (
+  array: Float32Array,
+  index: number,
+  value: number,
+): boolean => {
+  const before = array[index];
+
+  array[index] = value;
+
+  return array[index] !== before;
+};
+
+/**
+ * Writes one tile's quad at `quad`. The quad sits where the placed tile's
+ * image does (`getTileImageRect`), and shows the region of
+ * `frameTileIndex`, turned by the placed tile's transform bits.
  * @param arrays - The arrays to write into.
  * @param quad - The quad's index in the arrays.
  * @param tileSet - The layer's tile set.
  * @param column - The cell's column.
  * @param row - The cell's row.
- * @param tile - The packed tile.
+ * @param tile - The placed tile.
+ * @param frameTileIndex - The index, in the placed tile's source, of the
+ * tile whose image to show: the placed tile's own, or its current
+ * animation frame's.
+ * @returns Whether any corner's position changed.
  */
 const writeTile = (
   arrays: TilemapVertexArrays,
@@ -114,11 +138,13 @@ const writeTile = (
   column: number,
   row: number,
   tile: number,
-): void => {
+  frameTileIndex: number,
+): boolean => {
   const image: Rect = getTileImageRect(tileSet, column, row, tile);
   const region =
-    tileSet.sources[getTileSourceIndex(tile)].atlas.regions[getTileIndex(tile)];
+    tileSet.sources[getTileSourceIndex(tile)].atlas.regions[frameTileIndex];
   const bits = getTileTransformBits(tile);
+  let moved = false;
   const { uvOffset, uvScale, trimOffset, trimScale } = region;
 
   // A trimmed region draws only its share of the image, moved by the
@@ -141,16 +167,20 @@ const writeTile = (
     corner.x = unit.x === 0 ? minX : maxX;
     corner.y = unit.y === 0 ? minY : maxY;
 
-    arrays.positions[vertex * positionSize] = lerpEdge(
-      image.min.x,
-      image.max.x,
-      corner.x,
-    );
-    arrays.positions[vertex * positionSize + 1] = lerpEdge(
-      image.min.y,
-      image.max.y,
-      corner.y,
-    );
+    // A frame's region can be trimmed differently from the last one shown,
+    // which moves the corners of the drawn part.
+    moved =
+      writeChanged(
+        arrays.positions,
+        vertex * positionSize,
+        lerpEdge(image.min.x, image.max.x, corner.x),
+      ) || moved;
+    moved =
+      writeChanged(
+        arrays.positions,
+        vertex * positionSize + 1,
+        lerpEdge(image.min.y, image.max.y, corner.y),
+      ) || moved;
 
     // The corner shows the content the bits moved there, so it samples the
     // untransformed frame where that content was.
@@ -168,7 +198,63 @@ const writeTile = (
     arrays.texRects[texRect + 2] = uvScale.x;
     arrays.texRects[texRect + 3] = uvScale.y;
   }
+
+  return moved;
 };
+
+/**
+ * The index of the tile a cell shows at a time: the placed tile's own, or
+ * its animation's frame at that time.
+ */
+const getFrameTileIndex = (
+  tileSet: TileSet,
+  tile: number,
+  timeInMilliseconds: number,
+): number => {
+  const { animation } =
+    tileSet.sources[getTileSourceIndex(tile)].tiles[getTileIndex(tile)];
+
+  if (animation === null) {
+    return getTileIndex(tile);
+  }
+
+  return animation[getFrameIndexAt(animation, timeInMilliseconds)].tile;
+};
+
+/**
+ * Which quads of a chunk mesh show animated tiles, so a frame change
+ * rewrites only those.
+ */
+export interface TilemapAnimatedQuads {
+  /**
+   * The quad index, in the mesh, of each tile with an animation, in the
+   * order the mesh writes them (row-major cell order).
+   */
+  animatedQuads: Uint16Array;
+
+  /**
+   * The index, in the chunk's `tiles`, of the cell each of `animatedQuads`
+   * draws, in the same order.
+   */
+  animatedCells: Uint16Array;
+
+  /**
+   * The distinct animation keys among the mesh's tiles: each animated tile
+   * packed without its transform bits.
+   */
+  animatedTiles: readonly number[];
+}
+
+/** What {@link writeChunkVertices} wrote. */
+export interface WrittenChunkVertices extends TilemapAnimatedQuads {
+  /** The number of tiles (quads) written. */
+  tileCount: number;
+}
+
+// Shared by every mesh without animated tiles. Empty, so nothing can write
+// to them.
+const noQuads = new Uint16Array(0);
+const noTiles: readonly number[] = Object.freeze([]);
 
 /**
  * Counts a chunk's tiles from each source.
@@ -195,22 +281,29 @@ export const countChunkTilesBySource = (
  * order, which draws them back to front. Each quad is the tile's
  * `getTileImageRect` in the layer's local space (shrunk to the drawn part
  * of a trimmed region), with texture coordinates that apply the tile's
- * transform bits.
+ * transform bits. An animated tile shows its frame at
+ * `timeInMilliseconds`.
  * @param tileSet - The layer's tile set.
  * @param chunk - The chunk.
  * @param source - The index of the source whose tiles to write.
  * @param arrays - The arrays to write into, with room for every tile of
  * `source` in the chunk.
- * @returns The number of tiles written.
+ * @param timeInMilliseconds - The time whose animation frames to show.
+ * @returns The number of tiles written, and which of them are animated.
  */
 export const writeChunkVertices = (
   tileSet: TileSet,
   chunk: TilemapChunk,
   source: number,
   arrays: TilemapVertexArrays,
-): number => {
+  timeInMilliseconds: number,
+): WrittenChunkVertices => {
   const firstColumn = chunk.column * tilemapChunkSize;
   const firstRow = chunk.row * tilemapChunkSize;
+  const { tiles } = tileSet.sources[source];
+  const animatedQuads: number[] = [];
+  const animatedCells: number[] = [];
+  const animatedTiles = new Set<number>();
   let quad = 0;
 
   for (let index = 0; index < chunk.tiles.length; index++) {
@@ -220,6 +313,12 @@ export const writeChunkVertices = (
       continue;
     }
 
+    if (tiles[getTileIndex(tile)].animation !== null) {
+      animatedQuads.push(quad);
+      animatedCells.push(index);
+      animatedTiles.add(withoutTransformBits(tile));
+    }
+
     writeTile(
       arrays,
       quad,
@@ -227,9 +326,73 @@ export const writeChunkVertices = (
       firstColumn + (index % tilemapChunkSize),
       firstRow + Math.floor(index / tilemapChunkSize),
       tile,
+      getFrameTileIndex(tileSet, tile, timeInMilliseconds),
     );
     quad++;
   }
 
-  return quad;
+  if (animatedQuads.length === 0) {
+    return {
+      tileCount: quad,
+      animatedQuads: noQuads,
+      animatedCells: noQuads,
+      animatedTiles: noTiles,
+    };
+  }
+
+  return {
+    tileCount: quad,
+    animatedQuads: Uint16Array.from(animatedQuads),
+    animatedCells: Uint16Array.from(animatedCells),
+    animatedTiles: [...animatedTiles],
+  };
+};
+
+/**
+ * Rewrites the animated quads of a chunk mesh whose tile's frame changed,
+ * leaving every other quad as it is. The mesh must have been written by
+ * {@link writeChunkVertices} from the chunk as it is now.
+ * @param tileSet - The layer's tile set, the one the mesh was written
+ * with.
+ * @param chunk - The chunk the mesh draws.
+ * @param arrays - The mesh's arrays.
+ * @param animated - The mesh's animated quads.
+ * @param changedFrames - The tile index each animation key whose frame
+ * changed now shows, by key. Keys the mesh doesn't hold are ignored.
+ * @returns Whether any corner's position changed, which happens when a
+ * frame's region is trimmed differently from the last one shown.
+ */
+export const writeAnimatedQuads = (
+  tileSet: TileSet,
+  chunk: TilemapChunk,
+  arrays: TilemapVertexArrays,
+  animated: TilemapAnimatedQuads,
+  changedFrames: ReadonlyMap<number, number>,
+): boolean => {
+  const firstColumn = chunk.column * tilemapChunkSize;
+  const firstRow = chunk.row * tilemapChunkSize;
+  let moved = false;
+
+  for (let i = 0; i < animated.animatedQuads.length; i++) {
+    const index = animated.animatedCells[i];
+    const tile = chunk.tiles[index];
+    const frameTileIndex = changedFrames.get(withoutTransformBits(tile));
+
+    if (frameTileIndex === undefined) {
+      continue;
+    }
+
+    moved =
+      writeTile(
+        arrays,
+        animated.animatedQuads[i],
+        tileSet,
+        firstColumn + (index % tilemapChunkSize),
+        firstRow + Math.floor(index / tilemapChunkSize),
+        tile,
+        frameTileIndex,
+      ) || moved;
+  }
+
+  return moved;
 };

@@ -32,6 +32,19 @@ export type TilePropertyValue = string | number | boolean;
  */
 export type TileCollisionShape = 'cell' | readonly Readonly<Vector2>[] | null;
 
+/** One frame of a tile's animation (see {@link TileData.animation}). */
+export interface TileAnimationFrame {
+  /**
+   * The index of the tile whose image the frame shows, in the same source
+   * as the animated tile. It can be the animated tile itself. Only that
+   * tile's image is used: its data, and its own animation, are ignored.
+   */
+  readonly tile: number;
+
+  /** How long the frame shows, in milliseconds. Positive and finite. */
+  readonly durationMilliseconds: number;
+}
+
 /**
  * What a tile set knows about one tile, beyond its image. Shared by every
  * cell that holds the tile, and frozen. Read it with {@link getTileData}.
@@ -73,6 +86,19 @@ export interface TileData {
    * the way they move the tile's image.
    */
   readonly collision: TileCollisionShape;
+
+  /**
+   * The tile's animation, or `null` if it has none, like Tiled's tile
+   * animations and the animation frames of Godot's atlas tiles. Every cell
+   * holding the tile shows the same frame at the same time, in every layer,
+   * chosen from `Time.timeInMilliseconds` (see `getDisplayedTile`): frame
+   * `0` starts at time `0` and at every multiple of the frames' total
+   * duration. A cell's transform bits apply to every frame. Only the image
+   * animates: the cell keeps the placed tile's `textureOrigin`,
+   * `ySortOrigin`, `collision` and `properties`, so a frame change never
+   * rebuilds a collider.
+   */
+  readonly animation: readonly TileAnimationFrame[] | null;
 }
 
 /**
@@ -94,6 +120,12 @@ export interface TileDataOptions {
    * `null`: the tile doesn't collide.
    */
   collision?: TileCollisionShape;
+
+  /**
+   * See {@link TileData.animation}. Copied. Defaults to `null`: the tile
+   * doesn't animate.
+   */
+  animation?: readonly TileAnimationFrame[] | null;
 }
 
 /**
@@ -196,6 +228,7 @@ const defaultTileDataOptions: Required<TileDataOptions> = {
   textureOrigin: { x: 0, y: 0 },
   ySortOrigin: 0,
   collision: null,
+  animation: null,
 };
 
 /** How far outside the footprint, in cell space, a point still snaps onto its edge. */
@@ -277,15 +310,53 @@ const createCollisionPolygon = (
   return Object.freeze(points);
 };
 
+/**
+ * Checks an animation's frames and stores them frozen.
+ * @param animation - The frames.
+ * @param tileCount - How many tiles the animated tile's source has.
+ * @param describeTile - The animated tile, for error messages.
+ * @returns The frames, copied and frozen.
+ */
+const createTileAnimation = (
+  animation: readonly TileAnimationFrame[],
+  tileCount: number,
+  describeTile: string,
+): readonly TileAnimationFrame[] => {
+  const prefix = `Unable to create a tile set: ${describeTile}`;
+
+  if (animation.length === 0) {
+    throw new Error(
+      `${prefix} has an empty animation. Leave animation out, or set it to null, for a tile that doesn't animate.`,
+    );
+  }
+
+  return Object.freeze(
+    animation.map(({ tile, durationMilliseconds }, index) => {
+      if (!Number.isInteger(tile) || tile < 0 || tile >= tileCount) {
+        throw new Error(
+          `${prefix} has an animation whose frame ${index} shows tile ${tile}, but its source has ${tileCount} ${tileCount === 1 ? 'tile' : 'tiles'}, so its tile indices are whole numbers from 0 to ${tileCount - 1}.`,
+        );
+      }
+
+      if (!Number.isFinite(durationMilliseconds) || durationMilliseconds <= 0) {
+        throw new Error(
+          `${prefix} has an animation whose frame ${index} lasts ${durationMilliseconds} ms, which must be a positive finite number.`,
+        );
+      }
+
+      return Object.freeze({ tile, durationMilliseconds });
+    }),
+  );
+};
+
 const createTileData = (
   options: TileDataOptions,
   describeTile: string,
   layout: GridLayout,
+  tileCount: number,
 ): TileData => {
-  const { properties, textureOrigin, ySortOrigin, collision } = withDefaults(
-    defaultTileDataOptions,
-    options,
-  );
+  const { properties, textureOrigin, ySortOrigin, collision, animation } =
+    withDefaults(defaultTileDataOptions, options);
 
   if (!Number.isFinite(textureOrigin.x) || !Number.isFinite(textureOrigin.y)) {
     throw new Error(
@@ -307,6 +378,10 @@ const createTileData = (
       collision === null || collision === 'cell'
         ? collision
         : createCollisionPolygon(collision, layout, describeTile),
+    animation:
+      animation === null
+        ? null
+        : createTileAnimation(animation, tileCount, describeTile),
   });
 };
 
@@ -368,6 +443,7 @@ const createSource = (
       dataOptions,
       `tile ${tileIndex} of source ${sourceIndex}`,
       layout,
+      tileCount,
     );
   }
 
@@ -382,8 +458,8 @@ const createSource = (
 /**
  * Creates a {@link TileSet}. Every region of each source's atlas is a tile,
  * with the default {@link TileData} (no properties, a `(0, 0)`
- * `textureOrigin`, a `0` `ySortOrigin` and no `collision`) unless the
- * source's `tiles` give it data of its own.
+ * `textureOrigin`, a `0` `ySortOrigin`, no `collision` and no `animation`)
+ * unless the source's `tiles` give it data of its own.
  *
  * A collision polygon is checked against the layout: it must be inside the
  * cell's footprint (a point within `1/131,072` of a cell outside it counts
@@ -399,7 +475,9 @@ const createSource = (
  * its tile indices, a tile's `textureOrigin` or `ySortOrigin` isn't
  * finite, or a tile's collision polygon has fewer than 3 points, a point
  * that isn't finite or is outside the footprint, or isn't strictly convex
- * or crosses itself under some transform.
+ * or crosses itself under some transform, or a tile's animation is empty,
+ * has a frame tile its source doesn't have, or has a frame whose
+ * `durationMilliseconds` isn't a positive finite number.
  */
 export function createTileSet(options: TileSetOptions): TileSet {
   const { layout, sources } = options;
@@ -416,7 +494,9 @@ export function createTileSet(options: TileSetOptions): TileSet {
     );
   }
 
-  const defaultTileData = createTileData({}, 'the default tile', layout);
+  // The default tile has no animation, so no frame is checked against a
+  // tile count.
+  const defaultTileData = createTileData({}, 'the default tile', layout, 0);
 
   return Object.freeze({
     layout,

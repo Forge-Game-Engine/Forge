@@ -171,6 +171,10 @@ export default function Tilemaps(): JSX.Element {
           file: 'orthogonal-map.ts',
         },
         {
+          text: "The water tile has an animation, a list of frames from the same sheet. Every water cell shows the same frame, chosen from the game's time, and only the chunks holding water are rewritten when the frame changes.",
+          file: 'orthogonal-map.ts',
+        },
+        {
           text: 'The isometric walls are taller than their cells, and the layer draws its cells back to front, so nearer walls cover the ones behind.',
           file: 'isometric-map.ts',
         },

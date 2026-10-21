@@ -238,7 +238,7 @@ export const createScene: CreateScene = (
     packTile({ source: 0, tile: tileIndex }),
   );
 
-  world.addSystem(createTilemapRenderEcsSystem(renderContext));
+  world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
   world.addSystem(createTransformEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
 
