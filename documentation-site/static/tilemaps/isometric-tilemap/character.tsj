@@ -1,0 +1,14 @@
+{ "columns":1,
+ "image":"character.svg",
+ "imageheight":48,
+ "imagewidth":32,
+ "margin":0,
+ "name":"character",
+ "spacing":0,
+ "tilecount":1,
+ "tiledversion":"1.11.0",
+ "tileheight":48,
+ "tilewidth":32,
+ "type":"tileset",
+ "version":"1.10"
+}
