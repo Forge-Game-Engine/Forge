@@ -161,7 +161,7 @@ world.setParent(row, layer);
 
 A tilemap layer with `ySortChildren` draws its tiles from one child entity
 per row, so its walls sort against a character row by row (see
-[Y-sorting tiles with characters](../tilemaps/index.md#y-sorting-tiles-with-characters)).
+[Y-sorting tiles with characters](../tilemaps/rendering.md#y-sorting-tiles-with-characters)).
 
 World order still comes before Y, so a floor child with an `order` of `-1`
 draws behind every entity at world order `0`, whatever its Y. A

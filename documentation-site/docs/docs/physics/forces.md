@@ -6,8 +6,10 @@ sidebar_position: 2
 
 A force changes a dynamic body's `velocity` or `angularVelocity`. Kinematic
 and static bodies are never affected by forces (see
-[Body types](./rigid-bodies.md#body-types)). The physics module has these
-kinds of force:
+[Body types](./rigid-bodies.md#body-types)), and forces never change the
+`angularVelocity` of a body with
+[locked rotation](./rigid-bodies.md#locking-a-bodys-rotation). The physics
+module has these kinds of force:
 
 - **Gravity**: a constant acceleration applied every tick, by a
   [`GravityEcsComponent`](/Forge/docs/api/type-aliases/GravityEcsComponent).
