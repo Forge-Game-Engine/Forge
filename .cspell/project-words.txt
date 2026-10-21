@@ -122,6 +122,7 @@ golus
 gregorius
 gregorius's
 greyscale
+gsub
 gtao
 hammersley
 hanabi

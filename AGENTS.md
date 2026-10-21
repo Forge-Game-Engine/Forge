@@ -178,11 +178,13 @@ on:
   35 files, at most 20 of them in at most 2 folders under `src/`, and
   nothing in `.github/`, `.claude/`, `AGENTS.md`, `CLAUDE.md` or
   `scripts/changelog/` (the review and checks run the pull request's own
-  copy of those). The `pr-reviewer` review must have run on that commit and
-  approved it with no failed checks, no findings and nothing to check by
-  hand, and no person may have commented or reviewed it (approvals
-  aside). So a fix round's pushes, a demo that needs a manual check, or a
-  question from a person leaves the merge to a human.
+  copy of those). The `pr-reviewer` review must have approved the change
+  with no failed checks, no findings and nothing to check by hand, and no
+  person may have commented or reviewed it (approvals aside). Merging `dev`
+  in keeps the review, since the pull request's diff stays the same, and
+  when `dev` has moved on the workflow merges it in itself. A fix round's
+  pushes change the diff, so they, a demo that needs a manual check, or a
+  question from a person leave the merge to a human.
   `.github/scripts/claude-auto-merge.sh` lists the conditions; the job's
   log says which one stopped a merge.
 - **An `@claude` run resolves merge conflicts.** Mention `@claude` on a
