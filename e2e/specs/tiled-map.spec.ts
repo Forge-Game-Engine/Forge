@@ -119,9 +119,9 @@ test("a Tiled layer's offset and its group's add up through the transform hierar
     }
 
     // Two columns to the right, and the group's 8 plus the layer's 8 down.
-    expect(
-      Math.abs(shifted.left - twin.left - 2 * tile),
-    ).toBeLessThanOrEqual(edgeTolerance);
+    expect(Math.abs(shifted.left - twin.left - 2 * tile)).toBeLessThanOrEqual(
+      edgeTolerance,
+    );
     expect(Math.abs(shifted.top - twin.top - tile)).toBeLessThanOrEqual(
       edgeTolerance,
     );
