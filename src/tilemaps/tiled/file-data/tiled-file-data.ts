@@ -38,7 +38,9 @@ export type TiledObjectAlignment =
 export interface TiledTextFile {
   readonly text: string;
   readonly pixelSize: number;
-  readonly color: string;
+
+  /** The color as written, or `null` if the file leaves it out. */
+  readonly color: string | null;
   readonly fontFamily: string;
   readonly bold: boolean;
   readonly italic: boolean;

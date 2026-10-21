@@ -224,7 +224,8 @@ const toShape = (
       width,
       height,
       pixelSize: text.pixelSize * worldUnitsPerTiledPixel,
-      color: parseTiledColor(text.color) ?? Color.black,
+      // Tiled leaves out the default color, black.
+      color: parseTiledColor(text.color ?? '') ?? Color.black,
       fontFamily: text.fontFamily,
       bold: text.bold,
       italic: text.italic,

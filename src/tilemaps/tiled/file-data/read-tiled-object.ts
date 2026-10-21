@@ -69,7 +69,7 @@ const readShapePoints = (
 const readText = (text: JsonObject): TiledTextFile => ({
   text: readStringField(text, 'text', ''),
   pixelSize: readIntegerField(text, 'pixelsize', { minimum: 1, fallback: 16 }),
-  color: readOptionalColorField(text, 'color') ?? '#000000',
+  color: readOptionalColorField(text, 'color'),
   fontFamily: readStringField(text, 'fontfamily', 'sans-serif'),
   bold: readBooleanField(text, 'bold', false),
   italic: readBooleanField(text, 'italic', false),

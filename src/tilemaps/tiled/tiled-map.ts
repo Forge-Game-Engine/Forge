@@ -52,8 +52,13 @@ export type TiledObjectShape =
    * orthogonal maps: an isometric map's rectangles are `polygon`s.
    */
   | {
+      /** Says the shape is a rectangle. */
       readonly kind: 'rectangle';
+
+      /** The rectangle's width, in world units. */
       readonly width: number;
+
+      /** The rectangle's height, in world units. */
       readonly height: number;
     }
   /**
@@ -62,8 +67,13 @@ export type TiledObjectShape =
    * `polygon`s.
    */
   | {
+      /** Says the shape is an ellipse. */
       readonly kind: 'ellipse';
+
+      /** The bounding box's width, in world units. */
       readonly width: number;
+
+      /** The bounding box's height, in world units. */
       readonly height: number;
     }
   /**
@@ -72,20 +82,41 @@ export type TiledObjectShape =
    * orthogonal maps: an isometric map's capsules are `polygon`s.
    */
   | {
+      /** Says the shape is a capsule. */
       readonly kind: 'capsule';
+
+      /** The bounding box's width, in world units. */
       readonly width: number;
+
+      /** The bounding box's height, in world units. */
       readonly height: number;
     }
   /** A point: just the object's position. */
-  | { readonly kind: 'point' }
-  /** A closed polygon. Its points are relative to the object's position, before rotation. */
-  | { readonly kind: 'polygon'; readonly points: readonly Readonly<Vector2>[] }
-  /** An open line. Its points are relative to the object's position, before rotation. */
-  | { readonly kind: 'polyline'; readonly points: readonly Readonly<Vector2>[] }
+  | {
+      /** Says the shape is a point. */
+      readonly kind: 'point';
+    }
+  /** A closed polygon. */
+  | {
+      /** Says the shape is a polygon. */
+      readonly kind: 'polygon';
+
+      /** The polygon's points, relative to the object's position, before rotation. */
+      readonly points: readonly Readonly<Vector2>[];
+    }
+  /** An open line. */
+  | {
+      /** Says the shape is a polyline. */
+      readonly kind: 'polyline';
+
+      /** The line's points, relative to the object's position, before rotation. */
+      readonly points: readonly Readonly<Vector2>[];
+    }
   /**
    * A tile drawn as an object.
    */
   | {
+      /** Says the shape is a tile. */
       readonly kind: 'tile';
 
       /** The packed tile, in the map's `tileSet`, with its flip bits. */
@@ -106,19 +137,40 @@ export type TiledObjectShape =
     }
   /** A text box with its top-left corner at the object's position, drawn screen-aligned. */
   | {
+      /** Says the shape is text. */
       readonly kind: 'text';
+
+      /** The text. */
       readonly text: string;
+
+      /** The text box's width, in world units. */
       readonly width: number;
+
+      /** The text box's height, in world units. */
       readonly height: number;
 
       /** The font size, in world units. */
       readonly pixelSize: number;
+
+      /** The text's color, with straight alpha. Black when Tiled's default is kept. */
       readonly color: Color;
+
+      /** The font family's name, as chosen in Tiled. `'sans-serif'` by default. */
       readonly fontFamily: string;
+
+      /** Whether the text is bold. */
       readonly bold: boolean;
+
+      /** Whether the text is italic. */
       readonly italic: boolean;
+
+      /** Whether the text wraps at the box's width. */
       readonly wrap: boolean;
+
+      /** How lines are aligned in the box across. */
       readonly horizontalAlignment: 'left' | 'center' | 'right' | 'justify';
+
+      /** How the text is aligned in the box down. */
       readonly verticalAlignment: 'top' | 'center' | 'bottom';
     };
 
@@ -210,6 +262,7 @@ export interface TiledTileBlock {
 
 /** A tile layer. */
 export interface TiledTileLayer extends TiledLayerFields {
+  /** Says the layer is a tile layer. */
   readonly kind: 'tiles';
 
   /** The layer's tiles. */
@@ -221,6 +274,7 @@ export interface TiledTileLayer extends TiledLayerFields {
 
 /** An object layer. */
 export interface TiledObjectLayer extends TiledLayerFields {
+  /** Says the layer is an object layer. */
   readonly kind: 'objects';
 
   /** The layer's objects, in Tiled's order. */
@@ -229,6 +283,7 @@ export interface TiledObjectLayer extends TiledLayerFields {
 
 /** A group layer. */
 export interface TiledGroupLayer extends TiledLayerFields {
+  /** Says the layer is a group layer. */
   readonly kind: 'group';
 
   /** The group's layers, in Tiled's order (first is drawn first). */
