@@ -8,7 +8,6 @@ import {
   Color,
   createRibbonMeshBuffers,
   Geometry,
-  meshId,
   RenderContext,
   RibbonPoint,
 } from '@forge-game-engine/forge/rendering';
@@ -16,6 +15,7 @@ import {
   ColliderOutlineEcsComponent,
   colliderOutlineId,
 } from './_collider-outline.component';
+import { addOutlineLineComponent } from './_outline-line.component';
 
 const lineWidth = 2;
 const lineColor = new Color(1, 0.35, 0.75, 1);
@@ -71,10 +71,12 @@ function createLoopGeometry(
   return geometry;
 }
 
-/** Removes the outline's line entities and disposes their geometries. */
+/**
+ * Removes the outline's line entities. Each line's `OutlineLineEcsComponent`
+ * disposes its geometry when it's removed.
+ */
 function removeLines(world: EcsWorld, entity: number): void {
   for (const line of [...world.getChildren(entity)]) {
-    world.getComponent(line, meshId)?.geometry.dispose();
     world.removeEntity(line);
   }
 }
@@ -112,10 +114,12 @@ export const createColliderOutlineEcsSystem = (
 
       for (const loop of collider.loops) {
         const line = world.createEntity();
+        const geometry = createLoopGeometry(renderContext, loop);
 
         addPositionComponent(world, line);
+        addOutlineLineComponent(world, line, geometry);
         addMeshComponent(world, line, {
-          geometry: createLoopGeometry(renderContext, loop),
+          geometry,
           material: outline.material,
           layer: outline.layer,
         });

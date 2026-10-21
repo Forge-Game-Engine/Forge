@@ -11,6 +11,7 @@ import tileToggleComponentCode from '!!raw-loader!./_tile-toggle.component';
 import tileToggleSystemCode from '!!raw-loader!./_tile-toggle.system';
 import colliderOutlineComponentCode from '!!raw-loader!./_collider-outline.component';
 import colliderOutlineSystemCode from '!!raw-loader!./_collider-outline.system';
+import outlineLineComponentCode from '!!raw-loader!./_outline-line.component';
 import outlineShaderCode from '!!raw-loader!./_outline.shader';
 import cameraFollowComponentCode from '!!raw-loader!./_camera-follow.component';
 import cameraFollowSystemCode from '!!raw-loader!./_camera-follow.system';
@@ -180,6 +181,12 @@ export default function TiledMaps(): JSX.Element {
               summary:
                 "Rebuilds the lines when the ground layer's collider is replaced.",
               content: colliderOutlineSystemCode,
+            },
+            {
+              name: 'outline-line.component.ts',
+              summary:
+                "One line's geometry, disposed when the line is removed.",
+              content: outlineLineComponentCode,
             },
             {
               name: 'outline.shader.ts',
