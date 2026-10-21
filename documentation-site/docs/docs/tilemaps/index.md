@@ -59,11 +59,12 @@ const wallSource = {
 
 Each tile has a [`TileData`](/Forge/docs/api/interfaces/TileData): custom
 `properties`, a `textureOrigin` (see
-[Tile image placement](#tile-image-placement)), a `ySortOrigin` and a
-`collision` shape (see [Collision](#collision)). A source's `tiles` map
-sets them for the tiles that need them, by tile index; every other tile has
-no properties, a `(0, 0)` `textureOrigin`, a `0` `ySortOrigin` and no
-collision:
+[Tile image placement](#tile-image-placement)), a `ySortOrigin`, a
+`collision` shape (see [Collision](#collision)) and an `animation` (see
+[Animated tiles](#animated-tiles)). A source's `tiles` map sets them for
+the tiles that need them, by tile index; every other tile has no
+properties, a `(0, 0)` `textureOrigin`, a `0` `ySortOrigin`, no collision
+and no animation:
 
 ```ts
 const terrainSource = {
@@ -356,10 +357,12 @@ const { column, row } = worldToCell(world, ground, worldPoint);
 
 [`createTilemapRenderEcsSystem`](/Forge/docs/api/functions/createTilemapRenderEcsSystem)
 builds the meshes of every entity that has a `TilemapLayerEcsComponent` and
-a `PositionEcsComponent`, and `createRenderEcsSystem` draws them. Register
-it after the systems that edit tiles, so an edited tile shows on the same
-frame, and before `createTransformEcsSystem`, so a new chunk mesh gets its
-world transform on the frame it's created:
+a `PositionEcsComponent`, and `createRenderEcsSystem` draws them. It takes
+the game's `Time`, which chooses the frame of each
+[animated tile](#animated-tiles). Register it after the systems that edit
+tiles, so an edited tile shows on the same frame, and before
+`createTransformEcsSystem`, so a new chunk mesh gets its world transform on
+the frame it's created:
 
 ```ts
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
@@ -367,7 +370,7 @@ import { createRenderEcsSystem } from '@forge-game-engine/forge/rendering';
 import { createTilemapRenderEcsSystem } from '@forge-game-engine/forge/tilemaps';
 
 world.addSystem(tileEditingSystem);
-world.addSystem(createTilemapRenderEcsSystem(renderContext));
+world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
 world.addSystem(createTransformEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
 ```
@@ -391,7 +394,8 @@ changed:
 - The first update after a layer is added builds every chunk at once, so
   the first frame that draws a large map takes longer than the frames
   after it.
-- An update where no tile changed writes no vertices.
+- An update where no tile changed, and no
+  [animated tile](#animated-tiles) changed frame, writes no vertices.
 - Vertex data takes at least 128 bytes per tile in memory, and as much
   again on the GPU.
 
@@ -475,6 +479,66 @@ shows its own edge texels, not a blend with the next cell's tile.
 
 A texture whose `wrap` is `'repeat'` isn't inset, so give tileset textures
 the default `'clamp'`.
+
+### Animated tiles
+
+A tile's `animation` is a list of frames. Each frame shows the image of a
+tile of the same source for `durationMilliseconds`, and the list repeats:
+
+```ts
+const terrainSource = {
+  atlas: terrainAtlas,
+  tiles: new Map([
+    [
+      4,
+      {
+        animation: [
+          { tile: 4, durationMilliseconds: 150 },
+          { tile: 5, durationMilliseconds: 150 },
+          { tile: 6, durationMilliseconds: 200 },
+        ],
+      },
+    ],
+  ]),
+};
+```
+
+The animation belongs to the tile, not to a cell. Every cell that holds the
+tile, in every layer, shows the same frame at the same time. The frame is
+chosen from `time.timeInMilliseconds`: frame `0` starts at time `0` and at
+every multiple of the frames' total duration. A `timeScale` of `0` pauses
+every animated tile, and a larger `timeScale` speeds them up.
+
+- A cell's transform bits apply to every frame.
+- A frame shows only its tile's image. The cell keeps the placed tile's
+  `textureOrigin`, `ySortOrigin`, `collision` and `properties`, and a
+  frame's own animation is ignored.
+- `createTileSet` throws for an empty `animation`, a frame tile its source
+  doesn't have, and a duration that isn't a positive finite number. A tile
+  that doesn't animate has `animation: null`.
+
+[`getDisplayedTile`](/Forge/docs/api/functions/getDisplayedTile) returns
+the packed tile whose image a cell shows at a time, the placed tile with
+its tile index replaced by the current frame's:
+
+```ts
+import { getDisplayedTile, getTile } from '@forge-game-engine/forge/tilemaps';
+
+const shown = getDisplayedTile(
+  groundLayer.tileSet,
+  getTile(groundLayer, column, row),
+  time.timeInMilliseconds,
+);
+```
+
+[`getTileAnimationFrameIndex`](/Forge/docs/api/functions/getTileAnimationFrameIndex)
+returns the index of the frame an animation shows at a time.
+
+Each chunk mesh records which of its tiles are animated. On an update where
+an animated tile's frame changes, the system rewrites the vertices of only
+those tiles, in only the meshes that hold that tile, and uploads them. A
+mesh with no animated tiles isn't rewritten, and frame changes never change
+the layer's cells or its `version`.
 
 ### Removing a drawn layer
 
@@ -586,6 +650,11 @@ to a new `ChainCollider` built from the layer's solid tiles. On other
 ticks it does nothing, and several edits in one tick rebuild the collider
 once. A layer with no solid tiles has a `ChainCollider` with no loops,
 which collides with nothing.
+
+An [animated tile](#animated-tiles) collides with the shape of the tile
+placed in the cell, whatever frame shows, and a frame change doesn't
+rebuild the collider. To change a cell's collision over time, set a
+different tile in it with `setTile`.
 
 The system is the only writer of the `collider` field: anything else
 written there is replaced on its next tick. Register it after every system

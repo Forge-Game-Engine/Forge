@@ -81,7 +81,15 @@ export function createOrthogonalMap(
           ],
           [
             orthogonalTiles.water,
-            { properties: { name: 'Water', walkable: false } },
+            {
+              properties: { name: 'Water', walkable: false },
+              // Every water cell shows the same frame at the same time.
+              animation: [
+                orthogonalTiles.water,
+                orthogonalTiles.waterRipple,
+                orthogonalTiles.waterSwell,
+              ].map((frame) => ({ tile: frame, durationMilliseconds: 250 })),
+            },
           ],
           [
             orthogonalTiles.sand,

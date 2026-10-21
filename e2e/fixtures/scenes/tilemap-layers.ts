@@ -276,7 +276,7 @@ export const createScene: CreateScene = (
     foregroundTile,
   );
 
-  world.addSystem(createTilemapRenderEcsSystem(renderContext));
+  world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
   world.addSystem(createTransformEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
 

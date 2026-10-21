@@ -34,7 +34,9 @@ import {
   countChunkTilesBySource,
   createTilemapVertexArrays,
   TilemapVertexArrays,
+  writeAnimatedQuads,
   writeChunkVertices,
+  WrittenChunkVertices,
 } from './write-chunk-vertices.js';
 
 const orthogonal16 = (): GridLayout =>
@@ -65,11 +67,22 @@ const write = (
   layer: TilemapLayerEcsComponent,
   chunk: TilemapChunk,
   source: number = 0,
-): { arrays: TilemapVertexArrays; count: number } => {
+  timeInMilliseconds: number = 0,
+): {
+  arrays: TilemapVertexArrays;
+  count: number;
+  written: WrittenChunkVertices;
+} => {
   const arrays = createTilemapVertexArrays(chunk.tileCount);
-  const count = writeChunkVertices(layer.tileSet, chunk, source, arrays);
+  const written = writeChunkVertices(
+    layer.tileSet,
+    chunk,
+    source,
+    arrays,
+    timeInMilliseconds,
+  );
 
-  return { arrays, count };
+  return { arrays, count: written.tileCount, written };
 };
 
 /** The four corners of quad `quad`, in the order they're written. */
@@ -384,6 +397,228 @@ describe('writeChunkVertices', () => {
     expect(stored?.max.x).toBe(
       Math.fround(getTileImageRect(tileSet, 31, 31, tile).max.x),
     );
+  });
+});
+
+describe('writeChunkVertices with animated tiles', () => {
+  // Source 0 is a 2 x 2 grid atlas: tile 1 is its top-right quarter, tile 3
+  // its bottom-right. Tile 0 animates between them; tile 2 is static.
+  const water = packTile({ source: 0, tile: 0 });
+  const stone = packTile({ source: 0, tile: 2 });
+  const createAnimatedTileSet = (): TileSet =>
+    createTileSet({
+      layout: orthogonal16(),
+      sources: [
+        createTestSource(2, 2, {
+          tiles: new Map([
+            [
+              0,
+              {
+                textureOrigin: { x: 2, y: -3 },
+                animation: [
+                  { tile: 1, durationMilliseconds: 100 },
+                  { tile: 3, durationMilliseconds: 50 },
+                ],
+              },
+            ],
+          ]),
+        }),
+        createTestSource(1, 1),
+      ],
+    });
+
+  it('shows the frame at the time, placed by the placed tile’s textureOrigin', () => {
+    const layer = createLayer(createAnimatedTileSet());
+
+    setTile(layer, 1, 0, water);
+
+    const chunk = getChunk(layer, 0, 0);
+    const first = write(layer, chunk, 0, 0);
+    const second = write(layer, chunk, 0, 120);
+
+    expect(quadTexCoords(first.arrays, 0)[0]).toEqual({ x: 0.5, y: 0 });
+    expect(quadTexCoords(second.arrays, 0)[0]).toEqual({ x: 0.5, y: 0.5 });
+    expect([...second.arrays.texRects.subarray(0, 4)]).toEqual([
+      0.5, 0.5, 0.5, 0.5,
+    ]);
+
+    for (const { arrays } of [first, second]) {
+      expect(quadPositions(arrays, 0)[0]).toEqual({ x: 18, y: -3 });
+    }
+  });
+
+  it.each([0, 1, 2, 3, 4, 5, 6, 7])(
+    'applies transform bits %i to every frame',
+    (bits) => {
+      const layer = createLayer(createAnimatedTileSet());
+
+      setTile(
+        layer,
+        0,
+        0,
+        packTile({
+          source: 0,
+          tile: 0,
+          flipX: (bits & 4) !== 0,
+          flipY: (bits & 2) !== 0,
+          transpose: (bits & 1) !== 0,
+        }),
+      );
+
+      const { arrays } = write(layer, getChunk(layer, 0, 0), 0, 100);
+
+      // Frame 1 is tile 3, the bottom-right quarter.
+      expect(quadTexCoords(arrays, 0)).toEqual(
+        unitCorners.map((corner) => {
+          const sampled = invertTileTransform(bits, corner, { x: 0, y: 0 });
+
+          return { x: 0.5 + sampled.x * 0.5, y: 0.5 + sampled.y * 0.5 };
+        }),
+      );
+    },
+  );
+
+  it('lists the animated quads, their cells and their tiles in row-major order', () => {
+    const layer = createLayer(createAnimatedTileSet());
+
+    setTile(layer, 3, 1, water);
+    setTile(layer, 0, 0, stone);
+    setTile(layer, 1, 0, packTile({ source: 0, tile: 0, flipX: true }));
+    setTile(layer, 0, 1, packTile({ source: 1, tile: 0 }));
+
+    const chunk = getChunk(layer, 0, 0);
+    const { written } = write(layer, chunk, 0);
+
+    expect(written.tileCount).toBe(3);
+    expect([...written.animatedQuads]).toEqual([1, 2]);
+    expect([...written.animatedCells]).toEqual([1, 32 + 3]);
+    expect(written.animatedTiles).toEqual([water]);
+
+    // Source 1 holds no animated tiles.
+    const rocks = write(layer, chunk, 1).written;
+
+    expect(rocks.animatedQuads).toHaveLength(0);
+    expect(rocks.animatedCells).toHaveLength(0);
+    expect(rocks.animatedTiles).toEqual([]);
+  });
+
+  it('rewrites only the animated quads whose frame changed', () => {
+    const tileSet = createTileSet({
+      layout: orthogonal16(),
+      sources: [
+        createTestSource(2, 2, {
+          tiles: new Map([
+            [
+              0,
+              {
+                animation: [
+                  { tile: 1, durationMilliseconds: 100 },
+                  { tile: 3, durationMilliseconds: 100 },
+                ],
+              },
+            ],
+            [
+              2,
+              {
+                animation: [
+                  { tile: 2, durationMilliseconds: 100 },
+                  { tile: 1, durationMilliseconds: 100 },
+                ],
+              },
+            ],
+          ]),
+        }),
+      ],
+    });
+    const layer = createLayer(tileSet);
+
+    setTile(layer, 0, 0, water);
+    setTile(layer, 1, 0, stone);
+    setTile(layer, 2, 0, packTile({ source: 0, tile: 1 }));
+
+    const chunk = getChunk(layer, 0, 0);
+    const { arrays, written } = write(layer, chunk, 0, 0);
+    const before = [...arrays.texCoords];
+
+    const moved = writeAnimatedQuads(
+      tileSet,
+      chunk,
+      arrays,
+      written,
+      new Map([[water, 3]]),
+    );
+
+    expect(moved).toBe(false);
+    expect(quadTexCoords(arrays, 0)[0]).toEqual({ x: 0.5, y: 0.5 });
+    // The other animated tile and the static one keep their coordinates.
+    expect([...arrays.texCoords.subarray(8)]).toEqual(before.slice(8));
+  });
+
+  it('moves the quad, and says so, for a frame trimmed differently', () => {
+    const atlas = createTextureAtlas(textureOfSize(32, 16), [
+      { name: 'full', x: 0, y: 0, width: 16, height: 16 },
+      {
+        name: 'trimmed',
+        x: 16,
+        y: 0,
+        width: 8,
+        height: 4,
+        sourceWidth: 16,
+        sourceHeight: 16,
+        trimX: 4,
+        trimY: 2,
+      },
+    ]);
+    const tileSet = createTileSet({
+      layout: orthogonal16(),
+      sources: [
+        {
+          atlas,
+          tiles: new Map([
+            [
+              0,
+              {
+                animation: [
+                  { tile: 0, durationMilliseconds: 100 },
+                  { tile: 1, durationMilliseconds: 100 },
+                ],
+              },
+            ],
+          ]),
+        },
+      ],
+    });
+    const layer = createLayer(tileSet);
+
+    setTile(layer, 0, 0, water);
+
+    const chunk = getChunk(layer, 0, 0);
+    const { arrays, written } = write(layer, chunk, 0, 0);
+
+    expect(
+      writeAnimatedQuads(
+        tileSet,
+        chunk,
+        arrays,
+        written,
+        new Map([[water, 1]]),
+      ),
+    ).toBe(true);
+    expect(quadPositions(arrays, 0)).toEqual([
+      { x: 4, y: 2 },
+      { x: 12, y: 2 },
+      { x: 12, y: 6 },
+      { x: 4, y: 6 },
+    ]);
+    expect(
+      writeAnimatedQuads(
+        tileSet,
+        chunk,
+        arrays,
+        written,
+        new Map([[water, 1]]),
+      ),
+    ).toBe(false);
   });
 });
 

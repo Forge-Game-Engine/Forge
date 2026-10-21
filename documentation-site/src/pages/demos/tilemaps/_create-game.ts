@@ -68,8 +68,9 @@ export const createTilemapsGame = async (
   world.addSystem(createTileEditorEcsSystem(renderContext, editorInputs));
   // After the systems that edit tiles, so a painted tile draws this frame,
   // and before the transform system, so new chunk entities get their world
-  // transform before they're drawn.
-  world.addSystem(createTilemapRenderEcsSystem(renderContext));
+  // transform before they're drawn. It reads `time` to play animated tiles
+  // such as the water.
+  world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
   world.addSystem(createTransformEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
 

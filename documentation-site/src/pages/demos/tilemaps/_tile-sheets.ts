@@ -16,6 +16,8 @@ export const orthogonalTiles = {
   sand: 3,
   canopy: 4,
   arch: 5,
+  waterRipple: 6,
+  waterSwell: 7,
 } as const;
 
 /** The size of an isometric cell's diamond, in the map's local units. */
@@ -89,7 +91,16 @@ const drawGroundTile = (
   speckle(context, random, left, details, 18);
 };
 
-const drawWater = (context: CanvasRenderingContext2D, index: number): void => {
+/**
+ * Draws one frame of the water: a blue tile with three wavelets, each moved
+ * `shift` texels right and down, so the frames in turn look like ripples
+ * drifting across the water.
+ */
+const drawWater = (
+  context: CanvasRenderingContext2D,
+  index: number,
+  shift: number,
+): void => {
   const left = index * orthogonalTileSize;
 
   context.fillStyle = '#3a78c9';
@@ -97,17 +108,35 @@ const drawWater = (context: CanvasRenderingContext2D, index: number): void => {
   context.strokeStyle = '#7fb2ec';
   context.lineWidth = 2;
 
+  // A shifted wavelet would otherwise reach into the next tile of the sheet.
+  context.save();
+  context.beginPath();
+  context.rect(left, 0, orthogonalTileSize, orthogonalTileSize);
+  context.clip();
+
   for (const [x, y] of [
     [6, 10],
-    [20, 24],
+    [18, 24],
     [4, 32],
   ]) {
     context.beginPath();
-    context.moveTo(left + x, y);
-    context.quadraticCurveTo(left + x + 5, y - 4, left + x + 10, y);
-    context.quadraticCurveTo(left + x + 15, y + 4, left + x + 20, y);
+    context.moveTo(left + x + shift, y + shift / 2);
+    context.quadraticCurveTo(
+      left + x + shift + 5,
+      y + shift / 2 - 4,
+      left + x + shift + 10,
+      y + shift / 2,
+    );
+    context.quadraticCurveTo(
+      left + x + shift + 15,
+      y + shift / 2 + 4,
+      left + x + shift + 20,
+      y + shift / 2,
+    );
     context.stroke();
   }
+
+  context.restore();
 };
 
 /** A round clump of leaves with see-through corners, drawn over the ground. */
@@ -169,8 +198,8 @@ const drawArch = (context: CanvasRenderingContext2D, index: number): void => {
 /**
  * Draws the orthogonal map's tile sheet, one row of 40 x 40 texel tiles in
  * the order of {@link orthogonalTiles}: four ground tiles that fill their
- * cell, and two cover tiles with see-through parts that draw over the
- * ground.
+ * cell, two cover tiles with see-through parts that draw over the ground,
+ * and two more frames of the water's animation.
  * @param renderContext - The render context to create the texture in.
  * @returns The sheet's texture.
  */
@@ -190,13 +219,15 @@ export function createOrthogonalSheet(renderContext: RenderContext): Texture {
     '#8a6539',
     '#c49a63',
   ]);
-  drawWater(context, orthogonalTiles.water);
+  drawWater(context, orthogonalTiles.water, 0);
   drawGroundTile(context, random, orthogonalTiles.sand, '#dcc785', [
     '#c4ad6a',
     '#efdea4',
   ]);
   drawCanopy(context, orthogonalTiles.canopy);
   drawArch(context, orthogonalTiles.arch);
+  drawWater(context, orthogonalTiles.waterRipple, 3);
+  drawWater(context, orthogonalTiles.waterSwell, 6);
 
   return createTexture(renderContext, canvas);
 }

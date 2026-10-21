@@ -19,6 +19,7 @@ import { emptyTile, packTile } from '../tiles/packed-tile.js';
 import {
   createTileSet,
   getTileData,
+  TileAnimationFrame,
   TileCollisionShape,
   TileSet,
 } from './tile-set.js';
@@ -61,6 +62,7 @@ describe('createTileSet', () => {
         textureOrigin: { x: 0, y: 0 },
         ySortOrigin: 0,
         collision: null,
+        animation: null,
       });
     }
   });
@@ -90,6 +92,7 @@ describe('createTileSet', () => {
       textureOrigin: { x: 0, y: -4 },
       ySortOrigin: 3,
       collision: null,
+      animation: null,
     });
     expect(tiles[0]).toBe(tiles[1]);
     expect(tiles[0].properties).toEqual({});
@@ -204,6 +207,102 @@ describe('createTileSet', () => {
       /at most 1048576 tiles/,
     );
   });
+});
+
+describe('createTileSet animations', () => {
+  const withAnimation = (
+    animation: readonly TileAnimationFrame[],
+    tile: number = 0,
+  ): TileSet =>
+    createTileSet({
+      layout,
+      sources: [
+        createTestSource(1, 1),
+        createTestSource(2, 2, { tiles: new Map([[tile, { animation }]]) }),
+      ],
+    });
+
+  it('copies and freezes an animation and its frames', () => {
+    const frames = [
+      { tile: 0, durationMilliseconds: 100 },
+      { tile: 3, durationMilliseconds: 50 },
+    ];
+    const { animation } = withAnimation(frames).sources[1].tiles[0];
+
+    frames[0].durationMilliseconds = 1;
+
+    expect(animation).toEqual([
+      { tile: 0, durationMilliseconds: 100 },
+      { tile: 3, durationMilliseconds: 50 },
+    ]);
+    expect(Object.isFrozen(animation)).toBe(true);
+    expect(Object.isFrozen(animation?.[0])).toBe(true);
+  });
+
+  it('keeps an animation null when given null', () => {
+    const tileSet = createTileSet({
+      layout,
+      sources: [
+        createTestSource(1, 1, { tiles: new Map([[0, { animation: null }]]) }),
+      ],
+    });
+
+    expect(tileSet.sources[0].tiles[0].animation).toBeNull();
+  });
+
+  it('accepts frames that show the tile itself, another animated tile, or one frame', () => {
+    const tileSet = createTileSet({
+      layout,
+      sources: [
+        createTestSource(2, 1, {
+          tiles: new Map([
+            [0, { animation: [{ tile: 1, durationMilliseconds: 10 }] }],
+            [
+              1,
+              {
+                animation: [
+                  { tile: 1, durationMilliseconds: 10 },
+                  { tile: 0, durationMilliseconds: 10 },
+                ],
+              },
+            ],
+          ]),
+        }),
+      ],
+    });
+
+    expect(tileSet.sources[0].tiles[0].animation).toHaveLength(1);
+    expect(tileSet.sources[0].tiles[1].animation).toHaveLength(2);
+  });
+
+  it('throws for an empty animation, naming the tile and source', () => {
+    expect(() => withAnimation([], 2)).toThrow(
+      'Unable to create a tile set: tile 2 of source 1 has an empty animation.',
+    );
+  });
+
+  it.each([-1, 4, 1.5, Number.NaN])(
+    'throws for a frame showing tile %s, naming the frame',
+    (tile) => {
+      expect(() =>
+        withAnimation([
+          { tile: 0, durationMilliseconds: 10 },
+          { tile, durationMilliseconds: 10 },
+        ]),
+      ).toThrow(
+        `tile 0 of source 1 has an animation whose frame 1 shows tile ${tile}, but its source has 4 tiles, so its tile indices are whole numbers from 0 to 3.`,
+      );
+    },
+  );
+
+  it.each([0, -5, Number.NaN, Infinity])(
+    'throws for a frame lasting %s ms',
+    (durationMilliseconds) => {
+      expect(() => withAnimation([{ tile: 0, durationMilliseconds }])).toThrow(
+        `tile 0 of source 1 has an animation whose frame 0 lasts ${durationMilliseconds} ms, which must be a positive finite number.`,
+      );
+    },
+  );
 });
 
 describe('createTileSet collision shapes', () => {

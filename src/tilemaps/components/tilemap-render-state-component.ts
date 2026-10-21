@@ -48,6 +48,26 @@ export interface TilemapChunkMesh {
 
   /** The `a_texRect` data `geometry` was last updated from. */
   readonly texRects: Float32Array;
+
+  /**
+   * The quad index, in the mesh, of each tile with an animation, in the
+   * order the mesh writes them (row-major cell order). Empty for a mesh
+   * without animated tiles, which the system never rewrites for animation.
+   */
+  readonly animatedQuads: Uint16Array;
+
+  /**
+   * The index, in the chunk's `tiles`, of the cell each of `animatedQuads`
+   * draws, in the same order.
+   */
+  readonly animatedCells: Uint16Array;
+
+  /**
+   * The distinct animated tiles among the mesh's tiles, each packed without
+   * its transform bits (`packTile({ source, tile })`): cells holding the
+   * same tile with different flips show the same frame.
+   */
+  readonly animatedTiles: readonly number[];
 }
 
 /**
@@ -87,6 +107,21 @@ export interface TilemapRenderStateEcsComponent {
 
   /** One material per source index that has at least one mesh. */
   readonly materials: ReadonlyMap<number, MeshMaterial>;
+
+  /**
+   * The time, in `Time.timeInMilliseconds`, whose animation frames every
+   * chunk mesh shows. `null` before the first build, and after the layer
+   * component is replaced.
+   */
+  readonly animationTime: number | null;
+
+  /**
+   * The earliest time after `animationTime` at which a tile the meshes hold
+   * changes frame, or `Infinity` if they hold no animated tiles. Until
+   * `time.timeInMilliseconds` reaches it, the system doesn't look at the
+   * layer's animated tiles.
+   */
+  readonly nextFrameChangeTime: number;
 }
 
 /**

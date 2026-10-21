@@ -50,6 +50,25 @@ export const getTileIndex = (tile: number): number => tile & tileMask;
 export const getTileTransformBits = (tile: number): number => tile >>> 29;
 
 /**
+ * Replaces a tile's index within its source, keeping its source and
+ * transform bits.
+ * @param tile - A well-formed, non-empty packed tile.
+ * @param tileIndex - The new tile index, `0` to `tileMask`.
+ * @returns The packed tile.
+ */
+export const withTileIndex = (tile: number, tileIndex: number): number =>
+  ((tile & ~tileMask) | tileIndex) >>> 0;
+
+/**
+ * Drops a tile's transform bits: the tile packed with only its source and
+ * index, as `packTile({ source, tile })` packs it.
+ * @param tile - A well-formed, non-empty packed tile.
+ * @returns The packed tile without transform bits.
+ */
+export const withoutTransformBits = (tile: number): number =>
+  tile & (presentBit | (sourceMask << sourceShift) | tileMask);
+
+/**
  * Says what's wrong with a value given as a packed tile, other than the
  * tile set it's used with.
  * @param tile - The value.

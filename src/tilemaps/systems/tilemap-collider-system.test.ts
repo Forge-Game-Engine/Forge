@@ -24,6 +24,7 @@ import {
 } from '../test-helpers/create-collision-test-tile-set.js';
 import { createTestSource } from '../test-helpers/create-test-tile-set.js';
 import { createTileSet } from '../tile-set/tile-set.js';
+import { packTile } from '../tiles/packed-tile.js';
 import { createTilemapColliderEcsSystem } from './tilemap-collider-system.js';
 
 const layout = createOrthogonalGridLayout({ cellWidth: 16, cellHeight: 16 });
@@ -184,6 +185,47 @@ describe('createTilemapColliderEcsSystem', () => {
       friction: 0.9,
       sensor: false,
     });
+  });
+
+  it('collides an animated tile with the placed tile’s shape, whatever frame shows', () => {
+    // Tile 0 collides with its whole cell; its frames show tile 1, which
+    // doesn't collide.
+    setTileSet(
+      layer,
+      createTileSet({
+        layout,
+        sources: [
+          createTestSource(2, 1, {
+            tiles: new Map([
+              [
+                0,
+                {
+                  collision: 'cell',
+                  animation: [
+                    { tile: 1, durationMilliseconds: 100 },
+                    { tile: 0, durationMilliseconds: 100 },
+                  ],
+                },
+              ],
+            ]),
+          }),
+        ],
+      }),
+    );
+    setTile(layer, 0, 0, packTile({ source: 0, tile: 0 }));
+    world.update();
+
+    const built = collider.collider;
+    const { version } = layer;
+
+    expect(loopsOf(collider)).toEqual([layout.getCellPolygon(0, 0)]);
+
+    // Frames are drawn by the render system and never written to the cells,
+    // so the layer's version, and the collider, stay as they are.
+    world.update();
+
+    expect(layer.version).toBe(version);
+    expect(collider.collider).toBe(built);
   });
 
   it('never changes the collider’s other settings', () => {

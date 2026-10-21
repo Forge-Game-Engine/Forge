@@ -4,6 +4,7 @@ import {
   addScaleComponent,
   PositionEcsComponent,
   positionId,
+  Time,
 } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
@@ -36,8 +37,14 @@ import {
   createTilemapVertexArrays,
   positionSize,
   TilemapVertexArrays,
+  writeAnimatedQuads,
   writeChunkVertices,
 } from '../rendering/write-chunk-vertices.js';
+import { getTileData, TileAnimationFrame } from '../tile-set/tile-set.js';
+import {
+  getFrameIndexAt,
+  getNextFrameChangeTime,
+} from '../tiles/tile-animation-timing.js';
 
 // The vertex attributes `tilemap.vert` reads.
 const positionAttribute = 'a_position';
@@ -55,6 +62,14 @@ type WritableTilemapRenderState = {
 type WritableTilemapChunkMesh = {
   -readonly [K in keyof TilemapChunkMesh]: TilemapChunkMesh[K];
 };
+
+/** The layer a tick is rebuilding chunks of, and the time it shows. */
+interface LayerBuild {
+  readonly layer: TilemapLayerEcsComponent;
+  readonly state: WritableTilemapRenderState;
+  /** The time whose animation frames the rebuilt meshes show. */
+  readonly now: number;
+}
 
 const asWritableState = (
   state: TilemapRenderStateEcsComponent,
@@ -96,12 +111,25 @@ const asWritableMesh = (mesh: TilemapChunkMesh): WritableTilemapChunkMesh =>
  * has, but not a pattern for components that many entities carry. Removing
  * this system or stopping the world leaves every layer drawn as it was
  * last built.
+ *
+ * Animated tiles (`TileData.animation`) show their frame at
+ * `time.timeInMilliseconds`, so every cell of a tile, in every layer, shows
+ * the same frame, and a `timeScale` of `0` pauses them. Each mesh records
+ * which of its quads hold animated tiles. On a tick where an animated
+ * tile's frame changes, the system rewrites only those quads, in only the
+ * meshes that hold that tile, and uploads them with `Geometry.update`. A
+ * mesh without animated tiles is never touched, and between frame changes
+ * a layer costs one comparison. Animation never changes the layer's cells
+ * or `version`.
  * @param renderContext - The render context the chunk geometries and
  * materials are created in.
+ * @param time - The game's time, whose `timeInMilliseconds` chooses each
+ * animated tile's frame.
  * @returns The tilemap render ECS system.
  */
 export const createTilemapRenderEcsSystem = (
   renderContext: RenderContext,
+  time: Time,
 ): EcsSystem<[TilemapLayerEcsComponent, PositionEcsComponent]> => ({
   name: 'tilemapRender',
   query: [tilemapLayerId, positionId],
@@ -109,7 +137,13 @@ export const createTilemapRenderEcsSystem = (
     releaseOrphanedStates(world);
 
     for (let i = 0; i < entities.length; i++) {
-      updateLayer(world, renderContext, entities[i], layers[i]);
+      updateLayer(
+        world,
+        renderContext,
+        entities[i],
+        layers[i],
+        time.timeInMilliseconds,
+      );
     }
   },
 });
@@ -150,6 +184,8 @@ const getOrAddState = (
         appliedDrawLayer: layer.layer,
         meshes: [],
         materials: new Map(),
+        animationTime: null,
+        nextFrameChangeTime: Infinity,
       }),
   );
 
@@ -158,6 +194,7 @@ const updateLayer = (
   renderContext: RenderContext,
   entity: number,
   layer: TilemapLayerEcsComponent,
+  now: number,
 ): void => {
   const state = getOrAddState(world, entity, layer);
 
@@ -172,10 +209,34 @@ const updateLayer = (
     state.builtVersion = -1;
     state.meshes = [];
     state.materials = new Map();
+    state.animationTime = null;
   }
 
-  if (layer.version !== state.builtVersion) {
-    rebuildChangedChunks(world, renderContext, entity, layer, state);
+  // Frames are a function of time, so no frame changed unless time reached
+  // the next change. `Time` never runs backwards, but a game or a test can
+  // drive a world with a clock that does.
+  const animate =
+    state.animationTime !== null &&
+    (now >= state.nextFrameChangeTime || now < state.animationTime);
+  const rebuild = layer.version !== state.builtVersion;
+
+  // Brings the meshes of unchanged chunks to `now`; the rebuild writes the
+  // frames at `now` into the changed ones.
+  if (animate) {
+    advanceAnimatedTiles(layer, state, now);
+  }
+
+  if (rebuild) {
+    rebuildChangedChunks(world, renderContext, entity, layer, state, now);
+  }
+
+  if (animate || rebuild) {
+    state.animationTime = now;
+    state.nextFrameChangeTime = getNextFrameChangeTimeOfMeshes(
+      layer,
+      state,
+      now,
+    );
   }
 
   if (
@@ -198,19 +259,218 @@ const updateLayer = (
   }
 };
 
+/**
+ * The animation of an animated tile, from its animation key.
+ * @throws An error if the tile has no animation, which means the mesh that
+ * listed it wasn't built from the layer's current tile set.
+ */
+const getAnimation = (
+  layer: TilemapLayerEcsComponent,
+  key: number,
+): readonly TileAnimationFrame[] => {
+  const { animation } = getTileData(layer.tileSet, key);
+
+  if (animation === null) {
+    throw new Error(
+      `Unable to animate the tile ${key} of a tilemap layer: it has no animation in the layer's tile set.`,
+    );
+  }
+
+  return animation;
+};
+
+/**
+ * Rewrites the animated quads whose tile's frame changed since
+ * `state.animationTime`, in the meshes of chunks that haven't changed since
+ * the last build, and uploads their new texture coordinates.
+ *
+ * Meshes of changed chunks are left to the rebuild: their animated quads
+ * may name cells that changed, and after `setTileSet` their keys may name
+ * tiles the new tile set doesn't animate, or doesn't have.
+ */
+const advanceAnimatedTiles = (
+  layer: TilemapLayerEcsComponent,
+  state: WritableTilemapRenderState,
+  now: number,
+): void => {
+  const { animationTime } = state;
+
+  if (animationTime === null) {
+    return;
+  }
+
+  // Local to this call, so the system keeps no state.
+  const frames: FrameChanges = {
+    changed: new Map(),
+    unchanged: new Set(),
+    shownAt: animationTime,
+    now,
+  };
+
+  for (const mesh of state.meshes) {
+    const chunk = getUnchangedAnimatedChunk(layer, state, mesh);
+
+    if (chunk && holdsChangedFrame(layer, mesh, frames)) {
+      uploadAnimatedQuads(layer, chunk, mesh, frames.changed);
+    }
+  }
+};
+
+/** Which animated tiles changed frame between two times, found as needed. */
+interface FrameChanges {
+  /** The tile index each key whose image changed shows now, by key. */
+  readonly changed: Map<number, number>;
+
+  /** The keys found to show the same image at both times. */
+  readonly unchanged: Set<number>;
+
+  /** The time the meshes show. */
+  readonly shownAt: number;
+
+  /** The time to show. */
+  readonly now: number;
+}
+
+/**
+ * The chunk a mesh with animated tiles draws, if it hasn't changed since
+ * the last build, so the mesh still matches its cells and the layer's tile
+ * set.
+ */
+const getUnchangedAnimatedChunk = (
+  layer: TilemapLayerEcsComponent,
+  state: WritableTilemapRenderState,
+  mesh: TilemapChunkMesh,
+): TilemapChunk | null => {
+  if (mesh.animatedTiles.length === 0) {
+    return null;
+  }
+
+  const chunk = layer.chunks.get(getChunkKey(mesh.chunkColumn, mesh.chunkRow));
+
+  if (!chunk || chunk.changedAt > state.builtVersion) {
+    return null;
+  }
+
+  return chunk;
+};
+
+/**
+ * Whether any animated tile of a mesh shows a different image now,
+ * recording each key it checks in `frames`.
+ */
+const holdsChangedFrame = (
+  layer: TilemapLayerEcsComponent,
+  mesh: TilemapChunkMesh,
+  frames: FrameChanges,
+): boolean => {
+  let changed = false;
+
+  for (const key of mesh.animatedTiles) {
+    if (frames.changed.has(key)) {
+      changed = true;
+
+      continue;
+    }
+
+    if (frames.unchanged.has(key)) {
+      continue;
+    }
+
+    const animation = getAnimation(layer, key);
+    const shown = animation[getFrameIndexAt(animation, frames.shownAt)].tile;
+    const current = animation[getFrameIndexAt(animation, frames.now)].tile;
+
+    if (shown === current) {
+      frames.unchanged.add(key);
+
+      continue;
+    }
+
+    frames.changed.set(key, current);
+    changed = true;
+  }
+
+  return changed;
+};
+
+/**
+ * Rewrites a mesh's animated quads whose frame changed and uploads their
+ * texture coordinates, and their positions if a differently trimmed frame
+ * moved a corner.
+ */
+const uploadAnimatedQuads = (
+  layer: TilemapLayerEcsComponent,
+  chunk: TilemapChunk,
+  mesh: TilemapChunkMesh,
+  changedFrames: ReadonlyMap<number, number>,
+): void => {
+  const moved = writeAnimatedQuads(
+    layer.tileSet,
+    chunk,
+    mesh,
+    mesh,
+    changedFrames,
+  );
+  const attributes: Record<string, Float32Array> = {
+    [texCoordAttribute]: mesh.texCoords,
+    [texRectAttribute]: mesh.texRects,
+  };
+
+  if (moved) {
+    attributes[positionAttribute] = mesh.positions;
+  }
+
+  mesh.geometry.update({
+    vertexCount: mesh.tileCount * verticesPerTile,
+    attributes,
+  });
+};
+
+/**
+ * The earliest time after `now` at which an animated tile of any of the
+ * layer's meshes changes frame, or `Infinity` if they hold none. Every
+ * mesh was built from the layer's current cells and tile set by now.
+ */
+const getNextFrameChangeTimeOfMeshes = (
+  layer: TilemapLayerEcsComponent,
+  state: WritableTilemapRenderState,
+  now: number,
+): number => {
+  let next = Infinity;
+
+  for (const mesh of state.meshes) {
+    for (const key of mesh.animatedTiles) {
+      next = Math.min(
+        next,
+        getNextFrameChangeTime(getAnimation(layer, key), now),
+      );
+    }
+  }
+
+  return next;
+};
+
 const rebuildChangedChunks = (
   world: EcsWorld,
   renderContext: RenderContext,
   entity: number,
   layer: TilemapLayerEcsComponent,
   state: WritableTilemapRenderState,
+  now: number,
 ): void => {
   const counts = new Uint16Array(layer.tileSet.sources.length);
 
   for (const chunk of layer.chunks.values()) {
     if (chunk.changedAt > state.builtVersion) {
       countChunkTilesBySource(chunk, counts);
-      rebuildChunk(world, renderContext, entity, layer, state, chunk, counts);
+      rebuildChunk(
+        world,
+        renderContext,
+        entity,
+        { layer, state, now },
+        chunk,
+        counts,
+      );
     }
   }
 
@@ -297,11 +557,11 @@ const rebuildChunk = (
   world: EcsWorld,
   renderContext: RenderContext,
   entity: number,
-  layer: TilemapLayerEcsComponent,
-  state: WritableTilemapRenderState,
+  build: LayerBuild,
   chunk: TilemapChunk,
   counts: Uint16Array,
 ): void => {
+  const { layer, state, now } = build;
   const key = getChunkKey(chunk.column, chunk.row);
 
   for (let source = 0; source < counts.length; source++) {
@@ -320,14 +580,19 @@ const rebuildChunk = (
     const material = getMaterial(renderContext, state, source);
 
     if (found) {
-      updateMesh(world, entity, layer, state, index, chunk, tileCount);
+      updateMesh(world, entity, build, index, chunk, tileCount);
 
       continue;
     }
 
     const arrays = createTilemapVertexArrays(tileCount);
-
-    writeChunkVertices(layer.tileSet, chunk, source, arrays);
+    const { animatedQuads, animatedCells, animatedTiles } = writeChunkVertices(
+      layer.tileSet,
+      chunk,
+      source,
+      arrays,
+      now,
+    );
 
     const mesh: TilemapChunkMesh = {
       chunkColumn: chunk.column,
@@ -337,6 +602,9 @@ const rebuildChunk = (
       geometry: createChunkGeometry(renderContext, arrays, tileCount),
       tileCount,
       ...arrays,
+      animatedQuads,
+      animatedCells,
+      animatedTiles,
     };
 
     state.meshes = [
@@ -392,12 +660,12 @@ const createChunkGeometry = (
 const updateMesh = (
   world: EcsWorld,
   entity: number,
-  layer: TilemapLayerEcsComponent,
-  state: WritableTilemapRenderState,
+  build: LayerBuild,
   index: number,
   chunk: TilemapChunk,
   tileCount: number,
 ): void => {
+  const { layer, state, now } = build;
   const mesh = asWritableMesh(state.meshes[index]);
   const material = state.materials.get(mesh.source);
 
@@ -416,8 +684,18 @@ const updateMesh = (
     );
   }
 
-  writeChunkVertices(layer.tileSet, chunk, mesh.source, mesh);
+  const { animatedQuads, animatedCells, animatedTiles } = writeChunkVertices(
+    layer.tileSet,
+    chunk,
+    mesh.source,
+    mesh,
+    now,
+  );
+
   mesh.tileCount = tileCount;
+  mesh.animatedQuads = animatedQuads;
+  mesh.animatedCells = animatedCells;
+  mesh.animatedTiles = animatedTiles;
   mesh.geometry.update({
     vertexCount: tileCount * verticesPerTile,
     attributes: {
