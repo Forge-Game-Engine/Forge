@@ -113,7 +113,8 @@ the branch's pull request).
 
 A milestone goes from plan to merged code in these steps. The agents and
 workflows in this table are configured so that steps 3, 5-7 and 9 run
-unattended:
+unattended, and step 10 too for a small pull request nobody had to step in
+on:
 
 | #   | Step                                          | Who                                                                    |
 | --- | --------------------------------------------- | ---------------------------------------------------------------------- |
@@ -126,7 +127,7 @@ unattended:
 | 7   | Implement, with unit and e2e tests            | The label run, which opens the pull request                            |
 | 8   | Review the pull request, test the demos       | Human                                                                  |
 | 9   | Review the pull request against Forge's rules | `pr-reviewer` (`.github/workflows/claude-pr-review.yml`)               |
-| 10  | Merge                                         | Human                                                                  |
+| 10  | Merge                                         | Human, or `.github/workflows/claude-auto-merge.yml`                    |
 
 - **Dependencies hold a run back, not you.** Label every issue in a
   milestone at once. Before a label run starts, its `gate` job reads the
@@ -170,6 +171,18 @@ unattended:
   comment. Its pushes don't start another review, and a person's pull
   request is never fixed automatically. So the human review (step 8)
   usually comes after this round.
+- **A small, clean pull request from Claude merges itself.**
+  `claude-auto-merge.yml` squash-merges a pull request that a label run or
+  a Claude Code session (a `claude/` branch) opened, once every check on
+  its head commit has passed. It only merges one that changes fewer than
+  35 files, at most 20 of them in at most 2 folders under `src/`, and
+  nothing in `.github/` or `.claude/`. The `pr-reviewer` review must have
+  run on that commit and approved it with no findings and nothing to check
+  by hand, and no person may have commented or reviewed it (approvals
+  aside). So a fix round's pushes, a demo that needs a manual check, or a
+  question from a person leaves the merge to a human.
+  `.github/scripts/claude-auto-merge.sh` lists the conditions; the job's
+  log says which one stopped a merge.
 - **An `@claude` run resolves merge conflicts.** Mention `@claude` on a
   pull request that conflicts with `dev` and the run merges `dev` into its
   branch (after `git fetch origin --unshallow`, since the checkout is

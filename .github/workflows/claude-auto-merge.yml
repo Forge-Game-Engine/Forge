@@ -1,0 +1,64 @@
+name: Claude auto-merge
+
+# Squash-merges a pull request Claude opened once its checks pass, when it is
+# small and nobody had to step in. Every workflow that checks a pull request
+# into dev starts this one when it finishes, so the last one to finish on a
+# commit is the one that merges it. .github/scripts/claude-auto-merge.sh
+# lists the conditions and prints why a pull request wasn't merged.
+#
+# This runs from dev with the repository's secrets, so it never checks out
+# the pull request's code: it reads the pull request through the API only.
+#
+# Merges with the labeler App's token (see claude-unblock.yml), so the push to
+# dev starts the workflows a merge with GITHUB_TOKEN wouldn't. The App needs
+# read and write access to Contents and Pull requests as well as Issues. If
+# dev's branch protection requires an approving review, the merge fails until
+# the App may bypass it.
+
+on:
+  workflow_run:
+    workflows:
+      - CI / Build and Test
+      - CI / Documentation
+      - Changelog
+      - Claude PR review
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  # Two workflows finishing together on one commit check it one at a time.
+  group: claude-auto-merge-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    # A failed run means the commit can't merge, so there's nothing to check.
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout the auto-merge script
+        uses: actions/checkout@v7
+        with:
+          ref: dev
+          fetch-depth: 1
+          sparse-checkout: .github/scripts
+
+      - name: Create the labeler App's token
+        id: labeler
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.CLAUDE_LABELER_APP_ID }}
+          private-key: ${{ secrets.CLAUDE_LABELER_PRIVATE_KEY }}
+
+      - name: Merge the pull request if it qualifies
+        env:
+          GH_TOKEN: ${{ steps.labeler.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: .github/scripts/claude-auto-merge.sh "$SHA"

@@ -309,6 +309,7 @@ sponza
 spritesheet
 srgb
 ssao
+startswith
 stoppables
 stoppie
 stormmuller
@@ -334,6 +335,7 @@ Tinos
 tintable
 tokuyoshi
 toon
+tostring
 touchend
 transformless
 trilinearly
