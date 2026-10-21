@@ -75,7 +75,7 @@ and unrotated, they are world positions.
 
 A `ChainCollider` with no loops (`new ChainCollider([])`) has no edges and
 collides with nothing. A tile layer with no solid tiles has one (see
-[Tile collision](../tilemaps/index.md#collision)).
+[Tile collision](../tilemaps/collision.md)).
 
 The constructor throws for:
 

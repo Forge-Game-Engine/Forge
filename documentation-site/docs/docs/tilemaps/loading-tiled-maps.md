@@ -1,14 +1,14 @@
 ---
-sidebar_position: 2
+sidebar_position: 6
 ---
 
 # Loading Tiled maps
 
 [`TiledMapCache`](/Forge/docs/api/classes/TiledMapCache) loads maps made in
 the [Tiled](https://www.mapeditor.org/) map editor into a
-[tile set](./index.md#tile-sets), tile data and object data, and
+[tile set](./tile-sets.md), tile data and object data, and
 [`spawnTiledMap`](/Forge/docs/api/functions/spawnTiledMap) creates a
-[tilemap layer](./index.md#layers-and-maps) entity for each of the map's
+[tilemap layer](./layers.md#layers-and-maps) entity for each of the map's
 tile layers.
 
 ## Saving a map for Forge
@@ -73,21 +73,22 @@ const map = await tiledMaps.getOrLoad('maps/painted.tmj', {
 ```
 
 The promise rejects if a file fails to load, or is invalid or uses a Tiled
-feature that isn't supported. The message names the file and the JSON path
-of the field, such as `layers[2].chunks[0].width`.
+feature that isn't supported, or if the map was already requested with a
+different `filter`. The message names the file and, for a field, its JSON
+path, such as `layers[2].chunks[0].width`.
 
 ## What a loaded map holds
 
 A `TiledMap` is frozen, and every spawn of it shares it. It holds:
 
-- `tileSet`: one [tile set](./index.md#tile-sets) for the whole map, with
+- `tileSet`: one [tile set](./tile-sets.md) for the whole map, with
   one source per Tiled tileset, in `firstgid` order. Its layout is an
   orthogonal or isometric [grid layout](../math/grid-layouts.md) with the
   map's tile size as the cell size.
 - `tileSets`: each tileset's name, first gid, tile count, `.tsj` URL and
   custom properties, by source index.
 - `layers`: the layer tree, in Tiled's order. A tile layer holds its tiles
-  as [packed tiles](./index.md#packed-tiles) in the map's tile set, a group
+  as [packed tiles](./tile-sets.md#packed-tiles) in the map's tile set, a group
   layer holds its layers, and an object layer holds its objects. A tile
   layer's `blocks` hold their tiles in `Uint32Array`s, which can't be
   frozen: read them, and edit the spawned layers instead, since writing
@@ -121,9 +122,10 @@ A tile's properties of type `color` are stored as `#aarrggbb` strings,
 ### Tile collision shapes
 
 A tile's collision object becomes its
-[collision shape](./index.md#collision-shapes). The loader takes one
+[collision shape](./collision.md#collision-shapes). The loader takes one
 rectangle or convex polygon per tile, and throws for a tile with more
-objects or another kind of object. A shape that reaches outside the cell's
+objects or another kind of object, and for a shape that misses the cell's
+footprint. A shape that reaches outside the cell's
 footprint, such as a rectangle drawn over a tall wall's whole image, is
 clipped to the footprint, and a shape that covers the footprint becomes
 `'cell'`.
@@ -131,7 +133,8 @@ clipped to the footprint, and a shape that covers the footprint becomes
 A shape is measured on the tile's image as it draws, so the tileset's
 `tileoffset` moves it with the image. For a tileset whose collision
 editor grid (Tiled's "Orientation" in the tileset's grid settings) is
-isometric, the shape is measured on the isometric cell instead.
+isometric, the shape is measured on the isometric cell instead, and the
+tileset only loads into an isometric map with the grid's tile size.
 
 ## Spawning a map
 
@@ -208,7 +211,7 @@ layers in Tiled's order.
 A tile layer that holds any tile with a collision shape gets a static
 `ColliderEcsComponent` and a `TilemapColliderEcsComponent`, so it collides
 with its tiles' shapes once `createTilemapColliderEcsSystem` is registered
-(see [Giving a layer a collider](./index.md#giving-a-layer-a-collider)).
+(see [Giving a layer a collider](./collision.md#giving-a-layer-a-collider)).
 Set its friction, category and mask on the `ColliderEcsComponent`, found
 with `findTiledLayer`.
 
@@ -226,8 +229,11 @@ projected first (see [Objects in isometric maps](#objects-in-isometric-maps)).
 Forge's physics defaults are tuned for world units about a meter across.
 A game that collides with a map works in map pixels and scales its
 physics by its number of pixels per meter: gravity's `amount`, its speeds
-and forces, and the collision resolver's `slop`. For 16 pixel tiles that
-stand for a meter:
+and forces, and the collision resolver's `slop`, `maxBiasSpeed` and
+`restitutionThreshold`. Left at its default of `3` units a second,
+`maxBiasSpeed` pushes a body out of a tile at no more than 3 pixels a
+second, too slowly to stop a character that walks into a wall from sinking
+into it. For 16 pixel tiles that stand for a meter:
 
 ```ts
 import {
@@ -244,6 +250,8 @@ addGravityComponent(world, player, {
 world.addSystem(
   createCollisionResolutionEcsSystem(manifolds, constraints, time, {
     slop: 0.002 * pixelsPerMeter,
+    maxBiasSpeed: 3 * pixelsPerMeter,
+    restitutionThreshold: pixelsPerMeter,
   }),
 );
 ```
@@ -341,10 +349,13 @@ Properties of type `class` are left out.
 
 ## Unsupported Tiled features
 
-These throw, naming the file and the field, because the map would draw in
-the wrong place or look different:
+These throw, naming the file and, for a field, the field, because the map
+can't be read or would draw in the wrong place or look different:
 
-- staggered, hexagonal and oblique maps;
+- maps, tilesets and templates saved in Tiled's XML formats (`.tmx`,
+  `.tsx` and `.tx`), which throw as files that aren't valid JSON;
+- staggered, hexagonal and oblique maps, and tiles with the hexagonal
+  120-degree rotation flag;
 - image collection tilesets (one image per tile);
 - `zstd` compression;
 - a tileset's transparent color, or its fill mode "Preserve Aspect Ratio";
@@ -354,6 +365,11 @@ These are left out, and the rest of the map loads:
 
 - image layers, parallax factors and layer blend modes;
 - Wang sets, terrains, allowed tile transformations and tile probability;
-- custom properties of type `class`, and tile classes;
-- the map's render order: Forge always draws a layer's cells in row-major
-  order, which is Tiled's default "Right Down".
+- custom properties of type `class`, and the classes of tiles, layers,
+  tilesets and the map (an object's class is its `type`);
+- a text object's underline, strikeout and kerning;
+- the map's render order: Forge draws the tiles of one tileset in a chunk
+  in row-major order, Tiled's default "Right Down", and chunk by chunk (see
+  [Drawing order inside a layer](./rendering.md#drawing-order-inside-a-layer)),
+  so tall tiles that overlap across tilesets or chunks can draw in a
+  different order than in Tiled.

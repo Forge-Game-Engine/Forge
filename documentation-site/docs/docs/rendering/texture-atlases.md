@@ -383,7 +383,7 @@ with `'linear'` filtering, at any scale, a region never blends in its
 neighbors in the sheet, and tiles cut from a sheet with no spacing between
 them draw side by side without seams. A sprite's emissive map is sampled
 inside the same rect, so give it the texture's size. A
-[tilemap layer](../tilemaps/index.md#texture-filtering) samples each tile's
+[tilemap layer](../tilemaps/rendering.md#texture-filtering) samples each tile's
 region the same way.
 
 A region of a texture whose `wrap` is `'repeat'` isn't limited this way, so

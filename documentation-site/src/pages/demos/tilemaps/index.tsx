@@ -189,6 +189,11 @@ export default function Tilemaps(): JSX.Element {
       ]}
       docLinks={[
         { label: 'Tilemaps', to: '/docs/docs/tilemaps' },
+        { label: 'Tilemap layers', to: '/docs/docs/tilemaps/layers' },
+        {
+          label: 'Rendering tilemaps',
+          to: '/docs/docs/tilemaps/rendering',
+        },
         { label: 'Grid layouts', to: '/docs/docs/math/grid-layouts' },
         { label: 'Draw order', to: '/docs/docs/rendering/draw-order' },
       ]}

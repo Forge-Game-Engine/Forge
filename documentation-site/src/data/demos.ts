@@ -215,6 +215,13 @@ export const demos: Demo[] = [
     categories: ['rendering'],
   },
   {
+    slug: 'tiled-maps',
+    title: 'Tiled Maps',
+    description:
+      'A platformer level loaded from a Tiled map, with slopes, animated water and a foreground layer. Walk and jump on the tiles, and click a cell to add or remove a solid tile.',
+    categories: ['rendering', 'physics'],
+  },
+  {
     slug: 'sprite-atlas',
     title: 'Sprite Atlas',
     description:

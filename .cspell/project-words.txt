@@ -233,6 +233,7 @@ pillarbox
 pillarboxing
 pingpong
 Pixabay
+platformer
 pointerdown
 pointerlockerror
 pointerup
