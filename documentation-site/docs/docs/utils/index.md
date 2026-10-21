@@ -25,9 +25,10 @@ The module is made of:
     [`shallowArraysEqual`](/Forge/docs/api/functions/shallowArraysEqual) and
     [`matchesMask`](/Forge/docs/api/functions/matchesMask);
   - data structures: [`SparseSet`](/Forge/docs/api/classes/SparseSet),
-    [`DirectedAcyclicGraph`](/Forge/docs/api/classes/DirectedAcyclicGraph)
-    and [`Chain`](/Forge/docs/api/classes/Chain), a sequence of functions run
-    in order on a value;
+    [`DirectedAcyclicGraph`](/Forge/docs/api/classes/DirectedAcyclicGraph),
+    [`BinaryHeap`](/Forge/docs/api/classes/BinaryHeap), a min-heap ordered
+    by a compare function, and [`Chain`](/Forge/docs/api/classes/Chain), a
+    sequence of functions run in order on a value;
   - types: [`AtLeastOne`](/Forge/docs/api/type-aliases/AtLeastOne),
     [`Brand`](/Forge/docs/api/type-aliases/Brand),
     [`Predicate`](/Forge/docs/api/type-aliases/Predicate) and

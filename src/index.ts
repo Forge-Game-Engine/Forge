@@ -9,6 +9,7 @@ export * from './events/index.js';
 export * from './input/index.js';
 export * from './lifecycle/index.js';
 export * from './math/index.js';
+export * from './navigation/index.js';
 export * from './rendering/index.js';
 export * from './text/index.js';
 export * from './tilemaps/index.js';

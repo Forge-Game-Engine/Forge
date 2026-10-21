@@ -154,6 +154,16 @@ const icons = {
       />
     </>
   ),
+  navigation: (
+    <>
+      <circle cx="5" cy="19" r="2" />
+      <path d="M7 19h5a3 3 0 0 0 3-3v-2a3 3 0 0 1 3-3h1" />
+      <path
+        d="M19 11s-3.5-3.2-3.5-5.5a3.5 3.5 0 0 1 7 0c0 2.3-3.5 5.5-3.5 5.5Z"
+        className={styles.accent}
+      />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type ModuleIconName = keyof typeof icons;
