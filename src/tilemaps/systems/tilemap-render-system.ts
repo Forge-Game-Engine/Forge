@@ -215,15 +215,16 @@ const updateLayer = (
   // Frames are a function of time, so no frame changed unless time reached
   // the next change. `Time` never runs backwards, but a game or a test can
   // drive a world with a clock that does.
+  const { animationTime } = state;
   const animate =
-    state.animationTime !== null &&
-    (now >= state.nextFrameChangeTime || now < state.animationTime);
+    animationTime !== null &&
+    (now >= state.nextFrameChangeTime || now < animationTime);
   const rebuild = layer.version !== state.builtVersion;
 
   // Brings the meshes of unchanged chunks to `now`; the rebuild writes the
   // frames at `now` into the changed ones.
   if (animate) {
-    advanceAnimatedTiles(layer, state, now);
+    advanceAnimatedTiles(layer, state, animationTime, now);
   }
 
   if (rebuild) {
@@ -280,9 +281,10 @@ const getAnimation = (
 };
 
 /**
- * Rewrites the animated quads whose tile's frame changed since
- * `state.animationTime`, in the meshes of chunks that haven't changed since
- * the last build, and uploads their new texture coordinates.
+ * Rewrites the animated quads whose tile's frame changed between `shownAt`
+ * (the state's `animationTime`) and `now`, in the meshes of chunks that
+ * haven't changed since the last build, and uploads their new texture
+ * coordinates.
  *
  * Meshes of changed chunks are left to the rebuild: their animated quads
  * may name cells that changed, and after `setTileSet` their keys may name
@@ -291,19 +293,14 @@ const getAnimation = (
 const advanceAnimatedTiles = (
   layer: TilemapLayerEcsComponent,
   state: WritableTilemapRenderState,
+  shownAt: number,
   now: number,
 ): void => {
-  const { animationTime } = state;
-
-  if (animationTime === null) {
-    return;
-  }
-
   // Local to this call, so the system keeps no state.
   const frames: FrameChanges = {
     changed: new Map(),
     unchanged: new Set(),
-    shownAt: animationTime,
+    shownAt,
     now,
   };
 

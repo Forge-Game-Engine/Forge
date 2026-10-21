@@ -813,6 +813,65 @@ describe('createTilemapRenderEcsSystem', () => {
       expect(layer.version).toBe(5);
     });
 
+    it('leaves the meshes whose animated tiles kept their frame when another tile’s frame changes', () => {
+      // Terrain tile 2 changes frame every 50 ms, water every 100 ms.
+      const ripple = packTile({ source: 0, tile: 2 });
+
+      tileSet = createTwoSourceTileSet(
+        terrainTexture,
+        rockTexture,
+        new Map([
+          ...waterFrames,
+          [
+            2,
+            {
+              animation: [
+                { tile: 2, durationMilliseconds: 50 },
+                { tile: 0, durationMilliseconds: 50 },
+              ],
+            },
+          ],
+        ]),
+      );
+
+      const { entity, layer } = addLayer();
+
+      setTile(layer, 0, 0, water);
+      setTile(layer, 1, 0, ripple);
+      setTile(layer, 40, 0, water);
+      tick(0);
+
+      const [both, waterOnly] = getMeshes(entity);
+
+      expect(getState(entity).nextFrameChangeTime).toBe(50);
+
+      update.mockClear();
+      tick(50);
+
+      expect(update.mock.contexts).toEqual([both.geometry]);
+      expect(topLeftTexCoord(both, 0)).toEqual(ownImage);
+      expect(topLeftTexCoord(both, 1)).toEqual({ x: 0, y: 0 });
+      expect(topLeftTexCoord(waterOnly, 0)).toEqual(ownImage);
+      expect(getState(entity).nextFrameChangeTime).toBe(100);
+    });
+
+    it('throws, naming the tile, for a mesh that lists a tile its layer’s tile set doesn’t animate', () => {
+      const { entity, layer } = addLayer();
+
+      setTile(layer, 0, 0, water);
+      tick(0);
+
+      // A render state that no longer matches its layer, which only code
+      // other than the system could leave behind.
+      Object.assign(getMeshes(entity)[0], { animatedTiles: [grass] });
+
+      expect(() => {
+        tick(100);
+      }).toThrow(
+        `Unable to animate the tile ${grass} of a tilemap layer: it has no animation in the layer's tile set.`,
+      );
+    });
+
     it('uploads nothing on a tick whose delta is a whole number of cycles', () => {
       const { entity, layer } = addLayer();
 

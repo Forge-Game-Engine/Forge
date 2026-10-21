@@ -52,6 +52,22 @@ describe('getTileAnimationFrameIndex', () => {
     }
   });
 
+  it('shows the last frame when rounding leaves the time at the end of a cycle', () => {
+    // 0.1 + 0.2 + 0.3 rounds to 0.6000000000000001. This time, just before
+    // a cycle starts, wraps to a phase that's still at least 0.3 after the
+    // first two durations are taken off it, so it's past every frame's start
+    // but no frame's end.
+    const rounding = [
+      { tile: 1, durationMilliseconds: 0.1 },
+      { tile: 2, durationMilliseconds: 0.2 },
+      { tile: 3, durationMilliseconds: 0.3 },
+    ];
+    const t = -0.6000000000000002;
+
+    expect(getTileAnimationFrameIndex(rounding, t)).toBe(2);
+    expect(getNextFrameChangeTime(rounding, t)).toBeGreaterThanOrEqual(t);
+  });
+
   it('throws for an empty animation and a time that is not finite', () => {
     expect(() => getTileAnimationFrameIndex([], 0)).toThrow(/no frames/);
     expect(() => getTileAnimationFrameIndex(animation, Number.NaN)).toThrow(

@@ -295,6 +295,23 @@ describe('createTileSet animations', () => {
     },
   );
 
+  it('says "1 tile" for a frame outside a source with one tile', () => {
+    expect(() =>
+      createTileSet({
+        layout,
+        sources: [
+          createTestSource(1, 1, {
+            tiles: new Map([
+              [0, { animation: [{ tile: 1, durationMilliseconds: 10 }] }],
+            ]),
+          }),
+        ],
+      }),
+    ).toThrow(
+      'tile 0 of source 0 has an animation whose frame 0 shows tile 1, but its source has 1 tile, so its tile indices are whole numbers from 0 to 0.',
+    );
+  });
+
   it.each([0, -5, Number.NaN, Infinity])(
     'throws for a frame lasting %s ms',
     (durationMilliseconds) => {
