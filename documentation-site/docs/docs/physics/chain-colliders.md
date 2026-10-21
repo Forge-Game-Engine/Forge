@@ -5,7 +5,7 @@ sidebar_position: 6.5
 # Chain Colliders
 
 A [`ChainCollider`](/Forge/docs/api/classes/ChainCollider) is a collision
-shape for static level geometry: one or more closed loops of points, such
+shape for static level geometry: closed loops of points, such
 as the outline of a level's walls, floors, ceilings and platforms. Bodies
 collide with the loops' edges. One `ChainCollider` can hold every loop of
 a level, so the whole level is one collider on one entity.
@@ -73,9 +73,12 @@ addColliderComponent(world, level, {
 The points are in the entity's local space. With the entity at the origin
 and unrotated, they are world positions.
 
+A `ChainCollider` with no loops (`new ChainCollider([])`) has no edges and
+collides with nothing. A tile layer with no solid tiles has one (see
+[Tile collision](../tilemaps/index.md#collision)).
+
 The constructor throws for:
 
-- no loops;
 - a loop with fewer than 3 points;
 - two consecutive points that are the same, including a last point that
   repeats the first;

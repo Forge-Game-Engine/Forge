@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Vec2, Vector2 } from '../../math/index.js';
+import { aabbsOverlap } from '../collision/aabb-overlap.js';
+import { raycastChain } from '../raycast/raycast-chain.js';
 import { ChainCollider } from './chain-collider.js';
 
 const square: Vector2[] = [
@@ -37,8 +39,24 @@ describe('ChainCollider', () => {
       expect(collider.outline.edges[0].start).toBe(collider.loops[0][0]);
     });
 
-    it('throws for no loops', () => {
-      expect(() => new ChainCollider([])).toThrow('at least 1 loop');
+    it('accepts no loops and has no edges', () => {
+      const collider = new ChainCollider([]);
+
+      expect(collider.loops).toEqual([]);
+      expect(collider.outline.edges).toHaveLength(0);
+      expect(
+        collider.outline.queryEdges({
+          min: { x: -1e9, y: -1e9 },
+          max: { x: 1e9, y: 1e9 },
+        }),
+      ).toEqual([]);
+      expect(
+        raycastChain(
+          { position: { x: 0, y: 0 }, rotation: 0, collider },
+          { x: -100, y: 0 },
+          { x: 100, y: 0 },
+        ),
+      ).toBeNull();
     });
 
     it('throws for a loop with fewer than 3 points', () => {
@@ -231,5 +249,26 @@ describe('ChainCollider', () => {
         expect(world.y).toBeLessThanOrEqual(aabb.max.y + 1e-9);
       }
     });
+
+    it.each([0, 0.6])(
+      'is the empty box, overlapping nothing, with no loops at rotation %s',
+      (rotation) => {
+        const aabb = new ChainCollider([]).computeAabb(
+          { x: 3, y: -4 },
+          rotation,
+        );
+
+        expect(aabb).toEqual({
+          min: { x: Infinity, y: Infinity },
+          max: { x: -Infinity, y: -Infinity },
+        });
+        expect(
+          aabbsOverlap(aabb, {
+            min: { x: -1e9, y: -1e9 },
+            max: { x: 1e9, y: 1e9 },
+          }),
+        ).toBe(false);
+      },
+    );
   });
 });

@@ -1,6 +1,13 @@
 import { GridLayout, Vector2 } from '../../math/index.js';
+import { calculateSignedArea } from '../../physics/colliders/polygon-math.js';
 import { TextureAtlas } from '../../rendering/texture-atlas/index.js';
 import { withDefaults } from '../../utilities/with-defaults.js';
+import {
+  collisionSnapSteps,
+  describeSnappedShapeProblem,
+  snapTileCollisionPolygon,
+  tileLocalToCellSpace,
+} from '../collision/tile-collision-variant.js';
 import {
   getTileIndex,
   getTileSourceIndex,
@@ -11,6 +18,19 @@ import { describeTileProblem } from './describe-tile-problem.js';
 
 /** A value of a tile's custom property. */
 export type TilePropertyValue = string | number | boolean;
+
+/**
+ * A tile's collision shape, in tile-local space: the origin is the center
+ * of the cell's footprint (`layout.getCellCenter`), in layer-local units,
+ * Y-down. Tile-local space doesn't depend on the tile's image, so a tall
+ * isometric wall tile's shape is its base on the floor.
+ * - `'cell'`: the cell's whole footprint, a rectangle in an orthogonal
+ *   layout and a diamond in an isometric one.
+ * - A convex polygon of at least 3 points, inside the footprint: a slope, a
+ *   half tile, a wall's base.
+ * - `null`: the tile doesn't collide.
+ */
+export type TileCollisionShape = 'cell' | readonly Readonly<Vector2>[] | null;
 
 /**
  * What a tile set knows about one tile, beyond its image. Shared by every
@@ -43,6 +63,16 @@ export interface TileData {
    * from the center of the cell's footprint, in layer-local units, Y-down.
    */
   readonly ySortOrigin: number;
+
+  /**
+   * The tile's collision shape (see {@link TileCollisionShape}), which
+   * `buildTilemapCollisionLoops` and `createTilemapColliderEcsSystem` merge
+   * into a layer's collider. A polygon is stored wound with positive signed
+   * area (clockwise on screen), whatever order it was given in. A cell's
+   * flip and transpose bits move the shape within the footprint's bounds
+   * the way they move the tile's image.
+   */
+  readonly collision: TileCollisionShape;
 }
 
 /**
@@ -58,6 +88,12 @@ export interface TileDataOptions {
 
   /** See {@link TileData.ySortOrigin}. Defaults to `0`. */
   ySortOrigin?: number;
+
+  /**
+   * See {@link TileData.collision}. A polygon is copied. Defaults to
+   * `null`: the tile doesn't collide.
+   */
+  collision?: TileCollisionShape;
 }
 
 /**
@@ -155,17 +191,98 @@ const maxSources = sourceMask + 1;
 /** The most tiles a source can have, since a packed tile holds 20 bits of tile. */
 const maxTilesPerSource = tileMask + 1;
 
-const defaultTileDataOptions = {
+const defaultTileDataOptions: Required<TileDataOptions> = {
   properties: {},
   textureOrigin: { x: 0, y: 0 },
   ySortOrigin: 0,
+  collision: null,
+};
+
+/** How far outside the footprint, in cell space, a point still snaps onto its edge. */
+const footprintTolerance = 0.5 / collisionSnapSteps;
+
+const describeTransformBits = (bits: number): string => {
+  const names = [
+    bits & 4 ? 'flip X' : null,
+    bits & 2 ? 'flip Y' : null,
+    bits & 1 ? 'transpose' : null,
+  ].filter((name) => name !== null);
+
+  return names.join(', ');
+};
+
+/**
+ * Checks a collision polygon and stores it frozen, wound with positive
+ * signed area. Every transform of it is snapped and checked exactly as the
+ * outline builder will use it, so building an outline never meets a shape
+ * it can't merge.
+ */
+const createCollisionPolygon = (
+  polygon: readonly Readonly<Vector2>[],
+  layout: GridLayout,
+  describeTile: string,
+): readonly Readonly<Vector2>[] => {
+  const prefix = `Unable to create a tile set: ${describeTile} has a collision polygon`;
+
+  if (polygon.length < 3) {
+    throw new Error(
+      `${prefix} with ${polygon.length} points, and a polygon needs at least 3.`,
+    );
+  }
+
+  polygon.forEach((point, index) => {
+    if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+      throw new Error(
+        `${prefix} whose point ${index} is (${point.x}, ${point.y}), which must be finite.`,
+      );
+    }
+
+    const cellSpace = tileLocalToCellSpace(layout, point);
+
+    if (
+      Math.min(cellSpace.x, cellSpace.y) < -footprintTolerance ||
+      Math.max(cellSpace.x, cellSpace.y) > 1 + footprintTolerance
+    ) {
+      throw new Error(
+        `${prefix} whose point ${index}, (${point.x}, ${point.y}), is outside the cell's footprint. A collision polygon is measured from the center of the cell's footprint and must stay inside it.`,
+      );
+    }
+  });
+
+  const points = polygon.map((point) =>
+    Object.freeze({ x: point.x, y: point.y }),
+  );
+
+  if (calculateSignedArea(points) < 0) {
+    points.reverse();
+  }
+
+  for (let bits = 0; bits < 8; bits++) {
+    const problem = describeSnappedShapeProblem(
+      snapTileCollisionPolygon(layout, points, bits),
+    );
+
+    if (problem) {
+      const transform =
+        bits === 0
+          ? ''
+          : ` when turned by the transform bits ${describeTransformBits(bits)}`;
+
+      throw new Error(
+        `${prefix} that ${problem}${transform}, once snapped to 1/${collisionSnapSteps} of a cell. Move its points onto the cell's edge or further inside it.`,
+      );
+    }
+  }
+
+  return Object.freeze(points);
 };
 
 const createTileData = (
   options: TileDataOptions,
   describeTile: string,
+  layout: GridLayout,
 ): TileData => {
-  const { properties, textureOrigin, ySortOrigin } = withDefaults(
+  const { properties, textureOrigin, ySortOrigin, collision } = withDefaults(
     defaultTileDataOptions,
     options,
   );
@@ -186,6 +303,10 @@ const createTileData = (
     properties: Object.freeze({ ...properties }),
     textureOrigin: Object.freeze({ x: textureOrigin.x, y: textureOrigin.y }),
     ySortOrigin,
+    collision:
+      collision === null || collision === 'cell'
+        ? collision
+        : createCollisionPolygon(collision, layout, describeTile),
   });
 };
 
@@ -246,6 +367,7 @@ const createSource = (
     tileData[tileIndex] = createTileData(
       dataOptions,
       `tile ${tileIndex} of source ${sourceIndex}`,
+      layout,
     );
   }
 
@@ -260,15 +382,24 @@ const createSource = (
 /**
  * Creates a {@link TileSet}. Every region of each source's atlas is a tile,
  * with the default {@link TileData} (no properties, a `(0, 0)`
- * `textureOrigin` and a `0` `ySortOrigin`) unless the source's `tiles` give
- * it data of its own.
+ * `textureOrigin`, a `0` `ySortOrigin` and no `collision`) unless the
+ * source's `tiles` give it data of its own.
+ *
+ * A collision polygon is checked against the layout: it must be inside the
+ * cell's footprint (a point within `1/131,072` of a cell outside it counts
+ * as on its edge), and under each of the eight combinations of transform
+ * bits, once its points are snapped to `1/65,536` of a cell, it must be
+ * strictly convex and must not cross itself. Snapping merges points that
+ * land on the same spot and drops points in the middle of a straight edge.
  * @param options - The layout and the sources.
  * @returns The tile set, frozen along with its sources and tile data.
  * @throws An error if there are no sources or more than `256`, a source's
  * `tileWidth` or `tileHeight` isn't a positive finite number, its atlas has
  * more than `1,048,576` regions, its `tiles` has a key that isn't one of
- * its tile indices, or a tile's `textureOrigin` or `ySortOrigin` isn't
- * finite.
+ * its tile indices, a tile's `textureOrigin` or `ySortOrigin` isn't
+ * finite, or a tile's collision polygon has fewer than 3 points, a point
+ * that isn't finite or is outside the footprint, or isn't strictly convex
+ * or crosses itself under some transform.
  */
 export function createTileSet(options: TileSetOptions): TileSet {
   const { layout, sources } = options;
@@ -285,7 +416,7 @@ export function createTileSet(options: TileSetOptions): TileSet {
     );
   }
 
-  const defaultTileData = createTileData({}, 'the default tile');
+  const defaultTileData = createTileData({}, 'the default tile', layout);
 
   return Object.freeze({
     layout,
