@@ -88,7 +88,10 @@ A `TiledMap` is frozen, and every spawn of it shares it. It holds:
   custom properties, by source index.
 - `layers`: the layer tree, in Tiled's order. A tile layer holds its tiles
   as [packed tiles](./index.md#packed-tiles) in the map's tile set, a group
-  layer holds its layers, and an object layer holds its objects.
+  layer holds its layers, and an object layer holds its objects. A tile
+  layer's `blocks` hold their tiles in `Uint32Array`s, which can't be
+  frozen: read them, and edit the spawned layers instead, since writing
+  into a block changes every later spawn of the map.
 - `properties`, `backgroundColor` and `size` (`null` for an infinite map).
 
 Every layer has its `id`, `name`, `path` (its groups' names and its own,
@@ -216,8 +219,9 @@ components from its entity, or set the collider's `mask` to `0`.
 ## Units and physics
 
 A cell is the map's tile width by tile height in world units: one Tiled
-pixel is one world unit, and positions in the map are the positions shown
-in Tiled.
+pixel is one world unit. In an orthogonal map, positions in the map are
+the positions shown in Tiled. An isometric map's object positions are
+projected first (see [Objects in isometric maps](#objects-in-isometric-maps)).
 
 Forge's physics defaults are tuned for world units about a meter across.
 A game that collides with a map works in map pixels and scales its
