@@ -170,6 +170,12 @@ unattended:
   comment. Its pushes don't start another review, and a person's pull
   request is never fixed automatically. So the human review (step 8)
   usually comes after this round.
+- **An `@claude` run resolves merge conflicts.** Mention `@claude` on a
+  pull request that conflicts with `dev` and the run merges `dev` into its
+  branch (after `git fetch origin --unshallow`, since the checkout is
+  shallow), resolves the conflicts, regenerates lock files with
+  `npm install --package-lock-only` instead of editing them, verifies and
+  pushes the merge commit. It never rebases or force-pushes.
 - **Subagents run in the foreground.** Both Claude workflows set
   `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS`. A headless run ends as soon as the
   main agent ends its turn, so a subagent started in the background (the
