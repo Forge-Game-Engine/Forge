@@ -127,6 +127,9 @@ for (const layerTileSet of [groundTileSet, wallTileSet]) {
 }
 ```
 
+[Loading Tiled maps](./loading-tiled-maps.md) builds this hierarchy from a
+map made in Tiled.
+
 A layer has no size. Cells are stored in chunks of
 [`tilemapChunkSize`](/Forge/docs/api/variables/tilemapChunkSize) by
 `tilemapChunkSize` cells, created when a tile is written into them and
@@ -196,7 +199,8 @@ coordinates uses the inverse: the point `p` of the drawn rectangle shows the
 image at the flips undone, then the transpose undone. The two 90-degree turns
 are the only combinations that differ from their inverse.
 
-A transposed tile that isn't square is stretched to its rectangle.
+A transposed tile that isn't square is turned, not stretched: its rectangle
+swaps its width and height (see [Tile image placement](#tile-image-placement)).
 
 ## Tile image placement
 
@@ -212,8 +216,13 @@ const imageRect = getTileImageRect(tileSet, column, row, tile);
 The image is its source's `tileWidth` by `tileHeight`. Its bottom-left
 corner is on the bottom-left corner of the cell footprint's bounds, then it
 moves by the tile's `textureOrigin`, Y-down: a positive `y` moves it down.
-An image taller than its cell reaches up from the cell's footprint. The
-transform bits don't change the rectangle.
+An image taller than its cell reaches up from the cell's footprint. This
+is the rule Tiled uses, so a tile from a Tiled tileset is placed where Tiled
+draws it.
+
+A tile with its transpose bit set is `tileHeight` wide and `tileWidth`
+tall, with the same bottom-left corner: a 16 by 32 tile turned on its side
+covers 32 by 16. The flip bits don't change the rectangle.
 
 :::caution
 Cells draw back to front when each tile's image is at most `cellWidth`
@@ -259,6 +268,26 @@ clearTiles(groundLayer);
 ```
 
 Filling with `emptyTile` clears the rectangle.
+
+### Writing a block of tiles
+
+[`setTileBlock`](/Forge/docs/api/functions/setTileBlock) writes a
+rectangle of different tiles from a row-major array, given its top-left
+cell and its size in columns and rows. `tiles[r * columns + c]` goes to the
+cell `(column + c, row + r)`:
+
+```ts
+import { emptyTile, setTileBlock } from '@forge-game-engine/forge/tilemaps';
+
+const topRow = [grass, grass, grass];
+const bottomRow = [grass, emptyTile, grass];
+
+setTileBlock(groundLayer, 4, 2, 3, 2, [...topRow, ...bottomRow]);
+```
+
+An `emptyTile` entry clears its cell. The array's length must be
+`columns * rows`. Like `fillTiles`, the whole block is one change to the
+layer (see [Reacting to changes](#reacting-to-changes)).
 
 ### Reading a tile and its data
 
@@ -725,16 +754,20 @@ either order it was given.
 
 ### Turned and mirrored shapes
 
-A cell's transform bits move its tile's collision shape inside the
-footprint's bounds the way they move its image (see
-[Turning and mirroring tiles](#turning-and-mirroring-tiles)), in both
-layouts, so a turned or mirrored tile collides where it draws. A `'cell'`
-shape is the same under every transform.
+A cell's transform bits move its tile's collision shape inside the cell
+footprint's bounds: transpose, then flip X, then flip Y, in the bounds'
+normalized coordinates. That's the map they apply to the image inside its
+rectangle (see [Turning and mirroring tiles](#turning-and-mirroring-tiles)),
+so in both layouts a turned or mirrored square tile collides where it
+draws. A `'cell'` shape is the same under every transform.
 
 :::note
-For a tile whose image is larger than its cell, the bits turn the shape
-about the center of the cell's footprint, not the image's, so the shape
-stays inside its cell.
+The shape always stays inside its own cell. For a tile whose image is
+larger than its cell, the bits turn the shape about the center of the
+cell's footprint, not the image's. A transposed tile that isn't square
+turns its image out of the footprint's bounds (see
+[Tile image placement](#tile-image-placement)), but its shape stays in
+them.
 :::
 
 ### Giving a layer a collider

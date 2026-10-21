@@ -1,0 +1,54 @@
+{
+  "compressionlevel": -1,
+  "height": 4,
+  "infinite": true,
+  "layers": [
+    {
+      "chunks": [
+        {
+          "data": "AQAAAAIAAAADAAAABAAAAA==",
+          "height": 2,
+          "width": 2,
+          "x": -2,
+          "y": -2
+        },
+        {
+          "data": "AAAAAAQAAIACAAAAAAAAAA==",
+          "height": 2,
+          "width": 2,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "compression": "",
+      "encoding": "base64",
+      "height": 4,
+      "id": 1,
+      "name": "Ground",
+      "opacity": 1,
+      "startx": -2,
+      "starty": -2,
+      "type": "tilelayer",
+      "visible": true,
+      "width": 4,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "nextlayerid": 2,
+  "nextobjectid": 1,
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "tiledversion": "1.11.0",
+  "tileheight": 16,
+  "tilesets": [
+    {
+      "firstgid": 1,
+      "source": "../tilesets/terrain.tsj"
+    }
+  ],
+  "tilewidth": 16,
+  "type": "map",
+  "version": "1.10",
+  "width": 4
+}

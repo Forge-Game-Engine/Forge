@@ -75,8 +75,10 @@ const defaultTileFields = {
  * content within its own normalized coordinates (`(0, 0)` top-left,
  * `(1, 1)` bottom-right): transpose first (`(u, v) -> (v, u)`), then flip X
  * (`(u, v) -> (1 - u, v)`), then flip Y (`(u, v) -> (u, 1 - v)`). The
- * image's rect stays where it is. Together the bits give all eight
- * 90-degree rotations and mirrors:
+ * flips leave the image's rect where it is; transpose swaps its width and
+ * height, keeping its bottom-left corner, so a non-square tile turns
+ * rather than stretches, as in Tiled (see `getTileImageRect`). Together the
+ * bits give all eight 90-degree rotations and mirrors:
  *
  * | transpose | flipX | flipY | On screen                                      |
  * | --------- | ----- | ----- | ---------------------------------------------- |

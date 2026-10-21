@@ -86,8 +86,12 @@ export interface TileData {
    * `buildTilemapCollisionLoops` and `createTilemapColliderEcsSystem` merge
    * into a layer's collider. A polygon is stored wound with positive signed
    * area (clockwise on screen), whatever order it was given in. A cell's
-   * flip and transpose bits move the shape within the footprint's bounds
-   * the way they move the tile's image.
+   * transform bits move the shape within the cell footprint's bounds:
+   * transpose, then flip X, then flip Y, in the bounds' normalized
+   * coordinates. That's the map they apply to the tile's image within its
+   * image rect, so for a square tile the shape turns with the image. A
+   * transposed non-square tile's image rect swaps its width and height,
+   * but its shape stays in its own cell's footprint.
    */
   readonly collision: TileCollisionShape;
 
@@ -149,13 +153,16 @@ export interface TileSetSource {
    * whatever its region's size in texels. A trimmed region draws only its
    * share of it. An image wider than the layout's `cellWidth` may draw in
    * the wrong order against its neighbors in a layer that isn't y-sorted.
+   * A tile with its transpose bit set draws `tileHeight` wide instead, so a
+   * transposed tile taller than its cell is wider than its cell.
    */
   readonly tileWidth: number;
 
   /**
    * The height every tile of this source draws at, in layer-local units.
    * It can be taller than the cell: the image reaches up from the bottom of
-   * the cell's footprint.
+   * the cell's footprint. A tile with its transpose bit set draws
+   * `tileWidth` tall instead.
    */
   readonly tileHeight: number;
 
