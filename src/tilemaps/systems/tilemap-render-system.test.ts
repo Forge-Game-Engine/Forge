@@ -158,7 +158,7 @@ describe('createTilemapRenderEcsSystem', () => {
     world.getComponentRequired(entity, tilemapRenderStateId);
 
   const getMeshes = (entity: number): readonly TilemapChunkMesh[] =>
-    getState(entity).meshes;
+    getState(entity).chunkMeshes;
 
   const describeMeshes = (
     entity: number,
@@ -1117,7 +1117,7 @@ describe('createTilemapRenderEcsSystem', () => {
       }).not.toThrow();
       expect(world.isAlive(mesh.entity)).toBe(false);
       expect(getState(entity)).toMatchObject({
-        meshes: [],
+        chunkMeshes: [],
         nextFrameChangeTime: Infinity,
       });
     });
