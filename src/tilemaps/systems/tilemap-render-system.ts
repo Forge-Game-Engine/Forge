@@ -9,6 +9,10 @@ import {
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import {
+  addDrawOrderComponent,
+  drawOrderId,
+} from '../../rendering/components/draw-order-component.js';
+import {
   addMeshComponent,
   meshId,
 } from '../../rendering/components/mesh-component.js';
@@ -29,9 +33,20 @@ import {
   TilemapChunkMesh,
   TilemapRenderStateEcsComponent,
   tilemapRenderStateId,
+  TilemapYSortMesh,
+  TilemapYSortRow,
 } from '../components/tilemap-render-state-component.js';
-import { getQuadIndices, verticesPerTile } from '../rendering/quad-indices.js';
-import { releaseTilemapChunkMesh } from '../rendering/release-tilemap-chunk-mesh.js';
+import { getSiblingIndexBesideNeighbors } from '../rendering/place-beside-neighbors.js';
+import {
+  createQuadIndices,
+  getQuadIndices,
+  indicesPerTile,
+  verticesPerTile,
+} from '../rendering/quad-indices.js';
+import {
+  releaseTilemapChunkMesh,
+  releaseTilemapYSortMesh,
+} from '../rendering/release-tilemap-chunk-mesh.js';
 import {
   countChunkTilesBySource,
   createTilemapVertexArrays,
@@ -40,6 +55,11 @@ import {
   writeAnimatedQuads,
   writeChunkVertices,
 } from '../rendering/write-chunk-vertices.js';
+import {
+  collectYSortCells,
+  writeYSortAnimatedQuads,
+  writeYSortVertices,
+} from '../rendering/write-y-sort-vertices.js';
 import { getTileData, TileAnimationFrame } from '../tile-set/tile-set.js';
 import {
   getFrameIndexAt,
@@ -63,12 +83,22 @@ type WritableTilemapChunkMesh = {
   -readonly [K in keyof TilemapChunkMesh]: TilemapChunkMesh[K];
 };
 
-/** The layer a tick is rebuilding chunks of, and the time it shows. */
+/** A y-sort mesh's internal type, whose fields only this system writes. */
+type WritableTilemapYSortMesh = {
+  -readonly [K in keyof TilemapYSortMesh]: TilemapYSortMesh[K];
+};
+
+/** The layer a tick is rebuilding meshes of, and the time it shows. */
 interface LayerBuild {
   readonly layer: TilemapLayerEcsComponent;
   readonly state: WritableTilemapRenderState;
   /** The time whose animation frames the rebuilt meshes show. */
   readonly now: number;
+}
+
+/** What a mesh's animation bookkeeping has, for either kind of mesh. */
+interface AnimatedMesh {
+  readonly animatedTiles: readonly number[];
 }
 
 const asWritableState = (
@@ -78,32 +108,58 @@ const asWritableState = (
 const asWritableMesh = (mesh: TilemapChunkMesh): WritableTilemapChunkMesh =>
   mesh;
 
+const asWritableYSortMesh = (
+  mesh: TilemapYSortMesh,
+): WritableTilemapYSortMesh => mesh;
+
 /**
- * Creates the system that draws tilemap layers. For every chunk of a layer
- * and every tileset source its tiles use, it builds a mesh of two triangles
- * per tile and draws it through a `MeshEcsComponent` on a child entity of
- * the layer entity, so the render system draws one call per visible
- * (chunk, source), sorted with sprites and text by the layer entity's draw
- * order, and hidden and masked with the layer entity. Chunk entities stay
- * in row-major chunk order among themselves in the layer's children, and
- * each mesh writes its tiles in row-major cell order, so tiles of one
- * source that overlap (isometric walls, tall tiles) draw back to front.
+ * Creates the system that draws tilemap layers, one of two ways.
  *
- * Each tick it rebuilds only the chunks whose tiles changed since it last
- * saw the layer, writing an existing mesh's geometry in place with
- * `Geometry.update`, so an edit creates GL objects only for a chunk or
+ * A layer is drawn as chunk meshes unless it's y-sorted. For every chunk of
+ * the layer and every tileset source its tiles use, the system builds a mesh
+ * of two triangles per tile and draws it through a `MeshEcsComponent` on a
+ * child entity of the layer entity, so the render system draws one call per
+ * visible (chunk, source), sorted with sprites and text by the layer
+ * entity's draw order, and hidden and masked with the layer entity. Chunk
+ * entities stay in row-major chunk order among themselves in the layer's
+ * children, and each mesh writes its tiles in row-major cell order, so
+ * tiles of one source that overlap (isometric walls, tall tiles) draw back
+ * to front.
+ *
+ * A layer whose entity's `DrawOrderEcsComponent.ySortChildren` is `true` is
+ * y-sorted: its tiles sort with sprites row by row, so a character can walk
+ * behind one wall and in front of the next. The system groups the layer's
+ * cells by sort Y (the Y of the cell's center plus its tile's
+ * `ySortOrigin`) into sort rows and builds one geometry per source for the
+ * whole layer, with one `GeometrySection` per row. Each (row, source) is
+ * drawn by a child entity of the layer at the layer's origin, with a
+ * `DrawOrderEcsComponent` whose `ySortOrigin` is the row's sort Y, so under
+ * a camera with `ySort` each row is a sort unit of its own. The row
+ * entities stay in ascending sort Y order among the layer's children, so a
+ * camera without `ySort` draws them back to front. Rows that are neighbors
+ * in the draw order draw in one call, so a layer costs one draw per visible
+ * run of a source's rows, plus one for each sprite that sorts between them.
+ * The system only reads the flag; changing it rebuilds the layer as the
+ * other kind on the next tick.
+ *
+ * Each tick it rebuilds only what the edits since it last saw the layer
+ * changed: the chunks whose tiles changed, or, in a y-sorted layer, the
+ * whole geometry of each source those chunks held, adding and removing row
+ * entities as rows appear and empty. It writes an existing geometry in place
+ * with `Geometry.update`, so an edit creates GL objects only for a chunk or
  * source that had no mesh. It copies the layer's `category` and draw
  * `layer` onto its meshes and its `tintColor` onto their materials.
- * It's the only writer of the chunk entities, their meshes and the layer's
- * `TilemapRenderStateEcsComponent`, where it keeps what it built.
+ * It's the only writer of the chunk and row entities, their components and
+ * the layer's `TilemapRenderStateEcsComponent`, where it keeps what it
+ * built.
  *
  * Register it after the systems that edit tiles, so an edited tile shows on
- * the same frame, and before `createTransformEcsSystem`, so new chunk
- * entities get their world transform in the frame they're created;
+ * the same frame, and before `createTransformEcsSystem`, so new chunk and
+ * row entities get their world transform in the frame they're created;
  * `createRenderEcsSystem` draws them.
  *
- * Removing a layer entity removes its chunk entities and disposes their
- * geometries; removing its `TilemapLayerEcsComponent` or its
+ * Removing a layer entity removes its chunk and row entities and disposes
+ * their geometries; removing its `TilemapLayerEcsComponent` or its
  * `PositionEcsComponent` does the same on the system's next tick. To catch
  * a layer or position removed from a live entity, each tick starts with an
  * `EcsWorld.query` of every render state, which
@@ -182,7 +238,9 @@ const getOrAddState = (
         builtVersion: -1,
         appliedCategory: layer.category,
         appliedDrawLayer: layer.layer,
-        meshes: [],
+        ySorted: false,
+        chunkMeshes: [],
+        ySortMeshes: [],
         materials: new Map(),
         animationTime: null,
         nextFrameChangeTime: Infinity,
@@ -197,17 +255,17 @@ const updateLayer = (
   now: number,
 ): void => {
   const state = getOrAddState(world, entity, layer);
+  const ySorted =
+    world.getComponent(entity, drawOrderId)?.ySortChildren ?? false;
 
-  // The first build, or the layer component was replaced by a new one
-  // (whose version starts again at 0): nothing built so far applies.
-  if (state.builtFrom !== layer) {
-    for (const mesh of state.meshes) {
-      releaseTilemapChunkMesh(world, mesh);
-    }
-
+  // The first build, the layer component was replaced by a new one (whose
+  // version starts again at 0), or the layer switched between chunk meshes
+  // and y-sorted rows: nothing built so far applies.
+  if (state.builtFrom !== layer || state.ySorted !== ySorted) {
+    releaseMeshes(world, state);
     state.builtFrom = layer;
     state.builtVersion = -1;
-    state.meshes = [];
+    state.ySorted = ySorted;
     state.materials = new Map();
     state.animationTime = null;
   }
@@ -220,15 +278,13 @@ const updateLayer = (
     animationTime !== null &&
     (now >= state.nextFrameChangeTime || now < animationTime);
   const rebuild = layer.version !== state.builtVersion;
+  const build: LayerBuild = { layer, state, now };
+  const shownAt = animate ? animationTime : null;
 
-  // Brings the meshes of unchanged chunks to `now`; the rebuild writes the
-  // frames at `now` into the changed ones.
-  if (animate) {
-    advanceAnimatedTiles(layer, state, animationTime, now);
-  }
-
-  if (rebuild) {
-    rebuildChangedChunks(world, renderContext, entity, layer, state, now);
+  if (ySorted) {
+    updateYSortMeshes(world, renderContext, entity, build, shownAt, rebuild);
+  } else {
+    updateChunkMeshes(world, renderContext, entity, build, shownAt, rebuild);
   }
 
   if (animate || rebuild) {
@@ -258,6 +314,73 @@ const updateLayer = (
     material.setUniform('u_regionInset', computeRegionInset(texture));
     material.setColorUniform('u_tint', layer.tintColor);
   }
+};
+
+/**
+ * Brings a chunk layer's meshes the edits didn't touch to `now` when an
+ * animated tile's frame changed since `shownAt`, then rebuilds the changed
+ * chunks, which writes the frames at `now` into them.
+ * @param shownAt - The time the meshes show, or `null` when no frame
+ * changed.
+ */
+const updateChunkMeshes = (
+  world: EcsWorld,
+  renderContext: RenderContext,
+  entity: number,
+  { layer, state, now }: LayerBuild,
+  shownAt: number | null,
+  rebuild: boolean,
+): void => {
+  if (shownAt !== null) {
+    advanceAnimatedTiles(layer, state, shownAt, now);
+  }
+
+  if (rebuild) {
+    rebuildChangedChunks(world, renderContext, entity, layer, state, now);
+  }
+};
+
+/**
+ * {@link updateChunkMeshes} for a y-sorted layer, a source at a time.
+ * @param shownAt - The time the meshes show, or `null` when no frame
+ * changed.
+ */
+const updateYSortMeshes = (
+  world: EcsWorld,
+  renderContext: RenderContext,
+  entity: number,
+  build: LayerBuild,
+  shownAt: number | null,
+  rebuild: boolean,
+): void => {
+  const changedSources = rebuild
+    ? findChangedSources(build.layer, build.state)
+    : null;
+
+  if (shownAt !== null) {
+    advanceYSortAnimatedTiles(build, changedSources, shownAt);
+  }
+
+  if (changedSources) {
+    rebuildYSortMeshes(world, renderContext, entity, build, changedSources);
+  }
+};
+
+/** Releases every mesh the state lists, of both kinds, and forgets them. */
+const releaseMeshes = (
+  world: EcsWorld,
+  state: WritableTilemapRenderState,
+): void => {
+  for (const mesh of state.chunkMeshes) {
+    releaseTilemapChunkMesh(world, mesh);
+  }
+
+  for (const mesh of state.ySortMeshes) {
+    releaseTilemapYSortMesh(world, mesh);
+  }
+
+  state.chunkMeshes = [];
+  state.ySortMeshes = [];
 };
 
 /**
@@ -304,7 +427,7 @@ const advanceAnimatedTiles = (
     now,
   };
 
-  for (const mesh of state.meshes) {
+  for (const mesh of state.chunkMeshes) {
     const chunk = getUnchangedAnimatedChunk(layer, state, mesh);
 
     if (chunk && holdsChangedFrame(layer, mesh, frames)) {
@@ -357,7 +480,7 @@ const getUnchangedAnimatedChunk = (
  */
 const holdsChangedFrame = (
   layer: TilemapLayerEcsComponent,
-  mesh: TilemapChunkMesh,
+  mesh: AnimatedMesh,
   frames: FrameChanges,
 ): boolean => {
   let changed = false;
@@ -408,6 +531,22 @@ const uploadAnimatedQuads = (
     mesh,
     changedFrames,
   );
+
+  uploadAnimatedVertices(mesh, moved);
+};
+
+/**
+ * Uploads a mesh's texture coordinates after its animated quads were
+ * rewritten, and its positions if a differently trimmed frame moved a
+ * corner.
+ */
+const uploadAnimatedVertices = (
+  mesh: TilemapVertexArrays & {
+    readonly geometry: Geometry;
+    readonly tileCount: number;
+  },
+  moved: boolean,
+): void => {
   const attributes: Record<string, Float32Array> = {
     [texCoordAttribute]: mesh.texCoords,
     [texRectAttribute]: mesh.texRects,
@@ -434,13 +573,19 @@ const getNextFrameChangeTimeOfMeshes = (
   now: number,
 ): number => {
   let next = Infinity;
+  const meshLists: readonly (readonly AnimatedMesh[])[] = [
+    state.chunkMeshes,
+    state.ySortMeshes,
+  ];
 
-  for (const mesh of state.meshes) {
-    for (const key of mesh.animatedTiles) {
-      next = Math.min(
-        next,
-        getNextFrameChangeTime(getAnimation(layer, key), now),
-      );
+  for (const meshes of meshLists) {
+    for (const mesh of meshes) {
+      for (const key of mesh.animatedTiles) {
+        next = Math.min(
+          next,
+          getNextFrameChangeTime(getAnimation(layer, key), now),
+        );
+      }
     }
   }
 
@@ -476,7 +621,7 @@ const rebuildChangedChunks = (
   // `rebuildChunk` never reaches since it only counts the new tile set's
   // sources (no stored tile can name them, `setTileSet` checks that).
   const sourceCount = layer.tileSet.sources.length;
-  const kept = state.meshes.filter((mesh) => {
+  const kept = state.chunkMeshes.filter((mesh) => {
     if (
       mesh.source < sourceCount &&
       layer.chunks.has(getChunkKey(mesh.chunkColumn, mesh.chunkRow))
@@ -489,22 +634,37 @@ const rebuildChangedChunks = (
     return false;
   });
 
-  if (kept.length !== state.meshes.length) {
-    state.meshes = kept;
+  if (kept.length !== state.chunkMeshes.length) {
+    state.chunkMeshes = kept;
   }
 
-  // Materials of sources no mesh draws any more, which a new tile set
-  // might not even have.
-  for (const source of state.materials.keys()) {
-    if (!state.meshes.some((mesh) => mesh.source === source)) {
-      const materials = new Map(state.materials);
-
-      materials.delete(source);
-      state.materials = materials;
-    }
-  }
-
+  dropUnusedMaterials(state);
   state.builtVersion = layer.version;
+};
+
+/**
+ * Drops the materials of sources no mesh draws any more, which a new tile
+ * set might not even have.
+ */
+const dropUnusedMaterials = (state: WritableTilemapRenderState): void => {
+  const isDrawn = (source: number): boolean =>
+    state.chunkMeshes.some((mesh) => mesh.source === source) ||
+    state.ySortMeshes.some((mesh) => mesh.source === source);
+  const unused = [...state.materials.keys()].filter(
+    (source) => !isDrawn(source),
+  );
+
+  if (unused.length === 0) {
+    return;
+  }
+
+  const materials = new Map(state.materials);
+
+  for (const source of unused) {
+    materials.delete(source);
+  }
+
+  state.materials = materials;
 };
 
 /**
@@ -562,13 +722,13 @@ const rebuildChunk = (
   const key = getChunkKey(chunk.column, chunk.row);
 
   for (let source = 0; source < counts.length; source++) {
-    const { index, found } = findMeshIndex(state.meshes, key, source);
+    const { index, found } = findMeshIndex(state.chunkMeshes, key, source);
     const tileCount = counts[source];
 
     if (tileCount === 0) {
       if (found) {
-        releaseTilemapChunkMesh(world, state.meshes[index]);
-        state.meshes = state.meshes.filter((_, i) => i !== index);
+        releaseTilemapChunkMesh(world, state.chunkMeshes[index]);
+        state.chunkMeshes = state.chunkMeshes.filter((_, i) => i !== index);
       }
 
       continue;
@@ -604,12 +764,12 @@ const rebuildChunk = (
       animatedTiles,
     };
 
-    state.meshes = [
-      ...state.meshes.slice(0, index),
+    state.chunkMeshes = [
+      ...state.chunkMeshes.slice(0, index),
       mesh,
-      ...state.meshes.slice(index),
+      ...state.chunkMeshes.slice(index),
     ];
-    addChunkEntity(world, entity, layer, state.meshes, index, material);
+    addChunkEntity(world, entity, layer, state.chunkMeshes, index, material);
   }
 };
 
@@ -663,7 +823,7 @@ const updateMesh = (
   tileCount: number,
 ): void => {
   const { layer, state, now } = build;
-  const mesh = asWritableMesh(state.meshes[index]);
+  const mesh = asWritableMesh(state.chunkMeshes[index]);
   const material = state.materials.get(mesh.source);
 
   if (!material) {
@@ -705,7 +865,7 @@ const updateMesh = (
 
   if (!world.isAlive(mesh.entity)) {
     mesh.entity = world.createEntity();
-    addChunkEntity(world, entity, layer, state.meshes, index, material);
+    addChunkEntity(world, entity, layer, state.chunkMeshes, index, material);
 
     return;
   }
@@ -762,50 +922,395 @@ const addChunkEntity = (
   );
 };
 
-const isChildOf = (world: EcsWorld, entity: number, parent: number): boolean =>
-  world.isAlive(entity) && world.getParent(entity) === parent;
-
-/**
- * Where the chunk mesh at `index` goes among the layer's children: at the
- * place of the nearest later chunk mesh that's still a child of the layer,
- * so it lands just in front of it, or else just behind the nearest earlier
- * one, or else first.
- */
-const getSiblingIndexBesideNeighbors = (
-  world: EcsWorld,
-  layerEntity: number,
-  meshes: readonly TilemapChunkMesh[],
-  index: number,
-): number => {
-  for (let next = index + 1; next < meshes.length; next++) {
-    if (isChildOf(world, meshes[next].entity, layerEntity)) {
-      return world.getSiblingIndex(meshes[next].entity);
-    }
-  }
-
-  for (let previous = index - 1; previous >= 0; previous--) {
-    if (isChildOf(world, meshes[previous].entity, layerEntity)) {
-      return world.getSiblingIndex(meshes[previous].entity) + 1;
-    }
-  }
-
-  return 0;
-};
-
 const applyCategoryAndLayer = (
   world: EcsWorld,
   layer: TilemapLayerEcsComponent,
   state: WritableTilemapRenderState,
 ): void => {
-  for (const { entity } of state.meshes) {
+  const apply = (entity: number): void => {
     const mesh = world.getComponent(entity, meshId);
 
     if (mesh) {
       mesh.category = layer.category;
       mesh.layer = layer.layer;
     }
+  };
+
+  for (const { entity } of state.chunkMeshes) {
+    apply(entity);
+  }
+
+  for (const { rows } of state.ySortMeshes) {
+    for (const { entity } of rows) {
+      apply(entity);
+    }
   }
 
   state.appliedCategory = layer.category;
   state.appliedDrawLayer = layer.layer;
+};
+
+/**
+ * Which sources' y-sort meshes the edits since the last build touched:
+ * every source on the first build, else the sources held now by a chunk
+ * that changed, and those whose mesh held tiles in a chunk that changed or
+ * emptied.
+ * @returns A flag per source of the layer's tile set.
+ */
+const findChangedSources = (
+  layer: TilemapLayerEcsComponent,
+  state: WritableTilemapRenderState,
+): boolean[] => {
+  const sourceCount = layer.tileSet.sources.length;
+
+  if (state.builtVersion === -1) {
+    return new Array<boolean>(sourceCount).fill(true);
+  }
+
+  const changed = new Array<boolean>(sourceCount).fill(false);
+  const counts = new Uint16Array(sourceCount);
+
+  for (const chunk of layer.chunks.values()) {
+    if (chunk.changedAt > state.builtVersion) {
+      countChunkTilesBySource(chunk, counts);
+
+      for (let source = 0; source < sourceCount; source++) {
+        changed[source] ||= counts[source] > 0;
+      }
+    }
+  }
+
+  // A mesh of a source a smaller replacement tile set doesn't have is
+  // released by the rebuild instead.
+  for (const mesh of state.ySortMeshes) {
+    if (mesh.source < sourceCount && !changed[mesh.source]) {
+      changed[mesh.source] = [...mesh.chunkKeys].some((key) => {
+        const chunk = layer.chunks.get(key);
+
+        return !chunk || chunk.changedAt > state.builtVersion;
+      });
+    }
+  }
+
+  return changed;
+};
+
+/**
+ * Rewrites the animated quads whose tile's frame changed between `shownAt`
+ * and the build's `now` in the y-sort meshes the edits didn't touch, and
+ * uploads them. The meshes of changed sources are left to the rebuild, as
+ * for chunk meshes.
+ */
+const advanceYSortAnimatedTiles = (
+  build: LayerBuild,
+  changedSources: readonly boolean[] | null,
+  shownAt: number,
+): void => {
+  const { layer, state, now } = build;
+  // Local to this call, so the system keeps no state.
+  const frames: FrameChanges = {
+    changed: new Map(),
+    unchanged: new Set(),
+    shownAt,
+    now,
+  };
+
+  for (const mesh of state.ySortMeshes) {
+    const stale =
+      changedSources !== null &&
+      (mesh.source >= changedSources.length || changedSources[mesh.source]);
+
+    if (
+      !stale &&
+      mesh.animatedTiles.length > 0 &&
+      holdsChangedFrame(layer, mesh, frames)
+    ) {
+      const moved = writeYSortAnimatedQuads(layer, mesh, mesh, frames.changed);
+
+      uploadAnimatedVertices(mesh, moved);
+    }
+  }
+};
+
+/**
+ * Rebuilds the y-sort mesh of every changed source, releases the meshes of
+ * sources the tile set no longer has, and places the row entities it
+ * created among the layer's children.
+ */
+const rebuildYSortMeshes = (
+  world: EcsWorld,
+  renderContext: RenderContext,
+  layerEntity: number,
+  build: LayerBuild,
+  changedSources: readonly boolean[],
+): void => {
+  const { layer, state } = build;
+  // Local to this call, so the system keeps no state.
+  const newRows = new Set<number>();
+
+  for (let source = 0; source < changedSources.length; source++) {
+    if (changedSources[source]) {
+      rebuildYSortSource(world, renderContext, build, source, newRows);
+    }
+  }
+
+  const sourceCount = layer.tileSet.sources.length;
+  const kept = state.ySortMeshes.filter((mesh) => {
+    if (mesh.source < sourceCount) {
+      return true;
+    }
+
+    releaseTilemapYSortMesh(world, mesh);
+
+    return false;
+  });
+
+  if (kept.length !== state.ySortMeshes.length) {
+    state.ySortMeshes = kept;
+  }
+
+  dropUnusedMaterials(state);
+  placeNewRows(world, layerEntity, state, newRows);
+  state.builtVersion = layer.version;
+};
+
+/**
+ * Builds, or rewrites in place, the y-sort mesh of one source, and brings
+ * its row entities in line with its rows. Row entities it creates are
+ * added to `newRows`, and aren't parented yet.
+ */
+const rebuildYSortSource = (
+  world: EcsWorld,
+  renderContext: RenderContext,
+  build: LayerBuild,
+  source: number,
+  newRows: Set<number>,
+): void => {
+  const { layer, state, now } = build;
+  const cells = collectYSortCells(layer, source);
+  const index = state.ySortMeshes.findIndex((mesh) => mesh.source === source);
+
+  if (cells.count === 0) {
+    if (index !== -1) {
+      releaseTilemapYSortMesh(world, state.ySortMeshes[index]);
+      state.ySortMeshes = state.ySortMeshes.filter((_, i) => i !== index);
+    }
+
+    return;
+  }
+
+  const material = getMaterial(renderContext, state, source);
+
+  if (index === -1) {
+    const arrays = createTilemapVertexArrays(cells.count);
+    const indices = createQuadIndices(cells.count);
+    const written = writeYSortVertices(layer.tileSet, cells, arrays, now);
+    const mesh: WritableTilemapYSortMesh = {
+      source,
+      geometry: new Geometry(renderContext, {
+        attributes: [
+          { name: positionAttribute, data: arrays.positions, size: 2 },
+          { name: texCoordAttribute, data: arrays.texCoords, size: 2 },
+          { name: texRectAttribute, data: arrays.texRects, size: 4 },
+        ],
+        indices,
+        sections: written.sections,
+      }),
+      tileCount: cells.count,
+      ...arrays,
+      indices,
+      rows: [],
+      chunkKeys: cells.chunkKeys,
+      animatedQuads: written.animatedQuads,
+      animatedCells: written.animatedCells,
+      animatedTiles: written.animatedTiles,
+    };
+
+    // By ascending source index: sources rebuild in that order, and no
+    // mesh of a higher source is kept past a smaller tile set.
+    state.ySortMeshes = [...state.ySortMeshes, mesh].sort(
+      (a, b) => a.source - b.source,
+    );
+    mesh.rows = reconcileRows(
+      world,
+      layer,
+      mesh,
+      material,
+      written.sortYs,
+      newRows,
+    );
+
+    return;
+  }
+
+  const mesh = asWritableYSortMesh(state.ySortMeshes[index]);
+  const capacity = mesh.indices.length / indicesPerTile;
+  const grows = cells.count > capacity;
+
+  if (grows) {
+    const grownCapacity = 2 ** Math.ceil(Math.log2(cells.count));
+
+    Object.assign(mesh, createTilemapVertexArrays(grownCapacity));
+    mesh.indices = createQuadIndices(grownCapacity);
+  }
+
+  const written = writeYSortVertices(layer.tileSet, cells, mesh, now);
+
+  // The indices only need uploading when the number drawn, or the array,
+  // changed.
+  mesh.geometry.update({
+    vertexCount: cells.count * verticesPerTile,
+    attributes: {
+      [positionAttribute]: mesh.positions,
+      [texCoordAttribute]: mesh.texCoords,
+      [texRectAttribute]: mesh.texRects,
+    },
+    indices:
+      grows || cells.count !== mesh.tileCount
+        ? mesh.indices.subarray(0, cells.count * indicesPerTile)
+        : undefined,
+    sections: written.sections,
+  });
+  mesh.tileCount = cells.count;
+  mesh.chunkKeys = cells.chunkKeys;
+  mesh.animatedQuads = written.animatedQuads;
+  mesh.animatedCells = written.animatedCells;
+  mesh.animatedTiles = written.animatedTiles;
+  mesh.rows = reconcileRows(
+    world,
+    layer,
+    mesh,
+    material,
+    written.sortYs,
+    newRows,
+  );
+};
+
+/**
+ * Matches a y-sort mesh's row entities to its new rows, both in ascending
+ * sort Y: keeps the entity of a row that's still there, removes those of
+ * rows that emptied, and creates one for each new row (or for a row whose
+ * entity game code removed). Then points every row's mesh at its section,
+ * whose index shifts as rows come and go.
+ * @returns The new rows.
+ */
+const reconcileRows = (
+  world: EcsWorld,
+  layer: TilemapLayerEcsComponent,
+  mesh: TilemapYSortMesh,
+  material: MeshMaterial,
+  sortYs: readonly number[],
+  newRows: Set<number>,
+): TilemapYSortRow[] => {
+  const old = mesh.rows;
+  const rows: TilemapYSortRow[] = [];
+  let next = 0;
+
+  const removeRow = (row: TilemapYSortRow): void => {
+    if (world.isAlive(row.entity)) {
+      world.removeEntity(row.entity);
+    }
+  };
+
+  for (const sortY of sortYs) {
+    while (next < old.length && old[next].sortY < sortY) {
+      removeRow(old[next]);
+      next++;
+    }
+
+    if (
+      next < old.length &&
+      old[next].sortY === sortY &&
+      world.isAlive(old[next].entity)
+    ) {
+      rows.push(old[next]);
+      next++;
+
+      continue;
+    }
+
+    if (next < old.length && old[next].sortY === sortY) {
+      next++;
+    }
+
+    const entity = createRowEntity(world, sortY);
+
+    newRows.add(entity);
+    rows.push({ sortY, entity });
+  }
+
+  for (; next < old.length; next++) {
+    removeRow(old[next]);
+  }
+
+  for (const [section, { entity }] of rows.entries()) {
+    const meshComponent = world.getComponent(entity, meshId);
+
+    if (meshComponent) {
+      meshComponent.geometry = mesh.geometry;
+      meshComponent.material = material;
+      meshComponent.section = section;
+
+      continue;
+    }
+
+    addMeshComponent(world, entity, {
+      geometry: mesh.geometry,
+      material,
+      section,
+      category: layer.category,
+      layer: layer.layer,
+    });
+  }
+
+  return rows;
+};
+
+/**
+ * Creates the entity of a new sort row: identity local transforms, as for
+ * a chunk entity, so it has exactly the layer's world transform, and a draw
+ * order that sorts it at the row's sort Y. `placeNewRows` parents it.
+ */
+const createRowEntity = (world: EcsWorld, sortY: number): number => {
+  const entity = world.createEntity();
+
+  addPositionComponent(world, entity);
+  addRotationComponent(world, entity);
+  addScaleComponent(world, entity);
+  addDrawOrderComponent(world, entity, { ySortOrigin: sortY });
+
+  return entity;
+};
+
+/**
+ * Parents each row entity created this tick to the layer and places it in
+ * ascending (sort Y, source) order among the layer's row entities. Rows
+ * are parented one at a time, just before they're placed, so every row
+ * the placement looks at is already in order.
+ */
+const placeNewRows = (
+  world: EcsWorld,
+  layerEntity: number,
+  state: WritableTilemapRenderState,
+  newRows: ReadonlySet<number>,
+): void => {
+  if (newRows.size === 0) {
+    return;
+  }
+
+  const ordered = state.ySortMeshes
+    .flatMap(({ source, rows }) =>
+      rows.map(({ sortY, entity }) => ({ sortY, source, entity })),
+    )
+    .sort((a, b) => a.sortY - b.sortY || a.source - b.source);
+
+  for (const [index, { entity }] of ordered.entries()) {
+    if (newRows.has(entity)) {
+      world.setParent(entity, layerEntity);
+      world.setSiblingIndex(
+        entity,
+        getSiblingIndexBesideNeighbors(world, layerEntity, ordered, index),
+      );
+    }
+  }
 };

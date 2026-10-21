@@ -207,7 +207,7 @@ unattended:
   /states                  # Game states (createGameState), inState/onEnter/onExit run conditions, state-scoped entities
   /storage                 # StorageBackend (localStorage, memory) and createPersistentState: typed records kept outside the game
   /text                    # MSDF font atlas loading and text rendering
-  /tilemaps                # Tile sets, packed tiles, animated tiles, chunked tilemap layers on a GridLayout drawn as chunk meshes, layer colliders from per-tile collision shapes, and the Tiled (.tmj/.tsj/.tj) map loader
+  /tilemaps                # Tile sets, packed tiles, animated tiles, chunked tilemap layers on a GridLayout drawn as chunk meshes (or, for a ySortChildren layer, y-sorted row meshes), layer colliders from per-tile collision shapes, and the Tiled (.tmj/.tsj/.tj) map loader
   /timer                   # Timer utilities
   /ui                      # Retained-mode UI (anchored rect tree layout, canvases, panels, labels, buttons, focus navigation, toggles, sliders, progress bars, dropdowns, text inputs, layout groups, content size/aspect ratio fitters)
   /utilities               # General utilities
