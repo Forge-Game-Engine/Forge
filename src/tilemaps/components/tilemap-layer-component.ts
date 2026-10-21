@@ -107,7 +107,9 @@ export interface TilemapLayerDefaultedOptions {
  * the only code that writes `tileSet`, `chunks`, `version` and the
  * chunks. Add one with {@link addTilemapLayerComponent}.
  * `createTilemapRenderEcsSystem` draws the layer, as one mesh per chunk
- * and tile set source.
+ * and tile set source, or, when the entity's
+ * `DrawOrderEcsComponent.ySortChildren` is `true`, as one mesh per source
+ * drawn row by row.
  */
 export interface TilemapLayerEcsComponent
   extends TilemapLayerRequiredOptions, TilemapLayerDefaultedOptions {

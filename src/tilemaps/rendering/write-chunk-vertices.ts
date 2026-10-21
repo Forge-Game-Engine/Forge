@@ -1,5 +1,5 @@
-// Builds the vertices of one (chunk, tileset source) mesh. Not exported
-// from the package.
+// Builds the vertices of one (chunk, tileset source) mesh, and the quads
+// every tilemap mesh is made of. Not exported from the package.
 
 import { Rect, Vector2 } from '../../math/index.js';
 import {
@@ -131,7 +131,7 @@ const writeChanged = (
  * animation frame's.
  * @returns Whether any corner's position changed.
  */
-const writeTile = (
+export const writeTile = (
   arrays: TilemapVertexArrays,
   quad: number,
   tileSet: TileSet,
@@ -205,8 +205,12 @@ const writeTile = (
 /**
  * The index of the tile a cell shows at a time: the placed tile's own, or
  * its animation's frame at that time.
+ * @param tileSet - The layer's tile set.
+ * @param tile - The placed tile.
+ * @param timeInMilliseconds - The time whose animation frame to show.
+ * @returns The index, in the placed tile's source, of the tile to show.
  */
-const getFrameTileIndex = (
+export const getFrameTileIndex = (
   tileSet: TileSet,
   tile: number,
   timeInMilliseconds: number,

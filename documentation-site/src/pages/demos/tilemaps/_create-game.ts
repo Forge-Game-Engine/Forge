@@ -29,9 +29,10 @@ export interface TilemapsDemo {
 
 /**
  * Builds the tilemaps demo: an orthogonal map with a ground and a cover
- * layer and a character walking between them, an isometric map with tall
- * walls, and a tile editor that paints, erases and reads the shown map's
- * cells with the mouse.
+ * layer and a character walking between them, an isometric map with a
+ * character walking among tall walls that sort with it row by row, and a
+ * tile editor that paints, erases and reads the shown map's cells with the
+ * mouse.
  * @param onReady - Called with the maps and the editor once they exist, so
  * the page can switch maps, pick brushes and show the hovered cell.
  * @returns The created game.
@@ -41,10 +42,14 @@ export const createTilemapsGame = async (
 ): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
+  // `ySort` sorts the isometric map's wall rows and character by their Y.
+  // The orthogonal map's root doesn't set `ySortChildren`, so it sorts as
+  // one unit and draws in hierarchy order.
   const camera = createCamera(world, {
     isStatic: true,
     clearColor: new Color(0.09, 0.11, 0.16, 1),
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
+    ySort: true,
   });
 
   const { moveInput, editorInputs } = createInputs(world, time, game);

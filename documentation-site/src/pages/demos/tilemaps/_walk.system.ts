@@ -3,7 +3,7 @@ import {
   positionId,
   Time,
 } from '@forge-game-engine/forge/common';
-import { EcsSystem } from '@forge-game-engine/forge/ecs';
+import { EcsSystem, EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Axis2dAction } from '@forge-game-engine/forge/input';
 import { Vector2 } from '@forge-game-engine/forge/math';
 import {
@@ -12,38 +12,49 @@ import {
   getTileData,
   localToCell,
   TileData,
-  TilemapLayerEcsComponent,
   tilemapLayerId,
 } from '@forge-game-engine/forge/tilemaps';
 import { WalkerEcsComponent, walkerId } from './_walker.component';
 
-/** The tile data of the cell holding a point of the layer's local space, or `null` for an empty cell. */
+/**
+ * The tile data of every non-empty cell holding a point of the layers'
+ * local space, one per layer that has a tile there.
+ */
 const getTileDataAt = (
-  layer: TilemapLayerEcsComponent,
+  world: EcsWorld,
+  layers: readonly number[],
   point: Vector2,
-): TileData | null => {
-  const { column, row } = localToCell(layer, point);
-  const tile = getTile(layer, column, row);
+): TileData[] =>
+  layers.flatMap((entity) => {
+    const layer = world.getComponent(entity, tilemapLayerId);
 
-  return tile === emptyTile ? null : getTileData(layer.tileSet, tile);
-};
+    if (!layer) {
+      return [];
+    }
 
-const isWalkable = (data: TileData | null): boolean =>
-  data !== null && data.properties.walkable === true;
+    const { column, row } = localToCell(layer, point);
+    const tile = getTile(layer, column, row);
 
-const getSpeed = (data: TileData | null): number => {
-  const speed = data?.properties.speed;
+    return tile === emptyTile ? [] : [getTileData(layer.tileSet, tile)];
+  });
 
-  return typeof speed === 'number' ? speed : 1;
-};
+const isWalkable = (tiles: readonly TileData[]): boolean =>
+  tiles.length > 0 && tiles.every((data) => data.properties.walkable === true);
+
+const getSpeed = (tiles: readonly TileData[]): number =>
+  tiles.reduce((speed, data) => {
+    const tileSpeed = data.properties.speed;
+
+    return typeof tileSpeed === 'number' ? speed * tileSpeed : speed;
+  }, 1);
 
 /**
- * Creates the system that walks entities over a tilemap layer with
- * `moveInput`. Each tick it reads the tile under the walker: its `speed`
- * property scales how far the walker goes. The walker moves along X and Y
- * separately, and only into a cell whose tile is `walkable`, so it slides
- * along the shore instead of stopping. A walker already on a tile that
- * isn't walkable (one painted under it) can walk off it.
+ * Creates the system that walks entities over tilemap layers with
+ * `moveInput`. Each tick it reads the tiles under the walker: their `speed`
+ * properties scale how far the walker goes. The walker moves along X and Y
+ * separately, and only into a cell whose tiles are all `walkable`, so it
+ * slides along the shore or a wall instead of stopping. A walker already on
+ * a cell it couldn't enter (one painted under it) can walk off it.
  * @param time - The game's time, for the frame's delta.
  * @param moveInput - The move axis, Y-down like the world.
  * @returns The walk ECS system.
@@ -65,27 +76,22 @@ export const createWalkEcsSystem = (
     const scale = Math.max(length, 1);
 
     for (let i = 0; i < walkers.length; i++) {
-      const layer = world.getComponent(walkers[i].ground, tilemapLayerId);
-
-      if (!layer) {
-        continue;
-      }
-
+      const { layers, speed } = walkers[i];
       const position = positions[i].local;
-      const here = getTileDataAt(layer, position);
+      const here = getTileDataAt(world, layers, position);
       const distance =
-        (walkers[i].speed * getSpeed(here) * time.deltaTimeInSeconds) / scale;
+        (speed * getSpeed(here) * time.deltaTimeInSeconds) / scale;
       const canLeave = !isWalkable(here);
 
       const nextX = { x: position.x + x * distance, y: position.y };
 
-      if (canLeave || isWalkable(getTileDataAt(layer, nextX))) {
+      if (canLeave || isWalkable(getTileDataAt(world, layers, nextX))) {
         position.x = nextX.x;
       }
 
       const nextY = { x: position.x, y: position.y + y * distance };
 
-      if (canLeave || isWalkable(getTileDataAt(layer, nextY))) {
+      if (canLeave || isWalkable(getTileDataAt(world, layers, nextY))) {
         position.y = nextY.y;
       }
     }

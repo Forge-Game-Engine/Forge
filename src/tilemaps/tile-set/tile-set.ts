@@ -74,6 +74,10 @@ export interface TileData {
   /**
    * Where a y-sorted layer sorts the tile against other things: an offset
    * from the center of the cell's footprint, in layer-local units, Y-down.
+   * A layer is y-sorted when its entity's
+   * `DrawOrderEcsComponent.ySortChildren` is `true`; the cells of one
+   * source with the same center Y plus `ySortOrigin` sort as one row (see
+   * `createTilemapRenderEcsSystem`).
    */
   readonly ySortOrigin: number;
 
