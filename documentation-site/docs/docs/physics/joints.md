@@ -25,7 +25,9 @@ system changes the bodies' velocities so they keep to the constraint.
 Both bodies need a `PositionEcsComponent` and a `RotationEcsComponent`. A
 body with no `RigidBodyEcsComponent`, or a static or kinematic one, isn't
 moved by the joint, so a joint between such a body and a dynamic body fixes
-the dynamic body to it.
+the dynamic body to it. A joint moves a dynamic body with
+[locked rotation](./rigid-bodies.md#locking-a-bodys-rotation) but doesn't
+turn it.
 
 ## Adding a revolute joint
 

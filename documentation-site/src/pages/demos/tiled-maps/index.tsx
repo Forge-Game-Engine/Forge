@@ -6,7 +6,6 @@ import createInputsCode from '!!raw-loader!./_create-inputs';
 import createPlayerCode from '!!raw-loader!./_create-player';
 import playerComponentCode from '!!raw-loader!./_player.component';
 import playerMoveSystemCode from '!!raw-loader!./_player-move.system';
-import uprightSystemCode from '!!raw-loader!./_upright.system';
 import tileToggleComponentCode from '!!raw-loader!./_tile-toggle.component';
 import tileToggleSystemCode from '!!raw-loader!./_tile-toggle.system';
 import colliderOutlineComponentCode from '!!raw-loader!./_collider-outline.component';
@@ -136,11 +135,6 @@ export default function TiledMaps(): JSX.Element {
               summary:
                 'Walks and jumps the player, and sends it back to the start from the water.',
               content: playerMoveSystemCode,
-            },
-            {
-              name: 'upright.system.ts',
-              summary: "Keeps the player's box from turning.",
-              content: uprightSystemCode,
             },
             {
               name: 'create-inputs.ts',

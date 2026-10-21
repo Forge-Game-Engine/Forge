@@ -86,6 +86,30 @@ describe('createAngularVelocityMotorEcsSystem', () => {
     expect(rigidBody.angularVelocity).toBeLessThanOrEqual(10);
   });
 
+  it.each([0, 10])(
+    'leaves a fixed-rotation body alone with a target velocity of %d',
+    (targetVelocity) => {
+      const rigidBody = createMotoredEntity(targetVelocity, 1000, {
+        fixedRotation: true,
+      });
+
+      tick();
+
+      expect(rigidBody.angularVelocity).toBe(0);
+    },
+  );
+
+  it.each(['static', 'kinematic'] as const)(
+    'leaves a %s body alone',
+    (type) => {
+      const rigidBody = createMotoredEntity(10, 1000, { type });
+
+      tick();
+
+      expect(rigidBody.angularVelocity).toBe(0);
+    },
+  );
+
   it('recovers after an external disturbance', () => {
     const rigidBody = createMotoredEntity(5, 1000);
 

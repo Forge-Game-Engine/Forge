@@ -117,7 +117,9 @@ export function createPlayer(
     friction: 0,
     restitution: 0,
   });
-  addRigidBodyComponent(world, player);
+  // Contacts off the box's center, such as a cut corner on a slope or a
+  // step, would otherwise turn it.
+  addRigidBodyComponent(world, player, { fixedRotation: true });
   addGravityComponent(world, player, { amount: { x: 0, y: gravity } });
   addContactsComponent(world, player);
   addPlayerComponent(world, player, {

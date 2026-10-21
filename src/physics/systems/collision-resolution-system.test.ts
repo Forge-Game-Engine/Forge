@@ -202,6 +202,47 @@ describe('createCollisionResolutionEcsSystem', () => {
     expect(rigidBody.angularVelocity).toBeCloseTo(0);
   });
 
+  describe('an off-center contact', () => {
+    // A ball falling onto the ground, touching it right of its center, as a
+    // box's corner touches a step.
+    function landOffCenter(
+      rigidBodyOptions: Partial<RigidBodyEcsComponent>,
+    ): RigidBodyEcsComponent {
+      addSystem({ restitutionThreshold: 100 });
+
+      const { entity: ball, rigidBody } = addCircleEntity(
+        { x: 0, y: -1 },
+        1,
+        true,
+        { restitution: 0, friction: 0 },
+        { velocity: { x: 0, y: 5 }, ...rigidBodyOptions },
+      );
+      const { entity: ground } = addCircleEntity({ x: 0, y: 100 }, 100, false, {
+        restitution: 0,
+        friction: 0,
+      });
+
+      pushManifold(ground, ball, { x: 0, y: -1 }, 0.01, { x: 0.8, y: 0 });
+
+      world.update();
+
+      return rigidBody!;
+    }
+
+    it('should turn a body', () => {
+      expect(landOffCenter({}).angularVelocity).not.toBeCloseTo(0);
+    });
+
+    it('should stop a fixed-rotation body without turning it', () => {
+      const rigidBody = landOffCenter({ fixedRotation: true });
+
+      // The whole impulse goes into stopping the fall, as it does for a
+      // contact through the center of mass.
+      expect(rigidBody.velocity.y).toBeLessThan(0.5);
+      expect(rigidBody.angularVelocity).toBe(0);
+    });
+  });
+
   it('should not re-apply restitution to a contact reused from the previous tick', () => {
     addSystem();
 

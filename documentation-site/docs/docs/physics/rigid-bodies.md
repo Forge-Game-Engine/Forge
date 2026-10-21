@@ -139,6 +139,24 @@ addColliderComponent(world, entity, {
 addRigidBodyComponent(world, entity);
 ```
 
+## Locking a body's rotation
+
+Set `fixedRotation` on a dynamic body that physics mustn't turn, for
+example a character's body:
+
+```ts
+import { addRigidBodyComponent } from '@forge-game-engine/forge/physics';
+
+addRigidBodyComponent(world, character, { fixedRotation: true });
+```
+
+Collisions, joints, motors and torques still move a fixed-rotation body,
+but don't change its `angularVelocity`: it has an inverse moment of inertia
+of `0`, so a contact off its center of mass only pushes it. An
+`angularVelocity` or rotation that game code sets still applies. To lock a
+body that's already turning, set its `angularVelocity` to `0` when you set
+`fixedRotation`.
+
 ## Moving a body
 
 Set a body's `velocity` and `angularVelocity`, and

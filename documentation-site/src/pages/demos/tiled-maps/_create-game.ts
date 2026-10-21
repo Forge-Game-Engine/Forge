@@ -44,7 +44,6 @@ import { outlineFragmentShader, outlineVertexShader } from './_outline.shader';
 import { createPlayerMoveEcsSystem } from './_player-move.system';
 import { addTileToggleComponent } from './_tile-toggle.component';
 import { createTileToggleEcsSystem } from './_tile-toggle.system';
-import { createUprightEcsSystem } from './_upright.system';
 
 /**
  * One tile is 32 Tiled pixels, and one Tiled pixel is one world unit, so
@@ -201,7 +200,6 @@ export const createTiledMapsGame = async (
       },
     ),
   );
-  world.addSystem(createUprightEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));
 

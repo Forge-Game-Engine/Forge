@@ -50,6 +50,16 @@ export interface RigidBodyEcsComponent {
    * to `0`.
    */
   angularDrag: number;
+  /**
+   * Whether physics is kept from turning the body, for example to keep a
+   * character's body upright. Collisions, joints, motors and torques move a
+   * fixed-rotation `'dynamic'` body but never change its
+   * `angularVelocity`: `getRigidBodyMassData` gives it an inverse moment of
+   * inertia of `0`. An `angularVelocity` or rotation game code sets still
+   * applies, so to lock a body that's already spinning, set its
+   * `angularVelocity` to `0` too. Defaults to `false`.
+   */
+  fixedRotation: boolean;
 
   /**
    * How this body participates in the simulation. Defaults to `'dynamic'`.
@@ -77,6 +87,7 @@ export function addRigidBodyComponent(
     velocity: Vec2.zero,
     angularVelocity: 0,
     angularDrag: 0,
+    fixedRotation: false,
     type: 'dynamic',
   };
 

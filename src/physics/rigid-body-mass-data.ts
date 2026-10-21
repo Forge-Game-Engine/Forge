@@ -41,8 +41,13 @@ export interface RigidBodyMassData {
  * `velocityAtPoint`, which is what lets a kinematic body still push a
  * dynamic body it contacts.
  *
- * It's resolved fresh on every read, so changing a body's `type` or
- * collider at runtime takes effect on the next tick.
+ * A `'dynamic'` body with `fixedRotation` keeps its collider's mass and
+ * center of mass but has `0` inverse inertia, as Box2D's fixed-rotation
+ * bodies do, so no impulse or torque turns it and the contact solver puts
+ * the whole impulse into its linear motion.
+ *
+ * It's resolved fresh on every read, so changing a body's `type`,
+ * `fixedRotation` or collider at runtime takes effect on the next tick.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to resolve.
  * @returns The resolved mass data.
@@ -83,7 +88,9 @@ export function getRigidBodyMassData(
   return {
     rigidBody,
     invMass: 1 / collider.collider.mass,
-    invInertia: 1 / collider.collider.momentOfInertia,
+    invInertia: rigidBody.fixedRotation
+      ? 0
+      : 1 / collider.collider.momentOfInertia,
     localCenterOfMass: collider.collider.localCenterOfMass,
   };
 }

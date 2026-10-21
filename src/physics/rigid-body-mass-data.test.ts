@@ -62,6 +62,27 @@ describe('getRigidBodyMassData', () => {
     expect(massData.localCenterOfMass.y).toBeCloseTo(0);
   });
 
+  it('gives a fixed-rotation dynamic body zero inverse inertia and keeps its mass', () => {
+    const entity = world.createEntity();
+
+    addColliderComponent(world, entity, { collider });
+    addRigidBodyComponent(world, entity, { fixedRotation: true });
+
+    const massData = getRigidBodyMassData(world, entity);
+
+    expect(massData.invMass).toBeCloseTo(1 / collider.mass);
+    expect(massData.invInertia).toBe(0);
+    expect(massData.localCenterOfMass.x).toBeCloseTo(3);
+  });
+
+  it("follows a runtime change of the body's fixedRotation", () => {
+    const entity = createBody('dynamic');
+
+    world.getComponent(entity, rigidBodyId)!.fixedRotation = true;
+
+    expect(getRigidBodyMassData(world, entity).invInertia).toBe(0);
+  });
+
   it.each(['static', 'kinematic'] as const)(
     'returns zero inverse mass and the origin for a %s body',
     (type) => {

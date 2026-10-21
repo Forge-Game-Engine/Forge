@@ -18,9 +18,9 @@ import { getRigidBodyMassData } from '../rigid-body-mass-data.js';
  * external disturbance (a collision, a scripted torque). Order relative to
  * other physics systems doesn't matter beyond running before whatever
  * system integrates velocity into position
- * (`createEulerIntegrationEcsSystem`). Entities whose `RigidBodyEcsComponent.type`
- * (see {@link RigidBodyType}) isn't `'dynamic'` are skipped, since
- * `'static'`/`'kinematic'` bodies aren't affected by torque.
+ * (`createEulerIntegrationEcsSystem`). Bodies torque can't turn are
+ * skipped: `'static'`/`'kinematic'` bodies (see {@link RigidBodyType}) and
+ * `'dynamic'` bodies with `fixedRotation`.
  * @param time - Used to read the tick's delta time.
  * @returns An ECS system that drives every motor-equipped entity's angular
  * velocity every tick.
@@ -37,15 +37,16 @@ export const createAngularVelocityMotorEcsSystem = (
     }
 
     for (let i = 0; i < motors.length; i++) {
-      const rigidBody = rigidBodies[i];
+      const { invInertia } = getRigidBodyMassData(world, entities[i]);
 
-      if (rigidBody.type !== 'dynamic') {
+      // A body with no inverse inertia can't be turned by torque. Skipping
+      // it also keeps `velocityError / invInertia` from dividing by zero.
+      if (invInertia === 0) {
         continue;
       }
 
+      const rigidBody = rigidBodies[i];
       const motor = motors[i];
-      const { invInertia } = getRigidBodyMassData(world, entities[i]);
-
       const velocityError = motor.targetVelocity - rigidBody.angularVelocity;
       const impulse = velocityError / invInertia;
       const maxImpulse = motor.maxTorque * dt;
