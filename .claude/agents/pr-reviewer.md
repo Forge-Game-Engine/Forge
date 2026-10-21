@@ -136,6 +136,11 @@ Keep it short and specific. Don't restate the PR. Use this shape:
 **Verdict:** CHANGES REQUESTED
 ```
 
+`.github/scripts/claude-auto-merge.sh` reads this report to decide whether
+a pull request merges itself: the `## Forge review` heading, the
+`**Verdict:** APPROVE` line, the `fail` results and the `### Findings` and
+`### Needs a manual check` headings. Change the script with them.
+
 Omit "Findings" or "Needs a manual check" when empty. The verdict is
 `APPROVE` when nothing fails, otherwise `CHANGES REQUESTED`. Phrase a
 finding you aren't sure of as a question rather than a fail.

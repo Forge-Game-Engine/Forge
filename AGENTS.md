@@ -176,9 +176,11 @@ on:
   a Claude Code session (a `claude/` branch) opened, once every check on
   its head commit has passed. It only merges one that changes fewer than
   35 files, at most 20 of them in at most 2 folders under `src/`, and
-  nothing in `.github/` or `.claude/`. The `pr-reviewer` review must have
-  run on that commit and approved it with no findings and nothing to check
-  by hand, and no person may have commented or reviewed it (approvals
+  nothing in `.github/`, `.claude/`, `AGENTS.md`, `CLAUDE.md` or
+  `scripts/changelog/` (the review and checks run the pull request's own
+  copy of those). The `pr-reviewer` review must have run on that commit and
+  approved it with no failed checks, no findings and nothing to check by
+  hand, and no person may have commented or reviewed it (approvals
   aside). So a fix round's pushes, a demo that needs a manual check, or a
   question from a person leaves the merge to a human.
   `.github/scripts/claude-auto-merge.sh` lists the conditions; the job's

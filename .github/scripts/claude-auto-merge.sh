@@ -11,14 +11,18 @@
 #   - It targets dev from this repository, isn't a draft and doesn't conflict.
 #   - It changes fewer than 35 files, at most 20 of them under src/, in at
 #     most 2 folders directly under src/ (src/rendering, src/physics, ...).
-#   - It doesn't change .github/ or .claude/, so a pull request can't merge
-#     a change to the rules that merge it or to the agents that review it.
+#   - It doesn't change .github/, .claude/, AGENTS.md, CLAUDE.md or
+#     scripts/changelog/. The review and the changelog check run the pull
+#     request's own copy of those, so a change to them could weaken the
+#     checks that judge it and then merge itself.
 #   - Every job in `required_checks` passed on <sha>, and no other check run
-#     or commit status on it is pending or failed. `review` passing on <sha>
+#     or commit status on it is pending or failed. Codecov's are left out:
+#     coverage is reported, not enforced. `review` passing on <sha>
 #     means claude-pr-review.yml reviewed this exact commit, so commits
 #     pushed after the review (such as a fix round's) keep it from merging.
-#   - The latest Forge review approves, with no findings and nothing that
-#     needs a manual check.
+#   - The latest Forge review, posted by that `review` run, approves, fails
+#     no row of its checklist, and has no findings and nothing that needs a
+#     manual check.
 #   - No person has left a comment, a review comment or a review other than
 #     an approval.
 #
@@ -47,10 +51,10 @@ skip() {
 
 # Returns 0 when every condition above holds for pull request $pr.
 can_merge() {
-  local details author branch file check status conclusion verdict
+  local details author branch file check status conclusion started verdict
   local -a files src_folders
   local src_files=0
-  local -A check_results=()
+  local -A check_results=() check_starts=()
 
   details=$(gh api "repos/$GH_REPO/pulls/$pr" --jq '[
     .user.login, .head.ref, .head.sha, .head.repo.full_name, .base.ref,
@@ -68,8 +72,14 @@ can_merge() {
     return 1
   fi
 
-  if [ "$draft" = true ] || [ "$mergeable" = false ]; then
-    skip 'it is a draft or conflicts with dev.'
+  if [ "$draft" = true ]; then
+    skip 'it is a draft.'
+    return 1
+  fi
+
+  # null means GitHub hasn't worked it out yet.
+  if [ "$mergeable" != true ]; then
+    skip "it conflicts with dev, or GitHub hasn't checked yet (mergeable: $mergeable)."
     return 1
   fi
 
@@ -88,7 +98,8 @@ can_merge() {
   )
 
   for file in "${files[@]}"; do
-    if [[ $file == .github/* || $file == .claude/* ]]; then
+    if [[ $file == .github/* || $file == .claude/* || $file == AGENTS.md ||
+      $file == CLAUDE.md || $file == scripts/changelog/* ]]; then
       skip "it changes $file."
       return 1
     fi
@@ -109,7 +120,7 @@ can_merge() {
   fi
 
   # The API returns the latest run of each check by default.
-  while IFS=$'\t' read -r check status conclusion; do
+  while IFS=$'\t' read -r check status conclusion started; do
     if [ "$status" != completed ]; then
       skip "check \"$check\" is still $status."
       return 1
@@ -121,9 +132,11 @@ can_merge() {
     fi
 
     check_results[$check]=$conclusion
+    check_starts[$check]=$started
   done < <(
     gh api --paginate "repos/$GH_REPO/commits/$sha/check-runs" \
-      --jq '.check_runs[] | [.name, .status, (.conclusion // "")] | @tsv'
+      --jq '.check_runs[] | select(.name | startswith("codecov/") | not) |
+        [.name, .status, (.conclusion // ""), (.started_at // "")] | @tsv'
   )
 
   for check in "${required_checks[@]}"; do
@@ -133,7 +146,7 @@ can_merge() {
     fi
   done
 
-  if [ -n "$(gh api "repos/$GH_REPO/commits/$sha/status" --jq '.statuses[] | select(.state != "success") | .context')" ]; then
+  if [ -n "$(gh api "repos/$GH_REPO/commits/$sha/status" --jq '.statuses[] | select(.state != "success" and (.context | startswith("codecov/") | not)) | .context')" ]; then
     skip "a commit status on $sha is pending or failed."
     return 1
   fi
@@ -147,15 +160,19 @@ can_merge() {
     return 1
   fi
 
-  # --paginate runs the filter on each page, so take the last match of all.
+  # Only a comment posted after the `review` run on <sha> started reviewed
+  # this commit. --paginate runs the filter on each page, so take the last
+  # match of all. ISO 8601 UTC times compare as strings.
   verdict=$(
     gh api --paginate "repos/$GH_REPO/issues/$pr/comments" \
-      --jq ".[] | select(.user.login == \"$review_author\" and (.body | startswith(\"## Forge review\"))) | .body | @json" |
+      --jq ".[] | select(.user.login == \"$review_author\" and
+        .created_at >= \"${check_starts[review]}\" and
+        (.body | startswith(\"## Forge review\"))) | .body | @json" |
       tail -n 1
   )
 
   if [ -z "$verdict" ]; then
-    skip 'it has no Forge review.'
+    skip "it has no Forge review of $sha."
     return 1
   fi
 
@@ -166,8 +183,11 @@ can_merge() {
     return 1
   fi
 
-  if grep -qxE '### (Findings|Needs a manual check)' <<< "$verdict"; then
-    skip 'the Forge review left findings or a manual check for a person.'
+  # A failed checklist row stops the merge too, in case the report's
+  # headings change.
+  if grep -qE '^\|.*\|[[:space:]]*fail[[:space:]]*\|[[:space:]]*$' <<< "$verdict" ||
+    grep -qxE '### (Findings|Needs a manual check)' <<< "$verdict"; then
+    skip 'the Forge review failed a check or left findings or a manual check for a person.'
     return 1
   fi
 }
