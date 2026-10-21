@@ -33,6 +33,10 @@ layer as meshes and give it a collider that outlines its solid tiles.
   entity for each of its tile and group layers, with a collider on the
   layers whose tiles have collision shapes.
 
+[Isometric maps](./isometric-maps.md) covers what a map with an isometric
+layout adds: tall tiles, y-sorting them with characters, colliding with
+their bases and picking cells with the mouse.
+
 ## Building a tilemap
 
 A game builds a tilemap in this order:

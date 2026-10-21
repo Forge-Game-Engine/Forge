@@ -222,6 +222,13 @@ export const demos: Demo[] = [
     categories: ['rendering', 'physics'],
   },
   {
+    slug: 'isometric-tilemap',
+    title: 'Isometric Tilemap',
+    description:
+      'A courtyard loaded from a Tiled isometric map. Walk behind and in front of y-sorted walls and trees and collide with their bases, and click a highlighted cell to build or clear a wall.',
+    categories: ['rendering', 'physics'],
+  },
+  {
     slug: 'sprite-atlas',
     title: 'Sprite Atlas',
     description:

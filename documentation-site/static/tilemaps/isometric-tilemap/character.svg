@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="48" viewBox="0 0 32 48" shape-rendering="crispEdges">
+  <!-- A 32 by 48 character for the isometric tilemap demo, with its feet at the bottom center of the image. Original art, made for this demo. -->
+  <ellipse cx="16" cy="45" rx="10" ry="3" fill="#000000" fill-opacity="0.3"/>
+  <rect x="10" y="34" width="5" height="11" fill="#33415c"/>
+  <rect x="17" y="34" width="5" height="11" fill="#2a3650"/>
+  <rect x="8" y="18" width="16" height="18" rx="3" fill="#d9534f"/>
+  <rect x="8" y="18" width="5" height="18" fill="#e8746f"/>
+  <rect x="11" y="4" width="10" height="14" rx="4" fill="#f2c9a0"/>
+  <rect x="10" y="2" width="12" height="6" rx="3" fill="#5a3a22"/>
+  <rect x="13" y="10" width="2" height="2" fill="#2b2b2b"/>
+  <rect x="18" y="10" width="2" height="2" fill="#2b2b2b"/>
+</svg>
