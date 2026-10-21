@@ -1,0 +1,90 @@
+{
+  "columns": 3,
+  "image": "props.png",
+  "imageheight": 32,
+  "imagewidth": 48,
+  "margin": 0,
+  "name": "props",
+  "properties": [
+    { "name": "theme", "type": "string", "value": "castle" }
+  ],
+  "spacing": 0,
+  "tilecount": 3,
+  "tiledversion": "1.11.0",
+  "tileheight": 32,
+  "tileoffset": { "x": -2, "y": 4 },
+  "tiles": [
+    {
+      "id": 0,
+      "objectgroup": {
+        "draworder": "index",
+        "id": 2,
+        "name": "",
+        "objects": [
+          {
+            "height": 32,
+            "id": 1,
+            "name": "",
+            "rotation": 0,
+            "type": "",
+            "visible": true,
+            "width": 16,
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "opacity": 1,
+        "type": "objectgroup",
+        "visible": true,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 1,
+      "objectgroup": {
+        "draworder": "index",
+        "id": 2,
+        "name": "",
+        "objects": [
+          {
+            "height": 0,
+            "id": 1,
+            "name": "",
+            "polygon": [
+              { "x": 0, "y": 0 },
+              { "x": 8, "y": -8 },
+              { "x": 8, "y": 0 }
+            ],
+            "rotation": 0,
+            "type": "",
+            "visible": true,
+            "width": 0,
+            "x": 6,
+            "y": 28
+          }
+        ],
+        "opacity": 1,
+        "type": "objectgroup",
+        "visible": true,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "properties": [
+        { "name": "count", "type": "int", "value": 7 },
+        { "name": "glow", "type": "color", "value": "#ff0000" },
+        { "name": "owner", "type": "object", "value": 5 },
+        { "name": "sound", "type": "file", "value": "../sounds/step.ogg" },
+        { "name": "solid", "type": "bool", "value": true },
+        { "name": "tint", "type": "color", "value": "#80ff0000" },
+        { "name": "weight", "type": "float", "value": 1.5 }
+      ]
+    }
+  ],
+  "tilewidth": 16,
+  "type": "tileset",
+  "version": "1.10"
+}

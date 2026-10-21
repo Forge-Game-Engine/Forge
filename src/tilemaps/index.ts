@@ -4,4 +4,5 @@ export * from './components/index.js';
 export * from './conversions/index.js';
 export * from './systems/index.js';
 export * from './tile-set/index.js';
+export * from './tiled/index.js';
 export * from './tiles/index.js';

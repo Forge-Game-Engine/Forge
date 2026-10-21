@@ -89,10 +89,10 @@ const expectSamePoints = (
 };
 
 /**
- * A cell's collision shape in layer-local space, found the way its image
- * moves: each point is normalized in the image's rect (the cell's
- * footprint bounds, for these tiles), moved with `applyTileTransform`, and
- * put back in the rect. Wound with positive signed area.
+ * A cell's collision shape in layer-local space: each point is normalized
+ * in the cell's footprint bounds, moved with `applyTileTransform` (the map
+ * the tile's image content moves by within its image rect), and put back
+ * in the bounds. Wound with positive signed area.
  */
 const expectedShape = (
   tileSet: TileSet,
@@ -111,7 +111,7 @@ const expectedShape = (
     return layout.getCellPolygon(column, row);
   }
 
-  const rect = getTileImageRect(tileSet, column, row, tile);
+  const rect = layout.getCellFootprintBounds(column, row);
   const width = rect.max.x - rect.min.x;
   const height = rect.max.y - rect.min.y;
   const center = layout.getCellCenter(column, row);
@@ -257,6 +257,57 @@ describe('buildTilemapCollisionLoops, orthogonal', () => {
       expect(loops).toHaveLength(1);
       expectSamePoints(loops[0], expected ?? []);
       expect(calculateSignedArea(loops[0])).toBeGreaterThan(0);
+    },
+  );
+
+  it.each([1, 3, 5, 7])(
+    'keeps a transposed tall tile’s shape in its footprint for transform bits %s, while its image turns out of it',
+    (bits) => {
+      const world = new EcsWorld();
+      const tileSet = createTileSet({
+        layout: orthogonal,
+        sources: [
+          createTestSource(1, 1, {
+            tileHeight: 32,
+            // Touches the footprint's left, right and bottom edges.
+            tiles: new Map([
+              [
+                0,
+                {
+                  collision: [
+                    { x: -8, y: 8 },
+                    { x: -8, y: 0 },
+                    { x: 8, y: -4 },
+                    { x: 8, y: 8 },
+                  ],
+                },
+              ],
+            ]),
+          }),
+        ],
+      });
+      const layer = addTilemapLayerComponent(world, world.createEntity(), {
+        tileSet,
+      });
+      const tile = packTile({ source: 0, tile: 0, ...transformFields(bits) });
+
+      setTile(layer, 1, 0, tile);
+
+      const loops = buildTilemapCollisionLoops(layer);
+
+      expect(getTileImageRect(tileSet, 1, 0, tile)).toEqual({
+        min: { x: 16, y: 0 },
+        max: { x: 48, y: 16 },
+      });
+      expect(loops).toHaveLength(1);
+      expectSamePoints(loops[0], expectedShape(tileSet, 1, 0, tile) ?? []);
+
+      for (const point of loops[0]) {
+        expect(point.x).toBeGreaterThanOrEqual(16);
+        expect(point.x).toBeLessThanOrEqual(32);
+        expect(point.y).toBeGreaterThanOrEqual(0);
+        expect(point.y).toBeLessThanOrEqual(16);
+      }
     },
   );
 
