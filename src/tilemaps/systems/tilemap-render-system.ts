@@ -214,9 +214,16 @@ const rebuildChangedChunks = (
     }
   }
 
-  // Meshes of chunks the layer no longer has (emptied, or cleared).
+  // Meshes of chunks the layer no longer has (emptied, or cleared), and of
+  // sources a smaller replacement tile set doesn't have, which
+  // `rebuildChunk` never reaches since it only counts the new tile set's
+  // sources (no stored tile can name them, `setTileSet` checks that).
+  const sourceCount = layer.tileSet.sources.length;
   const kept = state.meshes.filter((mesh) => {
-    if (layer.chunks.has(getChunkKey(mesh.chunkColumn, mesh.chunkRow))) {
+    if (
+      mesh.source < sourceCount &&
+      layer.chunks.has(getChunkKey(mesh.chunkColumn, mesh.chunkRow))
+    ) {
       return true;
     }
 

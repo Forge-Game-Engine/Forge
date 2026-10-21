@@ -414,6 +414,41 @@ describe('createTilemapRenderEcsSystem', () => {
     ).toBe(winterTexture);
   });
 
+  it('removes the meshes of sources a smaller replacement tile set lacks', () => {
+    const { entity, layer } = addLayer();
+
+    setTile(layer, 0, 0, grass);
+    setTile(layer, 1, 0, rock);
+    world.update();
+
+    const [grassMesh, rockMesh] = getMeshes(entity);
+    const disposeRock = vi.spyOn(rockMesh.geometry, 'dispose');
+
+    // The chunk keeps its source-0 tile, so only the source count drops.
+    clearTile(layer, 1, 0);
+    setTileSet(
+      layer,
+      createTileSet({
+        layout: createOrthogonalGridLayout({ cellWidth: 16, cellHeight: 16 }),
+        sources: [
+          {
+            atlas: createGridTextureAtlas(terrainTexture, {
+              cellWidth: 16,
+              cellHeight: 16,
+            }),
+          },
+        ],
+      }),
+    );
+    world.update();
+
+    expect(world.isAlive(rockMesh.entity)).toBe(false);
+    expect(disposeRock).toHaveBeenCalledOnce();
+    expect(getMeshes(entity)).toEqual([grassMesh]);
+    expect(world.getChildren(entity)).toEqual([grassMesh.entity]);
+    expect([...getState(entity).materials.keys()]).toEqual([0]);
+  });
+
   it('replaces every mesh when the layer component is replaced', () => {
     const { entity, layer } = addLayer();
 
