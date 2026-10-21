@@ -382,7 +382,9 @@ region's edge texels, the way a whole clamped texture repeats its own. So
 with `'linear'` filtering, at any scale, a region never blends in its
 neighbors in the sheet, and tiles cut from a sheet with no spacing between
 them draw side by side without seams. A sprite's emissive map is sampled
-inside the same rect, so give it the texture's size.
+inside the same rect, so give it the texture's size. A
+[tilemap layer](../tilemaps/index.md#texture-filtering) samples each tile's
+region the same way.
 
 A region of a texture whose `wrap` is `'repeat'` isn't limited this way, so
 that its UV rect can tile or scroll the texture.
@@ -390,7 +392,7 @@ that its UV rect can tile or scroll the texture.
 Padding and extrusion in the export protect the samplers that don't stay
 inside a region: a [custom sprite shader](./sprites.md#drawing-sprites-with-a-custom-shader)
 that samples `v_texCoord` without clamping it to `v_texBounds`, a
-[mesh](./meshes.md) textured with the atlas's texture, and an atlas
+custom [mesh](./meshes.md) textured with the atlas's texture, and an atlas
 built over a texture loaded with `wrap: 'repeat'` (`TextureAtlasCache`
 always loads `'clamp'` textures).
 With `'linear'` filtering, and at a camera zoom that doesn't map texels to

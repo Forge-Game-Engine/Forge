@@ -86,8 +86,9 @@ export interface TilemapLayerDefaultedOptions {
   category: number;
 
   /**
-   * The draw-order layer, relative to sprites and text drawn by the same
-   * camera, as on a sprite: lower layers are drawn first. Defaults to `0`.
+   * The draw-order layer, relative to sprites, text and meshes drawn by the
+   * same camera, as on a sprite: lower layers are drawn first. Defaults to
+   * `0`.
    */
   layer: number;
 }
@@ -105,6 +106,8 @@ export interface TilemapLayerDefaultedOptions {
  * cells with the cell functions (`setTile`, `getTile`, `fillTiles`, ...),
  * the only code that writes `tileSet`, `chunks`, `version` and the
  * chunks. Add one with {@link addTilemapLayerComponent}.
+ * `createTilemapRenderEcsSystem` draws the layer, as one mesh per chunk
+ * and tile set source.
  */
 export interface TilemapLayerEcsComponent
   extends TilemapLayerRequiredOptions, TilemapLayerDefaultedOptions {
