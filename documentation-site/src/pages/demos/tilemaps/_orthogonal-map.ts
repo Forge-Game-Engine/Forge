@@ -156,7 +156,7 @@ export function createOrthogonalMap(
       pixelsPerUnit: 1,
     }),
   );
-  addWalkerComponent(world, character, { ground, speed: 140 });
+  addWalkerComponent(world, character, { layers: [ground], speed: 140 });
   world.setParent(character, ground);
 
   // A child of the top layer, so it draws over both layers.

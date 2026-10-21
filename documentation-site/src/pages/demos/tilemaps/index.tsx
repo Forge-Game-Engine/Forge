@@ -175,7 +175,7 @@ export default function Tilemaps(): JSX.Element {
           file: 'orthogonal-map.ts',
         },
         {
-          text: 'The isometric walls are taller than their cells, and the layer draws its cells back to front, so nearer walls cover the ones behind.',
+          text: "The isometric walls are taller than their cells. Their layer's entity sets ySortChildren, so the layer draws one row per diagonal of cells, each sorted by its Y, and the character walks behind the walls below it on screen and in front of the ones above it.",
           file: 'isometric-map.ts',
         },
         {
@@ -216,7 +216,7 @@ export default function Tilemaps(): JSX.Element {
             {
               name: 'isometric-map.ts',
               summary:
-                'The isometric tile set with tiles taller than a cell, and its one layer of floors, hedges and walls.',
+                'The isometric tile set with tiles taller than a cell, its floor layer, its y-sorted layer of hedges and walls, and the character.',
               content: isometricMapCode,
             },
             {
@@ -261,13 +261,13 @@ export default function Tilemaps(): JSX.Element {
           files: [
             {
               name: 'walker.component.ts',
-              summary: 'The layer an entity walks on, and its walking speed.',
+              summary: 'The layers an entity walks on, and its walking speed.',
               content: walkerComponentCode,
             },
             {
               name: 'walk.system.ts',
               summary:
-                "Walks the character over the ground layer, reading each tile's speed and whether it can be walked on.",
+                "Walks the characters over their layers, reading each tile's speed and whether it can be walked on.",
               content: walkSystemCode,
             },
           ],
