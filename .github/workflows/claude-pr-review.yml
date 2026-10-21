@@ -109,11 +109,15 @@ jobs:
           GH_TOKEN: ${{ steps.labeler.outputs.token }}
           GH_REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
+        # The body comes from a quoted heredoc, so its quotes and apostrophes
+        # reach GitHub as written instead of ending a shell string.
         run: |
-          gh pr comment "$PR" --body "@claude Address the Forge review above and its inline comments.
+          gh pr comment "$PR" --body-file - <<'EOF'
+          @claude Address the Forge review above and its inline comments.
 
           - Fix every finding the review marks as failing, and push the fixes to this pull request's branch.
           - Answer each question the review asks. Change the code when the answer shows it's wrong.
           - Leave the review's "Needs a manual check" items for a person.
 
-          No new review will run after your pushes. So in your tracking comment, list each finding and question with what you did about it."
+          No new review will run after your pushes. So in your tracking comment, list each finding and question with what you did about it.
+          EOF
