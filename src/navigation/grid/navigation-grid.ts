@@ -191,6 +191,18 @@ export interface NavigationGrid extends NavigationGraph {
   fillWalkable(range: GridCellRange, walkable: boolean): void;
 
   /**
+   * Makes every cell whose byte in `mask` isn't `0` walkable or blocked,
+   * and leaves the rest alone, as one change: `version` increases at most
+   * once. Byte `i` is the cell whose node id is `i`
+   * (`row * columns + column`). Use it to write many cells worked out from
+   * your own data, such as a level image, in one call.
+   * @param mask - One byte per cell, `nodeCount` long.
+   * @param walkable - Whether a path can enter the masked cells.
+   * @throws An error if `mask.length` isn't `nodeCount`.
+   */
+  fillWalkableMask(mask: Uint8Array, walkable: boolean): void;
+
+  /**
    * Sets the traversal cost of every cell of a range that's in the grid.
    * The rest of the range is ignored.
    * @param range - The inclusive range of cells.

@@ -208,6 +208,26 @@ export class DenseNavigationGrid implements NavigationGrid {
     }
   }
 
+  public fillWalkableMask(mask: Uint8Array, walkable: boolean): void {
+    if (mask.length !== this.nodeCount) {
+      throw new Error(
+        `Unable to fill the navigation grid cells from a mask of ${mask.length} bytes, it must have one byte per cell, ${this.nodeCount}.`,
+      );
+    }
+
+    let changed = false;
+
+    for (let index = 0; index < mask.length; index++) {
+      if (mask[index] !== 0) {
+        changed = this._writeWalkable(index, walkable) || changed;
+      }
+    }
+
+    if (changed) {
+      this._version++;
+    }
+  }
+
   public fillCost(range: GridCellRange, cost: number): void {
     const stored = toStoredCost(cost);
 
