@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createIsometricGridLayout } from '../../math/grid-layout/create-isometric-grid-layout.js';
 import { createOrthogonalGridLayout } from '../../math/grid-layout/create-orthogonal-grid-layout.js';
 import { Vector2 } from '../../math/vector2.js';
 import { createNavigationGrid } from './create-navigation-grid.js';
@@ -188,6 +189,27 @@ describe('findGridPath', () => {
     expect(result.goalCell).toEqual({ column: 2, row: 4 });
     expect(result.goalSnapped).toBe(true);
     expect(result.status).toBe('found');
+  });
+
+  it('starts from the edge cell nearest in the world on an isometric layout', () => {
+    const isometricLayout = createIsometricGridLayout({
+      cellWidth: 64,
+      cellHeight: 32,
+    });
+    const grid = createNavigationGrid({
+      columns: 4,
+      rows: 8,
+      layout: isometricLayout,
+    });
+    // Cell space (-3, 5): clamping the column alone would give row 5, but
+    // the nearest point of the column-0 edge is at row 6.8.
+    const outside = isometricLayout.cellSpaceToLocal({ x: -3, y: 5 });
+    const result = findGridPath(grid, outside, grid.cellToWorld(3, 0), {
+      snapRadius: 0,
+    });
+
+    expect(result.startCell).toEqual({ column: 0, row: 6 });
+    expect(result.startSnapped).toBe(true);
   });
 
   it('snaps an end outside the grid past a blocked edge cell', () => {

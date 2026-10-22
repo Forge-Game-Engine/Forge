@@ -482,11 +482,15 @@ flowchart TD
 
 ```text
 resolve(grid, position, snapRadius):
-  cellSpace = layout.localToCellSpace(position - origin)
-  cell = (clamp(floor(cellSpace.x), 0, columns - 1),
-          clamp(floor(cellSpace.y), 0, rows - 1))
-  wasInGrid = cell is the unclamped cell
-  if walkable(cell) and wasInGrid: return cell, snapped false
+  cell = worldToCell(position)
+  wasInGrid = cell is not null
+  if wasInGrid and walkable(cell): return cell, snapped false
+  if not wasInGrid:
+    # The grid's outline is a parallelogram in the world; clamping column
+    # and row separately is only nearest when the layout's axes are
+    # perpendicular.
+    p = the point of the outline's four sides nearest position
+    cell = floor(layout.localToCellSpace(p - origin)), clamped into the grid
 
   for ring in 0 .. snapRadius:           # ring 0 is the cell itself
     best = the walkable cell in the grid at Chebyshev distance `ring`
@@ -505,7 +509,7 @@ resolve(grid, position, snapRadius):
   a few cells the difference is under a cell, and the simple rule is
   easier to predict.
 - **Outside the grid.** A position outside the grid starts from the
-  nearest cell on the grid's edge (clamped in cell space) and snaps from
+  cell on the grid's edge nearest it in the world and snaps from
   there, so a click past the map's edge gives a path to the edge rather
   than an error (open question 3).
 - **Nothing walkable close by.** The end stays on its blocked cell:

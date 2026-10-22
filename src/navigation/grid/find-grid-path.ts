@@ -52,7 +52,7 @@ const assertFinitePosition = (name: string, position: Vector2): void => {
  *
  * A start or goal in a blocked cell, or outside the grid, moves to the
  * walkable cell nearest it in the nearest ring of cells around it (a
- * position outside the grid starts from the grid's nearest edge cell), up
+ * position outside the grid starts from the edge cell nearest it), up
  * to `snapRadius` rings out, and the result's `startSnapped` or
  * `goalSnapped` says so. A unit standing slightly inside a wall still gets
  * a path. When no walkable cell is close enough the end stays where it is:
