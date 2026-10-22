@@ -200,7 +200,7 @@ unattended:
   /input                   # Input handling (keyboard, mouse, gamepad, hidden-DOM text entry)
   /lifecycle               # Lifecycle management
   /math                    # Math utilities
-  /navigation              # Path finding: the NavigationGraph interface and findPath, an A* search over any graph of integer node ids
+  /navigation              # Path finding: the NavigationGraph interface and findPath, an A* search over any graph of integer node ids; navigation grids (walkable cells and costs on a GridLayout) and findGridPath
   /particles               # Particle system
   /physics                 # Physics integration
   /pooling                 # Object pooling
