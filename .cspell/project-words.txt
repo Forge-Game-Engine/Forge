@@ -441,3 +441,8 @@ tilewidth
 tintcolor
 transparentcolor
 zstd
+octile
+rescanning
+rescans
+underflows
+walkability
