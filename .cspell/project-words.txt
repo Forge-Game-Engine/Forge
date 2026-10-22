@@ -143,6 +143,7 @@ hoverable
 hrtf
 huhdanpaa
 Hyperlegible
+hypot
 ifdef
 imgui
 implementability

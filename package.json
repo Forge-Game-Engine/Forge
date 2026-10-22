@@ -57,6 +57,12 @@
         "default": "./dist/math/index.js"
       }
     },
+    "./navigation": {
+      "import": {
+        "types": "./dist/navigation/index.d.ts",
+        "default": "./dist/navigation/index.js"
+      }
+    },
     "./particles": {
       "import": {
         "types": "./dist/particles/index.d.ts",
