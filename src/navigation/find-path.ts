@@ -249,10 +249,13 @@ const validateInput = (
  * errors: the result's `status` says how the search ended, and its `nodes`
  * still lead from the start towards the goal.
  *
- * Every search reuses one set of arrays, grown to the largest graph
- * searched (24 bytes per node, kept for as long as the page runs), so a
- * search allocates nothing per node and starting one costs the same
- * whatever the graph's size.
+ * Every search reuses one set of arrays, so a search allocates nothing per
+ * node and starting one costs the same whatever the graph's size. They're
+ * kept for as long as the page runs: 24 bytes for each node of the largest
+ * graph searched, plus 20 bytes for each open-list entry slot. A search
+ * adds an entry for each node it reaches and another for each cheaper path
+ * it finds to a node it already reached, and the entry arrays double when
+ * they fill, so they hold up to twice the most entries a search added.
  * @param graph - The graph to search.
  * @param start - The node to start from.
  * @param goal - The node to find a path to.

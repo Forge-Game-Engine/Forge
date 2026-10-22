@@ -316,7 +316,10 @@ zeroed arrays a growth allocates are never valid; when the id would pass
 `2^32 - 1`, the stamps are cleared and the id starts again at `1`.
 
 Per-node memory is 24 bytes: a 512 x 512 grid holds 6 MB for as long as
-the page runs.
+the page runs. The open-list entry arrays add 20 bytes per entry slot. A
+search adds at least one entry per node it reaches, and the arrays double
+when they fill and never shrink, so a search that reaches every node of
+that grid keeps at least another 5 MB.
 
 ### Open list with lazy deletion
 

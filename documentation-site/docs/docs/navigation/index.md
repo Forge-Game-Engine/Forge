@@ -107,10 +107,19 @@ goal that isn't a node id, a neighbor that isn't a node id, or a negative
 step cost. It doesn't throw when there's no path.
 
 :::note
-Every search reuses one set of arrays, grown to the largest graph searched
-so far, so a search allocates nothing per node. They take 24 bytes per
-node (6 MB for a graph of 512 x 512 nodes) and are kept for as long as the
-page runs.
+Every search reuses one set of arrays, so a search allocates nothing per
+node. The arrays grow to fit the largest search so far and are kept for as
+long as the page runs:
+
+- 24 bytes for each node of the largest graph searched.
+- 20 bytes for each entry on the search's list of nodes to search. A
+  search adds an entry for each node it reaches, and another each time it
+  finds a cheaper path to a node it already reached. These arrays double
+  in size when they fill, so they can hold up to twice as many entries as
+  the largest search added.
+
+A search that reaches every node of a 512 x 512 graph keeps 6 MB for its
+nodes and at least another 5 MB for its entries.
 :::
 
 ## Path statuses
