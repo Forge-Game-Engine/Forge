@@ -330,6 +330,64 @@ where it is. A goal in a blocked cell can't be reached, so the result is
 `'unreachable'` (or `'limitReached'`), with a path towards it. A start in
 a blocked cell can still step into a walkable cell beside it.
 
+## Smoothing a path
+
+A path from `findGridPath` goes from cell centre to cell centre, so a unit
+following it zig-zags in steps between the eight directions.
+[`smoothGridPath`](/Forge/docs/api/functions/smoothGridPath) removes
+every point the unit can skip by walking in a straight line:
+
+```ts
+import {
+  findGridPath,
+  smoothGridPath,
+} from '@forge-game-engine/forge/navigation';
+
+const result = findGridPath(grid, unitPosition, targetPosition);
+const waypoints = smoothGridPath(grid, result.points);
+```
+
+It keeps the first point. From each point it keeps, it keeps the farthest
+later point in line of sight of it and drops the points in between. A
+path across an open room becomes one straight segment, and a path around
+a wall keeps a point at each corner it turns. The last point is always
+kept. It returns a new array of new points and leaves the path alone.
+
+Smoothing is a separate step, so a turn-based game that moves cell by
+cell keeps the raw path, and a real-time game smooths it.
+
+Line of sight only checks that cells are walkable. A smoothed segment can
+cross walkable cells that cost more, such as mud the cheapest path went
+around, so keep the raw path where costs matter.
+
+### Line of sight
+
+[`hasLineOfSight(grid, fromWorld, toWorld)`](/Forge/docs/api/functions/hasLineOfSight)
+checks whether a unit can walk in a straight line between two world
+positions. It's `true` when every cell the segment touches is in the grid
+and walkable:
+
+```ts
+import { hasLineOfSight } from '@forge-game-engine/forge/navigation';
+
+if (hasLineOfSight(grid, unitPosition, targetPosition)) {
+  // Walk straight to the target.
+}
+```
+
+A cell counts when the segment touches any part of it, its edges and
+corners included. A segment through the exact corner where four cells
+meet needs all four to be walkable, so a smoothed path never clips the
+corner of a wall:
+
+```text
+A #     The segment from A to B passes through the corner between
+# B     the two blocked cells #, so it isn't in line of sight. With
+        only one of them blocked, it still isn't.
+```
+
+The check works the same on orthogonal and isometric grids.
+
 ## Searching a grid with findPath
 
 A grid's node ids number its cells row by row from its first cell,

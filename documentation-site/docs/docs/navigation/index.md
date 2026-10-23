@@ -12,8 +12,10 @@ that implements the
 Everything is imported from `@forge-game-engine/forge/navigation`.
 
 For levels made of cells, a [navigation grid](./grids.md) is a
-`NavigationGraph` of walkable and blocked cells, and `findGridPath` finds
-a path across one between two world positions.
+`NavigationGraph` of walkable and blocked cells, `findGridPath` finds
+a path across one between two world positions, and `smoothGridPath`
+straightens that path into waypoints a unit can walk between in straight
+lines.
 
 ## Graphs and nodes
 
