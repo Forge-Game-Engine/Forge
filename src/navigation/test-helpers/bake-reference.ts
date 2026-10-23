@@ -171,11 +171,12 @@ export const compareWithReference = (
   radius: number,
 ): { wrong: string[]; undecided: number; blocked: number } => {
   const wrong: string[] = [];
+  const { minColumn, minRow, maxColumn, maxRow } = grid.cells;
   let undecided = 0;
   let blocked = 0;
 
-  for (let row = 0; row < grid.rows; row++) {
-    for (let column = 0; column < grid.columns; column++) {
+  for (let row = minRow; row <= maxRow; row++) {
+    for (let column = minColumn; column <= maxColumn; column++) {
       const verdict = getReferenceVerdict(grid, column, row, shapes, radius);
       const isWalkable = grid.isWalkable(column, row);
 
@@ -202,9 +203,10 @@ export const compareWithReference = (
  */
 export const getBlockedCells = (grid: NavigationGrid): string[] => {
   const cells: string[] = [];
+  const { minColumn, minRow, maxColumn, maxRow } = grid.cells;
 
-  for (let row = 0; row < grid.rows; row++) {
-    for (let column = 0; column < grid.columns; column++) {
+  for (let row = minRow; row <= maxRow; row++) {
+    for (let column = minColumn; column <= maxColumn; column++) {
       if (!grid.isWalkable(column, row)) {
         cells.push(`${column},${row}`);
       }

@@ -26,7 +26,10 @@ export interface CellFrame {
   /** The grid's layout, which maps between local space and cell space. */
   readonly layout: GridLayout;
 
-  /** The world position of cell space's origin. */
+  /**
+   * The world position of the frame's cell space origin, the grid's first
+   * cell's layout-origin corner.
+   */
   readonly origin: Vector2;
 
   /** The world offset of one column. */
@@ -53,12 +56,23 @@ export interface CellFrame {
 }
 
 /**
- * Measures where a grid's cells are.
+ * Measures where a grid's cells are. The frame counts columns and rows from
+ * the grid's first cell, so its cell `(c, r)` is the grid's
+ * `(cells.minColumn + c, cells.minRow + r)` and `r * columns + c` is that
+ * cell's node id.
  * @param grid - The grid.
  * @returns The grid's cell frame.
  */
 export const createCellFrame = (grid: NavigationGrid): CellFrame => {
-  const { columns, rows, layout, origin } = grid;
+  const { columns, rows, layout, cells } = grid;
+  const firstCorner = layout.cellSpaceToLocal({
+    x: cells.minColumn,
+    y: cells.minRow,
+  });
+  const origin = {
+    x: grid.origin.x + firstCorner.x,
+    y: grid.origin.y + firstCorner.y,
+  };
   const columnStep = layout.cellSpaceToLocal({ x: 1, y: 0 });
   const rowStep = layout.cellSpaceToLocal({ x: 0, y: 1 });
   const cellSpaceOfX = layout.localToCellSpace({ x: 1, y: 0 });

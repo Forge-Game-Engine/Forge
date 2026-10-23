@@ -98,11 +98,11 @@ export function markGridFromColliders(
   // Seeded with the cells already blocked, so the passes skip them. Reading
   // them one cell at a time is fine for a bake, which runs when the level
   // changes, not every frame.
-  for (let row = 0; row < grid.rows; row++) {
-    for (let column = 0; column < grid.columns; column++) {
-      if (!grid.isWalkable(column, row)) {
-        blocked[row * grid.columns + column] = 1;
-      }
+  for (let node = 0; node < grid.nodeCount; node++) {
+    const { column, row } = grid.nodeToCell(node);
+
+    if (!grid.isWalkable(column, row)) {
+      blocked[node] = 1;
     }
   }
 

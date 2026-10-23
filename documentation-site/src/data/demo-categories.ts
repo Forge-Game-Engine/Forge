@@ -50,6 +50,12 @@ export const demoCategories: DemoCategory[] = [
     icon: 'ecs',
   },
   {
+    slug: 'navigation',
+    title: 'Navigation',
+    description: 'Path finding across graphs and grids.',
+    icon: 'navigation',
+  },
+  {
     slug: 'games',
     title: 'Games',
     description: 'Complete games that combine many engine features.',

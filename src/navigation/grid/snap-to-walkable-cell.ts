@@ -106,13 +106,14 @@ const findNearestEdgeCell = (
   grid: NavigationGrid,
   position: Vector2,
 ): GridCell => {
-  const { layout, origin, columns, rows } = grid;
+  const { layout, origin, cells } = grid;
+  const { minColumn, minRow, maxColumn, maxRow } = cells;
   const local = { x: position.x - origin.x, y: position.y - origin.y };
   const corners = [
-    layout.cellSpaceToLocal({ x: 0, y: 0 }),
-    layout.cellSpaceToLocal({ x: columns, y: 0 }),
-    layout.cellSpaceToLocal({ x: columns, y: rows }),
-    layout.cellSpaceToLocal({ x: 0, y: rows }),
+    layout.cellSpaceToLocal({ x: minColumn, y: minRow }),
+    layout.cellSpaceToLocal({ x: maxColumn + 1, y: minRow }),
+    layout.cellSpaceToLocal({ x: maxColumn + 1, y: maxRow + 1 }),
+    layout.cellSpaceToLocal({ x: minColumn, y: maxRow + 1 }),
   ];
   let nearest = corners[0];
   let nearestDistance = Infinity;
@@ -137,8 +138,8 @@ const findNearestEdgeCell = (
   const cellSpace = layout.localToCellSpace(nearest);
 
   return {
-    column: clamp(Math.floor(cellSpace.x), 0, columns - 1),
-    row: clamp(Math.floor(cellSpace.y), 0, rows - 1),
+    column: clamp(Math.floor(cellSpace.x), minColumn, maxColumn),
+    row: clamp(Math.floor(cellSpace.y), minRow, maxRow),
   };
 };
 

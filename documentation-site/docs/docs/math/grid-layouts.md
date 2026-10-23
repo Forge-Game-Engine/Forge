@@ -8,7 +8,7 @@ A [`GridLayout`](/Forge/docs/api/interfaces/GridLayout) says where each cell
 of an unbounded grid is: it converts a cell's column and row to a position
 and a position to the cell that contains it. It holds no cells. Code that
 stores cells, such as a [tilemap layer](../tilemaps/layers.md) or a
-navigation grid, takes a layout to place them, so two of them made with the
+[navigation grid](../navigation/grids.md), takes a layout to place them, so two of them made with the
 same layout agree on every cell.
 
 Positions are in the local space of whatever uses the layout. Like the rest

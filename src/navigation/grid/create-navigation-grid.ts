@@ -1,3 +1,4 @@
+import { GridCellRange } from '../../math/grid-layout/grid-layout.js';
 import { withDefaults } from '../../utilities/with-defaults.js';
 import { DenseNavigationGrid } from './dense-navigation-grid.js';
 import {
@@ -22,40 +23,59 @@ const navigationGridDiagonals: readonly NavigationGridDiagonals[] = [
 // Node ids are cell indices, and the search keeps them in 32-bit arrays.
 const maxCellCount = 2 ** 31 - 1;
 
-const assertCount = (name: string, value: number): void => {
-  if (!Number.isInteger(value) || value <= 0) {
+const assertCells = (cells: GridCellRange): void => {
+  const { minColumn, minRow, maxColumn, maxRow } = cells;
+  const bounds = `(${minColumn}, ${minRow}) to (${maxColumn}, ${maxRow})`;
+
+  // Safe integers keep every cell's offset from the first cell, and so its
+  // node id, exact.
+  if (
+    !Number.isSafeInteger(minColumn) ||
+    !Number.isSafeInteger(minRow) ||
+    !Number.isSafeInteger(maxColumn) ||
+    !Number.isSafeInteger(maxRow)
+  ) {
     throw new Error(
-      `createNavigationGrid: ${name} must be a positive integer, received ${value}.`,
+      `createNavigationGrid: the bounds of cells must be safe integers, received ${bounds}.`,
+    );
+  }
+
+  if (minColumn > maxColumn || minRow > maxRow) {
+    throw new Error(
+      `createNavigationGrid: the min of cells must not be greater than its max, received ${bounds}.`,
+    );
+  }
+
+  const columns = maxColumn - minColumn + 1;
+  const rows = maxRow - minRow + 1;
+
+  if (columns * rows > maxCellCount) {
+    throw new Error(
+      `createNavigationGrid: cells from ${bounds} are ${columns} x ${rows}, ${columns * rows} cells, more than the most a grid can have, ${maxCellCount}.`,
     );
   }
 };
 
 /**
  * Creates a navigation grid with every cell walkable and costing `1`. The
- * grid's size, layout, origin and diagonal rule are fixed once it's
+ * grid's cells, layout, origin and diagonal rule are fixed once it's
  * created; a level of another size needs a new grid.
- * @param options - The grid's size, layout, origin and diagonal rule.
+ * @param options - The grid's cells, layout, origin and diagonal rule.
  * @returns The navigation grid.
- * @throws An error if `columns` or `rows` isn't a positive integer, if
- * `columns * rows` is more than `2^31 - 1`, if `origin` isn't finite, or if
- * `diagonals` isn't `'never'`, `'always'` or `'noCornerCutting'`.
+ * @throws An error if a bound of `cells` isn't a safe integer, if its min
+ * is greater than its max, if it holds more than `2^31 - 1` cells, if
+ * `origin` isn't finite, or if `diagonals` isn't `'never'`, `'always'` or
+ * `'noCornerCutting'`.
  */
 export function createNavigationGrid(
   options: NavigationGridOptions,
 ): NavigationGrid {
-  const { columns, rows, layout, origin, diagonals } = withDefaults(
+  const { cells, layout, origin, diagonals } = withDefaults(
     defaultNavigationGridOptions,
     options,
   );
 
-  assertCount('columns', columns);
-  assertCount('rows', rows);
-
-  if (columns * rows > maxCellCount) {
-    throw new Error(
-      `createNavigationGrid: a grid of ${columns} x ${rows} has ${columns * rows} cells, more than the most a grid can have, ${maxCellCount}.`,
-    );
-  }
+  assertCells(cells);
 
   if (!Number.isFinite(origin.x) || !Number.isFinite(origin.y)) {
     throw new Error(
@@ -69,5 +89,5 @@ export function createNavigationGrid(
     );
   }
 
-  return new DenseNavigationGrid(columns, rows, layout, origin, diagonals);
+  return new DenseNavigationGrid(cells, layout, origin, diagonals);
 }

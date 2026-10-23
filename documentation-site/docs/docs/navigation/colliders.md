@@ -22,8 +22,7 @@ import {
 } from '@forge-game-engine/forge/navigation';
 
 const grid = createNavigationGrid({
-  columns: 64,
-  rows: 48,
+  cells: { minColumn: 0, minRow: 0, maxColumn: 63, maxRow: 47 },
   layout: createOrthogonalGridLayout({ cellWidth: 16, cellHeight: 16 }),
   origin: { x: -512, y: -384 },
 });
@@ -149,15 +148,7 @@ affected cells walkable with
 [`fillWalkable`](./grids.md#blocking-cells), then bake again:
 
 ```ts
-grid.fillWalkable(
-  {
-    minColumn: 0,
-    minRow: 0,
-    maxColumn: grid.columns - 1,
-    maxRow: grid.rows - 1,
-  },
-  true,
-);
+grid.fillWalkable(grid.cells, true);
 markGridFromColliders(world, grid, { agentRadius: 12 });
 ```
 

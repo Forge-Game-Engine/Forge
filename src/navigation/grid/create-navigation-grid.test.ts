@@ -4,6 +4,7 @@ import { createOrthogonalGridLayout } from '../../math/grid-layout/create-orthog
 import { GridLayout } from '../../math/grid-layout/grid-layout.js';
 import { Random } from '../../math/random.js';
 import { findPath } from '../find-path.js';
+import { cellRange } from '../test-helpers/cell-range.js';
 import { shortestCosts, TestEdge } from '../test-helpers/test-graph.js';
 import { createNavigationGrid } from './create-navigation-grid.js';
 import { NavigationGrid, NavigationGridDiagonals } from './navigation-grid.js';
@@ -33,7 +34,11 @@ const createSquareGrid = (
   columns = 3,
   rows = 3,
 ): NavigationGrid =>
-  createNavigationGrid({ columns, rows, layout: squareLayout, diagonals });
+  createNavigationGrid({
+    cells: cellRange(columns, rows),
+    layout: squareLayout,
+    diagonals,
+  });
 
 /** Every step out of a node, as `[neighbor, cost]`. */
 const getSteps = (
@@ -72,11 +77,12 @@ const createRandomGrid = (
   random: Random,
   layout: GridLayout,
   diagonals: NavigationGridDiagonals,
+  cells = cellRange(6, 5),
 ): NavigationGrid => {
-  const grid = createNavigationGrid({ columns: 6, rows: 5, layout, diagonals });
+  const grid = createNavigationGrid({ cells, layout, diagonals });
 
-  for (let row = 0; row < grid.rows; row++) {
-    for (let column = 0; column < grid.columns; column++) {
+  for (let row = cells.minRow; row <= cells.maxRow; row++) {
+    for (let column = cells.minColumn; column <= cells.maxColumn; column++) {
       grid.setWalkable(column, row, random.randomInt(0, 4) !== 0);
       grid.setCost(column, row, random.randomInt(1, 8) / 2);
     }
@@ -85,6 +91,9 @@ const createRandomGrid = (
   return grid;
 };
 
+// A block of cells around (0, 0), from (-3, -2) to (2, 1).
+const negativeCells = cellRange(6, 4, -3, -2);
+
 // Costs are 32-bit floats and diagonal lengths involve square roots, so a
 // heuristic and a summed path cost can differ in their last bits.
 const tolerance = 1e-9;
@@ -92,12 +101,13 @@ const tolerance = 1e-9;
 describe('createNavigationGrid', () => {
   it('starts with every cell walkable, costing 1, at version 0', () => {
     const grid = createNavigationGrid({
-      columns: 4,
-      rows: 3,
+      cells: cellRange(4, 3),
       layout: squareLayout,
     });
 
     expect(grid.nodeCount).toBe(12);
+    expect(grid.columns).toBe(4);
+    expect(grid.rows).toBe(3);
     expect(grid.version).toBe(0);
     expect(grid.origin).toEqual({ x: 0, y: 0 });
     expect(grid.diagonals).toBe('noCornerCutting');
@@ -113,8 +123,7 @@ describe('createNavigationGrid', () => {
   it('copies the origin it is given and the one it returns', () => {
     const origin = { x: 5, y: 6 };
     const grid = createNavigationGrid({
-      columns: 1,
-      rows: 1,
+      cells: cellRange(1, 1),
       layout: squareLayout,
       origin,
     });
@@ -125,23 +134,69 @@ describe('createNavigationGrid', () => {
     expect(grid.origin).toEqual({ x: 5, y: 6 });
   });
 
-  it.each([0, -1, 1.5, NaN, Infinity])(
-    'throws for columns or rows of %s',
-    (count) => {
-      expect(() =>
-        createNavigationGrid({ columns: count, rows: 2, layout: squareLayout }),
-      ).toThrow('columns must be a positive integer');
-      expect(() =>
-        createNavigationGrid({ columns: 2, rows: count, layout: squareLayout }),
-      ).toThrow('rows must be a positive integer');
+  it('copies the cells it is given and the ones it returns', () => {
+    const cells = cellRange(3, 2, -4, 7);
+    const grid = createNavigationGrid({ cells, layout: squareLayout });
+
+    cells.minColumn = 0;
+    grid.cells.maxRow = 100;
+
+    expect(grid.cells).toEqual({
+      minColumn: -4,
+      minRow: 7,
+      maxColumn: -2,
+      maxRow: 8,
+    });
+    expect(grid.columns).toBe(3);
+    expect(grid.rows).toBe(2);
+    expect(grid.nodeCount).toBe(6);
+  });
+
+  it('has a single cell when min and max are equal', () => {
+    const grid = createNavigationGrid({
+      cells: { minColumn: -5, minRow: 3, maxColumn: -5, maxRow: 3 },
+      layout: squareLayout,
+    });
+
+    expect(grid.nodeCount).toBe(1);
+    expect(grid.nodeToCell(0)).toEqual({ column: -5, row: 3 });
+  });
+
+  it.each([1.5, NaN, Infinity, 2 ** 53])(
+    'throws for a bound of %s',
+    (bound) => {
+      const bounds = ['minColumn', 'minRow', 'maxColumn', 'maxRow'] as const;
+
+      for (const name of bounds) {
+        expect(() =>
+          createNavigationGrid({
+            cells: { ...cellRange(2, 2), [name]: bound },
+            layout: squareLayout,
+          }),
+        ).toThrow('the bounds of cells must be safe integers');
+      }
     },
   );
+
+  it('throws for a min greater than its max', () => {
+    expect(() =>
+      createNavigationGrid({
+        cells: { minColumn: 1, minRow: 0, maxColumn: 0, maxRow: 0 },
+        layout: squareLayout,
+      }),
+    ).toThrow('the min of cells must not be greater than its max');
+    expect(() =>
+      createNavigationGrid({
+        cells: { minColumn: 0, minRow: -2, maxColumn: 0, maxRow: -3 },
+        layout: squareLayout,
+      }),
+    ).toThrow('the min of cells must not be greater than its max');
+  });
 
   it('throws for more than 2^31 - 1 cells', () => {
     expect(() =>
       createNavigationGrid({
-        columns: 65536,
-        rows: 32768,
+        cells: cellRange(65536, 32768, -30000, -16000),
         layout: squareLayout,
       }),
     ).toThrow('more than the most a grid can have');
@@ -150,8 +205,7 @@ describe('createNavigationGrid', () => {
   it('throws for an origin that is not finite', () => {
     expect(() =>
       createNavigationGrid({
-        columns: 2,
-        rows: 2,
+        cells: cellRange(2, 2),
         layout: squareLayout,
         origin: { x: NaN, y: 0 },
       }),
@@ -161,8 +215,7 @@ describe('createNavigationGrid', () => {
   it('throws for an unknown diagonal rule', () => {
     expect(() =>
       createNavigationGrid({
-        columns: 2,
-        rows: 2,
+        cells: cellRange(2, 2),
         layout: squareLayout,
         // @ts-expect-error - checks a value from untyped code.
         diagonals: 'sometimes',
@@ -241,10 +294,53 @@ describe('NavigationGrid cells', () => {
     );
   });
 
+  it('throws for cells just outside a grid of negative cells', () => {
+    const grid = createNavigationGrid({
+      cells: negativeCells,
+      layout: squareLayout,
+    });
+
+    expect(grid.hasCell(-3, -2)).toBe(true);
+    expect(grid.hasCell(2, 1)).toBe(true);
+
+    for (const [column, row] of [
+      [-4, -2],
+      [3, 1],
+      [-3, -3],
+      [2, 2],
+    ]) {
+      expect(grid.hasCell(column, row)).toBe(false);
+      expect(() => grid.isWalkable(column, row)).toThrow(
+        "it isn't in the grid, which has integer columns from -3 to 2 and rows from -2 to 1",
+      );
+    }
+  });
+
+  it('fills an inclusive range, clipped to a grid of negative cells', () => {
+    const grid = createNavigationGrid({
+      cells: negativeCells,
+      layout: squareLayout,
+    });
+
+    grid.fillWalkable(
+      { minColumn: -10, minRow: 0, maxColumn: -2, maxRow: 10 },
+      false,
+    );
+    grid.fillCost({ minColumn: 2, minRow: -9, maxColumn: 9, maxRow: -2 }, 4);
+
+    for (let row = -2; row <= 1; row++) {
+      for (let column = -3; column <= 2; column++) {
+        expect(grid.isWalkable(column, row)).toBe(!(column <= -2 && row >= 0));
+        expect(grid.getCost(column, row)).toBe(
+          column === 2 && row === -2 ? 4 : 1,
+        );
+      }
+    }
+  });
+
   it('fills an inclusive range, clipped to the grid', () => {
     const grid = createNavigationGrid({
-      columns: 4,
-      rows: 4,
+      cells: cellRange(4, 4),
       layout: squareLayout,
     });
 
@@ -384,61 +480,82 @@ describe('NavigationGrid conversions', () => {
     { x: 250, y: -480 },
   ];
 
+  const cellBlocks = [cellRange(5, 4), negativeCells];
+
   describe.each(layouts)('on a %s layout', (_, layout) => {
-    it.each(origins)(
-      'round-trips every cell through the world with origin %o',
-      (origin) => {
-        const grid = createNavigationGrid({
-          columns: 5,
-          rows: 4,
-          layout,
-          origin,
-        });
+    describe.each(cellBlocks)('with cells %o', (cells) => {
+      it.each(origins)(
+        'round-trips every cell through the world with origin %o',
+        (origin) => {
+          const grid = createNavigationGrid({ cells, layout, origin });
 
-        for (let row = 0; row < grid.rows; row++) {
-          for (let column = 0; column < grid.columns; column++) {
-            expect(grid.worldToCell(grid.cellToWorld(column, row))).toEqual({
-              column,
-              row,
-            });
-            expect(grid.nodeToCell(grid.cellToNode(column, row))).toEqual({
-              column,
-              row,
-            });
+          for (let row = cells.minRow; row <= cells.maxRow; row++) {
+            for (
+              let column = cells.minColumn;
+              column <= cells.maxColumn;
+              column++
+            ) {
+              expect(grid.worldToCell(grid.cellToWorld(column, row))).toEqual({
+                column,
+                row,
+              });
+              expect(grid.nodeToCell(grid.cellToNode(column, row))).toEqual({
+                column,
+                row,
+              });
+            }
           }
-        }
-      },
-    );
+        },
+      );
 
-    it('returns null for positions just outside the grid', () => {
+      it('returns null for positions just outside the grid', () => {
+        const origin = { x: -100.5, y: 37 };
+        const grid = createNavigationGrid({ cells, layout, origin });
+        const middleColumn = (cells.minColumn + cells.maxColumn + 1) / 2;
+        const middleRow = (cells.minRow + cells.maxRow + 1) / 2;
+        const outside = [
+          { x: cells.minColumn - 0.25, y: middleRow },
+          { x: cells.maxColumn + 1.25, y: middleRow },
+          { x: middleColumn, y: cells.minRow - 0.25 },
+          { x: middleColumn, y: cells.maxRow + 1.25 },
+        ];
+
+        for (const cellSpace of outside) {
+          const local = layout.cellSpaceToLocal(cellSpace);
+
+          expect(
+            grid.worldToCell({ x: local.x + origin.x, y: local.y + origin.y }),
+          ).toBeNull();
+        }
+      });
+    });
+
+    it('places the cells a grid of negative cells shares with one from (0, 0) the same', () => {
       const origin = { x: -100.5, y: 37 };
-      const grid = createNavigationGrid({
-        columns: 5,
-        rows: 4,
+      const fromZero = createNavigationGrid({
+        cells: cellRange(3, 2),
         layout,
         origin,
       });
-      const outside = [
-        { x: -0.25, y: 2 },
-        { x: 5.25, y: 2 },
-        { x: 2, y: -0.25 },
-        { x: 2, y: 4.25 },
-      ];
+      const negative = createNavigationGrid({
+        cells: negativeCells,
+        layout,
+        origin,
+      });
 
-      for (const cellSpace of outside) {
-        const local = layout.cellSpaceToLocal(cellSpace);
-
-        expect(
-          grid.worldToCell({ x: local.x + origin.x, y: local.y + origin.y }),
-        ).toBeNull();
+      for (let row = 0; row <= 1; row++) {
+        for (let column = 0; column <= 2; column++) {
+          expect(negative.cellToWorld(column, row)).toEqual(
+            fromZero.cellToWorld(column, row),
+          );
+        }
       }
     });
   });
 
   it('numbers nodes row by row', () => {
     const grid = createNavigationGrid({
-      columns: 4,
-      rows: 3,
+      cells: cellRange(4, 3),
       layout: squareLayout,
     });
 
@@ -447,10 +564,22 @@ describe('NavigationGrid conversions', () => {
     expect(grid.nodeToCell(11)).toEqual({ column: 3, row: 2 });
   });
 
+  it('numbers nodes row by row from the first cell', () => {
+    const grid = createNavigationGrid({
+      cells: negativeCells,
+      layout: squareLayout,
+    });
+
+    expect(grid.cellToNode(-3, -2)).toBe(0);
+    expect(grid.cellToNode(2, -2)).toBe(5);
+    expect(grid.cellToNode(-3, -1)).toBe(6);
+    expect(grid.cellToNode(0, 0)).toBe(15);
+    expect(grid.nodeToCell(grid.nodeCount - 1)).toEqual({ column: 2, row: 1 });
+  });
+
   it('puts cell (0, 0) at the origin, with rows increasing down the screen', () => {
     const grid = createNavigationGrid({
-      columns: 4,
-      rows: 4,
+      cells: cellRange(4, 4),
       layout: squareLayout,
       origin: { x: -64, y: -64 },
     });
@@ -545,8 +674,7 @@ describe('NavigationGrid steps', () => {
 
   it('uses the layout to measure steps', () => {
     const grid = createNavigationGrid({
-      columns: 3,
-      rows: 3,
+      cells: cellRange(3, 3),
       layout: createIsometricGridLayout({ cellWidth: 64, cellHeight: 32 }),
       diagonals: 'always',
     });
@@ -565,8 +693,7 @@ describe('NavigationGrid heuristic', () => {
       "equals the cheapest cost on an empty grid with '%s'",
       (diagonals) => {
         const grid = createNavigationGrid({
-          columns: 5,
-          rows: 4,
+          cells: cellRange(5, 4),
           layout,
           diagonals,
         });
@@ -587,8 +714,15 @@ describe('NavigationGrid heuristic', () => {
       (diagonals) => {
         const random = new Random(`grid-${diagonals}`);
 
-        for (let trial = 0; trial < 5; trial++) {
-          const grid = createRandomGrid(random, layout, diagonals);
+        for (let trial = 0; trial < 6; trial++) {
+          // Every other grid has negative cells, which the search must
+          // see through node ids alone.
+          const grid = createRandomGrid(
+            random,
+            layout,
+            diagonals,
+            trial % 2 === 0 ? cellRange(6, 5) : cellRange(6, 5, -3, -2),
+          );
           const edges = getEdges(grid);
           const goal = random.randomInt(0, grid.nodeCount - 1);
 
@@ -625,7 +759,7 @@ describe('NavigationGrid heuristic', () => {
     );
 
     it('expands only the cells on the path across an open grid', () => {
-      const grid = createNavigationGrid({ columns: 8, rows: 6, layout });
+      const grid = createNavigationGrid({ cells: cellRange(8, 6), layout });
       const result = findPath(
         grid,
         grid.cellToNode(0, 0),

@@ -4,8 +4,8 @@ sidebar_position: 2
 
 # Navigation grids
 
-A navigation grid is a fixed-size block of cells, each walkable or blocked
-and each with a traversal cost, placed in the world by a
+A navigation grid is a fixed block of cells, each walkable or blocked and
+each with a traversal cost, placed in the world by a
 [grid layout](../math/grid-layouts.md). It's a
 [`NavigationGraph`](/Forge/docs/api/interfaces/NavigationGraph), so
 [`findPath`](./index.md#finding-a-path) can search it, and
@@ -15,7 +15,7 @@ between two world positions across it.
 ## Creating a grid
 
 [`createNavigationGrid`](/Forge/docs/api/functions/createNavigationGrid)
-takes the number of columns and rows, a `GridLayout` and the world
+takes the block of cells the grid has, a `GridLayout` and the world
 position of the grid's `origin`:
 
 ```ts
@@ -23,14 +23,19 @@ import { createOrthogonalGridLayout } from '@forge-game-engine/forge/math';
 import { createNavigationGrid } from '@forge-game-engine/forge/navigation';
 
 const grid = createNavigationGrid({
-  columns: 40,
-  rows: 30,
+  cells: { minColumn: 0, minRow: 0, maxColumn: 39, maxRow: 29 },
   layout: createOrthogonalGridLayout({ cellWidth: 32, cellHeight: 32 }),
   origin: { x: -640, y: -480 },
 });
 ```
 
-Every cell starts walkable, with a cost of `1`. The size, layout, origin
+`cells` is an inclusive
+[`GridCellRange`](/Forge/docs/api/interfaces/GridCellRange) of integer
+columns and rows, so this grid has 40 columns and 30 rows. Its bounds can
+be negative. `grid.cells` returns the range, and `grid.columns` and
+`grid.rows` the number of columns and rows.
+
+Every cell starts walkable, with a cost of `1`. The cells, layout, origin
 and [diagonal rule](#diagonal-movement) can't be changed after the grid is
 created.
 
@@ -38,10 +43,11 @@ created.
 
 The world is Y-down: columns increase towards `+X` and rows towards `+Y`,
 down the screen. `origin` is the world position of cell `(0, 0)`'s corner
-at the layout's origin: the top-left corner of an orthogonal cell and the
-top corner of an isometric one. A grid with the same layout as a tile
-layer whose entity isn't rotated or scaled, and its `origin` at the
-layer's world position, has the same cells as the layer.
+at the layout's origin, whether or not the grid has cell `(0, 0)`: the
+top-left corner of an orthogonal cell and the top corner of an isometric
+one. The layout places every other cell relative to it, so a grid's cells
+are at the same world positions as the same cells of a grid with any
+other `cells` and the same layout and origin.
 
 - `worldToCell(position)` returns the cell a world position is in, or
   `null` when the position is outside the grid.
@@ -60,11 +66,112 @@ if (cell !== null) {
 Every other method that takes a column and row throws for a cell that
 isn't in the grid.
 
+## Isometric grids
+
+A grid made with an isometric layout has diamond cells, like an
+[isometric tile layer](../tilemaps/isometric-maps.md):
+
+```ts
+import { createIsometricGridLayout } from '@forge-game-engine/forge/math';
+import { createNavigationGrid } from '@forge-game-engine/forge/navigation';
+
+const grid = createNavigationGrid({
+  cells: { minColumn: 0, minRow: 0, maxColumn: 19, maxRow: 19 },
+  layout: createIsometricGridLayout({ cellWidth: 64, cellHeight: 32 }),
+});
+```
+
+`origin` is the top corner of cell `(0, 0)`'s diamond. Columns run down
+and to the right on screen, and rows down and to the left. A step between
+two cells is a step between their centres, so on diamonds `w` wide and `h`
+tall:
+
+| Step                   | Direction on screen    | Length         |
+| ---------------------- | ---------------------- | -------------- |
+| One column or one row  | Along a diamond's edge | `√(w² + h²)/2` |
+| `(1, 1)` or `(-1, -1)` | Straight down or up    | `h`            |
+| `(1, -1)` or `(-1, 1)` | Straight right or left | `w`            |
+
+With `'never'`, a path only takes the steps along the diamonds' edges.
+
+## Laying a grid over a tile layer
+
+A grid with a tile layer's layout, its `origin` at the layer's world
+position and the layer's used cells as its `cells` has the layer's cells:
+grid cell `(c, r)` is layer cell `(c, r)`, at the same world position. The
+layer's entity and its parents must not be rotated or scaled, since a grid
+has no rotation or scale.
+
+The grid needs the cells units walk on, so it covers the layer that holds
+the floor. [`getUsedRect`](/Forge/docs/api/functions/getUsedRect) returns
+the cells a layer has tiles in, negative ones included:
+
+```ts
+import { positionId } from '@forge-game-engine/forge/common';
+import { createNavigationGrid } from '@forge-game-engine/forge/navigation';
+import { getUsedRect, tilemapLayerId } from '@forge-game-engine/forge/tilemaps';
+
+const layer = world.getComponent(floor, tilemapLayerId);
+const position = world.getComponent(floor, positionId);
+const cells = layer ? getUsedRect(layer) : null;
+
+if (!layer || !position || !cells) {
+  throw new Error('The floor must be a tile layer with tiles and a position.');
+}
+
+const grid = createNavigationGrid({
+  cells,
+  layout: layer.tileSet.layout,
+  origin: position.world,
+});
+```
+
+`position.world` includes the positions of the layer's parents once the
+transform system has run, so create the grid after the first
+`world.update()`. When the floor is made of several layers at the same
+position, give the grid the smallest range that holds all of their used
+rects.
+
+A finite [Tiled map](../tilemaps/loading-tiled-maps.md) has the cells from
+`(0, 0)` to `(size.columns - 1, size.rows - 1)` on every layer:
+
+```ts
+import { findTiledLayer } from '@forge-game-engine/forge/tilemaps';
+
+const floor = findTiledLayer(spawned, 'Floor').entity;
+const floorPosition = world.getComponent(floor, positionId);
+
+if (!map.size || !floorPosition) {
+  throw new Error('The map must be finite, with a positioned floor layer.');
+}
+
+const grid = createNavigationGrid({
+  cells: {
+    minColumn: 0,
+    minRow: 0,
+    maxColumn: map.size.columns - 1,
+    maxRow: map.size.rows - 1,
+  },
+  layout: map.tileSet.layout,
+  origin: floorPosition.world,
+});
+```
+
+An infinite Tiled map has no `size`, so use the floor layers' used rects
+for it. A layer with its own offset in Tiled is at a different world
+position from the others, so a grid only has the cells of the layers at
+its `origin`.
+
+The grid doesn't follow the layer: when the layer moves, create a new
+grid. To block the cells of the layer's solid tiles, bake the layer's
+collider into the grid (see
+[Blocking cells from colliders](./colliders.md)).
+
 ## Blocking cells
 
 `setWalkable(column, row, walkable)` makes one cell walkable or blocked,
 and `fillWalkable(range, walkable)` does the same for an inclusive
-[`GridCellRange`](/Forge/docs/api/interfaces/GridCellRange) of cells:
+`GridCellRange` of cells:
 
 ```ts
 grid.setWalkable(4, 7, false);
@@ -79,9 +186,8 @@ reads a cell's walkability. A path never enters a blocked cell.
 
 `fillWalkableMask(mask, walkable)` makes many cells walkable or blocked in
 one call. `mask` is a `Uint8Array` with one byte per cell, indexed by node
-id (`row * columns + column`, see
-[Searching a grid with findPath](#searching-a-grid-with-findpath)), and
-every cell whose byte isn't `0` is written:
+id (see [Searching a grid with findPath](#searching-a-grid-with-findpath)),
+and every cell whose byte isn't `0` is written:
 
 ```ts
 const mask = new Uint8Array(grid.nodeCount);
@@ -133,23 +239,25 @@ A #     The diagonal step from A to B passes between the blocked
         'noCornerCutting' doesn't.
 ```
 
-On an isometric layout the four cells beside a cell are the cells across
-its diamond's edges, so with `'never'` a path moves diagonally across the
-screen.
+The cells beside a cell are the cells one column or one row away on every
+layout. On an isometric layout they're across its diamond's edges (see
+[Isometric grids](#isometric-grids)).
 
 ## Path costs
 
 A step costs the cost of the cell it enters times the world distance
-between the two cells' centres. On square cells of size `s`, an
-orthogonal step costs `s` times the cell's cost and a diagonal step costs
-`s√2` times it. A path's cost is therefore its length in world units,
-weighted by the costs of the cells it enters.
+between the two cells' centres. A path's cost is therefore its length in
+world units, weighted by the costs of the cells it enters, and the
+cheapest path is the shortest one in the world when every cell costs the
+same. On square cells of size `s`, an orthogonal step costs `s` times the
+cell's cost and a diagonal step costs `s√2` times it. On an isometric
+layout the steps have the lengths in [Isometric grids](#isometric-grids).
 
 The grid's heuristic is the cost of the shortest path between two cells
 on the same grid with no blocked cells and every cell at the grid's lowest
-cost: Manhattan distance with `'never'`, and octile distance otherwise, on
-square cells. It never overestimates, so `findPath` returns the cheapest
-path.
+cost. On square cells that's Manhattan distance with `'never'` and octile
+distance otherwise, times the cell size. It never overestimates, so
+`findPath` returns the cheapest path.
 
 ## Finding a path between world positions
 
@@ -205,9 +313,10 @@ a blocked cell can still step into a walkable cell beside it.
 
 ## Searching a grid with findPath
 
-A grid's node ids are its cell indices, `row * columns + column`.
-`cellToNode(column, row)` and `nodeToCell(node)` convert between the two,
-so a grid can be searched with `findPath` directly:
+A grid's node ids number its cells row by row from its first cell,
+`(row - cells.minRow) * columns + (column - cells.minColumn)`, from `0` to
+`nodeCount - 1`. `cellToNode(column, row)` and `nodeToCell(node)` convert
+between the two, so a grid can be searched with `findPath` directly:
 
 ```ts
 import { findPath } from '@forge-game-engine/forge/navigation';
