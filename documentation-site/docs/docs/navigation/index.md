@@ -17,6 +17,11 @@ a path across one between two world positions, and `smoothGridPath`
 straightens that path into waypoints a unit can walk between in straight
 lines.
 
+For levels that aren't grids, a [waypoint graph](./waypoint-graphs.md) is
+a `NavigationGraph` of points placed in the world and joined by
+connections, and `findWaypointPath` finds a route through one between two
+world positions.
+
 ## Graphs and nodes
 
 A graph is a set of nodes connected by steps:

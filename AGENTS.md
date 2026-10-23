@@ -200,7 +200,7 @@ unattended:
   /input                   # Input handling (keyboard, mouse, gamepad, hidden-DOM text entry)
   /lifecycle               # Lifecycle management
   /math                    # Math utilities
-  /navigation              # Path finding: the NavigationGraph interface and findPath, an A* search over any graph of integer node ids; navigation grids (walkable cells and costs on a GridLayout), findGridPath, hasLineOfSight and smoothGridPath (string pulling a grid path into straight-line waypoints), and markGridFromColliders, which blocks the cells static colliders overlap
+  /navigation              # Path finding: the NavigationGraph interface and findPath, an A* search over any graph of integer node ids; navigation grids (walkable cells and costs on a GridLayout), findGridPath, hasLineOfSight and smoothGridPath (string pulling a grid path into straight-line waypoints), and markGridFromColliders, which blocks the cells static colliders overlap; waypoint graphs (points and connections placed by the game) and findWaypointPath
   /particles               # Particle system
   /physics                 # Physics integration
   /pooling                 # Object pooling
