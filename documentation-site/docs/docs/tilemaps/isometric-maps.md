@@ -243,8 +243,10 @@ layout, its `origin` at the floor layer's world position and the floor's
 cells has the same diamonds as the layer, by number and by position (see
 [Laying a grid over a tile layer](../navigation/grids.md#laying-a-grid-over-a-tile-layer)).
 [`markGridFromColliders`](../navigation/colliders.md) blocks the cells of
-the walls' collision shapes, and `findGridPath` returns paths through the
-centres of the open diamonds. The
+the walls' collision shapes,
+[`applyTilemapNavigationCosts`](./navigation.md#applying-tile-costs-to-a-grid)
+sets each diamond's cost from the floor tile's `navigationCost`, and
+`findGridPath` returns paths through the centres of the open diamonds. The
 [Isometric Path Finding demo](/Forge/demos/isometric-path-finding) draws
 one.
 

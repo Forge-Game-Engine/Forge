@@ -63,6 +63,7 @@ describe('createTileSet', () => {
         ySortOrigin: 0,
         collision: null,
         animation: null,
+        navigationCost: null,
       });
     }
   });
@@ -93,6 +94,7 @@ describe('createTileSet', () => {
       ySortOrigin: 3,
       collision: null,
       animation: null,
+      navigationCost: null,
     });
     expect(tiles[0]).toBe(tiles[1]);
     expect(tiles[0].properties).toEqual({});
@@ -207,6 +209,54 @@ describe('createTileSet', () => {
       /at most 1048576 tiles/,
     );
   });
+});
+
+describe('createTileSet navigation costs', () => {
+  const withNavigationCost = (navigationCost: number | null): TileSet =>
+    createTileSet({
+      layout,
+      sources: [
+        createTestSource(2, 1, {
+          tiles: new Map([[1, { navigationCost }]]),
+        }),
+      ],
+    });
+
+  it('stores a cost as a 32-bit float', () => {
+    expect(withNavigationCost(3).sources[0].tiles[1].navigationCost).toBe(3);
+    expect(withNavigationCost(0.1).sources[0].tiles[1].navigationCost).toBe(
+      Math.fround(0.1),
+    );
+  });
+
+  it('keeps a null cost', () => {
+    expect(
+      withNavigationCost(null).sources[0].tiles[1].navigationCost,
+    ).toBeNull();
+  });
+
+  it('gives a tile with other data a null cost', () => {
+    const tileSet = createTileSet({
+      layout,
+      sources: [
+        createTestSource(1, 1, {
+          tiles: new Map([[0, { collision: 'cell' }]]),
+        }),
+      ],
+    });
+
+    expect(tileSet.sources[0].tiles[0].navigationCost).toBeNull();
+  });
+
+  // 1e-50 underflows to 0 and 1e39 overflows to Infinity as 32-bit floats.
+  it.each([0, -1, Number.NaN, Infinity, 1e-50, 1e39])(
+    'throws for a cost of %s, naming the tile and source',
+    (cost) => {
+      expect(() => withNavigationCost(cost)).toThrow(
+        `tile 1 of source 0 has a navigationCost of ${cost}, which must be finite and more than 0 as a 32-bit float, or null`,
+      );
+    },
+  );
 });
 
 describe('createTileSet animations', () => {

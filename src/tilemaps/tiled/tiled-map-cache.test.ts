@@ -530,6 +530,54 @@ describe('TiledMapCache', () => {
       );
     });
 
+    it('gives a tile with no navigationCost property a null cost', async () => {
+      const { map } = await load();
+
+      expect(getTileData(map.tileSet, terrain(0)).navigationCost).toBeNull();
+    });
+
+    it.each([
+      ['int', 3],
+      ['float', 0.5],
+    ])(
+      'reads a %s navigationCost property into the tile’s cost, keeping the property',
+      async (type, value) => {
+        const map = await loadEdited([
+          ['tilesets', 0, 'tiles', 0, 'properties', 1],
+          { name: 'navigationCost', type, value },
+        ]);
+        const data = getTileData(map.tileSet, terrain(0));
+
+        expect(data.navigationCost).toBe(value);
+        expect(data.properties).toEqual({
+          kind: 'grass',
+          navigationCost: value,
+        });
+      },
+    );
+
+    it('throws for a navigationCost property that is not a number, naming the tile', async () => {
+      await expect(
+        loadEdited([
+          ['tilesets', 0, 'tiles', 0, 'properties', 1],
+          { name: 'navigationCost', type: 'string', value: 'slow' },
+        ]),
+      ).rejects.toThrow(
+        `tile 0 of tileset tilesets[0] embedded in "${badUrl}" has a navigationCost property of type "string", and it must be an int or a float.`,
+      );
+    });
+
+    it('throws for a navigationCost of 0, naming the tile', async () => {
+      await expect(
+        loadEdited([
+          ['tilesets', 0, 'tiles', 0, 'properties', 1],
+          { name: 'navigationCost', type: 'float', value: 0 },
+        ]),
+      ).rejects.toThrow(
+        `Unable to create a tile set: tile 0 of tileset tilesets[0] embedded in "${badUrl}" has a navigationCost of 0, which must be finite and more than 0 as a 32-bit float, or null.`,
+      );
+    });
+
     it('flattens tile properties into the values a tile set stores', async () => {
       const { map } = await load();
 

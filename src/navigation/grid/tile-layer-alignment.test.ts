@@ -11,7 +11,10 @@ import {
 import { Random } from '../../math/random.js';
 import { Vector2 } from '../../math/vector2.js';
 import { ChainCollider } from '../../physics/colliders/chain-collider.js';
-import { addColliderComponent } from '../../physics/components/collider-component.js';
+import {
+  addColliderComponent,
+  colliderId,
+} from '../../physics/components/collider-component.js';
 import {
   clearTile,
   fillTiles,
@@ -31,7 +34,10 @@ import {
   fullTileIndex,
   openTileIndex,
 } from '../../tilemaps/test-helpers/create-collision-test-tile-set.js';
-import { getBlockedCells } from '../test-helpers/bake-reference.js';
+import {
+  compareWithReference,
+  getBlockedCells,
+} from '../test-helpers/bake-reference.js';
 import { createNavigationGrid } from './create-navigation-grid.js';
 import { findGridPath } from './find-grid-path.js';
 import { markGridFromColliders } from './mark-grid-from-colliders.js';
@@ -197,5 +203,37 @@ describe.each(layouts)(
         cellToWorld(world, layerEntity, 1, 3),
       );
     });
+
+    it.each([0.25, 1])(
+      "pads the layer's walls by an agentRadius of %s cell heights",
+      (cellHeights) => {
+        const agentRadius = cellHeights * layout.cellHeight;
+        const collider = world.getComponent(layerEntity, colliderId);
+
+        if (!(collider?.collider instanceof ChainCollider)) {
+          throw new Error('The test layer has no chain collider.');
+        }
+
+        const loops = collider.collider.loops.map((loop) =>
+          loop.map((point) => ({
+            x: point.x + layerPosition.x,
+            y: point.y + layerPosition.y,
+          })),
+        );
+
+        markGridFromColliders(world, grid, { agentRadius });
+
+        const blockedCells = getBlockedCells(grid);
+        const { wrong } = compareWithReference(
+          grid,
+          [{ kind: 'loops', loops }],
+          agentRadius,
+        );
+
+        expect(wrong).toEqual([]);
+        expect(blockedCells).toEqual(expect.arrayContaining(wallCells));
+        expect(blockedCells.length).toBeGreaterThan(wallCells.length);
+      },
+    );
   },
 );

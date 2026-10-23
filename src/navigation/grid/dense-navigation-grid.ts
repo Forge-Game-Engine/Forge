@@ -252,6 +252,41 @@ export class DenseNavigationGrid implements NavigationGrid {
     }
   }
 
+  public setCosts(costs: Float32Array): void {
+    if (costs.length !== this.nodeCount) {
+      throw new Error(
+        `Unable to set the navigation grid's costs from an array of ${costs.length} costs, it must have one cost per cell, ${this.nodeCount}.`,
+      );
+    }
+
+    let minCost = Infinity;
+    let changed = false;
+
+    for (let index = 0; index < costs.length; index++) {
+      const cost = costs[index];
+
+      if (!Number.isFinite(cost) || cost <= 0) {
+        const { column, row } = this.nodeToCell(index);
+
+        throw new Error(
+          `Unable to set the navigation grid's costs: entry ${index}, for cell (${column}, ${row}), is ${cost}, and a cost must be finite and more than 0.`,
+        );
+      }
+
+      minCost = Math.min(minCost, cost);
+      changed = changed || cost !== this._cost[index];
+    }
+
+    if (!changed) {
+      return;
+    }
+
+    this._cost.set(costs);
+    this._minCost = minCost;
+    this._isMinCostStale = false;
+    this._version++;
+  }
+
   public forEachNeighbor(
     node: number,
     visit: (neighbor: number, cost: number) => void,

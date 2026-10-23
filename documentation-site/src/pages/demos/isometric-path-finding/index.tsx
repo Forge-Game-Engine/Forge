@@ -56,7 +56,11 @@ export default function IsometricPathFinding(): JSX.Element {
           file: 'bake-grid.system.ts',
         },
         {
-          text: 'findGridPath runs from the player to the hovered cell every frame. A step costs the world distance between cell centres, so the path is the shortest one on screen.',
+          text: "applyTilemapNavigationCosts gives each cell the navigationCost of the Floor tile under it. The stone path's tile has a navigationCost of 0.5 in Tiled, so walking on it costs half as much as walking on grass.",
+          file: 'bake-grid.system.ts',
+        },
+        {
+          text: "findGridPath runs from the player to the hovered cell every frame. A step costs the world distance between cell centres times the entered cell's cost, so the path takes the stone path when that's cheaper than the shortest way.",
           file: 'find-path.system.ts',
         },
         {
@@ -69,6 +73,10 @@ export default function IsometricPathFinding(): JSX.Element {
         {
           label: 'Blocking cells from colliders',
           to: '/docs/docs/navigation/colliders',
+        },
+        {
+          label: 'Navigation over tile layers',
+          to: '/docs/docs/tilemaps/navigation',
         },
         { label: 'Isometric maps', to: '/docs/docs/tilemaps/isometric-maps' },
       ]}
@@ -90,13 +98,13 @@ export default function IsometricPathFinding(): JSX.Element {
             {
               name: 'navigation.component.ts',
               summary:
-                'The grid, the walls layer it is baked from, the collider version it was last baked at, and the path markers.',
+                'The grid, the walls and floor layers it is baked from, the collider version it was last baked at, and the path markers.',
               content: navigationComponentCode,
             },
             {
               name: 'bake-grid.system.ts',
               summary:
-                "Opens every cell and bakes the map's colliders into the grid when the walls change.",
+                "Resets the grid, then bakes the map's colliders and the floor tiles' costs into it when the walls change.",
               content: bakeGridSystemCode,
             },
             {

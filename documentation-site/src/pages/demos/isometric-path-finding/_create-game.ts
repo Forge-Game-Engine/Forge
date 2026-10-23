@@ -104,8 +104,9 @@ const createPathMarkers = (
 /**
  * Builds the isometric path finding demo: the courtyard of the isometric
  * tilemap demo, with a navigation grid that has the map's diamond cells,
- * baked from the walls' and the water's collision shapes, and the path from
- * the player to the cell under the mouse drawn on it. A click builds or
+ * baked from the walls' and the water's collision shapes and the floor
+ * tiles' costs, and the path from the player to the cell under the mouse
+ * drawn on it. A click builds or
  * clears a wall, and the grid is baked again on the same frame.
  * @param mapUrl - The URL of the map's `.tmj` file.
  * @returns The created game.
@@ -225,6 +226,7 @@ export const createIsometricPathFindingGame = async (
   addNavigationDemoComponent(world, demo, {
     grid,
     walls,
+    floor,
     agent: player,
     markers: createPathMarkers(world, map, grid.nodeCount),
   });
