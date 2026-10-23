@@ -333,7 +333,7 @@ a blocked cell can still step into a walkable cell beside it.
 ## Smoothing a path
 
 A path from `findGridPath` goes from cell centre to cell centre, so a unit
-following it zig-zags in steps between the eight directions.
+following it zig-zags in grid-aligned steps.
 [`smoothGridPath`](/Forge/docs/api/functions/smoothGridPath) removes
 every point the unit can skip by walking in a straight line:
 
@@ -348,17 +348,23 @@ const waypoints = smoothGridPath(grid, result.points);
 ```
 
 It keeps the first point. From each point it keeps, it keeps the farthest
-later point in line of sight of it and drops the points in between. A
-path across an open room becomes one straight segment, and a path around
-a wall keeps a point at each corner it turns. The last point is always
-kept. It returns a new array of new points and leaves the path alone.
+later point it has a shortcut to and drops the points in between. A
+shortcut is a straight segment that's in
+[line of sight](#line-of-sight) and costs no more than the stretch of
+path it replaces. A path across an open room becomes one straight
+segment, and a path around a wall keeps a point at each corner it turns.
+The last point is always kept. It returns a new array of new points and
+leaves the path alone.
+
+A segment costs its length in each cell it crosses times that cell's
+cost, added up. So a path that went around mud keeps going around it,
+because cutting through the mud would cost more, while a path that has
+to cross a river can still be straightened across it. On a grid where
+every cell costs the same, a straight segment never costs more than the
+path it replaces, so only line of sight decides.
 
 Smoothing is a separate step, so a turn-based game that moves cell by
 cell keeps the raw path, and a real-time game smooths it.
-
-Line of sight only checks that cells are walkable. A smoothed segment can
-cross walkable cells that cost more, such as mud the cheapest path went
-around, so keep the raw path where costs matter.
 
 ### Line of sight
 

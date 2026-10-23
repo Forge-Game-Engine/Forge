@@ -60,6 +60,74 @@ const expectSegmentsWalkable = (
   }
 };
 
+/**
+ * Measures a path's cost by sampling the cell under the middle of each of
+ * many short pieces of it, independently of `smoothGridPath`.
+ * @param grid - The grid.
+ * @param path - The path's world positions.
+ * @returns The sum of each piece's length times its cell's cost.
+ */
+const pathCost = (grid: NavigationGrid, path: readonly Vector2[]): number => {
+  let cost = 0;
+
+  for (let i = 1; i < path.length; i++) {
+    const from = path[i - 1];
+    const to = path[i];
+    const pieceLength = Math.hypot(to.x - from.x, to.y - from.y) / 1000;
+
+    for (let piece = 0; piece < 1000; piece++) {
+      const t = (piece + 0.5) / 1000;
+      const cell = grid.worldToCell({
+        x: from.x + (to.x - from.x) * t,
+        y: from.y + (to.y - from.y) * t,
+      });
+
+      if (cell) {
+        cost += pieceLength * grid.getCost(cell.column, cell.row);
+      }
+    }
+  }
+
+  return cost;
+};
+
+/**
+ * Checks that no segment of a path runs through the inside of a cell of a
+ * given cost, by sampling points along each segment and skipping those
+ * within a small distance of a cell's edge.
+ * @param grid - The grid, made by `createGrid`.
+ * @param path - The path's world positions.
+ * @param cost - The cost of the cells to avoid.
+ * @param applies - Which cells of that cost to avoid; all by default.
+ */
+const expectSegmentsAvoidCost = (
+  grid: NavigationGrid,
+  path: readonly Vector2[],
+  cost: number,
+  applies: (cell: { column: number; row: number }) => boolean = () => true,
+): void => {
+  for (let i = 1; i < path.length; i++) {
+    const from = path[i - 1];
+    const to = path[i];
+
+    for (let sample = 1; sample < 200; sample++) {
+      const t = sample / 200;
+      const x = from.x + (to.x - from.x) * t;
+      const y = from.y + (to.y - from.y) * t;
+      const cellX = (x + 50) / 10;
+      const cellY = (y + 50) / 10;
+      const nearEdge =
+        Math.abs(cellX - Math.round(cellX)) < 1e-6 ||
+        Math.abs(cellY - Math.round(cellY)) < 1e-6;
+      const cell = grid.worldToCell({ x, y });
+
+      if (!nearEdge && cell && applies(cell)) {
+        expect(grid.getCost(cell.column, cell.row)).not.toBe(cost);
+      }
+    }
+  }
+};
+
 /** A deterministic pseudo-random number generator, from `0` up to `1`. */
 const createRandom = (seed: number): (() => number) => {
   let state = seed;
@@ -199,6 +267,92 @@ describe('smoothGridPath', () => {
       center(1, 1),
       center(3, 1),
     ]);
+  });
+
+  it('keeps going around costly cells the cheapest path went around', () => {
+    // Mud across the middle of the grid, between the start and the goal.
+    const grid = createGrid(9, 5);
+
+    grid.fillCost({ minColumn: 3, minRow: 1, maxColumn: 5, maxRow: 3 }, 3);
+
+    // Rightwards, leftwards, and up and to the left across the mud.
+    const ends = [
+      [center(0, 2), center(8, 2)],
+      [center(8, 2), center(0, 2)],
+      [center(8, 3), center(0, 1)],
+    ];
+
+    for (const [from, to] of ends) {
+      const { status, points } = findGridPath(grid, from, to);
+      const smoothed = smoothGridPath(grid, points);
+
+      expect(status).toBe('found');
+      expect(smoothed.length).toBeGreaterThan(2);
+      expectSegmentsAvoidCost(grid, smoothed, 3);
+      expect(pathCost(grid, smoothed)).toBeLessThanOrEqual(
+        pathCost(grid, points),
+      );
+    }
+  });
+
+  it('keeps going around costly cells when the path crosses one of the same cost', () => {
+    // A field of swamp the path goes around, and a river down column 8 it
+    // has to cross, both costing 3.
+    const grid = createGrid(12, 7);
+
+    grid.fillCost({ minColumn: 3, minRow: 2, maxColumn: 5, maxRow: 4 }, 3);
+    grid.fillCost({ minColumn: 8, minRow: 0, maxColumn: 8, maxRow: 6 }, 3);
+
+    const { status, points } = findGridPath(grid, center(0, 3), center(11, 3));
+    const smoothed = smoothGridPath(grid, points);
+
+    expect(status).toBe('found');
+    expect(smoothed.length).toBeGreaterThan(2);
+    expectSegmentsAvoidCost(grid, smoothed, 3, (cell) => cell.column !== 8);
+    expect(pathCost(grid, smoothed)).toBeLessThanOrEqual(
+      pathCost(grid, points),
+    );
+  });
+
+  it('smooths a path across costly cells it has to cross', () => {
+    // A river down column 4 that every path crosses.
+    const grid = createGrid(9, 5);
+
+    grid.fillCost({ minColumn: 4, minRow: 0, maxColumn: 4, maxRow: 4 }, 3);
+
+    const path = [
+      center(0, 0),
+      center(1, 1),
+      center(2, 2),
+      center(3, 2),
+      center(4, 2),
+      center(5, 2),
+      center(6, 2),
+      center(7, 3),
+      center(8, 4),
+    ];
+
+    expect(smoothGridPath(grid, path)).toEqual([center(0, 0), center(8, 4)]);
+  });
+
+  it('takes a shortcut across cheaper cells', () => {
+    const grid = createGrid(6, 3);
+
+    grid.fillCost(cellRange(6, 3), 2);
+    grid.fillCost({ minColumn: 0, minRow: 1, maxColumn: 5, maxRow: 1 }, 0.5);
+
+    // The path detours along the costly row 0, and the straight shortcut
+    // along the cheap row 1 costs less.
+    const path = [
+      center(0, 1),
+      center(1, 0),
+      center(2, 0),
+      center(3, 0),
+      center(4, 0),
+      center(5, 1),
+    ];
+
+    expect(smoothGridPath(grid, path)).toEqual([center(0, 1), center(5, 1)]);
   });
 
   it('smooths a path across an open isometric room into one segment', () => {
