@@ -438,6 +438,105 @@ describe('NavigationGrid.fillWalkableMask', () => {
   });
 });
 
+describe('NavigationGrid.setCosts', () => {
+  it("writes every cell's cost by node id", () => {
+    const grid = createNavigationGrid({
+      cells: negativeCells,
+      layout: squareLayout,
+    });
+    const costs = new Float32Array(grid.nodeCount);
+
+    for (let node = 0; node < costs.length; node++) {
+      costs[node] = 1 + node / 4;
+    }
+
+    grid.setCosts(costs);
+
+    for (let node = 0; node < grid.nodeCount; node++) {
+      const { column, row } = grid.nodeToCell(node);
+
+      expect(grid.getCost(column, row)).toBe(costs[node]);
+    }
+  });
+
+  it('increases version once for an array that changes many cells', () => {
+    const grid = createSquareGrid();
+
+    grid.setCosts(new Float32Array(9).fill(3));
+
+    expect(grid.version).toBe(1);
+  });
+
+  it('leaves version alone for an array equal to the current costs', () => {
+    const grid = createSquareGrid();
+
+    grid.setCost(1, 1, 2);
+    grid.setCosts(new Float32Array([1, 1, 1, 1, 2, 1, 1, 1, 1]));
+
+    expect(grid.version).toBe(1);
+  });
+
+  it.each([0, 8, 10])('throws for an array of %s costs', (length) => {
+    expect(() =>
+      createSquareGrid().setCosts(new Float32Array(length).fill(1)),
+    ).toThrow('it must have one cost per cell, 9');
+  });
+
+  it.each([0, -1, NaN, Infinity])(
+    'throws for an entry of %s and changes nothing',
+    (bad) => {
+      const grid = createSquareGrid();
+      const costs = new Float32Array(9).fill(4);
+
+      costs[5] = bad;
+
+      expect(() => grid.setCosts(costs)).toThrow(
+        `entry 5, for cell (2, 1), is ${bad}`,
+      );
+      expect(grid.version).toBe(0);
+
+      for (let node = 0; node < grid.nodeCount; node++) {
+        const { column, row } = grid.nodeToCell(node);
+
+        expect(grid.getCost(column, row)).toBe(1);
+      }
+    },
+  );
+
+  it('scales the heuristic by the lowest new cost', () => {
+    const grid = createSquareGrid('never', 4, 1);
+
+    grid.setCost(2, 0, 0.5);
+    grid.setCosts(new Float32Array(4).fill(4));
+    expect(grid.heuristic(0, 3)).toBe(384);
+
+    grid.setCosts(new Float32Array([4, 4, 0.25, 4]));
+    expect(grid.heuristic(0, 3)).toBe(24);
+  });
+
+  it('gives the cheapest paths after raising every cost', () => {
+    const grid = createSquareGrid('always', 5, 4);
+    const goal = grid.cellToNode(4, 3);
+
+    grid.setCosts(new Float32Array(grid.nodeCount).fill(4));
+
+    const reversed: TestEdge[] = getEdges(grid).map(([from, to, cost]) => [
+      to,
+      from,
+      cost,
+    ]);
+    const costs = shortestCosts(grid.nodeCount, reversed, goal);
+
+    for (let start = 0; start < grid.nodeCount; start++) {
+      const result = findPath(grid, start, goal);
+
+      expect(result.status).toBe('found');
+      expect(result.cost).toBeCloseTo(costs[start], 9);
+      expect(grid.heuristic(start, goal)).toBeCloseTo(costs[start], 9);
+    }
+  });
+});
+
 describe('NavigationGrid version', () => {
   it('increases once per call that changes a cell', () => {
     const grid = createSquareGrid();

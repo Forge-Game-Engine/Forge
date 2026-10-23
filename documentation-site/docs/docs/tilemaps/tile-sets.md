@@ -63,11 +63,14 @@ Each tile has a [`TileData`](/Forge/docs/api/interfaces/TileData): custom
 `properties`, a `textureOrigin` (see
 [Tile image placement](#tile-image-placement)), a `ySortOrigin` (see
 [Where a tile sorts](./rendering.md#where-a-tile-sorts)), a `collision`
-shape (see [Collision shapes](./collision.md#collision-shapes)) and an
-`animation` (see [Animated tiles](./animated-tiles.md)). A source's `tiles`
-map sets them for the tiles that need them, by tile index; every other tile
-has no properties, a `(0, 0)` `textureOrigin`, a `0` `ySortOrigin`, no
-collision and no animation:
+shape (see [Collision shapes](./collision.md#collision-shapes)), an
+`animation` (see [Animated tiles](./animated-tiles.md)) and a
+`navigationCost` (see
+[Giving tiles a navigation cost](./navigation.md#giving-tiles-a-navigation-cost)).
+A source's `tiles` map sets them for the tiles that need them, by tile
+index; every other tile has no properties, a `(0, 0)` `textureOrigin`, a
+`0` `ySortOrigin`, no collision, no animation and a `null`
+`navigationCost`:
 
 ```ts
 const terrainSource = {

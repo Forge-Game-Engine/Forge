@@ -114,7 +114,12 @@ of its own in Tiled gets it in its
 - its custom properties, as `properties`;
 - its animation, as `animation`, with Tiled's frame durations in
   milliseconds;
-- its collision objects, as `collision`.
+- its collision objects, as `collision`;
+- its `int` or `float` custom property named `navigationCost`, as
+  `navigationCost` (see
+  [Giving tiles a navigation cost](./navigation.md#giving-tiles-a-navigation-cost)).
+  The property stays in `properties` too. Loading throws for a
+  `navigationCost` property of another type.
 
 A tile's properties of type `color` are stored as `#aarrggbb` strings,
 `file` properties as absolute URLs and `object` properties as object ids.

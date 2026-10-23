@@ -222,4 +222,18 @@ export interface NavigationGrid extends NavigationGraph {
    * 32-bit float.
    */
   fillCost(range: GridCellRange, cost: number): void;
+
+  /**
+   * Sets every cell's traversal cost from an array, as one change: `version`
+   * increases at most once. Entry `i` is the cost of the cell whose node id
+   * is `i` (see `cellToNode`). Every entry is checked before any is written,
+   * so an array with a bad entry changes nothing. Use it to write costs
+   * worked out from your own data, such as a tile layer, in one call; read
+   * the costs you want to keep with `getCost` first.
+   * @param costs - One cost per cell, `nodeCount` long, each finite and
+   * more than `0`.
+   * @throws An error if `costs.length` isn't `nodeCount`, or an entry isn't
+   * finite and more than `0`.
+   */
+  setCosts(costs: Float32Array): void;
 }

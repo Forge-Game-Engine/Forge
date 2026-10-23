@@ -52,8 +52,8 @@ export interface TileAnimationFrame {
 export interface TileData {
   /**
    * Custom data, like Tiled's tile properties and Godot's custom data
-   * layers: whether a tile is water, how much it slows a walker, which
-   * sound a footstep makes.
+   * layers: whether a tile is water, which sound a footstep makes, what a
+   * pickaxe drops when it breaks the tile.
    */
   readonly properties: Readonly<Record<string, TilePropertyValue>>;
 
@@ -107,6 +107,19 @@ export interface TileData {
    * rebuilds a collider.
    */
   readonly animation: readonly TileAnimationFrame[] | null;
+
+  /**
+   * What entering a navigation grid cell costs when this tile is under the
+   * cell's centre, relative to a cell of cost `1`: `0.5` for a road, `3`
+   * for mud. `applyTilemapNavigationCosts` copies it into a grid. `null`
+   * leaves the grid's cost as it is, so a layer of roads applied after a
+   * layer of grass only changes the road cells. It never blocks a cell: a
+   * tile that should block has a `collision` shape, which
+   * `markGridFromColliders` bakes. Like `collision`, it belongs to the
+   * placed tile, not to the frame an animation shows. It's stored as a
+   * 32-bit float, as a navigation grid stores it.
+   */
+  readonly navigationCost: number | null;
 }
 
 /**
@@ -134,6 +147,13 @@ export interface TileDataOptions {
    * doesn't animate.
    */
   animation?: readonly TileAnimationFrame[] | null;
+
+  /**
+   * See {@link TileData.navigationCost}. Finite and more than `0` as a
+   * 32-bit float, or `null`. Defaults to `null`: the tile leaves a grid's
+   * cost alone.
+   */
+  navigationCost?: number | null;
 }
 
 /**
@@ -240,6 +260,7 @@ const defaultTileDataOptions: Required<TileDataOptions> = {
   ySortOrigin: 0,
   collision: null,
   animation: null,
+  navigationCost: null,
 };
 
 /** How far outside the footprint, in cell space, a point still snaps onto its edge. */
@@ -366,8 +387,14 @@ const createTileData = (
   layout: GridLayout,
   tileCount: number,
 ): TileData => {
-  const { properties, textureOrigin, ySortOrigin, collision, animation } =
-    withDefaults(defaultTileDataOptions, options);
+  const {
+    properties,
+    textureOrigin,
+    ySortOrigin,
+    collision,
+    animation,
+    navigationCost,
+  } = withDefaults(defaultTileDataOptions, options);
 
   if (!Number.isFinite(textureOrigin.x) || !Number.isFinite(textureOrigin.y)) {
     throw new Error(
@@ -378,6 +405,21 @@ const createTileData = (
   if (!Number.isFinite(ySortOrigin)) {
     throw new Error(
       `Unable to create a tile set: ${describeTile} has a ySortOrigin of ${ySortOrigin}, which must be finite.`,
+    );
+  }
+
+  // Checked with a navigation grid's own rule, so applying the cost to a
+  // grid can't fail on a value that underflows or overflows as a 32-bit
+  // float.
+  const storedNavigationCost =
+    navigationCost === null ? null : Math.fround(navigationCost);
+
+  if (
+    storedNavigationCost !== null &&
+    (!Number.isFinite(storedNavigationCost) || storedNavigationCost <= 0)
+  ) {
+    throw new Error(
+      `Unable to create a tile set: ${describeTile} has a navigationCost of ${navigationCost}, which must be finite and more than 0 as a 32-bit float, or null.`,
     );
   }
 
@@ -393,6 +435,7 @@ const createTileData = (
       animation === null
         ? null
         : createTileAnimation(animation, tileCount, describeTile),
+    navigationCost: storedNavigationCost,
   });
 };
 
@@ -469,8 +512,9 @@ const createSource = (
 /**
  * Creates a {@link TileSet}. Every region of each source's atlas is a tile,
  * with the default {@link TileData} (no properties, a `(0, 0)`
- * `textureOrigin`, a `0` `ySortOrigin`, no `collision` and no `animation`)
- * unless the source's `tiles` give it data of its own.
+ * `textureOrigin`, a `0` `ySortOrigin`, no `collision`, no `animation` and
+ * a `null` `navigationCost`) unless the source's `tiles` give it data of
+ * its own.
  *
  * A collision polygon is checked against the layout: it must be inside the
  * cell's footprint (a point within `1/131,072` of a cell outside it counts
@@ -488,7 +532,9 @@ const createSource = (
  * that isn't finite or is outside the footprint, or isn't strictly convex
  * or crosses itself under some transform, or a tile's animation is empty,
  * has a frame tile its source doesn't have, or has a frame whose
- * `durationMilliseconds` isn't a positive finite number.
+ * `durationMilliseconds` isn't a positive finite number, or a tile's
+ * `navigationCost` isn't `null` or finite and more than `0` as a 32-bit
+ * float.
  */
 export function createTileSet(options: TileSetOptions): TileSet {
   const { layout, sources } = options;

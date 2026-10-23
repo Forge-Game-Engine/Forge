@@ -1,18 +1,24 @@
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { markGridFromColliders } from '@forge-game-engine/forge/navigation';
-import { tilemapColliderId } from '@forge-game-engine/forge/tilemaps';
+import {
+  applyTilemapNavigationCosts,
+  tilemapColliderId,
+} from '@forge-game-engine/forge/tilemaps';
 import {
   NavigationDemoEcsComponent,
   navigationDemoId,
 } from './_navigation.component';
 
 /**
- * Creates the system that bakes the navigation grid from the map's static
- * colliders (the walls layer's and the water's) whenever the walls
- * layer's collider has been rebuilt since the last bake.
+ * Creates the system that bakes the navigation grid whenever the walls
+ * layer's collider has been rebuilt since the last bake: walkability from
+ * the map's static colliders (the walls layer's and the water's), and cell
+ * costs from the floor layer's tiles. The stone path's tile has a
+ * `navigationCost` of `0.5` in Tiled, so paths prefer it to the grass.
  *
- * A bake only blocks cells, so it opens every cell first. The player's
- * body is dynamic, so it never blocks the grid.
+ * Neither bake resets what it leaves alone, so each starts from an open
+ * grid with every cost `1`. The player's body is dynamic, so it never
+ * blocks the grid.
  *
  * It bakes with no `agentRadius`. With one, a cell stays walkable only
  * when its whole diamond clears the radius, so every cell beside a wall
@@ -40,7 +46,9 @@ export const createBakeGridEcsSystem = (): EcsSystem<
       const { grid } = navigation;
 
       grid.fillWalkable(grid.cells, true);
+      grid.fillCost(grid.cells, 1);
       markGridFromColliders(world, grid);
+      applyTilemapNavigationCosts(world, navigation.floor, grid);
       navigation.bakedVersion = collider.bakedVersion;
     }
   },

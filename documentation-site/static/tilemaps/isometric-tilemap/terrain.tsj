@@ -10,6 +10,15 @@
  "tileheight":32,
  "tiles":[
         {
+         "id":2,
+         "properties":[
+                {
+                 "name":"navigationCost",
+                 "type":"float",
+                 "value":0.5
+                }]
+        },
+        {
          "id":3,
          "properties":[
                 {

@@ -11,7 +11,10 @@ import type {
   TileDataOptions,
   TileSetSourceOptions,
 } from '../../tile-set/tile-set.js';
-import type { TiledTileSetFile } from '../file-data/tiled-file-data.js';
+import type {
+  TiledPropertyFile,
+  TiledTileSetFile,
+} from '../file-data/tiled-file-data.js';
 import type { TiledTileSetInfo } from '../tiled-map.js';
 import {
   toTiledProperties,
@@ -92,13 +95,50 @@ export const createTiledTileSetAtlas = (
 const isZero = (vector: Readonly<Vector2>): boolean =>
   vector.x === 0 && vector.y === 0;
 
+/** The custom property that gives a tile its navigation cost. */
+const navigationCostProperty = 'navigationCost';
+
+/**
+ * Reads a tile's navigation cost from its `navigationCost` custom
+ * property. Tiled has no navigation data of its own, so this is the one
+ * property name the loader gives a meaning to. The property still appears
+ * in the tile's `properties`. `createTileSet` checks the value's range.
+ * @param properties - The tile's properties, as written in the file.
+ * @param describeTile - The tile, for the error message.
+ * @returns The cost, or `null` if the tile has no such property.
+ * @throws An error naming the tile if the property isn't an `int` or a
+ * `float`.
+ */
+const toNavigationCost = (
+  properties: readonly TiledPropertyFile[],
+  describeTile: string,
+): number | null => {
+  // A later property with the same name replaces an earlier one, as it
+  // does in `properties`.
+  const property = properties.findLast(
+    ({ name }) => name === navigationCostProperty,
+  );
+
+  if (!property) {
+    return null;
+  }
+
+  if (property.type !== 'int' && property.type !== 'float') {
+    throw new Error(
+      `${describeTile} has a ${navigationCostProperty} property of type "${property.type}", and it must be an int or a float.`,
+    );
+  }
+
+  return Number(property.value);
+};
+
 /**
  * Converts a tileset to one source of the map's tile set.
  * @param tileSet - The tileset, with its image loaded.
  * @param context - The map's layout and tile size.
  * @returns The source's options.
  * @throws An error naming the tile if one of its collision shapes can't be
- * converted.
+ * converted, or its `navigationCost` property isn't an `int` or a `float`.
  */
 export const toTileSetSourceOptions = (
   tileSet: LoadedTiledTileSet,
@@ -150,6 +190,7 @@ export const toTileSetSourceOptions = (
           tile: frame.tileId,
           durationMilliseconds: frame.duration,
         })) ?? null,
+      navigationCost: toNavigationCost(tile.properties, describeTile),
     });
   }
 

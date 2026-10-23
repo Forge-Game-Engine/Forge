@@ -165,7 +165,9 @@ its `origin`.
 The grid doesn't follow the layer: when the layer moves, create a new
 grid. To block the cells of the layer's solid tiles, bake the layer's
 collider into the grid (see
-[Blocking cells from colliders](./colliders.md)).
+[Blocking cells from colliders](./colliders.md)). To set cell costs from
+the layer's tiles, see
+[Navigation over tile layers](../tilemaps/navigation.md).
 
 ## Blocking cells
 
@@ -216,6 +218,23 @@ grid.setCost(20, 13, 0.5);
 A cost is stored as a 32-bit float and must be finite and more than `0`.
 `getCost(column, row)` reads it. A blocked cell keeps its cost, so making
 it walkable again restores it.
+
+`setCosts(costs)` sets every cell's cost in one call. `costs` is a
+`Float32Array` with one cost per cell, indexed by node id (see
+[Searching a grid with findPath](#searching-a-grid-with-findpath)):
+
+```ts
+const costs = new Float32Array(grid.nodeCount).fill(1);
+
+costs[grid.cellToNode(20, 13)] = 0.5;
+
+grid.setCosts(costs);
+```
+
+It throws, and changes no cell, when `costs.length` isn't
+`grid.nodeCount` or an entry isn't finite and more than `0`. To set costs
+from a tile layer's tiles, see
+[Navigation over tile layers](../tilemaps/navigation.md).
 
 ## Diagonal movement
 
@@ -328,8 +347,8 @@ const cells = result.nodes.map((node) => grid.nodeToCell(node));
 ## Detecting changes
 
 A grid's `version` starts at `0` and increases by one after each call to
-`setWalkable`, `setCost`, `fillWalkable`, `fillWalkableMask` or `fillCost`
-that changes at least one cell. Comparing it with the version a path was found at tells
+`setWalkable`, `setCost`, `fillWalkable`, `fillWalkableMask`, `fillCost`
+or `setCosts` that changes at least one cell. Comparing it with the version a path was found at tells
 whether the grid has changed since:
 
 ```ts
