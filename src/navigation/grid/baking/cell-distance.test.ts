@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createIsometricGridLayout } from '../../../math/grid-layout/create-isometric-grid-layout.js';
 import { createOrthogonalGridLayout } from '../../../math/grid-layout/create-orthogonal-grid-layout.js';
+import { cellRange } from '../../test-helpers/cell-range.js';
 import { createNavigationGrid } from '../create-navigation-grid.js';
 import {
   cellInset,
@@ -17,13 +18,15 @@ describe('createCellFrame', () => {
   it('measures the steps, reach and world bounds of an orthogonal grid', () => {
     const frame = createCellFrame(
       createNavigationGrid({
-        columns: 4,
-        rows: 3,
+        cells: cellRange(4, 3),
         layout: createOrthogonalGridLayout({ cellWidth: 32, cellHeight: 16 }),
         origin: { x: 10, y: -5 },
       }),
     );
 
+    expect(frame.columns).toBe(4);
+    expect(frame.rows).toBe(3);
+    expect(frame.origin).toEqual({ x: 10, y: -5 });
     expect(frame.columnStep).toEqual({ x: 32, y: 0 });
     expect(frame.rowStep).toEqual({ x: 0, y: 16 });
     expect(frame.columnReach).toBeCloseTo(1 / 32);
@@ -32,11 +35,30 @@ describe('createCellFrame', () => {
     expect(frame.worldMax).toEqual({ x: 138, y: 43 });
   });
 
+  it("starts at the first cell's corner for a grid of negative cells", () => {
+    const frame = createCellFrame(
+      createNavigationGrid({
+        cells: cellRange(4, 3, -2, -1),
+        layout: createIsometricGridLayout({ cellWidth: 64, cellHeight: 32 }),
+        origin: { x: 10, y: -5 },
+      }),
+    );
+
+    // Cell (-2, -1)'s top corner is (-2 - -1) * 32 across and
+    // (-2 + -1) * 16 down from the origin.
+    expect(frame.origin).toEqual({ x: -22, y: -53 });
+    expect(worldToCellSpace(frame, { x: -22, y: -53 })).toEqual({
+      x: 0,
+      y: 0,
+    });
+    expect(frame.worldMin).toEqual({ x: -22 - 96, y: -53 });
+    expect(frame.worldMax).toEqual({ x: -22 + 128, y: -53 + 112 });
+  });
+
   it('bounds an isometric grid by its diamond', () => {
     const frame = createCellFrame(
       createNavigationGrid({
-        columns: 2,
-        rows: 2,
+        cells: cellRange(2, 2),
         layout: createIsometricGridLayout({ cellWidth: 64, cellHeight: 32 }),
       }),
     );
@@ -48,8 +70,7 @@ describe('createCellFrame', () => {
   it('reaches far enough along each axis for any direction', () => {
     const frame = createCellFrame(
       createNavigationGrid({
-        columns: 2,
-        rows: 2,
+        cells: cellRange(2, 2),
         layout: createIsometricGridLayout({ cellWidth: 64, cellHeight: 32 }),
       }),
     );
@@ -71,8 +92,7 @@ describe('writeInsetQuad', () => {
   it("writes the cell's corners moved inwards by the inset", () => {
     const frame = createCellFrame(
       createNavigationGrid({
-        columns: 4,
-        rows: 4,
+        cells: cellRange(4, 4),
         layout: createOrthogonalGridLayout({ cellWidth: 16, cellHeight: 16 }),
         origin: { x: 100, y: 0 },
       }),

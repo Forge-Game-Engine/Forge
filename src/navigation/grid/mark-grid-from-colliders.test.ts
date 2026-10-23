@@ -39,6 +39,7 @@ import {
   getRangeCells,
   ReferenceShape,
 } from '../test-helpers/bake-reference.js';
+import { cellRange } from '../test-helpers/cell-range.js';
 import { createNavigationGrid } from './create-navigation-grid.js';
 import { findGridPath } from './find-grid-path.js';
 import { markGridFromColliders } from './mark-grid-from-colliders.js';
@@ -50,7 +51,10 @@ const squareLayout = createOrthogonalGridLayout({
 });
 
 const createSquareGrid = (columns = 12, rows = 12): NavigationGrid =>
-  createNavigationGrid({ columns, rows, layout: squareLayout });
+  createNavigationGrid({
+    cells: cellRange(columns, rows),
+    layout: squareLayout,
+  });
 
 interface BodyOptions {
   position?: Vector2;
@@ -580,15 +584,24 @@ describe('markGridFromColliders layouts', () => {
     ],
   ];
 
+  // A 12 x 12 block from (0, 0), and one from (-4, -5).
+  const cellBlocks = [cellRange(12, 12), cellRange(12, 12, -4, -5)];
+
   const createLayoutGrid = (
     layout: GridLayout,
     origin: Vector2,
-  ): NavigationGrid =>
-    createNavigationGrid({ columns: 12, rows: 12, layout, origin });
+    cells = cellBlocks[0],
+  ): NavigationGrid => createNavigationGrid({ cells, layout, origin });
 
-  /** A world point at a cell-space position of the grid. */
+  /**
+   * A world point at a cell-space position of the grid, counted from its
+   * first cell, so each shape covers the same part of every block.
+   */
   const at = (grid: NavigationGrid, x: number, y: number): Vector2 => {
-    const local = grid.layout.cellSpaceToLocal({ x, y });
+    const local = grid.layout.cellSpaceToLocal({
+      x: grid.cells.minColumn + x,
+      y: grid.cells.minRow + y,
+    });
 
     return { x: local.x + grid.origin.x, y: local.y + grid.origin.y };
   };
@@ -688,18 +701,22 @@ describe('markGridFromColliders layouts', () => {
   ];
 
   for (const [layoutName, layout, origin] of layouts) {
-    for (const [shapeName, build] of cases) {
-      it.each([0, 9])(
-        `blocks the cells ${shapeName} overlaps on a ${layoutName} grid, with an agent radius of %s`,
-        (agentRadius) => {
-          const grid = createLayoutGrid(layout, origin);
-          const [collider, options, shape] = build(grid);
+    for (const cells of cellBlocks) {
+      const block = `cells from (${cells.minColumn}, ${cells.minRow})`;
 
-          bake(collider, options, agentRadius, grid);
+      for (const [shapeName, build] of cases) {
+        it.each([0, 9])(
+          `blocks the cells ${shapeName} overlaps on a ${layoutName} grid of ${block}, with an agent radius of %s`,
+          (agentRadius) => {
+            const grid = createLayoutGrid(layout, origin, cells);
+            const [collider, options, shape] = build(grid);
 
-          expectMatchesReference(grid, [shape], agentRadius);
-        },
-      );
+            bake(collider, options, agentRadius, grid);
+
+            expectMatchesReference(grid, [shape], agentRadius);
+          },
+        );
+      }
     }
   }
 

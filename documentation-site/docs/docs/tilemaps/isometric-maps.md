@@ -236,6 +236,18 @@ A system that sets or clears tiles in the picked cell runs before the
 tilemap systems, so the tile draws, sorts and collides on the tick it's
 changed (see [Registering the tilemap systems](./index.md#registering-the-tilemap-systems)).
 
+## Finding paths across the map
+
+A [navigation grid](../navigation/grids.md) made with the tile set's
+layout, its `origin` at the floor layer's world position and the floor's
+cells has the same diamonds as the layer, by number and by position (see
+[Laying a grid over a tile layer](../navigation/grids.md#laying-a-grid-over-a-tile-layer)).
+[`markGridFromColliders`](../navigation/colliders.md) blocks the cells of
+the walls' collision shapes, and `findGridPath` returns paths through the
+centres of the open diamonds. The
+[Isometric Path Finding demo](/Forge/demos/isometric-path-finding) draws
+one.
+
 ## Draw calls of y-sorted layers
 
 A layer that isn't y-sorted draws one call per chunk and source on screen.

@@ -50,7 +50,9 @@ const toStoredCost = (cost: number): number => {
 
 /**
  * A navigation grid over flat typed arrays: one byte per cell for
- * walkability and a 32-bit float per cell for its cost.
+ * walkability and a 32-bit float per cell for its cost. Inside, a cell is
+ * found by its column and row counted from the grid's first cell, so the
+ * neighbor walk and the heuristic never see the grid's own cell numbers.
  */
 export class DenseNavigationGrid implements NavigationGrid {
   public readonly columns: number;
@@ -59,6 +61,7 @@ export class DenseNavigationGrid implements NavigationGrid {
   public readonly layout: GridLayout;
   public readonly diagonals: NavigationGridDiagonals;
 
+  private readonly _cells: GridCellRange;
   private readonly _origin: Vector2;
   private readonly _metric: GridMetric;
   private readonly _walkable: Uint8Array;
@@ -77,25 +80,29 @@ export class DenseNavigationGrid implements NavigationGrid {
   /**
    * Creates a navigation grid with every cell walkable and costing `1`.
    * The arguments are checked by `createNavigationGrid`.
-   * @param columns - The number of columns.
-   * @param rows - The number of rows.
+   * @param cells - The inclusive range of cells the grid has.
    * @param layout - Where the cells are.
    * @param origin - The world position of cell `(0, 0)`'s layout-origin
    * corner.
    * @param diagonals - Which diagonal steps are allowed.
    */
   constructor(
-    columns: number,
-    rows: number,
+    cells: GridCellRange,
     layout: GridLayout,
     origin: Vector2,
     diagonals: NavigationGridDiagonals,
   ) {
-    this.columns = columns;
-    this.rows = rows;
-    this.nodeCount = columns * rows;
+    this.columns = cells.maxColumn - cells.minColumn + 1;
+    this.rows = cells.maxRow - cells.minRow + 1;
+    this.nodeCount = this.columns * this.rows;
     this.layout = layout;
     this.diagonals = diagonals;
+    this._cells = {
+      minColumn: cells.minColumn,
+      minRow: cells.minRow,
+      maxColumn: cells.maxColumn,
+      maxRow: cells.maxRow,
+    };
     this._origin = { x: origin.x, y: origin.y };
     this._metric = createGridMetric(layout);
     this._walkable = new Uint8Array(this.nodeCount).fill(1);
@@ -117,6 +124,10 @@ export class DenseNavigationGrid implements NavigationGrid {
     this._isMinCostStale = false;
   }
 
+  get cells(): GridCellRange {
+    return { ...this._cells };
+  }
+
   get origin(): Vector2 {
     return { x: this._origin.x, y: this._origin.y };
   }
@@ -126,13 +137,15 @@ export class DenseNavigationGrid implements NavigationGrid {
   }
 
   public hasCell(column: number, row: number): boolean {
+    const { minColumn, minRow, maxColumn, maxRow } = this._cells;
+
     return (
       Number.isInteger(column) &&
       Number.isInteger(row) &&
-      column >= 0 &&
-      column < this.columns &&
-      row >= 0 &&
-      row < this.rows
+      column >= minColumn &&
+      column <= maxColumn &&
+      row >= minRow &&
+      row <= maxRow
     );
   }
 
@@ -149,7 +162,10 @@ export class DenseNavigationGrid implements NavigationGrid {
 
     const row = Math.floor(node / this.columns);
 
-    return { column: node - row * this.columns, row };
+    return {
+      column: node - row * this.columns + this._cells.minColumn,
+      row: row + this._cells.minRow,
+    };
   }
 
   public worldToCell(position: Vector2): GridCell | null {
@@ -302,18 +318,23 @@ export class DenseNavigationGrid implements NavigationGrid {
    */
   private _getIndex(action: string, column: number, row: number): number {
     if (!this.hasCell(column, row)) {
+      const { minColumn, minRow, maxColumn, maxRow } = this._cells;
+
       throw new Error(
-        `Unable to ${action} navigation grid cell (${column}, ${row}), it isn't in the grid, which has integer columns from 0 to ${this.columns - 1} and rows from 0 to ${this.rows - 1}.`,
+        `Unable to ${action} navigation grid cell (${column}, ${row}), it isn't in the grid, which has integer columns from ${minColumn} to ${maxColumn} and rows from ${minRow} to ${maxRow}.`,
       );
     }
 
-    return row * this.columns + column;
+    return (
+      (row - this._cells.minRow) * this.columns +
+      (column - this._cells.minColumn)
+    );
   }
 
   /**
    * Finds the index of a cell a step can enter.
-   * @param column - The cell's integer column.
-   * @param row - The cell's integer row.
+   * @param column - The cell's integer column, counted from the first one.
+   * @param row - The cell's integer row, counted from the first one.
    * @returns The cell's index, or `-1` if it's outside the grid or blocked.
    */
   private _getWalkableIndex(column: number, row: number): number {
@@ -330,8 +351,8 @@ export class DenseNavigationGrid implements NavigationGrid {
    * Checks the corner-cutting rule for a diagonal step into a walkable
    * cell. Both cells it passes between are in the grid whenever the cell
    * it enters is.
-   * @param column - The column stepped from.
-   * @param row - The row stepped from.
+   * @param column - The column stepped from, counted from the first one.
+   * @param row - The row stepped from, counted from the first one.
    * @param columnOffset - The step's column offset.
    * @param rowOffset - The step's row offset.
    * @returns `true` if the step is allowed.
@@ -444,10 +465,12 @@ export class DenseNavigationGrid implements NavigationGrid {
       );
     }
 
-    const firstColumn = Math.max(minColumn, 0);
-    const lastColumn = Math.min(maxColumn, this.columns - 1);
-    const firstRow = Math.max(minRow, 0);
-    const lastRow = Math.min(maxRow, this.rows - 1);
+    // Clipped to the grid and counted from its first cell.
+    const cells = this._cells;
+    const firstColumn = Math.max(minColumn, cells.minColumn) - cells.minColumn;
+    const lastColumn = Math.min(maxColumn, cells.maxColumn) - cells.minColumn;
+    const firstRow = Math.max(minRow, cells.minRow) - cells.minRow;
+    const lastRow = Math.min(maxRow, cells.maxRow) - cells.minRow;
     let changed = false;
 
     for (let row = firstRow; row <= lastRow; row++) {

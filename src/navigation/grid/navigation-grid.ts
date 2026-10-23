@@ -19,11 +19,13 @@ export type NavigationGridDiagonals = 'never' | 'always' | 'noCornerCutting';
 
 /** Options for {@link createNavigationGrid}. */
 export interface NavigationGridOptions {
-  /** The number of columns, a positive integer. */
-  columns: number;
-
-  /** The number of rows, a positive integer. */
-  rows: number;
+  /**
+   * The cells the grid has, an inclusive range of integer columns and rows.
+   * Any integers, negative ones too, so a grid can have exactly the cells
+   * of a tile layer, with the layer's cell numbers: pass
+   * `getUsedRect(layer)`.
+   */
+  cells: GridCellRange;
 
   /**
    * Where the cells are, such as an orthogonal or isometric layout. The
@@ -34,8 +36,9 @@ export interface NavigationGridOptions {
 
   /**
    * The world position of the corner of cell `(0, 0)` at the layout's
-   * origin: the top-left corner of an orthogonal cell, the top corner of an
-   * isometric one. Defaults to `(0, 0)`.
+   * origin, whether or not `cells` holds `(0, 0)`: the top-left corner of
+   * an orthogonal cell, the top corner of an isometric one. For a grid over
+   * a tile layer, the layer's world position. Defaults to `(0, 0)`.
    */
   origin?: Vector2;
 
@@ -44,18 +47,21 @@ export interface NavigationGridOptions {
 }
 
 /**
- * A fixed-size grid of cells that are walkable or blocked, each with a
+ * A fixed block of cells that are walkable or blocked, each with a
  * traversal cost, placed in the world by a `GridLayout`. Build one with
  * {@link createNavigationGrid}.
  *
  * **Coordinates.** The world is Y-down: columns increase towards `+X` and
  * rows towards `+Y`, down the screen. A world position is in the cell the
- * layout puts `position - origin` in, so a grid with the same layout as a
- * tile layer, and its `origin` at the layer's position, agrees with the
- * layer on every cell.
+ * layout puts `position - origin` in. So a grid with a tile layer's layout,
+ * its `origin` at the layer's world position and the layer's used cells as
+ * its `cells` agrees with the layer on every cell, by position and by
+ * number.
  *
- * **Graph.** The grid is a {@link NavigationGraph} whose node ids are cell
- * indices, `row * columns + column`, so {@link findPath} can search it;
+ * **Graph.** The grid is a {@link NavigationGraph} whose node ids count its
+ * cells in row-major order from the first,
+ * `(row - cells.minRow) * columns + (column - cells.minColumn)`, so
+ * {@link findPath} can search it;
  * {@link findGridPath} does that from world positions. A step goes to one
  * of the eight cells around a cell (four when `diagonals` is `'never'`)
  * and only ever into a walkable cell, including out of a blocked one, so a
@@ -70,10 +76,13 @@ export interface NavigationGridOptions {
  * cells), so it never overestimates.
  */
 export interface NavigationGrid extends NavigationGraph {
-  /** The number of columns. */
+  /** A copy of the inclusive range of cells the grid has. */
+  readonly cells: GridCellRange;
+
+  /** The number of columns, `cells.maxColumn - cells.minColumn + 1`. */
   readonly columns: number;
 
-  /** The number of rows. */
+  /** The number of rows, `cells.maxRow - cells.minRow + 1`. */
   readonly rows: number;
 
   /** Where the cells are. */
@@ -97,13 +106,13 @@ export interface NavigationGrid extends NavigationGraph {
    * Checks whether a cell is in the grid.
    * @param column - The cell's column.
    * @param row - The cell's row.
-   * @returns `true` if `column` and `row` are integers of a cell in the
-   * grid.
+   * @returns `true` if `column` and `row` are integers inside `cells`.
    */
   hasCell(column: number, row: number): boolean;
 
   /**
-   * Finds a cell's node id, `row * columns + column`.
+   * Finds a cell's node id,
+   * `(row - cells.minRow) * columns + (column - cells.minColumn)`.
    * @param column - The cell's column.
    * @param row - The cell's row.
    * @returns The node id.
@@ -193,8 +202,8 @@ export interface NavigationGrid extends NavigationGraph {
   /**
    * Makes every cell whose byte in `mask` isn't `0` walkable or blocked,
    * and leaves the rest alone, as one change: `version` increases at most
-   * once. Byte `i` is the cell whose node id is `i`
-   * (`row * columns + column`). Use it to write many cells worked out from
+   * once. Byte `i` is the cell whose node id is `i` (see `cellToNode`).
+   * Use it to write many cells worked out from
    * your own data, such as a level image, in one call.
    * @param mask - One byte per cell, `nodeCount` long.
    * @param walkable - Whether a path can enter the masked cells.

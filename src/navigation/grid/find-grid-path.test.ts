@@ -2,11 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { createIsometricGridLayout } from '../../math/grid-layout/create-isometric-grid-layout.js';
 import { createOrthogonalGridLayout } from '../../math/grid-layout/create-orthogonal-grid-layout.js';
 import { Vector2 } from '../../math/vector2.js';
+import { cellRange } from '../test-helpers/cell-range.js';
 import { createNavigationGrid } from './create-navigation-grid.js';
 import { findGridPath } from './find-grid-path.js';
 import { NavigationGrid, NavigationGridDiagonals } from './navigation-grid.js';
 
 const layout = createOrthogonalGridLayout({ cellWidth: 10, cellHeight: 10 });
+
+const isometricLayout = createIsometricGridLayout({
+  cellWidth: 64,
+  cellHeight: 32,
+});
 
 const createGrid = (
   columns: number,
@@ -14,8 +20,7 @@ const createGrid = (
   diagonals: NavigationGridDiagonals = 'noCornerCutting',
 ): NavigationGrid =>
   createNavigationGrid({
-    columns,
-    rows,
+    cells: cellRange(columns, rows),
     layout,
     origin: { x: -50, y: -50 },
     diagonals,
@@ -192,13 +197,8 @@ describe('findGridPath', () => {
   });
 
   it('starts from the edge cell nearest in the world on an isometric layout', () => {
-    const isometricLayout = createIsometricGridLayout({
-      cellWidth: 64,
-      cellHeight: 32,
-    });
     const grid = createNavigationGrid({
-      columns: 4,
-      rows: 8,
+      cells: cellRange(4, 8),
       layout: isometricLayout,
     });
     // Cell space (-3, 5): clamping the column alone would give row 5, but
@@ -212,6 +212,21 @@ describe('findGridPath', () => {
     expect(result.startSnapped).toBe(true);
   });
 
+  it('starts from the edge cell nearest in the world on an isometric grid of negative cells', () => {
+    // The grid above, moved by (-5, -3) cells.
+    const grid = createNavigationGrid({
+      cells: cellRange(4, 8, -5, -3),
+      layout: isometricLayout,
+    });
+    const outside = isometricLayout.cellSpaceToLocal({ x: -8, y: 2 });
+    const result = findGridPath(grid, outside, grid.cellToWorld(-2, -3), {
+      snapRadius: 0,
+    });
+
+    expect(result.startCell).toEqual({ column: -5, row: 3 });
+    expect(result.startSnapped).toBe(true);
+  });
+
   it('snaps an end outside the grid past a blocked edge cell', () => {
     const grid = createGrid(5, 5);
 
@@ -222,6 +237,95 @@ describe('findGridPath', () => {
     // (4, 1) and (4, 3) are as near, and (4, 1) has the lower node id.
     expect(result.goalSnapped).toBe(true);
     expect(result.goalCell).toEqual({ column: 4, row: 1 });
+  });
+
+  describe('on an isometric grid with its centre cell blocked', () => {
+    const origin = { x: 40, y: -24 };
+
+    // A 3 x 3 grid of 64 x 32 diamonds. A step along a column or a row
+    // runs along a diamond's edge, sqrt(32^2 + 16^2) long; a (1, 1) step is
+    // 32 straight down the screen and a (1, -1) step 64 straight across.
+    const createDetourGrid = (
+      diagonals: NavigationGridDiagonals,
+    ): NavigationGrid => {
+      const grid = createNavigationGrid({
+        cells: cellRange(3, 3),
+        layout: isometricLayout,
+        origin,
+        diagonals,
+      });
+
+      grid.setWalkable(1, 1, false);
+
+      return grid;
+    };
+
+    const getWorldLength = (points: readonly Vector2[]): number => {
+      let length = 0;
+
+      for (let i = 1; i < points.length; i++) {
+        length += Math.hypot(
+          points[i].x - points[i - 1].x,
+          points[i].y - points[i - 1].y,
+        );
+      }
+
+      return length;
+    };
+
+    it("goes round the blocked cell along the diamonds' edges with 'noCornerCutting'", () => {
+      const grid = createDetourGrid('noCornerCutting');
+      const result = findGridPath(
+        grid,
+        grid.cellToWorld(0, 1),
+        grid.cellToWorld(2, 1),
+      );
+
+      expect(result.status).toBe('found');
+      // Both diagonal steps out of (0, 1) pass the blocked cell, so the path
+      // takes four edge steps, along the top or the bottom row; they tie.
+      expect(result.cost).toBeCloseTo(4 * Math.hypot(32, 16), 9);
+      expect(getWorldLength(result.points)).toBeCloseTo(result.cost, 9);
+      expect(result.points).toHaveLength(5);
+
+      const cells = result.nodes.map((node) => grid.nodeToCell(node));
+
+      for (const [i, { column, row }] of cells.entries()) {
+        const center = isometricLayout.getCellCenter(column, row);
+
+        expect(grid.isWalkable(column, row)).toBe(true);
+        expect(result.points[i]).toEqual({
+          x: center.x + origin.x,
+          y: center.y + origin.y,
+        });
+      }
+
+      for (let i = 1; i < cells.length; i++) {
+        expect(
+          Math.abs(cells[i].column - cells[i - 1].column) +
+            Math.abs(cells[i].row - cells[i - 1].row),
+        ).toBe(1);
+      }
+    });
+
+    it("cuts past the blocked cell's corner, straight down and across the screen, with 'always'", () => {
+      const grid = createDetourGrid('always');
+      const result = findGridPath(
+        grid,
+        grid.cellToWorld(0, 1),
+        grid.cellToWorld(2, 1),
+      );
+
+      expect(result.status).toBe('found');
+      // One 64-unit step across and one 32-unit step down, in either order:
+      // shorter in the world than the four edge steps.
+      expect(result.cost).toBe(96);
+      expect(getWorldLength(result.points)).toBeCloseTo(96, 9);
+      expect(result.points).toHaveLength(3);
+      expect([grid.cellToWorld(1, 0), grid.cellToWorld(1, 2)]).toContainEqual(
+        result.points[1],
+      );
+    });
   });
 
   it('finds a one-point path when both ends are in the same cell', () => {
