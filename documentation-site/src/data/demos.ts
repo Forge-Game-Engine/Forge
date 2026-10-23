@@ -229,6 +229,13 @@ export const demos: Demo[] = [
     categories: ['rendering', 'physics'],
   },
   {
+    slug: 'isometric-path-finding',
+    title: 'Isometric Path Finding',
+    description:
+      "Point at a cell of an isometric courtyard to see the path to it from the player, through a navigation grid with the map's diamond cells, and click to build or clear a wall it routes around.",
+    categories: ['navigation'],
+  },
+  {
     slug: 'sprite-atlas',
     title: 'Sprite Atlas',
     description:
