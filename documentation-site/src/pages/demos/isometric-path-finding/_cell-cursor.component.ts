@@ -1,5 +1,5 @@
 import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
-import { GridCell } from '@forge-game-engine/forge/math';
+import { GridCell, GridCellRange } from '@forge-game-engine/forge/math';
 
 /**
  * Picks the cell of a layer under the mouse, and toggles a tile in the cell
@@ -18,11 +18,11 @@ export interface CellCursorEcsComponent {
   /** An entity whose collider a placed tile mustn't overlap. */
   keepClear: number;
 
-  /** How many columns the map has: cells outside it aren't picked. */
-  columns: number;
-
-  /** How many rows the map has: cells outside it aren't picked. */
-  rows: number;
+  /**
+   * The cells that can be picked, the navigation grid's: cells outside them
+   * aren't picked or toggled.
+   */
+  cells: GridCellRange;
 
   /** The cell under the mouse, or `null` when the mouse is off the map. */
   hoveredCell: GridCell | null;
@@ -37,7 +37,7 @@ export const cellCursorId = createComponentId<CellCursorEcsComponent>(
  * @param world - The world the entity belongs to.
  * @param entity - The entity to add it to.
  * @param cursor - The camera, the layer, the tile to place, the entity to
- * keep clear and the map's size.
+ * keep clear and the cells that can be picked.
  * @returns The added component.
  */
 export function addCellCursorComponent(

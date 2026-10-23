@@ -78,8 +78,12 @@ const updateCursor = (
     renderContext,
   ).viewportToWorld(inputs.mouse.position);
   const { column, row } = worldToCell(world, cursor.layer, worldPoint);
+  const { minColumn, minRow, maxColumn, maxRow } = cursor.cells;
   const isInMap =
-    column >= 0 && column < cursor.columns && row >= 0 && row < cursor.rows;
+    column >= minColumn &&
+    column <= maxColumn &&
+    row >= minRow &&
+    row <= maxRow;
 
   cursor.hoveredCell = isInMap ? { column, row } : null;
 

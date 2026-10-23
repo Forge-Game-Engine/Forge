@@ -79,7 +79,7 @@ export default function IsometricPathFinding(): JSX.Element {
             {
               name: 'create-game.ts',
               summary:
-                'Loads and spawns the Tiled map, creates the navigation grid with its layout and cells, the player, the camera and the path markers, and registers the systems in order.',
+                'Loads and spawns the Tiled map, creates the player and the camera, registers the systems in order, and after one tick creates the navigation grid with its layout and cells, and the path markers.',
               content: gameCode,
             },
           ],

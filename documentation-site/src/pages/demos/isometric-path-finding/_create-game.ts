@@ -124,31 +124,13 @@ export const createIsometricPathFindingGame = async (
   addDrawOrderComponent(world, walls, { ySortChildren: true });
 
   const player = createPlayer(world, map);
-  const floorPosition = world.getComponent(floor, positionId);
 
-  if (!map.size || !floorPosition) {
-    throw new Error(`The map "${map.url}" must be finite, with a Floor layer.`);
+  if (!map.size) {
+    throw new Error(`The map "${map.url}" must be finite.`);
   }
 
   const { columns, rows } = map.size;
   const { layout } = map.tileSet;
-
-  // A finite map has the cells from (0, 0) to (columns - 1, rows - 1) on
-  // every layer. With the map's layout and its origin at the floor's world
-  // position, grid cell (c, r) is the layers' cell (c, r). The root is at
-  // the origin and the layers have no offsets, so the floor's world
-  // position is already right before the first transform pass.
-  const grid = createNavigationGrid({
-    cells: {
-      minColumn: 0,
-      minRow: 0,
-      maxColumn: columns - 1,
-      maxRow: rows - 1,
-    },
-    layout,
-    origin: floorPosition.world,
-  });
-
   const middle = layout.cellSpaceToLocal({ x: columns / 2, y: rows / 2 });
   const overhang =
     Math.max(...map.tileSet.sources.map(({ tileHeight }) => tileHeight)) -
@@ -165,26 +147,6 @@ export const createIsometricPathFindingGame = async (
     cameraPosition.local.x = middle.x;
     cameraPosition.local.y = middle.y - overhang / 2;
   }
-
-  // The cursor picks the goal and the navigation state draws the path to
-  // it, so both are on one entity, which the path system queries.
-  const demo = world.createEntity();
-
-  addCellCursorComponent(world, demo, {
-    camera,
-    layer: walls,
-    // The walls tileset's stone wall has a `placeable` property in Tiled.
-    tile: packTile(findTileWithProperty(map, 'placeable')),
-    keepClear: player,
-    columns,
-    rows,
-  });
-  addNavigationDemoComponent(world, demo, {
-    grid,
-    walls,
-    agent: player,
-    markers: createPathMarkers(world, map, grid.nodeCount),
-  });
 
   const { moveInput, cursorInputs } = createInputs(world, time, game.container);
   const collisionPairs: CollisionPair[] = [];
@@ -222,6 +184,50 @@ export const createIsometricPathFindingGame = async (
   );
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createEulerIntegrationEcsSystem(time));
+
+  // The floor's `position.world` includes the map root's position once the
+  // transform system has run, so the grid is created after one tick. The
+  // game's clock hasn't started, so the tick moves nothing.
+  world.update();
+
+  const floorPosition = world.getComponent(floor, positionId);
+
+  if (!floorPosition) {
+    throw new Error(`The map "${map.url}" must have a Floor layer.`);
+  }
+
+  // A finite map has the cells from (0, 0) to (columns - 1, rows - 1) on
+  // every layer. With the map's layout and its origin at the floor's world
+  // position, grid cell (c, r) is the layers' cell (c, r).
+  const grid = createNavigationGrid({
+    cells: {
+      minColumn: 0,
+      minRow: 0,
+      maxColumn: columns - 1,
+      maxRow: rows - 1,
+    },
+    layout,
+    origin: floorPosition.world,
+  });
+
+  // The cursor picks the goal and the navigation state draws the path to
+  // it, so both are on one entity, which the path system queries.
+  const demo = world.createEntity();
+
+  addCellCursorComponent(world, demo, {
+    camera,
+    layer: walls,
+    // The walls tileset's stone wall has a `placeable` property in Tiled.
+    tile: packTile(findTileWithProperty(map, 'placeable')),
+    keepClear: player,
+    cells: grid.cells,
+  });
+  addNavigationDemoComponent(world, demo, {
+    grid,
+    walls,
+    agent: player,
+    markers: createPathMarkers(world, map, grid.nodeCount),
+  });
 
   return game;
 };

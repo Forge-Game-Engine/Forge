@@ -44,7 +44,8 @@ const updatePath = (
   const goal = cursor.hoveredCell;
   const agentPosition = world.getComponent(agent, positionId);
 
-  if (!agentPosition || goal === null || !grid.hasCell(goal.column, goal.row)) {
+  // The cursor only picks the grid's cells, so a hovered cell is in it.
+  if (!agentPosition || goal === null) {
     placeMarkers(world, markers, []);
 
     return;
