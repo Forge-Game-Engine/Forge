@@ -15,6 +15,11 @@ For levels made of cells, a [navigation grid](./grids.md) is a
 `NavigationGraph` of walkable and blocked cells, and `findGridPath` finds
 a path across one between two world positions.
 
+For levels that aren't grids, a [waypoint graph](./waypoint-graphs.md) is
+a `NavigationGraph` of points placed in the world and joined by
+connections, and `findWaypointPath` finds a route through one between two
+world positions.
+
 ## Graphs and nodes
 
 A graph is a set of nodes connected by steps:
