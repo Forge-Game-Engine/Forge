@@ -22,6 +22,11 @@ a `NavigationGraph` of points placed in the world and joined by
 connections, and `findWaypointPath` finds a route through one between two
 world positions.
 
+A [navigation agent](./agents.md) is a component that sends a unit to a
+target: a system plans its path over a grid or a waypoint graph, plans it
+again when the level or the target changes, and outputs the velocity that
+walks the path.
+
 ## Graphs and nodes
 
 A graph is a set of nodes connected by steps:

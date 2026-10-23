@@ -171,6 +171,26 @@ When the graph has no enabled point, `findWaypointPath` doesn't throw. Its
 `expanded` are `0`, and `startPointId` and `goalPointId` are `null`. An
 empty `nodes` means there is no route.
 
+## Planning a unit's path
+
+A [path planner](/Forge/docs/api/interfaces/PathPlanner) plans the whole
+path a unit walks, from its own position to the target.
+[`createWaypointPathPlanner`](/Forge/docs/api/functions/createWaypointPathPlanner)
+creates one over a graph:
+
+```ts
+import { createWaypointPathPlanner } from '@forge-game-engine/forge/navigation';
+
+const planner = createWaypointPathPlanner(graph);
+const { status, points } = planner.planPath(unitPosition, targetPosition);
+```
+
+`planPath` runs `findWaypointPath`, puts `unitPosition` before the route's
+point positions, and puts `targetPosition` after them when the route is
+`'found'`. A route that doesn't reach the goal point ends at the reached
+point nearest it, and a graph with no enabled point gives an empty
+`points`. A planner is what a [navigation agent](./agents.md) plans with.
+
 ## Reading a graph
 
 These methods read a graph back, for example to draw it:
