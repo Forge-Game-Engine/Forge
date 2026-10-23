@@ -138,7 +138,8 @@ const defaultNavigationAgentOptions: NavigationAgentDefaultedOptions = {
 
 /**
  * Attaches a {@link NavigationAgentEcsComponent} to `entity`. The entity
- * also needs a `PositionEcsComponent` for the agent system to move it.
+ * also needs a `PositionEcsComponent`: the agent system reads its
+ * `position.world` to plan and steer.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to attach the component to.
  * @param options - The planner, speed, target and arrival radius. `planner`
