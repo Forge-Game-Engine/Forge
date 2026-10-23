@@ -320,6 +320,7 @@ Substepping
 substepping
 substeps
 supercompression
+supercover
 swiftshader
 texel
 texels
