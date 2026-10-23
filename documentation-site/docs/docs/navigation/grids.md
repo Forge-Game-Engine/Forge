@@ -77,6 +77,25 @@ grid.fillWalkable(
 The part of a range outside the grid is ignored. `isWalkable(column, row)`
 reads a cell's walkability. A path never enters a blocked cell.
 
+`fillWalkableMask(mask, walkable)` makes many cells walkable or blocked in
+one call. `mask` is a `Uint8Array` with one byte per cell, indexed by node
+id (`row * columns + column`, see
+[Searching a grid with findPath](#searching-a-grid-with-findpath)), and
+every cell whose byte isn't `0` is written:
+
+```ts
+const mask = new Uint8Array(grid.nodeCount);
+
+mask[grid.cellToNode(4, 7)] = 1;
+mask[grid.cellToNode(5, 7)] = 1;
+
+grid.fillWalkableMask(mask, false);
+```
+
+It throws when `mask.length` isn't `grid.nodeCount`. To block the cells
+your level's colliders cover, see
+[Blocking cells from colliders](./colliders.md).
+
 ## Setting cell costs
 
 A cell's cost multiplies the cost of every step into it, so a path avoids
@@ -200,8 +219,8 @@ const cells = result.nodes.map((node) => grid.nodeToCell(node));
 ## Detecting changes
 
 A grid's `version` starts at `0` and increases by one after each call to
-`setWalkable`, `setCost`, `fillWalkable` or `fillCost` that changes at
-least one cell. Comparing it with the version a path was found at tells
+`setWalkable`, `setCost`, `fillWalkable`, `fillWalkableMask` or `fillCost`
+that changes at least one cell. Comparing it with the version a path was found at tells
 whether the grid has changed since:
 
 ```ts

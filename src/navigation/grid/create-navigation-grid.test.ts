@@ -290,6 +290,58 @@ describe('NavigationGrid cells', () => {
   });
 });
 
+describe('NavigationGrid.fillWalkableMask', () => {
+  it('blocks and opens exactly the masked cells', () => {
+    const grid = createSquareGrid();
+    const mask = new Uint8Array([1, 0, 0, 0, 2, 0, 0, 0, 1]);
+
+    grid.fillWalkableMask(mask, false);
+
+    for (let node = 0; node < grid.nodeCount; node++) {
+      const { column, row } = grid.nodeToCell(node);
+
+      expect(grid.isWalkable(column, row)).toBe(mask[node] === 0);
+    }
+
+    grid.fillWalkable(
+      { minColumn: 0, minRow: 0, maxColumn: 2, maxRow: 0 },
+      false,
+    );
+    grid.fillWalkableMask(new Uint8Array([0, 1, 0, 0, 1, 0, 0, 0, 0]), true);
+
+    expect(grid.isWalkable(0, 0)).toBe(false);
+    expect(grid.isWalkable(1, 0)).toBe(true);
+    expect(grid.isWalkable(2, 0)).toBe(false);
+    expect(grid.isWalkable(1, 1)).toBe(true);
+    expect(grid.isWalkable(2, 2)).toBe(false);
+  });
+
+  it('increases version once for a mask that changes many cells', () => {
+    const grid = createSquareGrid();
+
+    grid.fillWalkableMask(new Uint8Array(9).fill(1), false);
+
+    expect(grid.version).toBe(1);
+  });
+
+  it('leaves version alone for a mask that changes nothing', () => {
+    const grid = createSquareGrid();
+
+    grid.setWalkable(1, 1, false);
+    grid.fillWalkableMask(new Uint8Array(9), false);
+    grid.fillWalkableMask(new Uint8Array([0, 0, 0, 0, 1, 0, 0, 0, 0]), false);
+    grid.fillWalkableMask(new Uint8Array([1, 0, 0, 0, 0, 0, 0, 0, 0]), true);
+
+    expect(grid.version).toBe(1);
+  });
+
+  it.each([0, 8, 10])('throws for a mask of %s bytes', (length) => {
+    expect(() =>
+      createSquareGrid().fillWalkableMask(new Uint8Array(length), false),
+    ).toThrow('it must have one byte per cell, 9');
+  });
+});
+
 describe('NavigationGrid version', () => {
   it('increases once per call that changes a cell', () => {
     const grid = createSquareGrid();
