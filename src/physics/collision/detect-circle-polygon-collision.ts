@@ -2,7 +2,7 @@ import { Vec2 } from '../../math/index.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { CollisionBody } from '../types/collision-body.js';
-import { CollisionManifold } from '../types/collision-manifold.js';
+import { NarrowPhaseManifold } from '../types/collision-manifold.js';
 import {
   findCircleContact,
   findClosestFace,
@@ -20,7 +20,7 @@ import {
 export function detectCirclePolygonCollision(
   circleBody: CollisionBody,
   polygonBody: CollisionBody,
-): Omit<CollisionManifold, 'entityA' | 'entityB'> | null {
+): NarrowPhaseManifold | null {
   const circleCollider = circleBody.collider as CircleCollider;
   const polygonCollider = polygonBody.collider as PolygonCollider;
   const { radius } = circleCollider;

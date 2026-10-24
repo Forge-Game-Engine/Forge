@@ -33,6 +33,9 @@ import { createSleepEcsSystem, SleepOptions } from './sleep-system.js';
 const tickMilliseconds = 62.5;
 const ticksToSleep = 8;
 
+// The sleep system never reads a manifold's colliders.
+const manifoldCollider = new CircleCollider(1);
+
 interface TestBody {
   entity: number;
   rigidBody: RigidBodyEcsComponent;
@@ -95,6 +98,8 @@ describe('createSleepEcsSystem', () => {
     return {
       entityA,
       entityB,
+      colliderA: manifoldCollider,
+      colliderB: manifoldCollider,
       normal: { x: 0, y: 1 },
       depth: 0,
       contactPoints: [],
@@ -150,7 +155,7 @@ describe('createSleepEcsSystem', () => {
       expect(sleepingStates(bottom, top)).toEqual([true, true]);
     });
 
-    it('zeroes resting velocities and records the pose and sorted links', () => {
+    it('zeroes resting velocities and records the pose, sorted links and manifolds', () => {
       const body = addBody({
         velocity: { x: 0.005, y: -0.005 },
         angularVelocity: 0.01,
@@ -175,7 +180,9 @@ describe('createSleepEcsSystem', () => {
         position: { x: 3, y: 4 },
         rotation: 1.25,
         links: [earlier, later].sort((a, b) => a - b),
+        manifolds,
       });
+      expect(body.rigidBody.sleepRecord!.manifolds[0]).toBe(manifolds[0]);
       expect(body.rigidBody.sleepRecord!.position).not.toBe(
         body.position.local,
       );
@@ -738,6 +745,7 @@ describe('createSleepEcsSystem', () => {
         position: { x: 2, y: 1 },
         rotation: 0,
         links: [],
+        manifolds: [],
       });
     });
 

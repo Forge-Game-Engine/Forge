@@ -3,6 +3,7 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
 import { formatEntity } from '../../ecs/entity.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 import { withDefaults } from '../../utilities/with-defaults.js';
+import { CollisionManifold } from '../types/collision-manifold.js';
 
 /**
  * How a {@link RigidBodyEcsComponent} participates in the simulation:
@@ -42,6 +43,13 @@ export interface RigidBodySleepRecord {
    * entity.
    */
   readonly links: readonly number[];
+  /**
+   * The collision manifolds the body was part of when it fell asleep. The
+   * body hasn't moved since, so while it sleeps
+   * `createNarrowPhaseEcsSystem` reuses them for its pairs with entities
+   * that aren't awake instead of testing those pairs again.
+   */
+  readonly manifolds: readonly CollisionManifold[];
 }
 
 /**
