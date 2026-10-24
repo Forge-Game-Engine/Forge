@@ -32,9 +32,11 @@ const movementSystem: EcsSystem<[Position, Velocity]> = {
 };
 ```
 
-`update` is called once per tick whether zero, one or many entities match,
-so work that runs once per tick, or that needs every match at once (sorting,
-spatial partitioning, batching), goes directly in `update`. `name` is
+`update` is called once per run of the system's group whether zero, one or
+many entities match. A group runs once per tick unless it repeats (see
+[Repeating a group](world.md#repeating-a-group)). Work that runs once per
+call, or that needs every match at once (sorting, spatial partitioning,
+batching), goes directly in `update`. `name` is
 optional and identifies the system in error messages.
 
 ## Registering a system
@@ -105,6 +107,11 @@ world.addSystem(spawnerSystem, { runIf: () => !settings.isPaused });
 per tick, before the group runs. When it returns `false`, none of the
 group's systems run and their own conditions aren't called. A system in a
 group runs when both conditions return `true`.
+
+A group registered with `runWhile` instead runs again while its condition
+returns `true`, and each of its systems' `runIf` is called on every run (see
+[Repeating a group](world.md#repeating-a-group)). A `runIf` condition only
+reads state; a `runWhile` condition may also change the state it loops over.
 
 A run condition doesn't change a system's `query` or `tags`. `cleanup` runs
 when the system is removed or the world stops, whatever its run condition.

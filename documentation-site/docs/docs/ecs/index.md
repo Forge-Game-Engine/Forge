@@ -12,12 +12,13 @@ The ECS is made of:
   more worlds every animation frame.
 - [World](world.md): `EcsWorld` stores entities, their components and
   tags, and registered systems. It creates and removes entities, answers
-  queries, and runs its systems once per tick.
+  queries, and runs its systems in groups each tick.
 - [Entity](entity.md): a numeric handle that identifies a set of
   components in a world.
 - [Component](component.md): typed data attached to an entity under a
   component key, or a tag with no data.
 - [System](system.md): an object with a `query` and an `update` function,
-  called once per tick with every entity that matches the query.
+  called once per run of its group (once per tick unless the group
+  repeats) with every entity that matches the query.
 
 ![Diagram of entities, components and systems](../../../static/img/ecs.png)

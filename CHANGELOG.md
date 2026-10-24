@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **ecs:** `addSystemGroup` takes a `runWhile` condition, the repeating counterpart of `runIf`: the world calls it before each run of the group and runs the group's systems again while it returns `true`, zero or more times per tick, re-checking each system's own `runIf` on every run. A group given both `runIf` and `runWhile` (in one call or across calls) throws
+- **common:** `registerFixedUpdate(world, time)` registers and returns a `fixed-update` system group that runs once per fixed step of `time`, after the start-of-tick groups and before `world.defaultSystemGroup`, like Unity's `FixedUpdate` and Bevy's `FixedMain`. Systems in it read the fixed delta from `time`. Calling it a second time with the same `Time` throws
+
+#### Changed
+
+- **input:** `registerInputs` now updates the `InputManager` in `world.firstSystemGroup` instead of an `input-update` group ordered before the default group, so game-state exit and enter systems, fixed steps and every other group read this frame's input whatever order they were registered in. The `input-update` group no longer exists; a group that had to run before the input update (for example, one that fed input into the `InputManager`) now runs after it
+
 ## [0.27.0] - 2026-10-24
 
 #### Added
