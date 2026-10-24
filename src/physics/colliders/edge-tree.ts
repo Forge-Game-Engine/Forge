@@ -1,4 +1,5 @@
 import { Vector2 } from '../../math/index.js';
+import { boxesOverlap, segmentReachesBox } from '../collision/flat-bounds.js';
 import { Aabb } from '../types/aabb.js';
 
 /**
@@ -119,7 +120,7 @@ export class EdgeTree {
     const deltaY = end.y - start.y;
 
     return this._query((source, offset) =>
-      segmentReachesBox(source, offset, start.x, start.y, deltaX, deltaY),
+      segmentReachesBox(source, offset, start.x, start.y, deltaX, deltaY, 1),
     );
   }
 
@@ -254,85 +255,4 @@ export class EdgeTree {
 
     return (this._itemBounds[offset] + this._itemBounds[offset + 2]) / 2;
   }
-}
-
-function boxesOverlap(
-  source: Float64Array,
-  offset: number,
-  minX: number,
-  minY: number,
-  maxX: number,
-  maxY: number,
-): boolean {
-  return (
-    source[offset] <= maxX &&
-    source[offset + 2] >= minX &&
-    source[offset + 1] <= maxY &&
-    source[offset + 3] >= minY
-  );
-}
-
-/**
- * Tests whether the segment from `(startX, startY)` to
- * `(startX + deltaX, startY + deltaY)` reaches a box, by clipping the
- * segment's parameter range against the box's x and y slabs.
- */
-function segmentReachesBox(
-  source: Float64Array,
-  offset: number,
-  startX: number,
-  startY: number,
-  deltaX: number,
-  deltaY: number,
-): boolean {
-  const xRange = clipToSlab(
-    startX,
-    deltaX,
-    source[offset],
-    source[offset + 2],
-    0,
-    1,
-  );
-
-  if (xRange === null) {
-    return false;
-  }
-
-  return (
-    clipToSlab(
-      startY,
-      deltaY,
-      source[offset + 1],
-      source[offset + 3],
-      xRange.tMin,
-      xRange.tMax,
-    ) !== null
-  );
-}
-
-/**
- * Narrows a segment's parameter range `[tMin, tMax]` to the part inside
- * the slab `min <= start + t * delta <= max`.
- * @returns The narrowed range, or `null` if none of it is inside.
- */
-function clipToSlab(
-  start: number,
-  delta: number,
-  min: number,
-  max: number,
-  tMin: number,
-  tMax: number,
-): { tMin: number; tMax: number } | null {
-  if (delta === 0) {
-    return start < min || start > max ? null : { tMin, tMax };
-  }
-
-  const tA = (min - start) / delta;
-  const tB = (max - start) / delta;
-  const narrowedMin = Math.max(tMin, Math.min(tA, tB));
-  const narrowedMax = Math.min(tMax, Math.max(tA, tB));
-
-  return narrowedMin > narrowedMax
-    ? null
-    : { tMin: narrowedMin, tMax: narrowedMax };
 }
