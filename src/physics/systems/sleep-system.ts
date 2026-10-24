@@ -75,6 +75,8 @@ interface SleepTick {
   readonly woken: Uint8Array;
   /** Each dynamic body's links: other entities and joint entities. */
   readonly links: number[][];
+  /** Each dynamic body's collision manifolds this tick. */
+  readonly manifolds: CollisionManifold[][];
   readonly islands: UnionFind;
 }
 
@@ -93,9 +95,10 @@ interface SleepTick {
  * `maxRestingAngularSpeed` and its `canSleep` is `true`; its `restTime`
  * counts how long. When every body of an island has rested for
  * `restDuration`, the system zeroes their velocities, sets `isSleeping` and
- * records each body's `local` pose and links in its `sleepRecord`. The
- * physics systems that change velocity or pose then leave the island alone
- * (see `isBodyAwake`).
+ * records each body's `local` pose, links and collision manifolds in its
+ * `sleepRecord`. The physics systems that change velocity or pose then
+ * leave the island alone (see `isBodyAwake`), and the narrow phase reuses
+ * the recorded manifolds instead of testing the island's contacts again.
  *
  * A sleeping island wakes, and every member's `restTime` restarts at `0`,
  * when any member:
@@ -172,6 +175,7 @@ export const createSleepEcsSystem = (
         wakesNeighbors: new Uint8Array(count),
         woken: new Uint8Array(count),
         links: Array.from({ length: count }, (): number[] => []),
+        manifolds: Array.from({ length: count }, (): CollisionManifold[] => []),
         islands: new UnionFind(count),
       };
 
@@ -232,8 +236,20 @@ function linkContacts(
   tick: SleepTick,
   collisionManifolds: readonly CollisionManifold[],
 ): void {
-  for (const { entityA, entityB } of collisionManifolds) {
+  const { indexOf, isDynamic, manifolds } = tick;
+
+  for (const manifold of collisionManifolds) {
+    const { entityA, entityB } = manifold;
+
     linkBodies(tick, entityA, entityB, entityB, entityA);
+
+    for (const entity of [entityA, entityB]) {
+      const index = indexOf.get(entity);
+
+      if (index !== undefined && isDynamic[index] === 1) {
+        manifolds[index].push(manifold);
+      }
+    }
   }
 }
 
@@ -457,6 +473,7 @@ function createSleepRecord(
     position: { x: local.x, y: local.y },
     rotation: tick.rotations[index].local,
     links: tick.links[index],
+    manifolds: tick.manifolds[index],
   };
 }
 

@@ -40,6 +40,7 @@ describe('isBodyAwake', () => {
       position: { x: 1, y: 2 },
       rotation: 0.5,
       links: [],
+      manifolds: [],
     };
 
     return { entity, rigidBody };

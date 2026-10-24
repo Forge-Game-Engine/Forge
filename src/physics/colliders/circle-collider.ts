@@ -17,7 +17,14 @@ function calculateCircleMomentOfInertia(radius: number, mass: number): number {
 export class CircleCollider extends Collider {
   public readonly type = 'circle';
   public readonly supportsDynamicBodies = true;
-  public radius: number;
+
+  /**
+   * The circle's radius. Read-only, like every collider's shape: the mass
+   * and moment of inertia are computed from it, and the narrow phase only
+   * notices a sleeping body's new shape when the collider object itself is
+   * replaced, so assign a new `CircleCollider` to change it.
+   */
+  public readonly radius: number;
 
   /**
    * The circle's center, in the entity's local space. Never mutate it:

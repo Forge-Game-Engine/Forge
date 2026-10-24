@@ -152,10 +152,12 @@ when they move.
 
 The narrow phase doesn't test a pair again when neither entity is awake
 and at least one of them is a sleeping body: two sleeping boxes, or a
-sleeping box on a static floor. Neither entity has moved, so it writes the
-pair's manifolds from the last tick back into `collisionManifolds`, the
-way Box2D keeps a sleeping island's contacts. A settled pile costs no
-collision tests, and its contacts carry on as if they had been tested:
+sleeping box on a static floor. When a body falls asleep, the sleep system
+records the collision manifolds it's part of in its `sleepRecord`. Neither
+entity has moved since, so the narrow phase writes those manifolds into
+`collisionManifolds` instead of testing the pair, the way Box2D keeps a
+sleeping island's contacts. A settled pile costs no collision tests, and
+its contacts carry on as if they had been tested:
 
 - each body's [contacts](./collisions.md#reading-contacts) keep the
   entities it rests on in `touching`, with nothing in `started` or
@@ -166,9 +168,9 @@ collision tests, and its contacts carry on as if they had been tested:
   when the island wakes, so a woken stack doesn't sag.
 
 The narrow phase tests the pair as usual when either entity is awake (an
-awake body hitting the pile is how the pile wakes), when the pair had no
-manifolds on the last tick, when either entity's collider shape object was
-replaced, and when either collider is a sensor. When the broad phase
+awake body hitting the pile is how the pile wakes), when the sleeping
+body's record has no manifolds for the pair, when either entity's collider
+shape object was replaced, and when either collider is a sensor. When the broad phase
 stops listing the pair, because their bounds no longer overlap or one of
 them was removed or lost its collider, the contact ends and the sleeping
 body wakes.

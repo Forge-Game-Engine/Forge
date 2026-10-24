@@ -9,6 +9,7 @@ import {
   ContactsEcsComponent,
   contactsId,
 } from '../components/contacts-component.js';
+import { rigidBodyId } from '../components/rigidbody-component.js';
 import { isContactAsleep } from '../is-body-awake.js';
 import { CollisionBody } from '../types/collision-body.js';
 import { CollisionManifold } from '../types/collision-manifold.js';
@@ -28,16 +29,16 @@ import { CollisionPair } from '../types/collision-pair.js';
  * written there, so it's never resolved.
  *
  * A pair in a sleeping island isn't tested again. When neither entity is
- * awake (see `isBodyAwake`), at least one of them is a sleeping `'dynamic'`
- * body, and the pair had manifolds last tick computed from the colliders
- * both entities still have, the system writes last tick's manifolds back
- * unchanged, the way Box2D keeps a sleeping island's contacts without
- * updating them. The contact stays in both entities' `touching`, the sleep
- * system keeps seeing it, and collision resolution keeps its accumulated
- * impulses for when the island wakes. Every other pair is tested: one with
- * an awake side, one with no manifolds last tick (a new contact), one whose
- * `ColliderEcsComponent.collider` was replaced (a rebuilt tilemap layer)
- * and every sensor pair.
+ * awake (see `isBodyAwake`) and at least one of them is a sleeping
+ * `'dynamic'` body whose `sleepRecord` holds manifolds for the pair,
+ * computed from the colliders both entities still have, the system writes
+ * those manifolds unchanged, the way Box2D keeps a sleeping island's
+ * contacts without updating them. The contact stays in both entities'
+ * `touching`, the sleep system keeps seeing it, and collision resolution
+ * keeps its accumulated impulses for when the island wakes. Every other
+ * pair is tested: one with an awake side, one the record has no manifolds
+ * for (a new contact), one whose `ColliderEcsComponent.collider` was
+ * replaced (a rebuilt tilemap layer) and every sensor pair.
  *
  * The system also owns every `ContactsEcsComponent`: it queries for them
  * and, each tick, rewrites their `touching`, `started` and `ended` lists
@@ -47,9 +48,7 @@ import { CollisionPair } from '../types/collision-pair.js';
  * @param collisionPairs - The broad-phase system's output: candidate
  * entity pairs whose AABBs overlap, each pair listed once.
  * @param collisionManifolds - The array the system clears and refills with
- * the current tick's confirmed collisions between solid colliders. Pass the
- * same array every tick: the system reads last tick's contents to reuse a
- * sleeping pair's manifolds.
+ * the current tick's confirmed collisions between solid colliders.
  * @returns An ECS system that populates `collisionManifolds` and every
  * `ContactsEcsComponent` every tick.
  */
@@ -59,8 +58,6 @@ export const createNarrowPhaseEcsSystem = (
 ): EcsSystem<[ContactsEcsComponent]> => ({
   query: [contactsId],
   update: (world, { entities, components: [contacts] }) => {
-    const previousManifolds = groupManifoldsByPair(collisionManifolds);
-
     collisionManifolds.length = 0;
 
     const hasContacts = new Set(entities);
@@ -104,9 +101,7 @@ export const createNarrowPhaseEcsSystem = (
       const sideA = { entity: entityA, collider: bodyA.collider };
       const sideB = { entity: entityB, collider: bodyB.collider };
       const manifolds =
-        (isSensorPair
-          ? null
-          : findSleepingManifolds(world, previousManifolds, sideA, sideB)) ??
+        (isSensorPair ? null : findSleepingManifolds(world, sideA, sideB)) ??
         detectCollision(bodyA, bodyB).map((manifold): CollisionManifold => ({
           entityA,
           entityB,
@@ -142,74 +137,72 @@ export const createNarrowPhaseEcsSystem = (
 
 const noContacts: readonly number[] = Object.freeze([]);
 
-type ManifoldsByPair = Map<number, Map<number, CollisionManifold[]>>;
-
 interface PairSide {
   entity: number;
   collider: Collider;
 }
 
 /**
- * Indexes last tick's manifolds by `entityA`, then `entityB`, so a pair's
- * manifolds can be found without searching the whole array.
- */
-function groupManifoldsByPair(
-  manifolds: readonly CollisionManifold[],
-): ManifoldsByPair {
-  const byPair: ManifoldsByPair = new Map();
-
-  for (const manifold of manifolds) {
-    let byEntityB = byPair.get(manifold.entityA);
-
-    if (byEntityB === undefined) {
-      byEntityB = new Map();
-      byPair.set(manifold.entityA, byEntityB);
-    }
-
-    const pairManifolds = byEntityB.get(manifold.entityB);
-
-    if (pairManifolds === undefined) {
-      byEntityB.set(manifold.entityB, [manifold]);
-    } else {
-      pairManifolds.push(manifold);
-    }
-  }
-
-  return byPair;
-}
-
-/**
- * Last tick's manifolds for a pair whose contact is asleep (see
- * `isContactAsleep`), or `null` when the pair has to be tested. Neither
- * body of a sleeping contact moved since last tick, so as long as both
- * entities still have the colliders the manifolds were computed from, the
- * manifolds are still right. Keeping them, rather than dropping them, is
- * what keeps the contact in `touching`, keeps the bodies linked in their
- * island, and lets collision resolution keep the contact's accumulated
- * impulses for when the island wakes. A pair with no manifolds last tick is
- * tested, so a new contact is still found.
+ * The manifolds a sleeping body recorded for a pair when it fell asleep
+ * (`RigidBodySleepRecord.manifolds`), or `null` when the pair has to be
+ * tested. Neither body of a sleeping contact (see `isContactAsleep`) moved
+ * since then, so as long as both entities still have the colliders the
+ * manifolds were computed from, the manifolds are still right. Reusing
+ * them, rather than dropping them, is what keeps the contact in
+ * `touching`, keeps the bodies linked in their island, and lets collision
+ * resolution keep the contact's accumulated impulses for when the island
+ * wakes. A pair the record has no manifolds for is tested, so a new contact
+ * is still found.
  */
 function findSleepingManifolds(
   world: EcsWorld,
-  previousManifolds: ManifoldsByPair,
   sideA: PairSide,
   sideB: PairSide,
 ): CollisionManifold[] | null {
-  const manifolds = previousManifolds.get(sideA.entity)?.get(sideB.entity);
+  if (!isContactAsleep(world, sideA.entity, sideB.entity)) {
+    return null;
+  }
+
+  const manifolds = findRecordedManifolds(world, sideA.entity, sideA, sideB);
+  const recorded =
+    manifolds.length > 0
+      ? manifolds
+      : findRecordedManifolds(world, sideB.entity, sideA, sideB);
 
   if (
-    manifolds === undefined ||
-    manifolds.some(
+    recorded.length === 0 ||
+    recorded.some(
       (manifold) =>
         manifold.colliderA !== sideA.collider ||
         manifold.colliderB !== sideB.collider,
-    ) ||
-    !isContactAsleep(world, sideA.entity, sideB.entity)
+    )
   ) {
     return null;
   }
 
-  return manifolds;
+  return recorded;
+}
+
+/**
+ * The manifolds between `sideA` and `sideB`, in that order, in `entity`'s
+ * sleep record. Empty when `entity` has no sleep record.
+ */
+function findRecordedManifolds(
+  world: EcsWorld,
+  entity: number,
+  sideA: PairSide,
+  sideB: PairSide,
+): CollisionManifold[] {
+  const record = world.getComponent(entity, rigidBodyId)?.sleepRecord;
+
+  if (!record) {
+    return [];
+  }
+
+  return record.manifolds.filter(
+    (manifold) =>
+      manifold.entityA === sideA.entity && manifold.entityB === sideB.entity,
+  );
 }
 
 function updateContacts(

@@ -63,6 +63,9 @@ describe('createNarrowPhaseEcsSystem with sleeping bodies', () => {
     world.addSystem(
       createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
     );
+    // Records the manifolds of bodies created asleep on the first tick, for
+    // the narrow phase to reuse on the next.
+    world.addSystem(createSleepEcsSystem(collisionManifolds, new Time()));
   });
 
   interface TestCircle {
@@ -120,6 +123,7 @@ describe('createNarrowPhaseEcsSystem with sleeping bodies', () => {
 
     expect(manifold.colliderA).toBe(body.collider.collider);
     expect(manifold.colliderB).toBe(floor.collider.collider);
+    expect(body.rigidBody.sleepRecord?.manifolds).toEqual([manifold]);
 
     for (let i = 0; i < 3; i++) {
       tickPair(body.entity, floor.entity);
@@ -134,6 +138,29 @@ describe('createNarrowPhaseEcsSystem with sleeping bodies', () => {
       expect(floor.contacts.started).toEqual([]);
       expect(floor.contacts.ended).toEqual([]);
     }
+  });
+
+  it('reads the manifolds to reuse from the sleep record, not from its previous output', () => {
+    const floor = addCircle({ x: 0, y: 1.5 });
+    const body = addSleepingCircle({ x: 0, y: 0 });
+
+    tickPair(body.entity, floor.entity);
+    collisionManifolds.length = 0;
+    tickPair(body.entity, floor.entity);
+
+    expect(detectCollisionSpy).not.toHaveBeenCalled();
+    expect(collisionManifolds).toHaveLength(1);
+  });
+
+  it('tests a sleeping body with no sleep record yet', () => {
+    const floor = addCircle({ x: 0, y: 1.5 });
+    const body = addSleepingCircle({ x: 0, y: 0 });
+
+    tickPair(body.entity, floor.entity);
+    body.rigidBody.sleepRecord = null;
+    tickPair(body.entity, floor.entity);
+
+    expect(detectCollisionSpy).toHaveBeenCalledTimes(1);
   });
 
   it('reuses the manifolds of two sleeping bodies resting on each other', () => {
