@@ -111,6 +111,22 @@ describe('createAngularVelocityMotorEcsSystem', () => {
     },
   );
 
+  it('leaves a sleeping body alone', () => {
+    const rigidBody = createMotoredEntity(10, 1000, { isSleeping: true });
+
+    tick();
+
+    expect(rigidBody.angularVelocity).toBe(0);
+  });
+
+  it('leaves a body alone when maxTorque is 0', () => {
+    const rigidBody = createMotoredEntity(10, 0);
+
+    tick();
+
+    expect(rigidBody.angularVelocity).toBe(0);
+  });
+
   it('recovers after an external disturbance', () => {
     const rigidBody = createMotoredEntity(5, 1000);
 

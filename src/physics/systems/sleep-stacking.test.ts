@@ -12,11 +12,18 @@ import { Vector2 } from '../../math/index.js';
 import { applyImpulse } from '../apply-impluse.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { addAngularVelocityMotorComponent } from '../components/angular-velocity-motor-component.js';
-import { addColliderComponent } from '../components/collider-component.js';
+import {
+  addColliderComponent,
+  allCollisionCategories,
+} from '../components/collider-component.js';
 import {
   addGravityComponent,
   GravityEcsComponent,
 } from '../components/gravity-component.js';
+import {
+  addRevoluteJointComponent,
+  RevoluteJointEcsComponent,
+} from '../components/revolute-joint-component.js';
 import {
   addRigidBodyComponent,
   RigidBodyEcsComponent,
@@ -30,6 +37,7 @@ import { createCollisionResolutionEcsSystem } from './collision-resolution-syste
 import { createEulerIntegrationEcsSystem } from './euler-integration-system.js';
 import { createGravityEcsSystem } from './gravity-system.js';
 import { createNarrowPhaseEcsSystem } from './narrow-phase-system.js';
+import { createRevoluteJointEcsSystem } from './revolute-joint-system.js';
 import { createSleepEcsSystem } from './sleep-system.js';
 
 const fixedDeltaMilliseconds = 1000 / 60;
@@ -86,6 +94,7 @@ describe('sleeping bodies in a physics scene', () => {
         time,
       ),
     );
+    world.addSystem(createRevoluteJointEcsSystem(time));
     world.addSystem(createAngularVelocityMotorEcsSystem(time));
     world.addSystem(createEulerIntegrationEcsSystem(time));
 
@@ -99,14 +108,18 @@ describe('sleeping bodies in a physics scene', () => {
     });
   });
 
-  function addBox(center: Vector2): Box {
+  function addBox(
+    center: Vector2,
+    { width = 1, height = 1, mask = allCollisionCategories } = {},
+  ): Box {
     const entity = world.createEntity();
     const position = addPositionComponent(world, entity, { local: center });
     const rotation = addRotationComponent(world, entity);
 
     addColliderComponent(world, entity, {
-      collider: boxCollider(1, 1),
+      collider: boxCollider(width, height),
       restitution: 0,
+      mask,
     });
 
     const rigidBody = addRigidBodyComponent(world, entity);
@@ -251,7 +264,7 @@ describe('sleeping bodies in a physics scene', () => {
     });
   });
 
-  it('turns a sleeping box whose motor is re-targeted, and wakes it on the next tick', () => {
+  it('wakes a sleeping box whose motor is re-targeted on the same tick, and turns it with its contacts solved', () => {
     const box = addBox({ x: 0, y: -0.55 });
     const motor = addAngularVelocityMotorComponent(world, box.entity, {
       targetVelocity: 0,
@@ -265,21 +278,122 @@ describe('sleeping bodies in a physics scene', () => {
     motor.targetVelocity = 3;
     tick();
 
-    // The motor's angular velocity disturbs the box, so integration turns
-    // it on this tick, and the sleep system wakes it on the next.
-    expect(box.rotation.local).not.toBe(restingRotation);
-    expect(box.rigidBody.isSleeping).toBe(true);
-
-    tick();
-
     expect(box.rigidBody.isSleeping).toBe(false);
+    expect(box.rotation.local).not.toBe(restingRotation);
 
     for (let i = 0; i < 10; i++) {
       tick();
+
+      expect(floorPenetration(box.entity)).toBeLessThan(0.1);
+    }
+  });
+
+  it('keeps a box whose motor is too weak to tip it awake', () => {
+    const box = addBox({ x: 0, y: -0.55 });
+
+    // Far less torque than tipping the box over takes, so the motor stalls
+    // and the box only ever turns a tiny amount each tick.
+    addAngularVelocityMotorComponent(world, box.entity, {
+      targetVelocity: 3,
+      maxTorque: 0.01,
+    });
+
+    for (let i = 0; i < 5 * ticksPerSecond; i++) {
+      tick();
+
+      expect(box.rigidBody.isSleeping).toBe(false);
     }
 
-    // Once awake, the floor holds the turning box up.
-    expect(floorPenetration(box.entity)).toBeLessThan(0.1);
+    expect(Math.abs(box.rotation.local)).toBeLessThan(0.1);
+  });
+
+  describe('a chain of links hung from a static pivot by revolute joints', () => {
+    const linkCount = 4;
+    const linkLength = 1;
+    let links: Box[];
+    let joints: { entity: number; joint: RevoluteJointEcsComponent }[];
+
+    beforeEach(() => {
+      // The pivot sits high above the floor, so the chain hangs freely.
+      const pivot = world.createEntity();
+
+      addPositionComponent(world, pivot, { local: { x: 0, y: -10 } });
+      addRotationComponent(world, pivot);
+
+      links = [];
+      joints = [];
+
+      for (let i = 0; i < linkCount; i++) {
+        const link = addBox(
+          { x: 0, y: -10 + (i + 0.5) * linkLength },
+          { width: 0.2, height: linkLength, mask: 0 },
+        );
+        const entity = world.createEntity();
+        const joint = addRevoluteJointComponent(world, entity, {
+          entityA: i === 0 ? pivot : links[i - 1].entity,
+          entityB: link.entity,
+          localAnchorA: i === 0 ? { x: 0, y: 0 } : { x: 0, y: linkLength / 2 },
+          localAnchorB: { x: 0, y: -linkLength / 2 },
+        });
+
+        links.push(link);
+        joints.push({ entity, joint });
+      }
+    });
+
+    it('falls asleep on the same tick and stays asleep with no joint correction', () => {
+      tickUntilAsleep(links, 5 * ticksPerSecond);
+
+      const poses = links.map((link) => ({ ...link.position.local }));
+      const rotations = links.map((link) => link.rotation.local);
+      const impulses = joints.map(({ joint }) => ({
+        ...joint.accumulatedPointImpulse,
+      }));
+
+      for (let i = 0; i < 5 * ticksPerSecond; i++) {
+        tick();
+
+        for (const link of links) {
+          expect(link.rigidBody.isSleeping).toBe(true);
+          expect(link.rigidBody.velocity).toEqual({ x: 0, y: 0 });
+        }
+      }
+
+      expect(links.map((link) => link.position.local)).toEqual(poses);
+      expect(links.map((link) => link.rotation.local)).toEqual(rotations);
+      expect(joints.map(({ joint }) => joint.accumulatedPointImpulse)).toEqual(
+        impulses,
+      );
+    });
+
+    it('wakes as a whole when an impulse hits one link', () => {
+      tickUntilAsleep(links, 5 * ticksPerSecond);
+
+      const middle = links[2];
+
+      applyImpulse(
+        world,
+        middle.entity,
+        { x: 0.1, y: 0 },
+        middle.position.world,
+      );
+      tick();
+
+      expect(links.map((link) => link.rigidBody.isSleeping)).toEqual(
+        links.map(() => false),
+      );
+    });
+
+    it('wakes as a whole when a joint is removed', () => {
+      tickUntilAsleep(links, 5 * ticksPerSecond);
+
+      world.removeEntity(joints[2].entity);
+      tick();
+
+      expect(links.map((link) => link.rigidBody.isSleeping)).toEqual(
+        links.map(() => false),
+      );
+    });
   });
 
   it('puts a stack of five boxes to sleep within two seconds of landing', () => {

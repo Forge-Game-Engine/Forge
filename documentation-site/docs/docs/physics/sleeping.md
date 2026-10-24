@@ -5,8 +5,9 @@ sidebar_position: 8
 # Sleeping Bodies
 
 A dynamic body that has moved slower than a small speed for long enough is
-put to sleep: gravity, collision resolution, joints, springs, dampers and
-integration skip it until something disturbs it.
+put to sleep: gravity, collision resolution, joints, springs, dampers,
+angular velocity motors and integration skip it until something disturbs
+it.
 [`createSleepEcsSystem`](/Forge/docs/api/functions/createSleepEcsSystem)
 puts bodies to sleep and wakes them, and it is the only system that writes
 a body's `isSleeping`.
@@ -70,7 +71,8 @@ Without the sleep system, no body falls asleep.
 
 A body is **resting** while its `velocity` is no faster than
 `maxRestingSpeed`, its `angularVelocity` is no faster than
-`maxRestingAngularSpeed`, and its `canSleep` is `true`. Its `restTime`
+`maxRestingAngularSpeed`, its `canSleep` is `true`, and no angular velocity
+motor is turning it towards a non-zero `targetVelocity`. Its `restTime`
 counts the seconds it has been resting, and is set back to `0` when it
 moves faster. When every body of an island has a `restTime` of at least
 `restDuration`, the sleep system sets each body's `velocity` and
@@ -103,7 +105,9 @@ when it fell asleep, and wakes its island when any body in the island:
 
 - has a non-zero `velocity` or `angularVelocity`, written by game code,
   [`applyImpulse`](/Forge/docs/api/functions/applyImpulse),
-  `applyTorque`, `applyExplosiveForce` or an angular velocity motor;
+  `applyTorque` or `applyExplosiveForce`;
+- has an angular velocity motor whose `targetVelocity` is set to something
+  other than `0`;
 - has a `position.local` or `rotation.local` that changed (a teleport);
 - touches a body it didn't touch when it fell asleep, or stops touching
   one, for example because that body was removed;
@@ -124,8 +128,10 @@ integration, and the island wakes on the next tick.
 
 Some changes don't change a sleeping body's velocity, pose or contacts:
 changing a `GravityEcsComponent`'s `amount`, a joint's limits, a spring's
-`stiffness` or `restLength`, or a collider's `friction`. To wake a body
-after one of them, set its `wakeRequested` to `true`:
+`stiffness` or `restLength`, or a collider's `friction`. (A motor's
+`targetVelocity` isn't one of them: the sleep system wakes a body whose
+motor target is set.) To wake a body after one of them, set its
+`wakeRequested` to `true`:
 
 ```ts
 gravity.amount.y = -600;
@@ -157,6 +163,15 @@ addRigidBodyComponent(world, player, { canSleep: false });
 ```
 
 Setting `canSleep` to `false` on a sleeping body wakes its island.
+
+An angular velocity motor with a non-zero `targetVelocity` keeps its body
+awake too, even while something stops the body turning, like a wheel
+pushed against a wall: a motor is a torque applied every tick, so a body it
+drives isn't resting. A motor whose `targetVelocity` is `0` (a brake) lets
+its body fall asleep, and setting a non-zero target on a sleeping body
+wakes its island before collision resolution on the sleep system's next
+run. A motor that can't turn its body (one on a fixed-rotation body, or
+with a `maxTorque` of `0`) doesn't keep the body awake.
 
 ## Creating a body asleep
 

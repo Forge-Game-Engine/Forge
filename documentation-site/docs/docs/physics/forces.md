@@ -161,6 +161,10 @@ turns the body back towards `targetVelocity`. Change `targetVelocity` or
 `maxTorque` on the component at any time. Register the system before
 `createEulerIntegrationEcsSystem`.
 
+A motor with a non-zero `targetVelocity` keeps its body awake, even when
+the body can't turn; one whose `targetVelocity` is `0` lets it fall asleep
+(see [Sleeping Bodies](./sleeping.md#keeping-a-body-awake)).
+
 ## Springs and dampers
 
 A `LinearSpringEcsComponent` pushes or pulls two bodies' anchor points
