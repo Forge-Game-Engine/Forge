@@ -13,6 +13,7 @@ import {
   RigidBodyEcsComponent,
   rigidBodyId,
 } from '../components/rigidbody-component.js';
+import { isRigidBodyAwake } from '../is-body-awake.js';
 import { getRigidBodyMassData } from '../rigid-body-mass-data.js';
 
 /**
@@ -22,7 +23,9 @@ import { getRigidBodyMassData } from '../rigid-body-mass-data.js';
  * (see {@link RigidBodyType}) are skipped entirely - they never move and
  * are never integrated - while `'kinematic'` bodies are integrated the same
  * as `'dynamic'` ones, since a kinematic body's `velocity` is expected to be
- * driven directly by game code.
+ * driven directly by game code. Bodies that aren't awake (sleeping
+ * `'dynamic'` bodies and `'kinematic'` bodies with no velocity, see
+ * {@link isBodyAwake}) are skipped too.
  *
  * Velocities are in world space. `velocity` is the velocity of the body's
  * center of mass, and a body turns about its center of mass (see
@@ -68,6 +71,17 @@ export const createEulerIntegrationEcsSystem = (
 
       const positionComponent = positions[i];
       const rotationComponent = rotations[i];
+
+      if (
+        !isRigidBodyAwake(
+          rigidBodyComponent,
+          positionComponent,
+          rotationComponent,
+        )
+      ) {
+        continue;
+      }
+
       const { localCenterOfMass } = getRigidBodyMassData(world, entities[i]);
       const startRotation = rotationComponent.local;
 

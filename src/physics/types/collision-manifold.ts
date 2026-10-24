@@ -1,4 +1,5 @@
 import { Vector2 } from '../../math/index.js';
+import { Collider } from '../colliders/collider.js';
 
 /**
  * The result of a narrow-phase collision check between two entities.
@@ -13,6 +14,20 @@ export interface CollisionManifold {
    * The second entity involved in the collision.
    */
   entityB: number;
+
+  /**
+   * The shape of `entityA`'s collider this manifold was computed from.
+   * `createNarrowPhaseEcsSystem` only reuses a sleeping pair's manifold
+   * while both entities still have these exact collider objects, so
+   * replacing a collider's shape gets the pair tested again.
+   */
+  colliderA: Collider;
+
+  /**
+   * The shape of `entityB`'s collider this manifold was computed from. See
+   * {@link CollisionManifold.colliderA}.
+   */
+  colliderB: Collider;
 
   /**
    * The collision normal, in world space, pointing from `entityA` toward
@@ -46,9 +61,9 @@ export interface CollisionManifold {
 /**
  * A {@link CollisionManifold} as produced by the narrow-phase collision
  * detectors, before `createNarrowPhaseEcsSystem` attaches the two colliding
- * entities' ids to it.
+ * entities and their colliders to it.
  */
 export type NarrowPhaseManifold = Omit<
   CollisionManifold,
-  'entityA' | 'entityB'
+  'entityA' | 'entityB' | 'colliderA' | 'colliderB'
 >;

@@ -112,4 +112,26 @@ describe('createLinearDamperEcsSystem', () => {
 
     expect(delta2).toBeCloseTo(delta1 * 2, 5);
   });
+
+  it('damps a sleeping body attached to a moving kinematic body', () => {
+    const sleeping = createBody(0, 0);
+    const kinematic = world.createEntity();
+
+    addPositionComponent(world, kinematic, { local: { x: 5, y: 0 } });
+    addRotationComponent(world, kinematic);
+    addRigidBodyComponent(world, kinematic, {
+      type: 'kinematic',
+      velocity: { x: -1, y: 0 },
+    });
+    sleeping.rigidBody.isSleeping = true;
+    addLinearDamperComponent(world, world.createEntity(), {
+      entityA: sleeping.entity,
+      entityB: kinematic,
+      dampingCoefficient: 2,
+    });
+
+    world.update();
+
+    expect(sleeping.rigidBody.velocity.x).toBeLessThan(0);
+  });
 });

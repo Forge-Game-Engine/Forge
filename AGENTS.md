@@ -1021,6 +1021,38 @@ spawn shape and direction) works in that entity's frame, turned by its
 `documentation-site/docs/docs/math/angles-and-rotation.md` covers the
 convention and which way a sprite faces.
 
+### Sleeping Bodies
+
+`createSleepEcsSystem` puts islands of resting dynamic bodies to sleep and
+is the only writer of `RigidBodyEcsComponent.isSleeping`, `restTime` and
+`sleepRecord` (game code only ever sets `wakeRequested` to `true`; the
+sleep system clears it). It wakes a sleeping island by comparing each body
+with its `sleepRecord`, so nothing else needs a `wakeUp` call:
+
+- A physics system that pushes on resting bodies (gravity, collision
+  resolution, joints, springs, dampers, motors) or moves them (integration)
+  skips a body that isn't awake (`isBodyAwake`), and skips a contact or
+  joint when neither of its bodies is awake. Otherwise it writes a velocity
+  into a sleeping body every tick and the sleep system wakes it on the next.
+- Something that drives a body every tick from a setting the data doesn't
+  show changing (an angular velocity motor's non-zero `targetVelocity`)
+  keeps the body from resting: the sleep system reads it, resets the
+  body's `restTime` and wakes its island, like repeated `AddTorque` in
+  Unity. Its own system then skips sleeping bodies like the rest.
+- A new component that connects two bodies (a joint) goes in
+  `islandLinkComponents` (`src/physics/islands/island-links.ts`), or the
+  bodies it connects fall asleep apart.
+- The narrow phase doesn't test a pair whose contact is asleep
+  (`isContactAsleep`: neither side awake, one of them a sleeping body). It
+  writes the manifolds the sleeping body recorded when it fell asleep
+  (`sleepRecord.manifolds`, written by the sleep system) instead, so a
+  sleeping island keeps its contacts, its links and its warm-start impulses
+  without collision tests. It only tests such a pair again when one of
+  `CollisionManifold.colliderA`/`colliderB` isn't the entity's current
+  `collider.collider` any more, so code that changes a collider's shape
+  assigns a new `Collider` object (as the tilemap collider system does)
+  rather than changing the old one in place.
+
 ### GPU Resources and Context Loss
 
 The browser can take the WebGL context away at any time, and every GL

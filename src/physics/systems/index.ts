@@ -9,3 +9,4 @@ export * from './linear-spring-system.js';
 export * from './narrow-phase-system.js';
 export * from './prismatic-joint-system.js';
 export * from './revolute-joint-system.js';
+export * from './sleep-system.js';

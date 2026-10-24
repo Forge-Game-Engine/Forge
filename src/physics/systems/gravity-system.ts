@@ -9,22 +9,28 @@ import {
   RigidBodyEcsComponent,
   rigidBodyId,
 } from '../components/rigidbody-component.js';
+import { isBodyAwake } from '../is-body-awake.js';
 
 /**
  * Creates an ECS system to handle gravity of rigid body entities.
  * @returns An ECS system that updates velocity of a rigid body based on
  * gravity. `'static'` and `'kinematic'` bodies (see {@link RigidBodyType})
- * are skipped - neither is affected by forces.
+ * are skipped - neither is affected by forces - and so are sleeping bodies
+ * (see {@link isBodyAwake}). Register it after `createSleepEcsSystem`, so
+ * a body that falls asleep this tick gets no velocity from it.
  */
 export const createGravityEcsSystem = (
   time: Time,
 ): EcsSystem<[RigidBodyEcsComponent, GravityEcsComponent]> => ({
   query: [rigidBodyId, gravityId],
-  update: (_world, { components: [rigidBodies, gravities] }) => {
+  update: (world, { entities, components: [rigidBodies, gravities] }) => {
     for (let i = 0; i < rigidBodies.length; i++) {
       const rigidBodyComponent = rigidBodies[i];
 
-      if (rigidBodyComponent.type !== 'dynamic') {
+      if (
+        rigidBodyComponent.type !== 'dynamic' ||
+        (rigidBodyComponent.isSleeping && !isBodyAwake(world, entities[i]))
+      ) {
         continue;
       }
 

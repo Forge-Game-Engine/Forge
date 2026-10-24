@@ -1,7 +1,9 @@
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
+import { formatEntity } from '../../ecs/entity.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 import { withDefaults } from '../../utilities/with-defaults.js';
+import { CollisionManifold } from '../types/collision-manifold.js';
 
 /**
  * How a {@link RigidBodyEcsComponent} participates in the simulation:
@@ -22,6 +24,33 @@ import { withDefaults } from '../../utilities/with-defaults.js';
  *   present.
  */
 export type RigidBodyType = 'dynamic' | 'kinematic' | 'static';
+
+/**
+ * What `createSleepEcsSystem` records about a body when it puts it to
+ * sleep. While the body sleeps, any difference between its current data and
+ * this record means something disturbed it, and the system wakes the body's
+ * island.
+ */
+export interface RigidBodySleepRecord {
+  /** `position.local` when the body fell asleep (a copy). */
+  readonly position: Readonly<Vector2>;
+  /** `rotation.local` when the body fell asleep. */
+  readonly rotation: number;
+  /**
+   * The body's links when it fell asleep, sorted and without duplicates:
+   * the other entity of each collision manifold it was part of, and the
+   * joint entity of each joint, spring or damper connecting it to another
+   * entity.
+   */
+  readonly links: readonly number[];
+  /**
+   * The collision manifolds the body was part of when it fell asleep. The
+   * body hasn't moved since, so while it sleeps
+   * `createNarrowPhaseEcsSystem` reuses them for its pairs with entities
+   * that aren't awake instead of testing those pairs again.
+   */
+  readonly manifolds: readonly CollisionManifold[];
+}
 
 /**
  * ECS-style component interface for a rigid body.
@@ -66,7 +95,64 @@ export interface RigidBodyEcsComponent {
    * See {@link RigidBodyType}.
    */
   type: RigidBodyType;
+
+  /**
+   * Whether the body may fall asleep. A body that can't sleep keeps its
+   * whole island (every dynamic body it's connected to through contacts and
+   * joints) awake, and setting it to `false` on a sleeping body wakes the
+   * island. Use it for bodies the game moves every tick in ways the sleep
+   * system can't see, such as a player character. Defaults to `true`.
+   */
+  canSleep: boolean;
+
+  /**
+   * A request to wake the body's island on `createSleepEcsSystem`'s next
+   * run, for changes the sleep system can't see in the body's data: a new
+   * gravity, a joint limit or spring stiffness, a motor's target. Game code
+   * sets it to `true` and never to `false`; the sleep system wakes the
+   * island, restarts every member's `restTime` (so the island stays awake at
+   * least the system's `restDuration`) and sets it back to `false`. Setting
+   * it on an awake body keeps its island awake that long, and setting it on
+   * a `'kinematic'` or `'static'` body wakes the sleeping bodies touching or
+   * jointed to it. Starts at `false`.
+   */
+  wakeRequested: boolean;
+
+  /**
+   * Whether the body is asleep: left alone by gravity, collision
+   * resolution, joints, springs, dampers and integration until something
+   * disturbs it. Output, written only by `createSleepEcsSystem`, which only
+   * puts `'dynamic'` bodies to sleep. Pass `true` to `addRigidBodyComponent`
+   * to create a `'dynamic'` body asleep, such as a pile placed already
+   * settled. Defaults to `false`.
+   */
+  isSleeping: boolean;
+
+  /**
+   * How long, in seconds, the body has been resting: moving no faster than
+   * the sleep system's resting speeds. Reset to `0` when it moves faster or
+   * is woken. Output, written only by `createSleepEcsSystem`. Starts at `0`.
+   */
+  restTime: number;
+
+  /**
+   * The body's pose and links when it fell asleep, which
+   * `createSleepEcsSystem` and `isBodyAwake` compare against to notice that
+   * it was disturbed. `null` while the body is awake, and for a body created
+   * asleep until the sleep system first sees it. Output, written only by
+   * `createSleepEcsSystem`.
+   */
+  sleepRecord: RigidBodySleepRecord | null;
 }
+
+/**
+ * The options {@link addRigidBodyComponent} accepts: every field of
+ * {@link RigidBodyEcsComponent} except the request and the outputs only
+ * the sleep system writes after creation.
+ */
+export type RigidBodyOptions = Partial<
+  Omit<RigidBodyEcsComponent, 'wakeRequested' | 'restTime' | 'sleepRecord'>
+>;
 
 export const rigidBodyId =
   createComponentId<RigidBodyEcsComponent>('f-rigid-body');
@@ -77,24 +163,48 @@ export const rigidBodyId =
  * @param entity - The entity to attach the component to.
  * @param options - Options for configuring the rigid body.
  * @returns The attached component, for further tuning or runtime changes.
+ * @throws An error if `options.isSleeping` is `true` and the body isn't
+ * `'dynamic'` (only dynamic bodies sleep) or `options.canSleep` is `false`.
  */
 export function addRigidBodyComponent(
   world: EcsWorld,
   entity: number,
-  options: Partial<RigidBodyEcsComponent> = {},
+  options: RigidBodyOptions = {},
 ): RigidBodyEcsComponent {
-  const defaultRigidBodyOptions: RigidBodyEcsComponent = {
+  const defaultRigidBodyOptions: Required<RigidBodyOptions> = {
     velocity: Vec2.zero,
     angularVelocity: 0,
     angularDrag: 0,
     fixedRotation: false,
     type: 'dynamic',
+    canSleep: true,
+    isSleeping: false,
   };
 
-  const component: RigidBodyEcsComponent = withDefaults(
-    defaultRigidBodyOptions,
-    options,
-  );
+  const resolvedOptions = withDefaults(defaultRigidBodyOptions, options);
+
+  if (resolvedOptions.isSleeping && resolvedOptions.type !== 'dynamic') {
+    throw new Error(
+      `Unable to add a sleeping ${resolvedOptions.type} rigid body to entity ${formatEntity(entity)}, only dynamic bodies sleep.`,
+    );
+  }
+
+  if (resolvedOptions.isSleeping && !resolvedOptions.canSleep) {
+    throw new Error(
+      `Unable to add a sleeping rigid body to entity ${formatEntity(entity)}, its canSleep is false.`,
+    );
+  }
+
+  // A new body is awake unless it's created asleep, so a wake request at
+  // creation means nothing, and it has rested for no time yet. A body
+  // created asleep gets its sleep record when the sleep system first sees
+  // it, since its links aren't known before then.
+  const component: RigidBodyEcsComponent = {
+    ...resolvedOptions,
+    wakeRequested: false,
+    restTime: 0,
+    sleepRecord: null,
+  };
 
   return world.addComponent(entity, rigidBodyId, component);
 }
