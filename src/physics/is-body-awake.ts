@@ -87,9 +87,9 @@ export function isRigidBodyAwake(
 /**
  * Whether `entity`'s rigid body takes part in this tick's simulation. The
  * physics systems that change velocity or pose (gravity, collision
- * resolution, the joint, spring and damper systems, integration) skip a body
- * that isn't awake, and skip a contact or joint when neither of its bodies
- * is awake.
+ * resolution, the joint, spring and damper systems, integration, continuous
+ * collision) skip a body that isn't awake, and skip a contact or joint when
+ * neither of its bodies is awake.
  *
  * - A `'dynamic'` body is awake unless it's sleeping (see
  *   `createSleepEcsSystem`). A sleeping body that was disturbed since it

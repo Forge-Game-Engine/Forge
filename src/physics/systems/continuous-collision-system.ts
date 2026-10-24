@@ -19,6 +19,7 @@ import {
   RigidBodyEcsComponent,
   rigidBodyId,
 } from '../components/rigidbody-component.js';
+import { isRigidBodyAwake } from '../is-body-awake.js';
 import { Aabb } from '../types/aabb.js';
 import { CollisionBody } from '../types/collision-body.js';
 
@@ -70,7 +71,11 @@ const contactDepthRatio = 0.01;
  * before `createTransformEcsSystem` runs, or the sweep treats the jump as
  * motion and can stop it at a wall in between. A swept body keeps its full
  * velocity but covers less ground this tick, the same trade Box2D makes.
- * Polygon bodies and kinematic or dynamic targets aren't swept.
+ * Polygon bodies and kinematic or dynamic targets aren't swept, and
+ * neither are bodies that aren't awake (see {@link isBodyAwake}):
+ * integration skips them, so they haven't moved. A sleeping body that was
+ * disturbed this tick counts as awake, so integration moves it and this
+ * system sweeps it.
  * @returns The ECS system.
  */
 export const createContinuousCollisionEcsSystem = (): EcsSystem<
@@ -107,10 +112,11 @@ export const createContinuousCollisionEcsSystem = (): EcsSystem<
 
     for (let i = 0; i < entities.length; i++) {
       const mover = colliders[i];
+      const rigidBody = getRigidBody(entities[i]);
 
       if (
         mover.sensor ||
-        getRigidBody(entities[i])?.type !== 'dynamic' ||
+        rigidBody?.type !== 'dynamic' ||
         !(mover.collider instanceof CircleCollider)
       ) {
         continue;
@@ -119,6 +125,13 @@ export const createContinuousCollisionEcsSystem = (): EcsSystem<
       const circle = mover.collider;
       const position = positions[i];
       const rotation = getRotation(entities[i]);
+
+      // A sleeping body wasn't integrated, so it hasn't moved since this
+      // tick's transform pass and there's nothing to sweep.
+      if (!isRigidBodyAwake(rigidBody, position, rotation)) {
+        continue;
+      }
+
       const start = circle.getWorldCenter(
         position.world,
         getColliderRotation(rotation),

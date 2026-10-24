@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Changed
+
+- **physics:** `createContinuousCollisionEcsSystem` skips sleeping bodies, since integration doesn't move them. A sleeping body that gets a velocity or is moved during a tick is still swept. Results don't change. See "Which bodies are swept" in the Continuous Collision Detection guide
+
 ## [0.27.0] - 2026-10-24
 
 #### Added

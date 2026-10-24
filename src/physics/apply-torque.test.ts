@@ -8,6 +8,22 @@ import {
   RigidBodyEcsComponent,
   RigidBodyType,
 } from './components/index.js';
+import { createSleepingBodyWorld } from './test-helpers/sleeping-body-world.js';
+
+describe('applyTorque on a sleeping body', () => {
+  it('wakes the body and turns it on the same tick', () => {
+    const { world, tick, addSleepingBody } = createSleepingBodyWorld();
+    // A moment of inertia of 1 (mass 2, radius 1).
+    const body = addSleepingBody({ x: 0, y: 0 });
+
+    applyTorque(world, body.entity, 60, 1 / 60);
+    tick();
+
+    expect(body.rigidBody.isSleeping).toBe(false);
+    expect(body.rigidBody.angularVelocity).toBeCloseTo(1);
+    expect(body.rotation.local).toBeCloseTo(1 / 60);
+  });
+});
 
 describe('applyTorque', () => {
   let world: EcsWorld;
