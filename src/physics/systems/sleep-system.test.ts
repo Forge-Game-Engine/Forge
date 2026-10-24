@@ -8,9 +8,16 @@ import {
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
+import {
+  addAngularVelocityMotorComponent,
+  AngularVelocityMotorEcsComponent,
+} from '../components/angular-velocity-motor-component.js';
 import { addColliderComponent } from '../components/collider-component.js';
 import { addLinearDamperComponent } from '../components/linear-damper-component.js';
-import { addLinearSpringComponent } from '../components/linear-spring-component.js';
+import {
+  addLinearSpringComponent,
+  linearSpringId,
+} from '../components/linear-spring-component.js';
 import { addPrismaticJointComponent } from '../components/prismatic-joint-component.js';
 import { addRevoluteJointComponent } from '../components/revolute-joint-component.js';
 import {
@@ -535,6 +542,47 @@ describe('createSleepEcsSystem', () => {
       expect(sleepingStates(left, right)).toEqual([false, true]);
     });
 
+    it('puts a pendulum hung from a static pivot to sleep', () => {
+      const pivot = addStaticCollider();
+      const bob = addBody();
+      const joint = world.createEntity();
+
+      addRevoluteJointComponent(world, joint, {
+        entityA: pivot,
+        entityB: bob.entity,
+      });
+      tick(ticksToSleep);
+
+      expect(bob.rigidBody.isSleeping).toBe(true);
+      expect(bob.rigidBody.sleepRecord!.links).toEqual([joint]);
+    });
+
+    it('wakes a sleeping body a joint is added to', () => {
+      const anchor = addStaticCollider();
+      const body = addBody();
+
+      tick(ticksToSleep);
+      addRevoluteJointComponent(world, world.createEntity(), {
+        entityA: anchor,
+        entityB: body.entity,
+      });
+      tick();
+
+      expect(body.rigidBody.isSleeping).toBe(false);
+    });
+
+    it('wakes both bodies when their joint loses its component', () => {
+      const a = addBody();
+      const b = addBody();
+      const joint = jointCases[2][1](a.entity, b.entity);
+
+      tick(ticksToSleep);
+      world.removeComponent(joint, linearSpringId);
+      tick();
+
+      expect(sleepingStates(a, b)).toEqual([false, false]);
+    });
+
     it('does not count a joint whose other entity has no rotation as a link', () => {
       const body = addBody();
       const other = world.createEntity();
@@ -572,6 +620,102 @@ describe('createSleepEcsSystem', () => {
       tick();
 
       expect(a.rigidBody.isSleeping).toBe(false);
+    });
+  });
+
+  describe('motors', () => {
+    function addMotor(
+      body: TestBody,
+      targetVelocity: number,
+      maxTorque = 10,
+    ): AngularVelocityMotorEcsComponent {
+      return addAngularVelocityMotorComponent(world, body.entity, {
+        targetVelocity,
+        maxTorque,
+      });
+    }
+
+    // Without a motor system, the motor never turns its body, like a wheel
+    // stalled against a wall.
+    it('keeps a stalled body with a non-zero target and its island awake', () => {
+      const wheel = addBody();
+      const partner = addBody();
+
+      setContacts([wheel.entity, partner.entity]);
+      addMotor(wheel, 3);
+      tick(4 * ticksToSleep);
+
+      expect(sleepingStates(wheel, partner)).toEqual([false, false]);
+      expect(wheel.rigidBody.restTime).toBe(0);
+    });
+
+    it('lets a body with a target of 0 fall asleep', () => {
+      const wheel = addBody();
+
+      addMotor(wheel, 0);
+      tick(ticksToSleep);
+
+      expect(wheel.rigidBody.isSleeping).toBe(true);
+    });
+
+    it.each<[string, RigidBodyOptions, number]>([
+      ['fixed-rotation body', { fixedRotation: true }, 10],
+      ['motor with no maxTorque', {}, 0],
+    ])(
+      'lets a body fall asleep when its motor cannot turn it: %s',
+      (_name, options, maxTorque) => {
+        const body = addBody(options);
+
+        addMotor(body, 3, maxTorque);
+        tick(ticksToSleep);
+
+        expect(body.rigidBody.isSleeping).toBe(true);
+      },
+    );
+
+    it('wakes a sleeping island when a motor target is set', () => {
+      const wheel = addBody();
+      const partner = addBody();
+
+      setContacts([wheel.entity, partner.entity]);
+
+      const motor = addMotor(wheel, 0);
+
+      tick(ticksToSleep);
+
+      expect(sleepingStates(wheel, partner)).toEqual([true, true]);
+
+      motor.targetVelocity = 3;
+      tick();
+
+      expect(sleepingStates(wheel, partner)).toEqual([false, false]);
+      expect(partner.rigidBody.restTime).toBe(tickMilliseconds / 1000);
+    });
+
+    it('wakes a sleeping island when a motor target is set while paused', () => {
+      const wheel = addBody();
+      const motor = addMotor(wheel, 0);
+
+      tick(ticksToSleep);
+      motor.targetVelocity = -3;
+      pausedTick();
+
+      expect(wheel.rigidBody.isSleeping).toBe(false);
+    });
+
+    it('lets a body fall asleep once its motor target is set back to 0', () => {
+      const wheel = addBody();
+      const motor = addMotor(wheel, 3);
+
+      tick(ticksToSleep);
+      motor.targetVelocity = 0;
+      tick(ticksToSleep - 1);
+
+      expect(wheel.rigidBody.isSleeping).toBe(false);
+
+      tick();
+
+      expect(wheel.rigidBody.isSleeping).toBe(true);
     });
   });
 
