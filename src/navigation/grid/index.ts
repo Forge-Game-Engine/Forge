@@ -1,3 +1,4 @@
+export * from './create-grid-path-planner.js';
 export * from './create-navigation-grid.js';
 export * from './find-grid-path.js';
 export * from './has-line-of-sight.js';

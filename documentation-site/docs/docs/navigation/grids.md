@@ -394,6 +394,31 @@ A #     The segment from A to B passes through the corner between
 
 The check works the same on orthogonal and isometric grids.
 
+## Planning a unit's path
+
+A [path planner](/Forge/docs/api/interfaces/PathPlanner) plans the whole
+path a unit walks, from its own position to the target.
+[`createGridPathPlanner`](/Forge/docs/api/functions/createGridPathPlanner)
+creates one over a grid:
+
+```ts
+import { createGridPathPlanner } from '@forge-game-engine/forge/navigation';
+
+const planner = createGridPathPlanner(grid);
+const { status, points } = planner.planPath(unitPosition, targetPosition);
+```
+
+`planPath` runs `findGridPath`, puts `unitPosition` before the cell
+centres, and puts `targetPosition` after them when the path is `'found'`
+and the target's own cell is walkable. It then smooths the points with
+`smoothGridPath`, so across open ground `points` is
+`[unitPosition, targetPosition]`. A target inside a blocked cell that
+snaps to a walkable one gives a path that ends at that cell's centre.
+
+`createGridPathPlanner(grid, { smooth: false })` doesn't smooth the path,
+which then goes from cell centre to cell centre, for a unit that moves cell by
+cell. A planner is what a [navigation agent](./agents.md) plans with.
+
 ## Searching a grid with findPath
 
 A grid's node ids number its cells row by row from its first cell,
