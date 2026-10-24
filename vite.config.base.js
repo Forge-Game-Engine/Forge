@@ -9,6 +9,9 @@ export default defineConfig({
     include: ['src/**/*.test.ts'],
     environment: 'jsdom',
     setupFiles: ['setup-tests.ts'],
+    benchmark: {
+      include: ['src/**/*.bench.ts'],
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
@@ -17,6 +20,7 @@ export default defineConfig({
       exclude: [
         'src/**/*.test.ts',
         'src/**/*.spec.ts',
+        'src/**/*.bench.ts',
         'src/**/test-helpers/**',
       ],
     },

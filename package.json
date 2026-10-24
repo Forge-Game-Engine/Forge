@@ -154,6 +154,7 @@
     "test:ui": "vitest --reporter=html",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
+    "bench": "vitest bench --run",
     "pretest:e2e": "node -e \"console.log('[e2e] npm run test:e2e starting', new Date().toISOString())\"",
     "test:e2e": "playwright test --config e2e/playwright.config.ts",
     "pretest:e2e:ui": "node -e \"console.log('[e2e] npm run test:e2e:ui starting', new Date().toISOString())\"",
