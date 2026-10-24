@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { registerInputs } from './register-inputs';
-import { EcsWorld } from '../ecs';
+import { createSystemGroup, EcsSystem, EcsWorld } from '../ecs';
 import { Time } from '../common';
+import { createGameState } from '../states/index.js';
 import { inputsId } from './components/index.js';
 import { InputManager } from './input-manager';
 import { buttonMoments } from './constants/index.js';
@@ -75,6 +76,115 @@ describe('registerInputs', () => {
     world.update();
 
     expect(triggerAction.isTriggered).toBe(false);
+  });
+
+  describe('order', () => {
+    let order: string[];
+
+    const loggingSystem = (name: string): EcsSystem => ({
+      name,
+      query: [],
+      update: (): void => {
+        order.push(name);
+      },
+    });
+
+    const logInputUpdate = (inputManager: InputManager): void => {
+      inputManager.addUpdatable({
+        update: (): void => {
+          order.push('input-update');
+        },
+      });
+    };
+
+    beforeEach(() => {
+      order = [];
+    });
+
+    it('updates input before a start-of-tick group registered before it', () => {
+      const startOfTick = createSystemGroup('start-of-tick');
+      world.addSystemGroup(startOfTick, { after: [world.firstSystemGroup] });
+      world.addSystem(loggingSystem('start-of-tick'), { group: startOfTick });
+
+      logInputUpdate(registerInputs(world, time));
+
+      world.update();
+
+      expect(order).toEqual(['input-update', 'start-of-tick']);
+    });
+
+    it("updates input before a game state's enter systems, in both registration orders", () => {
+      const stateFirst = createGameState(world, 'menu');
+      world.addSystem(loggingSystem('enter'), {
+        group: stateFirst.enterGroup,
+      });
+      logInputUpdate(registerInputs(world, time));
+
+      world.update();
+
+      expect(order).toEqual(['input-update', 'enter']);
+
+      order = [];
+      const otherWorld = new EcsWorld();
+      logInputUpdate(registerInputs(otherWorld, time));
+      const stateSecond = createGameState(otherWorld, 'menu');
+      otherWorld.addSystem(loggingSystem('enter'), {
+        group: stateSecond.enterGroup,
+      });
+
+      otherWorld.update();
+
+      expect(order).toEqual(['input-update', 'enter']);
+    });
+
+    it('updates input before a group ordered before the default group, in both registration orders', () => {
+      const early = createSystemGroup('early');
+      world.addSystemGroup(early, { before: [world.defaultSystemGroup] });
+      world.addSystem(loggingSystem('early'), { group: early });
+      logInputUpdate(registerInputs(world, time));
+
+      world.update();
+
+      expect(order).toEqual(['input-update', 'early']);
+
+      order = [];
+      const otherWorld = new EcsWorld();
+      logInputUpdate(registerInputs(otherWorld, time));
+      const otherEarly = createSystemGroup('early');
+      otherWorld.addSystemGroup(otherEarly, {
+        before: [otherWorld.defaultSystemGroup],
+      });
+      otherWorld.addSystem(loggingSystem('early'), { group: otherEarly });
+
+      otherWorld.update();
+
+      expect(order).toEqual(['input-update', 'early']);
+    });
+
+    it('resets input after the default group', () => {
+      const triggerAction = new TriggerAction('trigger', 'game');
+      const inputManager = registerInputs(world, time, {
+        triggerActions: [triggerAction],
+      });
+      let seenInDefaultGroup: boolean | undefined;
+
+      world.addSystem({
+        query: [],
+        update: (): void => {
+          seenInDefaultGroup = triggerAction.isTriggered;
+        },
+      });
+
+      inputManager.setTriggerInput(
+        { name: 'test' },
+        { action: triggerAction, moment: buttonMoments.down, displayText: '' },
+        true,
+      );
+      world.update();
+
+      expect(seenInDefaultGroup).toBe(true);
+      expect(triggerAction.isTriggered).toBe(false);
+    });
   });
 
   it('does not throw when called without options', () => {

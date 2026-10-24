@@ -670,6 +670,246 @@ describe('EcsWorld', () => {
     });
   });
 
+  describe('repeating groups', () => {
+    const times = (count: number): (() => boolean) => {
+      let runsLeft = count;
+
+      return () => runsLeft-- > 0;
+    };
+
+    it.each([0, 1, 3])(
+      'runs the group %i times, its systems in order on each run',
+      (count) => {
+        const world = new EcsWorld();
+        const calls: string[] = [];
+        const group = createSystemGroup('repeating');
+
+        world.addSystemGroup(group, { runWhile: times(count) });
+        world.addSystem(trackingSystem('a', calls), { group });
+        world.addSystem(trackingSystem('b', calls), { group });
+
+        world.update();
+
+        expect(calls).toEqual(
+          Array.from({ length: count }, () => ['a', 'b']).flat(),
+        );
+      },
+    );
+
+    it('calls the condition once more than the group runs, with the world', () => {
+      const world = new EcsWorld();
+      const group = createSystemGroup('repeating');
+      const runWhile = vi.fn(times(2));
+
+      world.addSystemGroup(group, { runWhile });
+      world.addSystem(trackingSystem('a', []), { group });
+
+      world.update();
+
+      expect(runWhile).toHaveBeenCalledTimes(3);
+      expect(runWhile).toHaveBeenCalledWith(world);
+    });
+
+    it('calls the condition even when the group has no systems', () => {
+      const world = new EcsWorld();
+      const runWhile = vi.fn(times(2));
+
+      world.addSystemGroup(createSystemGroup('empty'), { runWhile });
+
+      world.update();
+
+      expect(runWhile).toHaveBeenCalledTimes(3);
+    });
+
+    it("checks each system's own condition on every run", () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      const group = createSystemGroup('repeating');
+      let run = 0;
+
+      world.addSystemGroup(group, {
+        runWhile: () => {
+          run++;
+
+          return run <= 3;
+        },
+      });
+      world.addSystem(trackingSystem('second-run-only', calls), {
+        group,
+        runIf: () => run === 2,
+      });
+      world.addSystem(trackingSystem('always', calls), { group });
+
+      world.update();
+
+      expect(calls).toEqual(['always', 'second-run-only', 'always', 'always']);
+    });
+
+    it('queries again on every run', () => {
+      const world = new EcsWorld();
+      const group = createSystemGroup('repeating');
+      const batchSizes: number[] = [];
+
+      world.addSystemGroup(group, { runWhile: times(2) });
+      world.addSystem(
+        {
+          query: [positionId],
+          update: (_, { entities }) => {
+            batchSizes.push(entities.length);
+            const entity = world.createEntity();
+            world.addComponent(entity, positionId, {
+              local: { x: 0, y: 0 },
+              world: { x: 0, y: 0 },
+            });
+          },
+        },
+        { group },
+      );
+
+      world.update();
+
+      expect(batchSizes).toEqual([0, 1]);
+    });
+
+    it('keeps the order of the tick around a repeating group', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      const beforeGroup = createSystemGroup('before');
+      const repeatingGroup = createSystemGroup('repeating');
+      const afterGroup = createSystemGroup('after');
+
+      world.addSystemGroup(beforeGroup, { before: [world.defaultSystemGroup] });
+      world.addSystemGroup(repeatingGroup, {
+        after: [beforeGroup],
+        before: [world.defaultSystemGroup],
+        runWhile: times(2),
+      });
+      world.addSystemGroup(afterGroup, { after: [world.defaultSystemGroup] });
+      world.addSystem(trackingSystem('after', calls), { group: afterGroup });
+      world.addSystem(trackingSystem('default', calls));
+      world.addSystem(trackingSystem('r', calls), { group: repeatingGroup });
+      world.addSystem(trackingSystem('before', calls), { group: beforeGroup });
+
+      world.update();
+
+      expect(calls).toEqual(['before', 'r', 'r', 'default', 'after']);
+    });
+
+    it('repeats a start-of-tick group in its place', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      const group = createSystemGroup('repeating');
+
+      world.addSystem(trackingSystem('default', calls));
+      world.addSystemGroup(group, {
+        after: [world.firstSystemGroup],
+        runWhile: times(2),
+      });
+      world.addSystem(trackingSystem('first', calls), {
+        group: world.firstSystemGroup,
+      });
+      world.addSystem(trackingSystem('r', calls), { group });
+
+      world.update();
+
+      expect(calls).toEqual(['first', 'r', 'r', 'default']);
+    });
+
+    it('runs a system added during a run from the next tick', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      const group = createSystemGroup('repeating');
+      const added = trackingSystem('added', calls);
+      let runWhile = times(3);
+
+      world.addSystemGroup(group, { runWhile: () => runWhile() });
+      world.addSystem(
+        {
+          name: 'adder',
+          query: [],
+          update: () => {
+            calls.push('adder');
+
+            if (calls.length === 1) {
+              world.addSystem(added, { group });
+            }
+          },
+        },
+        { group },
+      );
+
+      world.update();
+
+      expect(calls).toEqual(['adder', 'adder', 'adder']);
+
+      calls.length = 0;
+      runWhile = times(1);
+      world.update();
+
+      expect(calls).toEqual(['adder', 'added']);
+    });
+
+    it('runs nothing in the group and the rest of the tick when the condition is false', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      const group = createSystemGroup('repeating');
+
+      world.addSystemGroup(group, {
+        before: [world.defaultSystemGroup],
+        runWhile: () => false,
+      });
+      world.addSystem(trackingSystem('r', calls), { group });
+      world.addSystem(trackingSystem('default', calls));
+
+      world.update();
+
+      expect(calls).toEqual(['default']);
+    });
+
+    it('throws for a group given both runIf and runWhile', () => {
+      const world = new EcsWorld();
+
+      expect(() =>
+        world.addSystemGroup(createSystemGroup('both'), {
+          runIf: () => true,
+          runWhile: () => false,
+        }),
+      ).toThrow(
+        'Unable to add system group "both" with both "runIf" and "runWhile"',
+      );
+    });
+
+    it('throws for runWhile on a group that already has runIf, and the reverse', () => {
+      const world = new EcsWorld();
+      const gated = createSystemGroup('gated');
+      const repeating = createSystemGroup('repeating');
+
+      world.addSystemGroup(gated, { runIf: () => true });
+      world.addSystemGroup(repeating, { runWhile: () => false });
+
+      expect(() =>
+        world.addSystemGroup(gated, { runWhile: () => false }),
+      ).toThrow('"gated" with both "runIf" and "runWhile"');
+      expect(() =>
+        world.addSystemGroup(repeating, { runIf: () => true }),
+      ).toThrow('"repeating" with both "runIf" and "runWhile"');
+    });
+
+    it('replaces the condition when the group is registered again with a new runWhile', () => {
+      const world = new EcsWorld();
+      const calls: string[] = [];
+      const group = createSystemGroup('repeating');
+
+      world.addSystemGroup(group, { runWhile: times(3) });
+      world.addSystemGroup(group, { runWhile: times(1) });
+      world.addSystem(trackingSystem('r', calls), { group });
+
+      world.update();
+
+      expect(calls).toEqual(['r']);
+    });
+  });
+
   describe('run conditions', () => {
     it('skips a system whose condition is false, without querying it', () => {
       const world = new EcsWorld();

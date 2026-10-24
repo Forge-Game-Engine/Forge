@@ -111,6 +111,14 @@ on each source added with `inputManager.addResettable`. A source's `reset`
 reports `0` for input that only lasts one frame, such as a mouse wheel
 turn.
 
+:::caution
+`isTriggered` is `true` for one frame, not for one fixed step. A system in
+the [fixed-update group](../common/time.md#running-systems-at-a-fixed-rate)
+reads a press zero times on a frame with no fixed steps and several times on
+a frame with several. Read triggers in the default group. Held actions and
+axes read the same value in every fixed step of a frame.
+:::
+
 ### Reading presses of an axis
 
 `value` is the axis's state when it's read, so a key pressed and released
