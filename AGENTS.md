@@ -1005,6 +1005,23 @@ spawn shape and direction) works in that entity's frame, turned by its
 `documentation-site/docs/docs/math/angles-and-rotation.md` covers the
 convention and which way a sprite faces.
 
+### Sleeping Bodies
+
+`createSleepEcsSystem` puts islands of resting dynamic bodies to sleep and
+is the only writer of `RigidBodyEcsComponent.isSleeping`, `restTime` and
+`sleepRecord` (game code only ever sets `wakeRequested` to `true`; the
+sleep system clears it). It wakes a sleeping island by comparing each body
+with its `sleepRecord`, so nothing else needs a `wakeUp` call:
+
+- A physics system that changes a body's velocity or pose skips a body
+  that isn't awake (`isBodyAwake`), and skips a contact or joint when
+  neither of its bodies is awake. Otherwise gravity or a solver writes a
+  velocity into a sleeping body and the sleep system wakes it on the next
+  tick.
+- A new component that connects two bodies (a joint) goes in
+  `islandLinkComponents` (`src/physics/islands/island-links.ts`), or the
+  bodies it connects fall asleep apart.
+
 ### GPU Resources and Context Loss
 
 The browser can take the WebGL context away at any time, and every GL

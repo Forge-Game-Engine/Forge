@@ -197,4 +197,34 @@ describe('createRevoluteJointEcsSystem', () => {
     expect(Number.isFinite(joint.accumulatedPointImpulse.y)).toBe(true);
     expect(Vec2.magnitude(joint.accumulatedPointImpulse)).toBeLessThan(1000);
   });
+
+  it.each([
+    ['leaves a sleeping body hanging from a static pivot alone', true],
+    ['warm-starts an awake body hanging from a static pivot', false],
+  ])('%s', (_name, isSleeping) => {
+    const pivot = world.createEntity();
+    addPositionComponent(world, pivot);
+    addRotationComponent(world, pivot);
+
+    const body = world.createEntity();
+    addPositionComponent(world, body, { local: { x: 0, y: 2 } });
+    addRotationComponent(world, body);
+    addUnitMassCollider(world, body);
+    const rigidBody = addRigidBodyComponent(world, body, { isSleeping });
+
+    const joint = addRevoluteJointComponent(world, world.createEntity(), {
+      entityA: pivot,
+      entityB: body,
+    });
+    joint.accumulatedPointImpulse = { x: 0, y: -1 };
+
+    tick();
+
+    if (isSleeping) {
+      expect(rigidBody.velocity).toEqual({ x: 0, y: 0 });
+      expect(joint.accumulatedPointImpulse).toEqual({ x: 0, y: -1 });
+    } else {
+      expect(rigidBody.velocity.y).toBeLessThan(0);
+    }
+  });
 });
