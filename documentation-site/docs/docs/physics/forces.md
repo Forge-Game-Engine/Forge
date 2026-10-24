@@ -57,10 +57,17 @@ Gravity is per entity, so each body can have a different `amount`, or none.
 
 ```ts
 gravity.amount.y = -600;
+rigidBody.wakeRequested = true;
 ```
 
+Changing `amount` doesn't change a sleeping body's data, so a sleeping body
+stays asleep until something wakes it. Setting the body's `wakeRequested`
+wakes it and every body it rests on or against (see
+[Waking a body](./sleeping.md#waking-a-body)).
+
 Register `createGravityEcsSystem` before `createCollisionResolutionEcsSystem`,
-so collision resolution works with the velocity gravity changed this tick.
+so collision resolution works with the velocity gravity changed this tick,
+and after `createSleepEcsSystem` if the game registers it.
 
 ## Impulses
 
@@ -202,8 +209,10 @@ local space, and default to the bodies' origins. A spring without a
 An entity in `entityA` or `entityB` without a `RigidBodyEcsComponent` is
 static.
 
-Register both systems before `createCollisionResolutionEcsSystem`, as for
-gravity.
+Register both systems before `createCollisionResolutionEcsSystem` and after
+`createSleepEcsSystem`, as for gravity. A spring or damper between two
+bodies that aren't awake applies no force, so changing its `stiffness` or
+`restLength` while its bodies sleep has no effect until they wake.
 
 ## Explosions
 

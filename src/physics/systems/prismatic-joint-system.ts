@@ -5,6 +5,7 @@ import {
   PrismaticJointEcsComponent,
   prismaticJointId,
 } from '../components/prismatic-joint-component.js';
+import { isBodyAwake } from '../is-body-awake.js';
 import {
   getJointLeverArm,
   JointBody,
@@ -57,6 +58,8 @@ interface PreparedPrismaticJoint {
  * `createCollisionResolutionEcsSystem`'s contact resolution. Must run after
  * `createCollisionResolutionEcsSystem` and before whatever system
  * integrates velocity into position (`createEulerIntegrationEcsSystem`).
+ * A joint is skipped, keeping its accumulated impulses, while neither of its
+ * bodies is awake (see {@link isBodyAwake}).
  * @param time - Used to read the tick's delta time.
  * @param options - Tuning overrides for the solver; see
  * {@link PrismaticJointSystemOptions}.
@@ -84,6 +87,15 @@ export const createPrismaticJointEcsSystem = (
       const prepared: PreparedPrismaticJoint[] = [];
 
       for (const joint of joints) {
+        // A joint between bodies that aren't awake keeps its accumulated
+        // impulses for when they wake.
+        if (
+          !isBodyAwake(world, joint.entityA) &&
+          !isBodyAwake(world, joint.entityB)
+        ) {
+          continue;
+        }
+
         const bodyA = resolveJointBody(world, joint.entityA);
         const bodyB = resolveJointBody(world, joint.entityB);
 

@@ -1,4 +1,3 @@
-import { positionId, rotationId } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 import {
@@ -6,6 +5,7 @@ import {
   getWorldCenterOfMass,
   RigidBodyMassData,
 } from '../rigid-body-mass-data.js';
+import { getJointBodyTransform } from './has-joint-body.js';
 
 /**
  * A joint constraint's view of one of its two connected entities: its
@@ -39,13 +39,13 @@ export function resolveJointBody(
   world: EcsWorld,
   entity: number,
 ): JointBody | null {
-  const position = world.getComponent(entity, positionId);
-  const rotation = world.getComponent(entity, rotationId);
+  const transform = getJointBodyTransform(world, entity);
 
-  if (position === null || rotation === null) {
+  if (transform === null) {
     return null;
   }
 
+  const { position, rotation } = transform;
   const massData = getRigidBodyMassData(world, entity);
 
   return {

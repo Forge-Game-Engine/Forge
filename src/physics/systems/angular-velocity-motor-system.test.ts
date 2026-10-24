@@ -6,6 +6,7 @@ import { addAngularVelocityMotorComponent } from '../components/angular-velocity
 import {
   addRigidBodyComponent,
   RigidBodyEcsComponent,
+  RigidBodyOptions,
 } from '../components/rigidbody-component.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { addColliderComponent } from '../components/collider-component.js';
@@ -46,7 +47,7 @@ describe('createAngularVelocityMotorEcsSystem', () => {
   function createMotoredEntity(
     targetVelocity: number,
     maxTorque: number,
-    rigidBodyOverrides: Partial<RigidBodyEcsComponent> = {},
+    rigidBodyOverrides: RigidBodyOptions = {},
   ): RigidBodyEcsComponent {
     const entity = world.createEntity();
     addUnitMassCollider(world, entity);
