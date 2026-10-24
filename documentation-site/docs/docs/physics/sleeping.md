@@ -128,7 +128,8 @@ integration, and the island wakes on the next tick.
 
 Some changes don't change a sleeping body's velocity, pose or contacts:
 changing a `GravityEcsComponent`'s `amount`, a joint's limits, a spring's
-`stiffness` or `restLength`, or a collider's `friction`. (A motor's
+`stiffness` or `restLength`, a collider's `friction`, or a collider's
+shape when the new shape still touches the same entities. (A motor's
 `targetVelocity` isn't one of them: the sleep system wakes a body whose
 motor target is set.) To wake a body after one of them, set its
 `wakeRequested` to `true`:
@@ -146,10 +147,47 @@ touch or are jointed to it.
 
 :::note
 A kinematic body moved by writing its position, rather than its
-`velocity`, doesn't wake the bodies it touches while its contacts stay the
-same. Move kinematic bodies by their velocity, or set `wakeRequested` on
-them when they move.
+`velocity`, doesn't wake a sleeping body it already touches while their
+bounds still overlap (see
+[Collision detection for sleeping bodies](#collision-detection-for-sleeping-bodies)).
+Move kinematic bodies by their velocity, or set `wakeRequested` on them
+when they move.
 :::
+
+## Collision detection for sleeping bodies
+
+The narrow phase doesn't test a pair again when neither entity is awake
+and at least one of them is a sleeping body: two sleeping boxes, or a
+sleeping box on a static floor. When a body falls asleep, the sleep system
+records the collision manifolds it's part of in its `sleepRecord`. Neither
+entity has moved since, so the narrow phase writes those manifolds into
+`collisionManifolds` instead of testing the pair, the way Box2D keeps a
+sleeping island's contacts. A settled pile costs no collision tests, and
+its contacts carry on as if they had been tested:
+
+- each body's [contacts](./collisions.md#reading-contacts) keep the
+  entities it rests on in `touching`, with nothing in `started` or
+  `ended`;
+- the sleep system keeps seeing the island's contacts, so the island stays
+  asleep;
+- collision resolution keeps each contact's impulses, and starts from them
+  when the island wakes, so a woken stack doesn't sag.
+
+The narrow phase tests the pair as usual when either entity is awake (an
+awake body hitting the pile is how the pile wakes), when the sleeping
+body's record has no manifolds for the pair, when either entity's collider
+shape object was replaced, and when either collider is a sensor. When the broad phase
+stops listing the pair, because their bounds no longer overlap or one of
+them was removed or lost its collider, the contact ends and the sleeping
+body wakes.
+
+Replacing a collider's shape, as a tilemap layer's collider system does
+when its tiles change, tests the pair again, and the body wakes if what it
+touches changes. Moving a static body, a collider-only entity or a still
+kinematic body by its position doesn't update its contact with a sleeping
+body it already touches while their bounds still overlap: set the sleeping
+body's `wakeRequested` when moving one of them. A move that makes it touch
+a sleeping body it didn't touch before is tested, and wakes the body.
 
 ## Keeping a body awake
 

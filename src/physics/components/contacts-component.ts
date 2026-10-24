@@ -10,7 +10,10 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
  * recorded.
  *
  * Every overlap counts, including one with a sensor collider (which is
- * never resolved) and one with a body this entity is resting on.
+ * never resolved) and one with a body this entity is resting on. A
+ * sleeping body's contacts persist while it sleeps: the narrow phase reuses
+ * them without testing them again, so a crate asleep on the floor keeps the
+ * floor in `touching` and reports nothing in `started` or `ended`.
  */
 export interface ContactsEcsComponent {
   /**

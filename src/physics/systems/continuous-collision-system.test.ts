@@ -366,6 +366,7 @@ describe('continuous collision of sleeping circles', () => {
       position: recordedPosition,
       rotation: 0,
       links: [],
+      manifolds: [],
     };
   }
 
