@@ -229,6 +229,13 @@ export const demos: Demo[] = [
     categories: ['rendering', 'physics'],
   },
   {
+    slug: 'path-finding',
+    title: 'Path Finding',
+    description:
+      'Click to send a group of units through a walled level on paths planned over a navigation grid baked from its colliders, and drag a wall to watch them plan new paths around it.',
+    categories: ['navigation'],
+  },
+  {
     slug: 'isometric-path-finding',
     title: 'Isometric Path Finding',
     description:
