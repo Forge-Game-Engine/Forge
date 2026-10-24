@@ -87,9 +87,9 @@ export function isRigidBodyAwake(
 /**
  * Whether `entity`'s rigid body takes part in this tick's simulation. The
  * physics systems that change velocity or pose (gravity, collision
- * resolution, the joint, spring and damper systems, integration) skip a body
- * that isn't awake, and skip a contact or joint when neither of its bodies
- * is awake.
+ * resolution, the joint, spring and damper systems, the angular velocity
+ * motor system, integration) skip a body that isn't awake, and skip a
+ * contact or joint when neither of its bodies is awake.
  *
  * - A `'dynamic'` body is awake unless it's sleeping (see
  *   `createSleepEcsSystem`). A sleeping body that was disturbed since it
@@ -97,6 +97,9 @@ export function isRigidBodyAwake(
  *   `position.local` or `rotation.local` different from its `sleepRecord`,
  *   `canSleep` set to `false`, or `wakeRequested`) counts as awake already,
  *   so the answer is the same before and after the sleep system wakes it.
+ *   Only the sleep system notices a joint, spring or damper added or
+ *   removed and a motor's `targetVelocity` set to something other than
+ *   `0`: those wake the body on its next run.
  * - A `'kinematic'` body is awake while its `velocity` or `angularVelocity`
  *   is non-zero.
  * - A `'static'` body and an entity with no `RigidBodyEcsComponent` (a

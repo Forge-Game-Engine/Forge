@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Changed
+
+- **physics:** An angular velocity motor with a non-zero `targetVelocity` (and a positive `maxTorque`, on a dynamic body without `fixedRotation`) now keeps its body awake: `createSleepEcsSystem` doesn't count the body as resting, so a motor stalled against a wall no longer falls asleep and wakes again every half second, and setting a non-zero target on a sleeping body wakes its island before collision resolution on the same tick, instead of turning it for one tick with its contacts unsolved. A motor whose `targetVelocity` is `0` (a brake) still lets its body sleep. `createAngularVelocityMotorEcsSystem` now skips sleeping bodies and motors whose `maxTorque` isn't positive. Set `targetVelocity` to `0` on a motor that should let its body sleep
+
 ## [0.27.0] - 2026-10-24
 
 #### Added
