@@ -27,6 +27,9 @@ target: a system plans its path over a grid or a waypoint graph, plans it
 again when the level or the target changes, and outputs the velocity that
 walks the path.
 
+The [Path Finding demo](/Forge/demos/path-finding) bakes a grid from a
+level's colliders and sends navigation agents across it.
+
 ## Graphs and nodes
 
 A graph is a set of nodes connected by steps:
@@ -39,6 +42,20 @@ A graph is a set of nodes connected by steps:
   walked both ways is two steps.
 - The **cost** of a path is the sum of its steps' costs. The cheapest path
   is the one with the lowest cost, not the fewest steps.
+
+## How the A\* search works
+
+The search keeps a list of nodes to search, which starts with the start
+node. Each node on it has the cost of the cheapest path found to it so
+far, plus the [heuristic](#the-heuristic)'s estimate of the cost from it
+to the goal. The search repeatedly takes the node with the lowest total
+off the list and expands it: for each step out of it, it adds the neighbor
+to the list with the cost of the path through the node, when that path is
+cheaper than any found to the neighbor before. The search ends when it
+takes the goal off the list, and the path to the goal is then the
+cheapest. Because nodes the heuristic puts closer to the goal are taken
+first, the search expands fewer nodes than one that orders them by cost
+alone.
 
 ## Implementing a graph
 

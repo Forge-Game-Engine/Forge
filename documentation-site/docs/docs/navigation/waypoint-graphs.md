@@ -191,6 +191,58 @@ point positions, and puts `targetPosition` after them when the route is
 point nearest it, and a graph with no enabled point gives an empty
 `points`. A planner is what a [navigation agent](./agents.md) plans with.
 
+## Rerouting a unit when a route closes
+
+A [navigation agent](./agents.md) plans its path again whenever its
+planner's graph changes, so closing a connection reroutes every unit
+whose path used it. This road network has two routes from a depot to a
+town, one over a bridge and a longer one through a ford, and a vehicle
+driving to the town:
+
+```ts
+import { addPositionComponent } from '@forge-game-engine/forge/common';
+import {
+  addNavigationAgentComponent,
+  createWaypointGraph,
+  createWaypointPathPlanner,
+} from '@forge-game-engine/forge/navigation';
+
+const roads = createWaypointGraph();
+const depot = roads.addPoint({ x: 0, y: 0 });
+const bridge = roads.addPoint({ x: 200, y: 0 });
+const town = roads.addPoint({ x: 400, y: 0 });
+const ford = roads.addPoint({ x: 200, y: 150 });
+
+roads.connect(depot, bridge);
+roads.connect(bridge, town);
+roads.connect(depot, ford);
+roads.connect(ford, town);
+
+const vehicle = world.createEntity();
+
+addPositionComponent(world, vehicle, { local: { x: 0, y: 0 } });
+addNavigationAgentComponent(world, vehicle, {
+  planner: createWaypointPathPlanner(roads),
+  speed: 80,
+  target: { x: 400, y: 0 },
+});
+```
+
+The vehicle's path runs over the bridge, the cheapest route. Closing the
+road from the bridge to the town:
+
+```ts
+roads.disconnect(bridge, town);
+```
+
+raises the graph's `version`, so on the next tick the agent system plans a
+new path from the vehicle's position over the roads still open. A vehicle
+that hasn't reached the bridge yet gets a path through the ford.
+`roads.setEnabled(bridge, false)` closes the bridge itself, and every road
+through it, the same way. Connecting the road again, or enabling the
+point, raises `version` too, and the vehicle plans the cheapest path from
+where it is.
+
 ## Reading a graph
 
 These methods read a graph back, for example to draw it:
