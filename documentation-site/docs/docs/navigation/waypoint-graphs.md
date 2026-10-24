@@ -236,8 +236,9 @@ roads.disconnect(bridge, town);
 ```
 
 raises the graph's `version`, so on the next tick the agent system plans a
-new path from the vehicle's position over the roads still open. A vehicle
-that hasn't reached the bridge yet gets a path through the ford.
+new path over the roads still open, from the vehicle's position through
+the enabled point closest to it. A vehicle that hasn't reached the bridge
+yet gets a path through the ford.
 `roads.setEnabled(bridge, false)` closes the bridge itself, and every road
 through it, the same way. Connecting the road again, or enabling the
 point, raises `version` too, and the vehicle plans the cheapest path from
