@@ -196,7 +196,10 @@ body wakes on the first tick. `addRigidBodyComponent` throws for
 [`isBodyAwake`](/Forge/docs/api/functions/isBodyAwake) returns whether a
 body takes part in this tick's simulation: `true` for a dynamic body that
 isn't sleeping or was disturbed since it fell asleep, and for a kinematic
-body with a non-zero velocity; `false` otherwise.
+body with a non-zero velocity; `false` otherwise. A sleeping body that
+gained or lost a joint, spring or damper, or whose motor's
+`targetVelocity` was set, still counts as asleep until the sleep system
+wakes it on its next run, since only the sleep system checks for those.
 
 ```ts
 import { isBodyAwake } from '@forge-game-engine/forge/physics';

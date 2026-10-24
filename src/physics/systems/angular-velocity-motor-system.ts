@@ -17,10 +17,10 @@ import { getRigidBodyMassData } from '../rigid-body-mass-data.js';
  * `AngularVelocityMotorEcsComponent` toward `targetVelocity`, clamped by
  * `maxTorque`. Recomputed fresh from the body's current angular velocity
  * every tick (no warm-starting), so it automatically recovers after an
- * external disturbance (a collision, a scripted torque). Order relative to
- * other physics systems doesn't matter beyond running before whatever
- * system integrates velocity into position
- * (`createEulerIntegrationEcsSystem`). Bodies torque can't turn are
+ * external disturbance (a collision, a scripted torque). Register it after
+ * `createSleepEcsSystem` and before whatever system integrates velocity
+ * into position (`createEulerIntegrationEcsSystem`); its order relative to
+ * the other physics systems doesn't matter. Bodies torque can't turn are
  * skipped: `'static'`/`'kinematic'` bodies (see {@link RigidBodyType}) and
  * `'dynamic'` bodies with `fixedRotation`, as are motors whose `maxTorque`
  * isn't positive.

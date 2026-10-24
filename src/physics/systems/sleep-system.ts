@@ -129,7 +129,8 @@ interface SleepTick {
  * `collisionManifolds` and a body hit this tick wakes before the solver
  * runs, and before every system that changes velocity
  * (`createGravityEcsSystem`, the spring and damper systems,
- * `createCollisionResolutionEcsSystem`, the joint systems and
+ * `createCollisionResolutionEcsSystem`, the joint systems,
+ * `createAngularVelocityMotorEcsSystem` and
  * `createEulerIntegrationEcsSystem`). Game code that changes physics input
  * runs before `createTransformEcsSystem`.
  * @param collisionManifolds - The narrow-phase system's output: this tick's
