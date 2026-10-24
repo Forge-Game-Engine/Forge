@@ -7,7 +7,8 @@ sidebar_position: 1
 [`Time`](/Forge/docs/api/classes/Time) holds the timing of the current
 frame: the time since the previous frame (delta time), the total elapsed
 time, the frame count and the frame rate. Its `timeScale` multiplies the
-delta time, for slow motion or pausing.
+delta time, for slow motion or pausing. It also hands out fixed steps, for
+work that runs at a fixed rate.
 
 ## Creating and updating time
 
@@ -94,6 +95,79 @@ time.timeScale = 0; // paused
 At `timeScale = 0`, `deltaTimeInSeconds` is `0`. Systems still run each
 frame; anything they change by the delta time doesn't change. The raw
 values aren't scaled.
+
+## Fixed timestep
+
+A fixed timestep runs work, such as a physics simulation, in steps of the same
+size whatever the frame rate. `Time` keeps a fixed clock beside the frame
+clock: each `update` adds the frame's delta time to an accumulated time, and
+[`consumeFixedStep`](/Forge/docs/api/classes/Time#consumefixedstep) takes one
+fixed step out of it.
+
+### Running fixed steps
+
+Call `consumeFixedStep` in a loop after `time.update`, and run the fixed-rate
+work once per step:
+
+```ts
+time.update(performance.now());
+
+while (time.consumeFixedStep()) {
+  runFixedStep();
+}
+
+world.update();
+```
+
+When the accumulated time holds at least one fixed delta time,
+`consumeFixedStep` subtracts it, starts a fixed step and returns `true`.
+Otherwise it ends the fixed step and returns `false`, and the rest of the
+accumulated time is kept for the next frame. A frame shorter than the fixed
+delta time can take no steps, and a longer one takes several.
+
+While a fixed step runs, `isInFixedStep` is `true`, `deltaTimeInSeconds` and
+`deltaTimeInMilliseconds` are the fixed delta time, and `timeInSeconds` and
+`timeInMilliseconds` are the fixed time: the time at the end of the step. A
+system written against `deltaTimeInSeconds` runs at the fixed rate when it's
+updated inside the loop. The raw values, `frames`, `fps` and `timeScale` don't
+change.
+
+Run the loop once per frame, in the code that calls `time.update`, not inside
+a system: each step it takes is removed from the accumulated time.
+[`Game`](/Forge/docs/api/classes/Game) doesn't call `consumeFixedStep`.
+
+:::caution
+`update` throws while a fixed step is running. Call `consumeFixedStep` until
+it returns `false` before the next `update`.
+:::
+
+### Setting the fixed delta time
+
+`fixedDeltaTimeInMilliseconds` is the size of each step, `1000 / 60` (60 steps
+per second) by default. `fixedDeltaTimeInSeconds` holds the same value in
+seconds:
+
+```ts
+time.fixedDeltaTimeInMilliseconds = 1000 / 50; // 50 steps per second
+```
+
+The accumulated time is kept, and the next step uses the new size. Setting a
+value that isn't finite and greater than `0` throws.
+
+### Scaling fixed steps
+
+The accumulated time is fed the frame's `deltaTimeInMilliseconds`, which is
+scaled by `timeScale` and limited to `1/15` of a second. At
+`timeScale = 0.5`, fixed steps happen half as often; at `timeScale = 0`, no
+fixed steps happen. The size of a step doesn't change. The first `update`
+adds nothing, since its delta time isn't elapsed time.
+
+### Interpolating between fixed steps
+
+After the loop, `fixedOverstepFraction` is the accumulated time left over, as
+a fraction of the fixed delta time, from `0` up to but not including `1`. To
+draw a value that changes in fixed steps smoothly, interpolate between its
+values at the previous and the latest fixed step by this fraction.
 
 ## Measuring the frame rate
 
