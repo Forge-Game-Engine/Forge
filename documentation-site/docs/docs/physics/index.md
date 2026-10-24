@@ -37,6 +37,11 @@ The physics module has these parts:
 - **Continuous collision detection**: stops fast circles from sinking into
   or passing through static colliders within one tick. See
   [Continuous Collision Detection](./continuous-collision-detection.md).
+- **Dynamic AABB tree**: a
+  [`DynamicAabbTree`](/Forge/docs/api/classes/DynamicAabbTree) is a spatial
+  index that finds the boxes overlapping a box or crossed by a segment,
+  for a game's own spatial queries. See
+  [Dynamic AABB Tree](./dynamic-aabb-tree.md).
 
 ## Registering the physics systems
 
