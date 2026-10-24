@@ -114,4 +114,40 @@ describe('createLinearSpringEcsSystem', () => {
     expect(a.rigidBody.velocity.x).toBe(0);
     expect(b.rigidBody.velocity.x).toBe(0);
   });
+
+  it('leaves a stretched spring between two sleeping bodies alone', () => {
+    const a = createBody(0);
+    const b = createBody(5);
+
+    a.rigidBody.isSleeping = true;
+    b.rigidBody.isSleeping = true;
+    addLinearSpringComponent(world, world.createEntity(), {
+      entityA: a.entity,
+      entityB: b.entity,
+      restLength: 2,
+      stiffness: 10,
+    });
+
+    world.update();
+
+    expect(a.rigidBody.velocity.x).toBe(0);
+    expect(b.rigidBody.velocity.x).toBe(0);
+  });
+
+  it('pulls a sleeping body towards an awake one', () => {
+    const a = createBody(0);
+    const b = createBody(5);
+
+    a.rigidBody.isSleeping = true;
+    addLinearSpringComponent(world, world.createEntity(), {
+      entityA: a.entity,
+      entityB: b.entity,
+      restLength: 2,
+      stiffness: 10,
+    });
+
+    world.update();
+
+    expect(a.rigidBody.velocity.x).toBeGreaterThan(0);
+  });
 });

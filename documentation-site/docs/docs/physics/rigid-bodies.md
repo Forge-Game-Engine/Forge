@@ -187,6 +187,25 @@ treats a change to `local` made after it as movement, and stops a dynamic
 circle at any static collider between the old and new positions.
 :::
 
+Writing a sleeping body's velocity or `local` pose wakes it (see
+[Sleeping Bodies](./sleeping.md)).
+
+## Sleep state
+
+A `RigidBodyEcsComponent` also holds a body's sleep state, which
+[`createSleepEcsSystem`](/Forge/docs/api/functions/createSleepEcsSystem)
+uses:
+
+- `canSleep` (`true` by default): whether the body may fall asleep.
+- `isSleeping`: whether the body is asleep. Pass `isSleeping: true` to
+  `addRigidBodyComponent` to create a dynamic body asleep.
+- `wakeRequested`: set to `true` to wake the body.
+- `restTime` and `sleepRecord`: how long the body has been resting, and
+  its pose and contacts when it fell asleep. Only the sleep system writes
+  them.
+
+[Sleeping Bodies](./sleeping.md) describes each of them.
+
 ## Removing a body
 
 Remove the body's entity with `world.removeEntity`. Removing only its

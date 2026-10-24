@@ -40,6 +40,33 @@ describe('createGravityEcsSystem', () => {
     expect(rigidBody.velocity.y).toBeGreaterThan(0);
   });
 
+  it('does not accelerate a sleeping body', () => {
+    const entity = world.createEntity();
+    const rigidBody = addRigidBodyComponent(world, entity, {
+      isSleeping: true,
+    });
+
+    addGravityComponent(world, entity, { amount: { x: 0, y: 10 } });
+
+    world.update();
+
+    expect(rigidBody.velocity).toEqual({ x: 0, y: 0 });
+  });
+
+  it('accelerates a sleeping body that was asked to wake', () => {
+    const entity = world.createEntity();
+    const rigidBody = addRigidBodyComponent(world, entity, {
+      isSleeping: true,
+    });
+
+    addGravityComponent(world, entity, { amount: { x: 0, y: 10 } });
+    rigidBody.wakeRequested = true;
+
+    world.update();
+
+    expect(rigidBody.velocity.y).toBeGreaterThan(0);
+  });
+
   it.each(['static', 'kinematic'] as const)(
     'does not accelerate a %s body',
     (type) => {

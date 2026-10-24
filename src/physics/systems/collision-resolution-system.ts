@@ -9,6 +9,7 @@ import {
 } from '../components/collider-component.js';
 import { RigidBodyEcsComponent } from '../components/rigidbody-component.js';
 import { getColliderRotation } from '../collider-rotation.js';
+import { isBodyAwake } from '../is-body-awake.js';
 import { applyPointImpulse } from '../joints/apply-point-impulse.js';
 import { velocityAtPoint } from '../joints/velocity-at-point.js';
 import {
@@ -102,7 +103,9 @@ interface ActiveContact {
  * entity pair and feature id, for fast convergence and stable resting
  * contacts. Must run after whatever system populates `collisionManifolds`
  * (`createNarrowPhaseEcsSystem`) and before whatever system integrates
- * velocity into position (`createEulerIntegrationEcsSystem`).
+ * velocity into position (`createEulerIntegrationEcsSystem`). A contact is
+ * left unsolved, keeping its accumulated impulses, when neither of its
+ * bodies is awake (see {@link isBodyAwake}).
  * @param collisionManifolds - The narrow-phase system's output: this tick's
  * confirmed collisions.
  * @param contactConstraints - The array the system clears and refills with
@@ -265,6 +268,17 @@ function prepareContact(
   world: EcsWorld,
   constraint: ContactConstraint,
 ): ActiveContact | null {
+  // A contact between bodies that are both asleep (or a sleeping body and
+  // a static or still kinematic one) isn't solved. Its constraint is still
+  // matched every tick, so the accumulated impulses it fell asleep with
+  // warm-start it when the bodies wake.
+  if (
+    !isBodyAwake(world, constraint.entityA) &&
+    !isBodyAwake(world, constraint.entityB)
+  ) {
+    return null;
+  }
+
   const positionA = world.getComponent(constraint.entityA, positionId);
   const positionB = world.getComponent(constraint.entityB, positionId);
 
