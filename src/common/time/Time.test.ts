@@ -126,4 +126,173 @@ describe('Time', () => {
     expect(time.deltaTimeInSeconds).toBe(0);
     expect(time.timeInMilliseconds).toBe(currentTime);
   });
+
+  describe('fixed timestep', () => {
+    const consumeAllFixedSteps = (): number => {
+      let steps = 0;
+
+      while (time.consumeFixedStep()) {
+        steps++;
+      }
+
+      return steps;
+    };
+
+    it('should default the fixed delta time to 1/60 of a second', () => {
+      expect(time.fixedDeltaTimeInMilliseconds).toBeCloseTo(1000 / 60);
+      expect(time.fixedDeltaTimeInSeconds).toBeCloseTo(1 / 60);
+      expect(time.isInFixedStep).toBe(false);
+      expect(time.fixedOverstepFraction).toBe(0);
+    });
+
+    it('should take 0, 2 and 3 steps for frames of 7, 33 and 50 milliseconds, carrying the leftover', () => {
+      time.update(1000);
+
+      time.update(1007);
+      expect(consumeAllFixedSteps()).toBe(0);
+
+      time.update(1040);
+      let steps = 0;
+
+      while (time.consumeFixedStep()) {
+        steps++;
+        expect(time.deltaTimeInSeconds).toBeCloseTo(1 / 60);
+        expect(time.deltaTimeInMilliseconds).toBeCloseTo(1000 / 60);
+      }
+
+      expect(steps).toBe(2);
+
+      time.update(1090);
+      steps = 0;
+
+      while (time.consumeFixedStep()) {
+        steps++;
+        expect(time.deltaTimeInSeconds).toBeCloseTo(1 / 60);
+      }
+
+      expect(steps).toBe(3);
+      expect(time.fixedOverstepFraction).toBeCloseTo(
+        (90 - 5 * (1000 / 60)) / (1000 / 60),
+      );
+    });
+
+    it.each([
+      { frameDelta: 5, steps: 0, overstepFraction: 0.5 },
+      { frameDelta: 10, steps: 1, overstepFraction: 0 },
+      { frameDelta: 25, steps: 2, overstepFraction: 0.5 },
+    ])(
+      'should take $steps steps for a $frameDelta millisecond frame with a 10 millisecond fixed delta time',
+      ({ frameDelta, steps, overstepFraction }) => {
+        time.fixedDeltaTimeInMilliseconds = 10;
+        time.update(1000);
+        time.update(1000 + frameDelta);
+
+        expect(consumeAllFixedSteps()).toBe(steps);
+        expect(time.fixedOverstepFraction).toBe(overstepFraction);
+      },
+    );
+
+    it('should carry the leftover time to the next frame', () => {
+      time.fixedDeltaTimeInMilliseconds = 10;
+      time.update(1000);
+
+      time.update(1006);
+      expect(consumeAllFixedSteps()).toBe(0);
+
+      time.update(1012);
+      expect(consumeAllFixedSteps()).toBe(1);
+      expect(time.fixedOverstepFraction).toBeCloseTo(0.2);
+    });
+
+    it('should take no steps while the time scale is 0', () => {
+      time.fixedDeltaTimeInMilliseconds = 10;
+      time.timeScale = 0;
+      time.update(1000);
+      time.update(1050);
+      time.update(1100);
+
+      expect(consumeAllFixedSteps()).toBe(0);
+      expect(time.fixedOverstepFraction).toBe(0);
+    });
+
+    it('should feed the scaled delta time when the time scale is 0.5', () => {
+      time.fixedDeltaTimeInMilliseconds = 10;
+      time.timeScale = 0.5;
+      time.update(1000);
+      time.update(1040);
+
+      expect(consumeAllFixedSteps()).toBe(2);
+      expect(time.fixedOverstepFraction).toBe(0);
+    });
+
+    it('should feed nothing on the first update', () => {
+      time.update(5000);
+
+      expect(consumeAllFixedSteps()).toBe(0);
+      expect(time.fixedOverstepFraction).toBe(0);
+    });
+
+    it('should report the fixed clock only while a fixed step is running', () => {
+      time.fixedDeltaTimeInMilliseconds = 10;
+      time.update(5000);
+      time.update(5020);
+
+      expect(time.consumeFixedStep()).toBe(true);
+      expect(time.isInFixedStep).toBe(true);
+      expect(time.deltaTimeInMilliseconds).toBe(10);
+      expect(time.deltaTimeInSeconds).toBeCloseTo(0.01);
+      expect(time.timeInMilliseconds).toBe(5010);
+      expect(time.timeInSeconds).toBeCloseTo(5.01);
+      expect(time.rawDeltaTimeInMilliseconds).toBe(20);
+      expect(time.rawTimeInMilliseconds).toBe(5020);
+      expect(time.frames).toBe(2);
+      expect(time.timeScale).toBe(1);
+
+      expect(time.consumeFixedStep()).toBe(true);
+      expect(time.timeInMilliseconds).toBe(5020);
+
+      expect(time.consumeFixedStep()).toBe(false);
+      expect(time.isInFixedStep).toBe(false);
+      expect(time.deltaTimeInMilliseconds).toBe(20);
+      expect(time.deltaTimeInSeconds).toBeCloseTo(0.02);
+      expect(time.timeInMilliseconds).toBe(5020);
+      expect(time.timeInSeconds).toBeCloseTo(5.02);
+    });
+
+    it('should keep the accumulated time and the running step size when the fixed delta time changes', () => {
+      time.fixedDeltaTimeInMilliseconds = 10;
+      time.update(1000);
+      time.update(1030);
+
+      expect(time.consumeFixedStep()).toBe(true);
+
+      time.fixedDeltaTimeInMilliseconds = 20;
+
+      expect(time.deltaTimeInMilliseconds).toBe(10);
+      expect(time.consumeFixedStep()).toBe(true);
+      expect(time.deltaTimeInMilliseconds).toBe(20);
+      expect(time.timeInMilliseconds).toBe(1030);
+      expect(time.consumeFixedStep()).toBe(false);
+      expect(time.fixedOverstepFraction).toBe(0);
+    });
+
+    it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])(
+      'should throw for a fixed delta time of %s',
+      (value) => {
+        expect(() => {
+          time.fixedDeltaTimeInMilliseconds = value;
+        }).toThrow('must be finite and greater than 0');
+        expect(time.fixedDeltaTimeInMilliseconds).toBeCloseTo(1000 / 60);
+      },
+    );
+
+    it('should throw when updated while a fixed step is running', () => {
+      time.fixedDeltaTimeInMilliseconds = 10;
+      time.update(1000);
+      time.update(1020);
+      time.consumeFixedStep();
+
+      expect(() => time.update(1030)).toThrow('fixed step is running');
+    });
+  });
 });
