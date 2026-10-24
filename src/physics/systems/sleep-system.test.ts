@@ -26,6 +26,9 @@ import { createSleepEcsSystem, SleepOptions } from './sleep-system.js';
 const tickMilliseconds = 62.5;
 const ticksToSleep = 8;
 
+// The sleep system never reads a manifold's colliders.
+const manifoldCollider = new CircleCollider(1);
+
 interface TestBody {
   entity: number;
   rigidBody: RigidBodyEcsComponent;
@@ -88,6 +91,8 @@ describe('createSleepEcsSystem', () => {
     return {
       entityA,
       entityB,
+      colliderA: manifoldCollider,
+      colliderB: manifoldCollider,
       normal: { x: 0, y: 1 },
       depth: 0,
       contactPoints: [],

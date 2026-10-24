@@ -122,3 +122,35 @@ export function isBodyAwake(world: EcsWorld, entity: number): boolean {
     world.getComponent(entity, rotationId),
   );
 }
+
+/**
+ * Whether a contact between two entities can't have changed since last
+ * tick because it belongs to a sleeping island: neither entity is awake
+ * (see {@link isBodyAwake}) and at least one of them is a sleeping
+ * `'dynamic'` body. A pair of static bodies, still kinematic bodies or
+ * collider-only entities doesn't count, since nothing puts those to sleep
+ * and game code may move them.
+ * @param world - The ECS world both entities belong to.
+ * @param entityA - One entity of the contact.
+ * @param entityB - The other entity of the contact.
+ * @returns Whether the contact is asleep.
+ */
+export function isContactAsleep(
+  world: EcsWorld,
+  entityA: number,
+  entityB: number,
+): boolean {
+  return (
+    (isSleepingBody(world, entityA) || isSleepingBody(world, entityB)) &&
+    !isBodyAwake(world, entityA) &&
+    !isBodyAwake(world, entityB)
+  );
+}
+
+function isSleepingBody(world: EcsWorld, entity: number): boolean {
+  const rigidBody = world.getComponent(entity, rigidBodyId);
+
+  return (
+    rigidBody !== null && rigidBody.type === 'dynamic' && rigidBody.isSleeping
+  );
+}

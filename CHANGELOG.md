@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Changed
+
+- **physics:** A sleeping pile no longer runs collision tests. When neither entity of a pair is awake and at least one is a sleeping body, `createNarrowPhaseEcsSystem` writes last tick's manifolds for the pair back into `collisionManifolds` instead of testing it again, the way Box2D keeps a sleeping island's contacts. The contact stays in both entities' `ContactsEcsComponent.touching` with nothing in `started` or `ended`, the sleep system keeps seeing it, and collision resolution warm-starts it from the impulses it fell asleep with when the island wakes. A pair is tested again when either side wakes, when it had no manifolds last tick, when a collider's shape object is replaced (a rebuilt tilemap layer) or when it involves a sensor, and its manifolds are dropped when the broad phase stops listing it. Pass the same `collisionManifolds` array to the narrow phase every tick. `CollisionManifold` gains required `colliderA` and `colliderB` fields, the shapes it was computed from: code that builds manifolds by hand has to set them. Moving a static body, collider-only entity or still kinematic body by its position doesn't update its contact with a sleeping body while their bounds still overlap: move kinematic bodies by their velocity, or set `wakeRequested` on the sleeping body
+
 ## [0.27.0] - 2026-10-24
 
 #### Added

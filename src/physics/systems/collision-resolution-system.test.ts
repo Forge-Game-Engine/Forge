@@ -19,6 +19,9 @@ import {
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { ContactConstraint } from '../types/contact-constraint.js';
 
+// The solver never reads a manifold's colliders.
+const manifoldCollider = new CircleCollider(1);
+
 describe('createCollisionResolutionEcsSystem', () => {
   let world: EcsWorld;
   let time: Time;
@@ -83,6 +86,8 @@ describe('createCollisionResolutionEcsSystem', () => {
     collisionManifolds.push({
       entityA,
       entityB,
+      colliderA: manifoldCollider,
+      colliderB: manifoldCollider,
       normal,
       depth,
       contactPoints: [contactPoint],

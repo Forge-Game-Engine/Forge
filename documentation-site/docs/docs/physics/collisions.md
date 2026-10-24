@@ -187,6 +187,12 @@ terrain's surface edges has one per edge), and manifolds don't include
 sensor overlaps. To find which entities a collider touches, read its
 contacts.
 
+Each manifold also records `colliderA` and `colliderB`, the collider shapes
+it was computed from. The narrow phase reads the array's contents from the
+last tick to reuse the manifolds of sleeping bodies (see
+[Collision detection for sleeping bodies](./sleeping.md#collision-detection-for-sleeping-bodies)),
+so pass it the same array every tick.
+
 ## Removing a collider
 
 Removing a collider's entity removes it from collision detection, and so

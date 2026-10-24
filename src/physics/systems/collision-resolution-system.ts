@@ -105,7 +105,10 @@ interface ActiveContact {
  * (`createNarrowPhaseEcsSystem`) and before whatever system integrates
  * velocity into position (`createEulerIntegrationEcsSystem`). A contact is
  * left unsolved, keeping its accumulated impulses, when neither of its
- * bodies is awake (see {@link isBodyAwake}).
+ * bodies is awake (see {@link isBodyAwake}). The narrow phase keeps such a
+ * contact's manifolds while its island sleeps, so the constraint is still
+ * matched every tick and warm-starts from those impulses when the island
+ * wakes.
  * @param collisionManifolds - The narrow-phase system's output: this tick's
  * confirmed collisions.
  * @param contactConstraints - The array the system clears and refills with
@@ -269,9 +272,10 @@ function prepareContact(
   constraint: ContactConstraint,
 ): ActiveContact | null {
   // A contact between bodies that are both asleep (or a sleeping body and
-  // a static or still kinematic one) isn't solved. Its constraint is still
-  // matched every tick, so the accumulated impulses it fell asleep with
-  // warm-start it when the bodies wake.
+  // a static or still kinematic one) isn't solved. The narrow phase keeps
+  // its manifolds, so its constraint is still matched every tick, and the
+  // accumulated impulses it fell asleep with warm-start it when the bodies
+  // wake.
   if (
     !isBodyAwake(world, constraint.entityA) &&
     !isBodyAwake(world, constraint.entityB)
