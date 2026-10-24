@@ -1,7 +1,7 @@
 import { Vec2 } from '../../math/index.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { CollisionBody } from '../types/collision-body.js';
-import { CollisionManifold } from '../types/collision-manifold.js';
+import { NarrowPhaseManifold } from '../types/collision-manifold.js';
 
 /**
  * Detects a collision between two circle-collider bodies.
@@ -13,7 +13,7 @@ import { CollisionManifold } from '../types/collision-manifold.js';
 export function detectCircleCircleCollision(
   bodyA: CollisionBody,
   bodyB: CollisionBody,
-): Omit<CollisionManifold, 'entityA' | 'entityB'> | null {
+): NarrowPhaseManifold | null {
   const colliderA = bodyA.collider as CircleCollider;
   const colliderB = bodyB.collider as CircleCollider;
 

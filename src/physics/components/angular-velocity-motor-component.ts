@@ -8,6 +8,12 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
  * has no warm-start state: it's recomputed fresh from the body's current
  * angular velocity every tick, so it recovers automatically after an
  * external velocity change (e.g. a collision).
+ *
+ * A motor with a non-zero `targetVelocity` and a positive `maxTorque` keeps
+ * a `'dynamic'` body awake, even while something stalls it: the sleep
+ * system doesn't count the body as resting, and setting `targetVelocity` on
+ * a sleeping body wakes its island on the sleep system's next run. A motor
+ * whose `targetVelocity` is `0` (a brake) lets its body fall asleep.
  */
 export interface AngularVelocityMotorEcsComponent {
   /** The angular velocity, in radians/second, the motor drives the entity toward. */

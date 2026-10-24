@@ -9,6 +9,11 @@ import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { degreesToRadians, Vec2 } from '../../math/index.js';
 import { withDefaults } from '../../utilities/with-defaults.js';
+import { canMotorTurnBody } from '../can-motor-turn-body.js';
+import {
+  AngularVelocityMotorEcsComponent,
+  angularVelocityMotorId,
+} from '../components/angular-velocity-motor-component.js';
 import {
   RigidBodyEcsComponent,
   rigidBodyId,
@@ -73,8 +78,12 @@ interface SleepTick {
   readonly wakesNeighbors: Uint8Array;
   /** Dynamic bodies whose island wakes, or stays awake, this run. */
   readonly woken: Uint8Array;
+  /** Dynamic bodies a motor turns, which don't count as resting. */
+  readonly driven: Uint8Array;
   /** Each dynamic body's links: other entities and joint entities. */
   readonly links: number[][];
+  /** Each dynamic body's collision manifolds this tick. */
+  readonly manifolds: CollisionManifold[][];
   readonly islands: UnionFind;
 }
 
@@ -90,12 +99,15 @@ interface SleepTick {
  * collider-only entities) don't join islands, so two bodies resting on the
  * same floor are separate islands. A body is resting while its `velocity` is
  * no faster than `maxRestingSpeed`, its `angularVelocity` no faster than
- * `maxRestingAngularSpeed` and its `canSleep` is `true`; its `restTime`
- * counts how long. When every body of an island has rested for
+ * `maxRestingAngularSpeed`, its `canSleep` is `true` and it has no
+ * `AngularVelocityMotorEcsComponent` turning it towards a non-zero
+ * `targetVelocity` (a motor stalled against a wall still drives its body);
+ * its `restTime` counts how long. When every body of an island has rested for
  * `restDuration`, the system zeroes their velocities, sets `isSleeping` and
- * records each body's `local` pose and links in its `sleepRecord`. The
- * physics systems that change velocity or pose then leave the island alone
- * (see `isBodyAwake`).
+ * records each body's `local` pose, links and collision manifolds in its
+ * `sleepRecord`. The physics systems that change velocity or pose then
+ * leave the island alone (see `isBodyAwake`), and the narrow phase reuses
+ * the recorded manifolds instead of testing the island's contacts again.
  *
  * A sleeping island wakes, and every member's `restTime` restarts at `0`,
  * when any member:
@@ -103,6 +115,8 @@ interface SleepTick {
  *   `applyImpulse`, `applyTorque`, a solver), or a `position.local` or
  *   `rotation.local` different from its record (a teleport);
  * - has `canSleep` set to `false` or `wakeRequested` set to `true`;
+ * - has an angular velocity motor whose `targetVelocity` was set to
+ *   something other than `0`;
  * - gains or loses a link: a new contact, a removed support or collider, a
  *   joint added or removed;
  * - is linked to an awake body, a `'kinematic'` body with a velocity, or a
@@ -118,7 +132,8 @@ interface SleepTick {
  * `collisionManifolds` and a body hit this tick wakes before the solver
  * runs, and before every system that changes velocity
  * (`createGravityEcsSystem`, the spring and damper systems,
- * `createCollisionResolutionEcsSystem`, the joint systems and
+ * `createCollisionResolutionEcsSystem`, the joint systems,
+ * `createAngularVelocityMotorEcsSystem` and
  * `createEulerIntegrationEcsSystem`). Game code that changes physics input
  * runs before `createTransformEcsSystem`.
  * @param collisionManifolds - The narrow-phase system's output: this tick's
@@ -171,11 +186,14 @@ export const createSleepEcsSystem = (
         isDynamic: new Uint8Array(count),
         wakesNeighbors: new Uint8Array(count),
         woken: new Uint8Array(count),
+        driven: new Uint8Array(count),
         links: Array.from({ length: count }, (): number[] => []),
+        manifolds: Array.from({ length: count }, (): CollisionManifold[] => []),
         islands: new UnionFind(count),
       };
 
       readWakeRequests(tick);
+      readMotors(tick);
       linkContacts(tick, collisionManifolds);
       linkJoints(tick);
       wakeOnLinkChanges(tick);
@@ -228,12 +246,57 @@ function readWakeRequests(tick: SleepTick): void {
   }
 }
 
+/**
+ * Marks every dynamic body a motor turns towards a non-zero target as
+ * driven, and wakes it if it's asleep, so the motor turns it with its
+ * contacts solved. A motor is a force applied every tick: a body it drives
+ * isn't resting even while something stalls it.
+ */
+function readMotors(tick: SleepTick): void {
+  const { world, bodies, indexOf, driven, woken } = tick;
+  const {
+    entities: motorEntities,
+    components: [motors],
+  } = world.query<[AngularVelocityMotorEcsComponent]>([angularVelocityMotorId]);
+
+  for (let i = 0; i < motorEntities.length; i++) {
+    const index = indexOf.get(motorEntities[i]);
+    const motor = motors[i];
+
+    if (
+      index === undefined ||
+      motor.targetVelocity === 0 ||
+      !canMotorTurnBody(motor, bodies[index])
+    ) {
+      continue;
+    }
+
+    driven[index] = 1;
+
+    if (bodies[index].isSleeping) {
+      woken[index] = 1;
+    }
+  }
+}
+
 function linkContacts(
   tick: SleepTick,
   collisionManifolds: readonly CollisionManifold[],
 ): void {
-  for (const { entityA, entityB } of collisionManifolds) {
+  const { indexOf, isDynamic, manifolds } = tick;
+
+  for (const manifold of collisionManifolds) {
+    const { entityA, entityB } = manifold;
+
     linkBodies(tick, entityA, entityB, entityB, entityA);
+
+    for (const entity of [entityA, entityB]) {
+      const index = indexOf.get(entity);
+
+      if (index !== undefined && isDynamic[index] === 1) {
+        manifolds[index].push(manifold);
+      }
+    }
   }
 }
 
@@ -386,7 +449,7 @@ function updateIsland(
   dt: number,
   options: SleepOptions,
 ): void {
-  const { bodies, woken } = tick;
+  const { bodies, woken, driven } = tick;
   const isWoken = members.some((i) => woken[i] === 1);
 
   if (!isWoken && members.every((i) => bodies[i].isSleeping)) {
@@ -417,7 +480,8 @@ function updateIsland(
   for (const i of members) {
     const body = bodies[i];
 
-    body.restTime = isResting(body, options) ? body.restTime + dt : 0;
+    body.restTime =
+      driven[i] === 0 && isResting(body, options) ? body.restTime + dt : 0;
     minimumRestTime = Math.min(minimumRestTime, body.restTime);
   }
 
@@ -457,6 +521,7 @@ function createSleepRecord(
     position: { x: local.x, y: local.y },
     rotation: tick.rotations[index].local,
     links: tick.links[index],
+    manifolds: tick.manifolds[index],
   };
 }
 

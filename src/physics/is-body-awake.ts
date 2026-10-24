@@ -87,9 +87,9 @@ export function isRigidBodyAwake(
 /**
  * Whether `entity`'s rigid body takes part in this tick's simulation. The
  * physics systems that change velocity or pose (gravity, collision
- * resolution, the joint, spring and damper systems, integration) skip a body
- * that isn't awake, and skip a contact or joint when neither of its bodies
- * is awake.
+ * resolution, the joint, spring and damper systems, the angular velocity
+ * motor system, integration) skip a body that isn't awake, and skip a
+ * contact or joint when neither of its bodies is awake.
  *
  * - A `'dynamic'` body is awake unless it's sleeping (see
  *   `createSleepEcsSystem`). A sleeping body that was disturbed since it
@@ -97,6 +97,9 @@ export function isRigidBodyAwake(
  *   `position.local` or `rotation.local` different from its `sleepRecord`,
  *   `canSleep` set to `false`, or `wakeRequested`) counts as awake already,
  *   so the answer is the same before and after the sleep system wakes it.
+ *   Only the sleep system notices a joint, spring or damper added or
+ *   removed and a motor's `targetVelocity` set to something other than
+ *   `0`: those wake the body on its next run.
  * - A `'kinematic'` body is awake while its `velocity` or `angularVelocity`
  *   is non-zero.
  * - A `'static'` body and an entity with no `RigidBodyEcsComponent` (a
@@ -120,5 +123,37 @@ export function isBodyAwake(world: EcsWorld, entity: number): boolean {
     rigidBody,
     world.getComponent(entity, positionId),
     world.getComponent(entity, rotationId),
+  );
+}
+
+/**
+ * Whether a contact between two entities can't have changed since last
+ * tick because it belongs to a sleeping island: neither entity is awake
+ * (see {@link isBodyAwake}) and at least one of them is a sleeping
+ * `'dynamic'` body. A pair of static bodies, still kinematic bodies or
+ * collider-only entities doesn't count, since nothing puts those to sleep
+ * and game code may move them.
+ * @param world - The ECS world both entities belong to.
+ * @param entityA - One entity of the contact.
+ * @param entityB - The other entity of the contact.
+ * @returns Whether the contact is asleep.
+ */
+export function isContactAsleep(
+  world: EcsWorld,
+  entityA: number,
+  entityB: number,
+): boolean {
+  return (
+    (isSleepingBody(world, entityA) || isSleepingBody(world, entityB)) &&
+    !isBodyAwake(world, entityA) &&
+    !isBodyAwake(world, entityB)
+  );
+}
+
+function isSleepingBody(world: EcsWorld, entity: number): boolean {
+  const rigidBody = world.getComponent(entity, rigidBodyId);
+
+  return (
+    rigidBody !== null && rigidBody.type === 'dynamic' && rigidBody.isSleeping
   );
 }

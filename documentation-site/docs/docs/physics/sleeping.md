@@ -5,8 +5,9 @@ sidebar_position: 8
 # Sleeping Bodies
 
 A dynamic body that has moved slower than a small speed for long enough is
-put to sleep: gravity, collision resolution, joints, springs, dampers and
-integration skip it until something disturbs it.
+put to sleep: gravity, collision resolution, joints, springs, dampers,
+angular velocity motors and integration skip it until something disturbs
+it.
 [`createSleepEcsSystem`](/Forge/docs/api/functions/createSleepEcsSystem)
 puts bodies to sleep and wakes them, and it is the only system that writes
 a body's `isSleeping`.
@@ -70,7 +71,8 @@ Without the sleep system, no body falls asleep.
 
 A body is **resting** while its `velocity` is no faster than
 `maxRestingSpeed`, its `angularVelocity` is no faster than
-`maxRestingAngularSpeed`, and its `canSleep` is `true`. Its `restTime`
+`maxRestingAngularSpeed`, its `canSleep` is `true`, and no angular velocity
+motor is turning it towards a non-zero `targetVelocity`. Its `restTime`
 counts the seconds it has been resting, and is set back to `0` when it
 moves faster. When every body of an island has a `restTime` of at least
 `restDuration`, the sleep system sets each body's `velocity` and
@@ -103,7 +105,9 @@ when it fell asleep, and wakes its island when any body in the island:
 
 - has a non-zero `velocity` or `angularVelocity`, written by game code,
   [`applyImpulse`](/Forge/docs/api/functions/applyImpulse),
-  `applyTorque`, `applyExplosiveForce` or an angular velocity motor;
+  `applyTorque` or `applyExplosiveForce`;
+- has an angular velocity motor whose `targetVelocity` is set to something
+  other than `0`;
 - has a `position.local` or `rotation.local` that changed (a teleport);
 - touches a body it didn't touch when it fell asleep, or stops touching
   one, for example because that body was removed;
@@ -124,8 +128,11 @@ integration, and the island wakes on the next tick.
 
 Some changes don't change a sleeping body's velocity, pose or contacts:
 changing a `GravityEcsComponent`'s `amount`, a joint's limits, a spring's
-`stiffness` or `restLength`, or a collider's `friction`. To wake a body
-after one of them, set its `wakeRequested` to `true`:
+`stiffness` or `restLength`, a collider's `friction`, or a collider's
+shape when the new shape still touches the same entities. (A motor's
+`targetVelocity` isn't one of them: the sleep system wakes a body whose
+motor target is set.) To wake a body after one of them, set its
+`wakeRequested` to `true`:
 
 ```ts
 gravity.amount.y = -600;
@@ -140,10 +147,47 @@ touch or are jointed to it.
 
 :::note
 A kinematic body moved by writing its position, rather than its
-`velocity`, doesn't wake the bodies it touches while its contacts stay the
-same. Move kinematic bodies by their velocity, or set `wakeRequested` on
-them when they move.
+`velocity`, doesn't wake a sleeping body it already touches while their
+bounds still overlap (see
+[Collision detection for sleeping bodies](#collision-detection-for-sleeping-bodies)).
+Move kinematic bodies by their velocity, or set `wakeRequested` on them
+when they move.
 :::
+
+## Collision detection for sleeping bodies
+
+The narrow phase doesn't test a pair again when neither entity is awake
+and at least one of them is a sleeping body: two sleeping boxes, or a
+sleeping box on a static floor. When a body falls asleep, the sleep system
+records the collision manifolds it's part of in its `sleepRecord`. Neither
+entity has moved since, so the narrow phase writes those manifolds into
+`collisionManifolds` instead of testing the pair, the way Box2D keeps a
+sleeping island's contacts. A settled pile costs no collision tests, and
+its contacts carry on as if they had been tested:
+
+- each body's [contacts](./collisions.md#reading-contacts) keep the
+  entities it rests on in `touching`, with nothing in `started` or
+  `ended`;
+- the sleep system keeps seeing the island's contacts, so the island stays
+  asleep;
+- collision resolution keeps each contact's impulses, and starts from them
+  when the island wakes, so a woken stack doesn't sag.
+
+The narrow phase tests the pair as usual when either entity is awake (an
+awake body hitting the pile is how the pile wakes), when the sleeping
+body's record has no manifolds for the pair, when either entity's collider
+shape object was replaced, and when either collider is a sensor. When the broad phase
+stops listing the pair, because their bounds no longer overlap or one of
+them was removed or lost its collider, the contact ends and the sleeping
+body wakes.
+
+Replacing a collider's shape, as a tilemap layer's collider system does
+when its tiles change, tests the pair again, and the body wakes if what it
+touches changes. Moving a static body, a collider-only entity or a still
+kinematic body by its position doesn't update its contact with a sleeping
+body it already touches while their bounds still overlap: set the sleeping
+body's `wakeRequested` when moving one of them. A move that makes it touch
+a sleeping body it didn't touch before is tested, and wakes the body.
 
 ## Keeping a body awake
 
@@ -157,6 +201,15 @@ addRigidBodyComponent(world, player, { canSleep: false });
 ```
 
 Setting `canSleep` to `false` on a sleeping body wakes its island.
+
+An angular velocity motor with a non-zero `targetVelocity` keeps its body
+awake too, even while something stops the body turning, like a wheel
+pushed against a wall: a motor is a torque applied every tick, so a body it
+drives isn't resting. A motor whose `targetVelocity` is `0` (a brake) lets
+its body fall asleep, and setting a non-zero target on a sleeping body
+wakes its island before collision resolution on the sleep system's next
+run. A motor that can't turn its body (one on a fixed-rotation body, or
+with a `maxTorque` of `0`) doesn't keep the body awake.
 
 ## Creating a body asleep
 
@@ -181,7 +234,10 @@ body wakes on the first tick. `addRigidBodyComponent` throws for
 [`isBodyAwake`](/Forge/docs/api/functions/isBodyAwake) returns whether a
 body takes part in this tick's simulation: `true` for a dynamic body that
 isn't sleeping or was disturbed since it fell asleep, and for a kinematic
-body with a non-zero velocity; `false` otherwise.
+body with a non-zero velocity; `false` otherwise. A sleeping body that
+gained or lost a joint, spring or damper, or whose motor's
+`targetVelocity` was set, still counts as asleep until the sleep system
+wakes it on its next run, since only the sleep system checks for those.
 
 ```ts
 import { isBodyAwake } from '@forge-game-engine/forge/physics';

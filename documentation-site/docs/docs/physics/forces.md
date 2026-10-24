@@ -158,8 +158,12 @@ world.addSystem(createAngularVelocityMotorEcsSystem(time));
 The system computes the torque every tick from the body's current angular
 velocity, so after a collision or another torque changes it, the motor
 turns the body back towards `targetVelocity`. Change `targetVelocity` or
-`maxTorque` on the component at any time. Register the system before
-`createEulerIntegrationEcsSystem`.
+`maxTorque` on the component at any time. Register the system after
+`createSleepEcsSystem` and before `createEulerIntegrationEcsSystem`.
+
+A motor with a non-zero `targetVelocity` keeps its body awake, even when
+the body can't turn; one whose `targetVelocity` is `0` lets it fall asleep
+(see [Sleeping Bodies](./sleeping.md#keeping-a-body-awake)).
 
 ## Springs and dampers
 
