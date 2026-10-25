@@ -32,9 +32,10 @@ export interface TileToggleInputs {
  * tile clears it, and a click on an empty cell places the toggle's tile,
  * unless it would overlap the collider of the entity to keep clear.
  *
- * Register it before `createTilemapColliderEcsSystem` and
- * `createTilemapRenderEcsSystem`, so the cell collides and draws as it is
- * now on the tick it's clicked.
+ * It reads a click made this frame, so register it in the default group,
+ * before `createTilemapColliderEcsSystem` and `createTilemapRenderEcsSystem`:
+ * the cell draws as it is now on the frame it's clicked, and collides from
+ * the next physics step.
  * @param renderContext - The render context whose canvas the mouse is over.
  * @param inputs - The mouse and the toggle action.
  * @returns The ECS system.

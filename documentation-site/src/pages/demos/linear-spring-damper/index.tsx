@@ -32,7 +32,7 @@ export default function LinearSpringDamper(): JSX.Element {
           file: 'reset.system.ts',
         },
         {
-          text: "The bar between mount and wheel stretches each tick to show the spring's current length.",
+          text: "The bar between mount and wheel stretches each frame to show the spring's current length.",
           file: 'spring-line.system.ts',
         },
       ]}
@@ -95,7 +95,7 @@ export default function LinearSpringDamper(): JSX.Element {
             {
               name: 'spring-line.system.ts',
               summary:
-                'Stretches each line sprite between its anchor and the body every tick.',
+                'Stretches each line sprite between its anchor and the body every frame.',
               content: springLineSystemCode,
             },
           ],

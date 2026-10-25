@@ -21,7 +21,7 @@ import { withDefaults } from '../../utilities/with-defaults.js';
  */
 export interface RevoluteJointSystemOptions {
   /**
-   * The number of velocity-solve iterations run per joint, per tick. Each
+   * The number of velocity-solve iterations run per joint, per step. Each
    * revolute joint is an isolated 2-3 DOF relationship (unlike contacts,
    * which may need several iterations to converge a stack), so `1` is
    * usually enough; raise it if a chain of joints sharing a body (e.g. a
@@ -51,15 +51,15 @@ interface PreparedRevoluteJoint {
  * optionally clamping their relative angle), using the same warm-started,
  * soft-constraint velocity solve as `createCollisionResolutionEcsSystem`'s
  * contact resolution. Must run after `createCollisionResolutionEcsSystem`
- * (so joints get the "last word" on velocity each tick) and before whatever
+ * (so joints get the "last word" on velocity each step) and before whatever
  * system integrates velocity into position (`createEulerIntegrationEcsSystem`).
  * A joint is skipped, keeping its accumulated impulses, while neither of its
  * bodies is awake (see {@link isBodyAwake}).
- * @param time - Used to read the tick's delta time.
+ * @param time - Used to read the step's delta time.
  * @param options - Tuning overrides for the solver; see
  * {@link RevoluteJointSystemOptions}.
  * @returns An ECS system that resolves every `RevoluteJointEcsComponent`
- * every tick.
+ * every step.
  */
 export const createRevoluteJointEcsSystem = (
   time: Time,
@@ -189,7 +189,7 @@ function solvePoint(prepared: PreparedRevoluteJoint, dt: number): void {
     dt,
   );
   // Clone before scaling: `pointSeparation` persists across every solve
-  // iteration this tick.
+  // iteration this step.
   const bias = Vec2.multiply(Vec2.clone(pointSeparation), soft.biasRate);
 
   // The impulseScale decay term is a fraction of the accumulated impulse
@@ -200,7 +200,7 @@ function solvePoint(prepared: PreparedRevoluteJoint, dt: number): void {
     Vec2.add(Vec2.multiply(relativeVelocity, soft.massScale), bias),
   );
   // Clone before scaling: `joint.accumulatedPointImpulse` persists across
-  // every solve iteration this tick.
+  // every solve iteration this step.
   const impulse = Vec2.subtract(
     pointMatrix.solve(rhs),
     Vec2.multiply(Vec2.clone(joint.accumulatedPointImpulse), soft.impulseScale),
@@ -232,8 +232,8 @@ function solvePoint(prepared: PreparedRevoluteJoint, dt: number): void {
 /**
  * Solves the (optional) angle-limit constraint. Unlike the point constraint,
  * this isn't warm-started: with no ongoing external force (like gravity) to
- * counteract each tick, persisting and re-applying an accumulated impulse
- * every tick has nothing to balance against and compounds. Instead, each
+ * counteract each step, persisting and re-applying an accumulated impulse
+ * every step has nothing to balance against and compounds. Instead, each
  * solve computes a fresh, one-sided velocity correction directly from the
  * current violation, matching the reference `simple_phys.js`'s
  * `solveAngleLimits`.

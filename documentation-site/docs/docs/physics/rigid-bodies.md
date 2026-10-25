@@ -18,7 +18,7 @@ is one of three values, `'dynamic'` by default:
 
 - **Dynamic**: moved by gravity, forces, impulses, collisions and joints.
   `createEulerIntegrationEcsSystem` moves it by its `velocity` and
-  `angularVelocity` every tick. Use it for anything that moves and reacts
+  `angularVelocity` every step. Use it for anything that moves and reacts
   to other bodies.
 - **Kinematic**: moved only by its own `velocity` and `angularVelocity`,
   which game code sets. Gravity, forces, collisions and joints don't change
@@ -163,7 +163,7 @@ body that's already turning, set its `angularVelocity` to `0` when you set
 ## Moving a body
 
 Set a body's `velocity` and `angularVelocity`, and
-`createEulerIntegrationEcsSystem` moves it by them every tick:
+`createEulerIntegrationEcsSystem` moves it by them every step:
 
 ```ts
 import { addRigidBodyComponent } from '@forge-game-engine/forge/physics';
@@ -181,13 +181,15 @@ velocity also changes with gravity, forces and collisions (see
 To place a body at a new position (a teleport), write its `local`
 position and rotation, as for any entity (see
 [Transforms](../common/transforms.md)). Physics systems read the `world`
-values, which `createTransformEcsSystem` writes from `local`.
+values, which the `createTransformEcsSystem` at the start of each fixed
+step writes from `local`.
 
 :::caution
-Write a teleport in a system that runs before `createTransformEcsSystem`.
+Write a teleport in a system in the default group, or in the fixed-update
+group before its `createTransformEcsSystem`.
 [Continuous collision detection](./continuous-collision-detection.md)
-treats a change to `local` made after it as movement, and stops a dynamic
-circle at any static collider between the old and new positions.
+treats a change to `local` made later in a step as movement, and stops a
+dynamic circle at any static collider between the old and new positions.
 :::
 
 Writing a sleeping body's velocity or `local` pose wakes it (see

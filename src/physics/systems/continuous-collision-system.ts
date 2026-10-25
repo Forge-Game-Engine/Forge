@@ -26,10 +26,10 @@ import { CollisionBody } from '../types/collision-body.js';
 
 /**
  * How deep, as a fraction of its radius, a circle may sink into a static
- * collider in one tick before the sweep steps in. Shallower penetrations
+ * collider in one step before the sweep steps in. Shallower penetrations
  * are left to the discrete pipeline, whose next collision-resolution pass
- * pushes them back out within a tick or two. Stepping in for those as well
- * would cut short the tick's travel every time a fast body rolls over a
+ * pushes them back out within a step or two. Stepping in for those as well
+ * would cut short the step's travel every time a fast body rolls over a
  * slight bend in the ground, which shows as stutter.
  */
 const maxDiscretePenetrationRatio = 0.1;
@@ -37,24 +37,24 @@ const maxDiscretePenetrationRatio = 0.1;
 /**
  * How deep, as a fraction of its radius, a swept circle is left inside the
  * surface it hit. Leaving it slightly inside, rather than exactly touching,
- * gives the next tick's narrow phase an overlap to report, so the
+ * gives the next step's narrow phase an overlap to report, so the
  * collision resolution system can stop it; a body left just short of the
- * surface would be swept and stopped again every tick without ever
+ * surface would be swept and stopped again every step without ever
  * reaching it.
  */
 const contactDepthRatio = 0.01;
 
 /**
  * Creates an ECS system that stops fast dynamic circles from passing into
- * or through static colliders between two ticks (continuous collision
- * detection).
+ * or through static colliders between two physics steps (continuous
+ * collision detection).
  *
  * Narrow-phase collision only tests where each body is at the start of a
- * tick, so a body that integration then moves further than the gap to a
+ * step, so a body that integration then moves further than the gap to a
  * surface ends up deep inside it, or out the other side, before the next
- * tick's test runs. This system sweeps the center of each dynamic body's
+ * step's test runs. This system sweeps the center of each dynamic body's
  * {@link CircleCollider} (which is the body's center of mass) from where
- * this tick's collision detection saw it (`position.world` and
+ * this step's collision detection saw it (`position.world` and
  * `rotation.world`) to where integration just moved it (`position.local`
  * and `rotation.local`) in a straight line, against every static collider (an entity with no
  * `RigidBodyEcsComponent`, or a `'static'` one) its path overlaps and its
@@ -64,18 +64,22 @@ const contactDepthRatio = 0.01;
  * `position.local` back so the circle's center is where the circle first
  * touched that collider, leaving it just inside the surface. Rotation and
  * velocity are left alone: the next
- * tick's narrow phase reports that contact and collision resolution
+ * step's narrow phase reports that contact and collision resolution
  * responds to it (friction, restitution) as it does for any other.
  *
- * Register it directly after `createEulerIntegrationEcsSystem`, whose
- * output it checks. A body moved directly (a teleport) must be moved
- * before `createTransformEcsSystem` runs, or the sweep treats the jump as
- * motion and can stop it at a wall in between. A swept body keeps its full
- * velocity but covers less ground this tick, the same trade Box2D makes.
+ * Register it in the fixed-update group, directly after
+ * `createEulerIntegrationEcsSystem`, whose output it checks. A body moved
+ * directly (a teleport) must be moved before the step's transform pass
+ * (the `createTransformEcsSystem` registered first in the fixed-update
+ * group) runs, or the sweep treats the jump as motion and can stop it at a
+ * wall in between. A teleport made in the default group always is: the
+ * next step's transform pass copies it into `world` first. A swept body
+ * keeps its full velocity but covers less ground this step, the same trade
+ * Box2D makes.
  * Polygon bodies and kinematic or dynamic targets aren't swept, and
  * neither are bodies that aren't awake (see {@link isBodyAwake}):
  * integration skips them, so they haven't moved. A sleeping body that was
- * disturbed this tick counts as awake, so integration moves it and this
+ * disturbed this step counts as awake, so integration moves it and this
  * system sweeps it.
  * @returns The ECS system.
  */
@@ -125,7 +129,7 @@ export const createContinuousCollisionEcsSystem = (): EcsSystem<
       const rotation = getRotation(entities[i]);
 
       // A sleeping body wasn't integrated, so it hasn't moved since this
-      // tick's transform pass and there's nothing to sweep.
+      // step's transform pass and there's nothing to sweep.
       if (!isRigidBodyAwake(rigidBody, position, rotation)) {
         continue;
       }
@@ -167,14 +171,14 @@ interface SweepTarget {
 }
 
 /**
- * Finds how far along this tick's motion, from `0` to `1`, a circle should
+ * Finds how far along this step's motion, from `0` to `1`, a circle should
  * stop so that it ends up just inside the first static collider it would
  * otherwise sink deeply into.
  * @param mover - The moving circle's collider component, for its category
  * and mask.
  * @param collider - The moving circle.
- * @param start - The circle's world center at the start of the tick.
- * @param end - The circle's world center after this tick's integration.
+ * @param start - The circle's world center at the start of the step.
+ * @param end - The circle's world center after this step's integration.
  * @param targets - Every static collider in the world.
  * @returns The fraction of the motion to keep; `1` keeps all of it.
  */
@@ -215,7 +219,7 @@ function findStopT(
       const approach = -Vec2.dot(translation, hit.normal);
 
       // A graze, or a surface the circle wouldn't sink deeply into by the
-      // end of the tick, is left to the discrete pipeline.
+      // end of the step, is left to the discrete pipeline.
       if (approach * (1 - hit.t) <= maxDiscretePenetration) {
         continue;
       }

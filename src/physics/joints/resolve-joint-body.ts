@@ -29,7 +29,7 @@ export interface JointBody extends Readonly<RigidBodyMassData> {
  * Resolves `entity`'s current rotation, center of mass, and mass/inertia
  * for a joint solve. Returns `null` if `entity` no longer has a position or
  * rotation component (e.g. it was destroyed), so callers can skip the
- * joint for this tick instead of throwing.
+ * joint for this step instead of throwing.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to resolve.
  * @returns The resolved joint body, or `null` if `entity` is missing a
@@ -73,7 +73,7 @@ export function getJointLeverArm(
   localAnchor: Vector2,
 ): Vector2 {
   // Clone before subtracting: `localAnchor` is a persistent component
-  // field reused every tick.
+  // field reused every step.
   return Vec2.rotate(
     Vec2.subtract(Vec2.clone(localAnchor), body.localCenterOfMass),
     body.rotation,

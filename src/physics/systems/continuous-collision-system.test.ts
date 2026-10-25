@@ -505,7 +505,7 @@ describe('a sleeping circle in the full physics pipeline', () => {
 
     const x = ball.position.local.x;
 
-    applyImpulse(world, ball.entity, { x: 1, y: 0 }, ball.position.world);
+    applyImpulse(world, ball.entity, { x: 1, y: 0 }, ball.position.local);
     tick();
 
     expect(ball.rigidBody.isSleeping).toBe(false);

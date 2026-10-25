@@ -142,7 +142,10 @@ What `Time` reports depends on where a system runs:
 | Default group and the groups after it | frame delta time     | `false`         | from `0` up to but not including `1`                    |
 
 Put work that has to advance in steps of the same size in the group: physics
-simulation, and forces or velocities changed by the delta time. Leave in the
+simulation (see
+[Registering the physics systems](../physics/index.md#registering-the-physics-systems)),
+forces or velocities changed by the delta time, and systems that react to
+the contacts that started or ended in a step. Leave in the
 default group the work that runs once per frame: reading trigger actions'
 `isTriggered` (a press is read by zero fixed steps on a short frame and by
 several on a long one), rendering, camera follow and UI. A system in the

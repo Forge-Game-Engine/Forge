@@ -23,7 +23,7 @@ import { CollisionPair } from '../types/collision-pair.js';
 import { DynamicAabbTree } from './dynamic-aabb-tree.js';
 
 /**
- * Brings `broadPhase` up to date with this tick's colliders and writes the
+ * Brings `broadPhase` up to date with this step's colliders and writes the
  * pairs whose tight boxes overlap to `collisionPairs`, the way Box2D's
  * broad phase does:
  *
@@ -49,7 +49,7 @@ import { DynamicAabbTree } from './dynamic-aabb-tree.js';
  * @param entities - Every entity with a position and a collider.
  * @param positions - The entities' positions, in the same order.
  * @param colliders - The entities' colliders, in the same order.
- * @param collisionPairs - The array to clear and fill with this tick's
+ * @param collisionPairs - The array to clear and fill with this step's
  * pairs.
  */
 export function updateBroadPhase(
@@ -384,7 +384,7 @@ const mergePairs = (
 
   // Grow the cache to its new length; the merge below overwrites every
   // slot from the end. (A spread push would overflow the call stack on a
-  // first tick with many pairs.)
+  // first step with many pairs.)
   for (const pair of newPairs) {
     pairs.push(pair);
   }

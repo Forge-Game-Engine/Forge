@@ -48,12 +48,12 @@ export interface CollisionManifold {
 
   /**
    * Identifiers for each entry in `contactPoints` (same length, same order)
-   * that stay stable across ticks for the same physical contact (e.g. the
+   * that stay stable across steps for the same physical contact (e.g. the
    * same polygon edge/vertex pairing), even as the exact point position
-   * changes slightly frame to frame. Used by
+   * changes slightly step to step. Used by
    * `createCollisionResolutionEcsSystem` to match a contact point up with
    * its persisted solver state so accumulated impulses can be warm-started
-   * instead of resolved from zero every tick.
+   * instead of resolved from zero every step.
    */
   featureIds: number[];
 }

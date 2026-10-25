@@ -39,7 +39,7 @@ export interface PolygonFacesContact {
 
   /**
    * Identifiers for each entry in `contactPoints` (same length, same order),
-   * stable across ticks for the same reference/incident edge pairing, and
+   * stable across steps for the same reference/incident edge pairing, and
    * always within `[0, 2^21)`. See {@link CollisionManifold.featureIds}.
    */
   featureIds: number[];
@@ -295,7 +295,7 @@ function findContactPoints(
 
 /**
  * Derives a feature id for a polygon-polygon contact point that stays
- * stable across ticks for the same reference/incident edge pairing, by
+ * stable across steps for the same reference/incident edge pairing, by
  * packing which polygon is the reference face, the reference and incident
  * face indices, and the point's position within the (always
  * length-2) clipped incident edge.

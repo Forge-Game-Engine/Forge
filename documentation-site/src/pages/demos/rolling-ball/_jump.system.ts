@@ -22,15 +22,21 @@ const respawnFallDistance = 2000;
 /**
  * Creates an ECS system that tracks whether the ball is currently touching
  * the terrain (via the ball's `ContactsEcsComponent`, which
- * `createNarrowPhaseEcsSystem` fills every tick), applies an upward impulse when `jumpInput` triggers
- * while grounded, and resets the ball back to `spawnPosition` if it ever
- * falls `respawnFallDistance` below it (for example off the end of the
- * terrain).
+ * `createNarrowPhaseEcsSystem` fills every physics step), applies an upward
+ * impulse when `jumpInput` triggers while grounded, and resets the ball back
+ * to `spawnPosition` if it ever falls `respawnFallDistance` below it (for
+ * example off the end of the terrain).
  *
- * Must run after `createNarrowPhaseEcsSystem`, so this tick's contacts are
- * available before this system checks them, and before
- * `createEulerIntegrationEcsSystem`, so a jump/respawn applied this tick is
- * reflected in this same tick's integration.
+ * Register it in the default group, after the fixed steps: a trigger is
+ * pressed for exactly one frame, so a system that runs once per frame sees
+ * each press once, where a fixed step could miss it or see it twice. It
+ * reads `touching`, the contacts after the frame's last step, which is a
+ * state and safe to read once per frame. The jump's velocity and a respawn's
+ * `local` position reach the simulation at the next fixed step.
+ *
+ * It reads the ball's `local` position, which is current whenever this
+ * runs (the ball has no parent), where `world` is still the pose from the
+ * start of the frame's last step.
  * @param playerEntity - The ball's entity id.
  * @param terrainEntity - The terrain's entity id.
  * @param jumpInput - The jump trigger action.
@@ -61,7 +67,7 @@ export const createJumpEcsSystem = (
         world,
         playerEntity,
         { x: 0, y: -jumpImpulse },
-        position.world,
+        position.local,
       );
     }
 

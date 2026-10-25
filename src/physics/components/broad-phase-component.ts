@@ -82,7 +82,7 @@ export interface BroadPhasePair {
   readonly proxyB: BroadPhaseProxy;
 
   /**
-   * The object written to `collisionPairs` on every tick the pair's tight
+   * The object written to `collisionPairs` on every step the pair's tight
    * boxes overlap, made once for the pair's lifetime.
    */
   readonly output: CollisionPair;
@@ -98,7 +98,7 @@ export interface BroadPhasePair {
  * A world's persistent broad phase: a {@link DynamicAabbTree} of static
  * colliders, one of kinematic and dynamic colliders, a record of every
  * collider entity's proxy, and the pairs whose fat boxes overlap, all kept
- * from one tick to the next so only colliders that moved look for new
+ * from one step to the next so only colliders that moved look for new
  * pairs. Output only: `createBroadPhaseEcsSystem` is the only writer of
  * every field, and it reads this component from the world's broad-phase
  * entity, which {@link addBroadPhaseComponent}'s caller (usually

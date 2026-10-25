@@ -20,6 +20,14 @@ export interface PlayerEcsComponent {
 
   /** The Y past which the player has fallen out of the map. */
   fallLimit: number;
+
+  /**
+   * Set by the jump-input system when the jump action is pressed. The
+   * player-move system clears it in its next physics step, jumping if the
+   * player stands on the ground. A press lasts one frame, which can run no
+   * physics step or several, so this carries it to exactly one step.
+   */
+  jumpRequested: boolean;
 }
 
 export const playerId = createComponentId<PlayerEcsComponent>('player');
@@ -34,9 +42,11 @@ export const playerId = createComponentId<PlayerEcsComponent>('player');
 export function addPlayerComponent(
   world: EcsWorld,
   entity: number,
-  player: PlayerEcsComponent,
+  player: Omit<PlayerEcsComponent, 'jumpRequested'>,
 ): PlayerEcsComponent {
-  world.addComponent(entity, playerId, player);
+  const component: PlayerEcsComponent = { ...player, jumpRequested: false };
 
-  return player;
+  world.addComponent(entity, playerId, component);
+
+  return component;
 }

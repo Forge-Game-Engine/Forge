@@ -27,8 +27,8 @@ import {
  * of a diamond beside a blocked one is about 14 units from it, more than
  * the player's foot radius, so feet on the path's cell centres clear them.
  *
- * Register it after `createTilemapColliderEcsSystem`, so a wall clicked
- * this tick is in the collider it bakes.
+ * Register it in the default group after `createTilemapColliderEcsSystem`,
+ * so a wall clicked this frame is in the collider it bakes.
  * @returns The ECS system.
  */
 export const createBakeGridEcsSystem = (): EcsSystem<

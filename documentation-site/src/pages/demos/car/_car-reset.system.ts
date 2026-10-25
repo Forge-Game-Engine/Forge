@@ -6,7 +6,9 @@ import { CarResetEcsComponent, carResetId } from './_car-reset.component';
 
 /**
  * Moves the car's bodies back to their spawn transforms, at rest, on the
- * tick the restart input fires.
+ * frame the restart input fires. It reads a press made this frame, so it
+ * runs once per frame, in the default group; the next physics step starts
+ * from the spawn transforms.
  */
 export const createCarResetEcsSystem = (): EcsSystem<
   [CarResetEcsComponent]

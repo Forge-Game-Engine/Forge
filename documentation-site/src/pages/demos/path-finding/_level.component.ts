@@ -32,7 +32,7 @@ export interface PathFindingLevelEcsComponent {
 
   /**
    * Raised by the pointer system each time it moves a wall. Starts one
-   * ahead of `bakedVersion`, so the grid is baked on the first tick.
+   * ahead of `bakedVersion`, so the grid is baked on the first frame.
    */
   wallsVersion: number;
 

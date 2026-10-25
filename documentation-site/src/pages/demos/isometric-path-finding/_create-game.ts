@@ -2,6 +2,7 @@ import {
   addPositionComponent,
   createTransformEcsSystem,
   positionId,
+  registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import { EcsWorld } from '@forge-game-engine/forge/ecs';
 import { createNavigationGrid } from '@forge-game-engine/forge/navigation';
@@ -155,23 +156,19 @@ export const createIsometricPathFindingGame = async (
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  world.addSystem(createPlayerMoveEcsSystem(moveInput));
-  // Picks the goal cell, and edits the walls layer before the tilemap
-  // collider system rebuilds its collider.
-  world.addSystem(createCellCursorEcsSystem(renderContext, cursorInputs));
-  world.addSystem(createTilemapColliderEcsSystem());
-  // Bakes the grid from the colliders built this tick, then finds the path
-  // on it, so a new wall reroutes the path on the frame it's clicked.
-  world.addSystem(createBakeGridEcsSystem());
-  // Before the transform system, so the markers are drawn where the path
-  // puts them on the same frame.
-  world.addSystem(createFindPathEcsSystem());
-  world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
-  world.addSystem(createTransformEcsSystem());
+  // The physics systems run once per fixed step, so the player walks the
+  // same at any frame rate. The transform system comes first, so each step
+  // reads the poses the previous step left in `local`.
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createPlayerMoveEcsSystem(moveInput), physics);
   createBroadPhase(world);
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
   );
   world.addSystem(
     createCollisionResolutionEcsSystem(
@@ -184,13 +181,30 @@ export const createIsometricPathFindingGame = async (
         restitutionThreshold: pixelsPerMeter,
       },
     ),
+    physics,
   );
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+
+  // Once per frame, after the fixed steps.
+  // Picks the goal cell, and edits the walls layer before the tilemap
+  // collider system rebuilds its collider.
+  world.addSystem(createCellCursorEcsSystem(renderContext, cursorInputs));
+  world.addSystem(createTilemapColliderEcsSystem());
+  // Bakes the grid from the colliders built this frame, then finds the path
+  // on it, so a new wall reroutes the path on the frame it's clicked.
+  world.addSystem(createBakeGridEcsSystem());
+  // Before the transform system, so the markers are drawn where the path
+  // puts them on the same frame.
+  world.addSystem(createFindPathEcsSystem());
+  world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
 
   // The floor's `position.world` includes the map root's position once the
   // transform system has run, so the grid is created after one tick. The
-  // game's clock hasn't started, so the tick moves nothing.
+  // game's clock hasn't started, so the tick runs no fixed step and moves
+  // nothing; the default group's transform system writes the floor's
+  // `world`.
   world.update();
 
   const floorPosition = world.getComponent(floor, positionId);

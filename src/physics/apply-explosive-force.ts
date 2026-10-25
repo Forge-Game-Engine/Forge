@@ -5,7 +5,6 @@ import {
 } from '../common/index.js';
 import { EcsWorld } from '../ecs/index.js';
 import { Vec2, Vector2 } from '../math/index.js';
-import { getColliderRotation } from './collider-rotation.js';
 import { RigidBodyEcsComponent, rigidBodyId } from './components/index.js';
 import { applyPointImpulse } from './joints/apply-point-impulse.js';
 import {
@@ -22,12 +21,16 @@ import {
  * (see {@link RigidBodyType}), and bodies whose center of mass is at or
  * beyond `radius` are untouched.
  *
+ * Each body's center of mass is found from its `position.local` and
+ * `rotation.local`. A dynamic body is always a root entity, so its `local`
+ * pose is its world-space pose, and unlike `world` it's current from any
+ * system group, including a once-per-frame system after the frame's fixed
+ * steps.
+ *
  * Sleeping bodies are pushed too, and need no separate wake-up. The
  * velocity this writes makes each of them count as awake right away (see
- * {@link isBodyAwake}), so integration moves it this tick, and
- * `createSleepEcsSystem` wakes its island on its next pass: on this tick
- * when the explosion is applied before `createTransformEcsSystem` runs,
- * otherwise on the next.
+ * {@link isBodyAwake}), so the next integration pass moves it, and
+ * `createSleepEcsSystem` wakes its island on its next pass.
  * @param world - The ECS world to search for dynamic bodies in.
  * @param center - The explosion's world-space origin.
  * @param force - The impulse magnitude at `center`.
@@ -52,8 +55,8 @@ export function applyExplosiveForce(
     }
 
     const centerOfMass = getWorldCenterOfMass(
-      positions[i].world,
-      getColliderRotation(world.getComponent(entities[i], rotationId)),
+      positions[i].local,
+      world.getComponent(entities[i], rotationId)?.local ?? 0,
       massData.localCenterOfMass,
     );
     // `centerOfMass` is freshly allocated, so subtracting in place is safe.

@@ -4,7 +4,10 @@ import {
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   CollisionManifold,
   CollisionPair,
@@ -41,20 +44,26 @@ export const createPrismaticJointGame = async (): Promise<Game> => {
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  // `createTransformEcsSystem` runs first so every body's `world` pose
-  // matches the `local` pose euler integration wrote at the end of the
-  // previous tick before the pump, physics and render systems read it.
-  // Gravity and pumps must run before collision/joint resolution, so this
-  // tick's forces are reflected in the velocities those solvers see; the
-  // prismatic joint solver must run after collision resolution so each
-  // slider's rail constraint gets the "last word" on velocity each tick.
-  world.addSystem(createTransformEcsSystem());
-  world.addSystem(createGravityEcsSystem(time));
-  world.addSystem(createPumpEcsSystem(time));
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  // Once per fixed step. `createTransformEcsSystem` runs first so every
+  // body's `world` pose matches the `local` pose the previous step's
+  // integration wrote before the pump and physics systems read it. Gravity
+  // and pumps must run before collision/joint resolution, so this step's
+  // forces are reflected in the velocities those solvers see; the prismatic
+  // joint solver must run after collision resolution so each slider's rail
+  // constraint gets the "last word" on velocity each step. The pumps count
+  // their interval in fixed steps, so they fire at the same simulated time
+  // at any frame rate.
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createGravityEcsSystem(time), physics);
+  world.addSystem(createPumpEcsSystem(time), physics);
   createBroadPhase(world);
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
   );
   world.addSystem(
     createCollisionResolutionEcsSystem(
@@ -62,12 +71,17 @@ export const createPrismaticJointGame = async (): Promise<Game> => {
       contactConstraints,
       time,
     ),
+    physics,
   );
-  world.addSystem(createPrismaticJointEcsSystem(time));
+  world.addSystem(createPrismaticJointEcsSystem(time), physics);
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createContinuousCollisionEcsSystem(), physics);
+
+  // Once per frame, after the fixed steps, so the frame draws the latest
+  // step's poses.
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
-  world.addSystem(createContinuousCollisionEcsSystem());
 
   return game;
 };

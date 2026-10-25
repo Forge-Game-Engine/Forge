@@ -110,9 +110,10 @@ const updateCursor = (
  * it, and a click on an empty cell places the cursor's tile, unless it would
  * overlap the collider of the entity to keep clear.
  *
- * Register it before `createTilemapColliderEcsSystem`, so a toggled tile's
- * collider is rebuilt, and the grid baked from it, on the tick it's
- * clicked.
+ * It reads a click made this frame, so register it in the default group,
+ * before `createTilemapColliderEcsSystem`, so a toggled tile's collider is
+ * rebuilt, and the grid baked from it, on the frame it's clicked. The
+ * player collides with it from the next physics step.
  * @param renderContext - The render context whose canvas the mouse is over.
  * @param inputs - The mouse and the toggle action.
  * @returns The ECS system.

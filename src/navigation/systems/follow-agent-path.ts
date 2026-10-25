@@ -43,19 +43,20 @@ const measureRemaining = (
 };
 
 /**
- * Walks an agent along its path for one tick: moves on past each waypoint
+ * Walks an agent along its path for one update: moves on past each waypoint
  * it's within `arrivalRadius` of or has passed, and sets `desiredVelocity`
  * towards the next at `speed`. Over the last `arrivalRadius` of the path it
  * slows with a constant deceleration, `speed * sqrt(remaining /
  * arrivalRadius)`, which stops it in a finite time (a linear ramp only ever
  * halves the distance left). On the last segment it goes no faster than
- * lands on the end this tick, so a game that moves it by
+ * lets it land on the end within `deltaSeconds`, so a game that moves it by
  * `desiredVelocity * deltaSeconds` stops exactly there. At the end of a
  * `'found'` path it's `'arrived'`; at the end of any other path, or of the
  * path it keeps walking while it waits for a new one, it just stops.
  * @param agent - The agent, with a target.
  * @param position - The agent's world position.
- * @param deltaSeconds - The tick's duration.
+ * @param deltaSeconds - The duration the velocity will be applied for: the
+ * fixed delta when the agent is moved by physics in the fixed-update group.
  */
 export const followAgentPath = (
   agent: NavigationAgentEcsComponent,

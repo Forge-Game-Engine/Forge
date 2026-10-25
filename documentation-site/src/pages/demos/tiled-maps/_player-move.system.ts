@@ -1,11 +1,7 @@
-import { positionId } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import { Axis1dAction, TriggerAction } from '@forge-game-engine/forge/input';
-import { Vec2 } from '@forge-game-engine/forge/math';
+import { Axis1dAction } from '@forge-game-engine/forge/input';
 import {
   CollisionManifold,
-  ContactsEcsComponent,
-  contactsId,
   RigidBodyEcsComponent,
   rigidBodyId,
 } from '@forge-game-engine/forge/physics';
@@ -15,9 +11,6 @@ import { PlayerEcsComponent, playerId } from './_player.component';
 export interface PlayerMoveInputs {
   /** `-1` walks left, `1` walks right. */
   walkInput: Axis1dAction;
-
-  /** Starts a jump while the player stands on the ground. */
-  jumpInput: TriggerAction;
 }
 
 /**
@@ -27,7 +20,7 @@ export interface PlayerMoveInputs {
 const groundNormalY = -0.7;
 
 /**
- * Whether one of this tick's contacts between the player and the ground
+ * Whether one of this physics step's contacts between the player and the ground
  * layer pushes the player up. A manifold's normal points from `entityA`
  * towards `entityB`, so it pushes `entityB` along the normal and `entityA`
  * against it.
@@ -48,49 +41,32 @@ const isStandingOnGround = (
   });
 
 /**
- * Creates the system that walks and jumps the player, and puts it back at
- * its spawn point when it touches the water layer or falls out of the map.
+ * Creates the system that walks the player and jumps it when the
+ * jump-input system has set `jumpRequested`.
  *
- * It sets the velocity the solver starts from, so register it after
- * `createNarrowPhaseEcsSystem`, which finds this tick's contacts, and
- * before `createCollisionResolutionEcsSystem`, which then stops the
- * player's motion into the ground and walls on the same tick.
- * @param manifolds - The narrow phase's contacts for this tick.
- * @param inputs - The walk and jump actions.
+ * It sets the velocity the solver starts from, so register it in the
+ * fixed-update group, after `createNarrowPhaseEcsSystem`, which finds the
+ * step's contacts, and before `createCollisionResolutionEcsSystem`, which
+ * then stops the player's motion into the ground and walls in the same
+ * step. It clears `jumpRequested` every step, so a press made in mid-air
+ * doesn't fire on landing.
+ * @param manifolds - The narrow phase's contacts for the step.
+ * @param inputs - The walk action.
  * @returns The ECS system.
  */
 export const createPlayerMoveEcsSystem = (
   manifolds: readonly CollisionManifold[],
   inputs: PlayerMoveInputs,
-): EcsSystem<
-  [PlayerEcsComponent, RigidBodyEcsComponent, ContactsEcsComponent]
-> => ({
-  query: [playerId, rigidBodyId, contactsId],
-  update: (
-    world,
-    { entities, components: [players, rigidBodies, contacts] },
-  ) => {
+): EcsSystem<[PlayerEcsComponent, RigidBodyEcsComponent]> => ({
+  query: [playerId, rigidBodyId],
+  update: (_world, { entities, components: [players, rigidBodies] }) => {
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
       const player = players[i];
       const rigidBody = rigidBodies[i];
-      const position = world.getComponent(entity, positionId);
+      const { jumpRequested } = player;
 
-      if (!position) {
-        continue;
-      }
-
-      // The water layer is a sensor: it's reported in `touching`, and
-      // nothing pushes the player out of it.
-      if (
-        contacts[i].touching.includes(player.water) ||
-        position.world.y > player.fallLimit
-      ) {
-        position.local = Vec2.clone(player.spawn);
-        rigidBody.velocity = Vec2.zero;
-
-        continue;
-      }
+      player.jumpRequested = false;
 
       const walk = inputs.walkInput.value;
       const isGrounded = isStandingOnGround(manifolds, entity, player.ground);
@@ -105,7 +81,7 @@ export const createPlayerMoveEcsSystem = (
         rigidBody.velocity.y = 0;
       }
 
-      if (isGrounded && inputs.jumpInput.isTriggered) {
+      if (isGrounded && jumpRequested) {
         rigidBody.velocity.y = -player.jumpSpeed;
       }
     }

@@ -4,9 +4,9 @@ sidebar_position: 7
 
 # Continuous Collision Detection
 
-The narrow phase tests each body where it is at the start of a tick. A body
+The narrow phase tests each body where it is at the start of a step. A body
 that `createEulerIntegrationEcsSystem` then moves further than the gap to a
-surface ends the tick deep inside that surface, or past it, before any
+surface ends the step deep inside that surface, or past it, before any
 collision is detected.
 [`createContinuousCollisionEcsSystem`](/Forge/docs/api/functions/createContinuousCollisionEcsSystem)
 moves a fast dynamic circle that would sink deep into a static collider
@@ -23,31 +23,34 @@ import {
   createEulerIntegrationEcsSystem,
 } from '@forge-game-engine/forge/physics';
 
-world.addSystem(createEulerIntegrationEcsSystem(time));
-world.addSystem(createContinuousCollisionEcsSystem());
+world.addSystem(createEulerIntegrationEcsSystem(time), { group: fixedUpdate });
+world.addSystem(createContinuousCollisionEcsSystem(), { group: fixedUpdate });
 ```
 
 The system sweeps each circle in a straight line from its position at the
-start of the tick (from `position.world` and `rotation.world`) to the
+start of the step (from `position.world` and `rotation.world`) to the
 position integration moved it to (from `position.local` and
 `rotation.local`). It must run after integration and before the next
-tick's `createTransformEcsSystem`. See
+step's `createTransformEcsSystem`, the first system of the fixed-update
+group. See
 [Registering the physics systems](./index.md#registering-the-physics-systems)
 for the full order.
 
 :::caution
-A body teleported by writing its `local` position after
-`createTransformEcsSystem` has run is swept from its old position to its new
-one, and is stopped at any static collider in between. Write teleports in a
-system registered before `createTransformEcsSystem`.
+A body teleported by writing its `local` position after the fixed-update
+group's `createTransformEcsSystem` has run in a step is swept from its old
+position to its new one, and is stopped at any static collider in between.
+Write teleports in the default group, or in the fixed-update group before
+its `createTransformEcsSystem`. The next step's transform system writes the
+new position to `world` before any physics system reads it.
 :::
 
 ## Which bodies are swept
 
 - **Swept bodies**: dynamic bodies with a `CircleCollider` that isn't a
   sensor. A [sleeping body](./sleeping.md) isn't swept, since integration
-  doesn't move it. A sleeping body that gets a velocity or is moved during
-  the tick is integrated and swept like an awake one.
+  doesn't move it. A sleeping body that gets a velocity or is moved before
+  the step's integration is integrated and swept like an awake one.
 - **Targets**: static colliders (entities with no `RigidBodyEcsComponent`,
   or a `'static'` one) of every shape, whose bounds overlap the circle's
   path and whose category and mask let the two collide. Sensors aren't
@@ -56,22 +59,22 @@ system registered before `createTransformEcsSystem`.
   Against a `ChainCollider`, it only meets edges from the side their
   normals face, as [chain collision](./chain-colliders.md#colliding-with-a-chain)
   does, so a fast circle stops at the near side of a thin wall.
-- **When it stops a body**: when the circle would end the tick more than a
+- **When it stops a body**: when the circle would end the step more than a
   tenth of its radius inside a target. Collision resolution pushes out
   shallower contacts. A circle that moves less than a tenth of its radius
-  in a tick isn't swept.
+  in a step isn't swept.
 - **What it changes**: the body's `local` position, so that the circle's
   center is where it first touches the target, a hundredth of its radius
-  inside the surface. The next tick's narrow phase detects that contact,
+  inside the surface. The next step's narrow phase detects that contact,
   and collision resolution handles it like any other. The body's rotation
   and velocity aren't changed, so a stopped body moves less than its
-  velocity says it does in that tick.
+  velocity says it does in that step.
 
 :::caution
 Polygon bodies aren't swept, so a fast `PolygonCollider` body can still
 pass into or through thin static geometry. Dynamic and kinematic bodies
 aren't targets, so two fast bodies, or a fast body and a kinematic one, can
-still pass through each other within one tick.
+still pass through each other within one step.
 :::
 
 ## Sweeping a circle yourself

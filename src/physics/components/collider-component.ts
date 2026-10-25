@@ -82,10 +82,11 @@ export interface ColliderEcsComponent
   extends ColliderRequiredOptions, ColliderDefaultedOptions {
   /**
    * The collider's world-space bounds. Output only: written by
-   * `createBroadPhaseEcsSystem` whenever the entity's world position or
-   * rotation, its `collider` shape, or this component changed since the
-   * broad phase last ran, and left alone otherwise. Until the broad phase
-   * first runs, the box is empty and overlaps nothing.
+   * `createBroadPhaseEcsSystem`, from the entity's world position and
+   * rotation, on each step where the position, rotation, `collider` shape
+   * or this component changed since the broad phase last ran, and left
+   * alone otherwise. Until the broad phase first runs, the box is empty and
+   * overlaps nothing.
    */
   readonly aabb: Aabb;
 }

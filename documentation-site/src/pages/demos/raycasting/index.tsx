@@ -31,7 +31,7 @@ export default function Raycasting(): JSX.Element {
           file: 'create-targets.ts',
         },
         {
-          text: 'The broad phase still runs every tick, because raycast reads the bounding boxes it keeps up to date.',
+          text: 'The broad phase still runs every fixed step, because raycast reads the bounding boxes it keeps up to date.',
           file: 'create-game.ts',
         },
       ]}

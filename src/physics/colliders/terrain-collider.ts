@@ -177,7 +177,7 @@ export function buildTerrainEdgeSlab(
 
   return {
     // Clone before transforming: `edge.start`/`edge.end`/`edge.normal` are
-    // the collider's own persistent local-space data, reused every tick.
+    // the collider's own persistent local-space data, reused every step.
     vertices: localVertices.map((vertex) =>
       Vec2.add(Vec2.rotate(Vec2.clone(vertex), rotation), position),
     ),

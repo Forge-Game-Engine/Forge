@@ -18,15 +18,15 @@ const minAnchorDistance = 1e-6;
 /**
  * Creates an ECS system that applies every `LinearDamperEcsComponent`'s
  * force, opposing the closing velocity between its two anchor points along
- * the line connecting them, converted to an impulse for the tick
+ * the line connecting them, converted to an impulse for the step
  * (`force * deltaTime`). A pure force generator - like gravity, it has no
  * warm-start state and should run before whatever system resolves hard
  * constraints (`createCollisionResolutionEcsSystem`, joint systems) so they
- * see this tick's damping force reflected in velocity, and after
+ * see this step's damping force reflected in velocity, and after
  * `createSleepEcsSystem`. A damper is skipped while neither of its bodies is
  * awake (see {@link isBodyAwake}).
- * @param time - Used to read the tick's delta time.
- * @returns An ECS system that applies every damper's force every tick.
+ * @param time - Used to read the step's delta time.
+ * @returns An ECS system that applies every damper's force every step.
  */
 export const createLinearDamperEcsSystem = (
   time: Time,

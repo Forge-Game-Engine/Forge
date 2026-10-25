@@ -41,10 +41,13 @@ edge it leaves by.
 
 :::caution
 `raycast` skips every collider whose `aabb` doesn't overlap the ray, and
-`createBroadPhaseEcsSystem` is the system that writes `aabb`. Call
-`createBroadPhase(world)`, register the broad phase system, and cast rays
-after it has run: a collider is tested where it was when the broad phase
-last ran, and a collider added since then isn't hit.
+`createBroadPhaseEcsSystem` is the system that writes `aabb`, once per
+fixed step. Call `createBroadPhase(world)`, register the broad phase
+system, and cast rays after it has run: a collider is tested where it was
+when the broad phase last ran, and a collider added since then isn't hit.
+A ray cast from the default group or an event handler tests the colliders
+as of the latest fixed step, and on the frames before the first fixed step
+it hits nothing.
 :::
 
 ## Choosing which colliders a ray hits

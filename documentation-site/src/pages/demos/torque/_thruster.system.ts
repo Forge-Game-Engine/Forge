@@ -10,9 +10,10 @@ import { ThrusterEcsComponent, thrusterId } from './_thruster.component';
 /**
  * Applies each matched entity's `ThrusterEcsComponent.torque` directly to
  * its `RigidBodyEcsComponent` while `holdAction` is held, via `applyTorque`.
- * Must run before whatever system integrates velocity into position
- * (`createEulerIntegrationEcsSystem`) so the torque applied this tick is
- * reflected in this tick's integration.
+ * Runs in the fixed-update group, once per step, before whatever system
+ * integrates velocity into position (`createEulerIntegrationEcsSystem`) so
+ * the torque applied this step is reflected in this step's integration. A
+ * held action reads the same in every step of a frame.
  */
 export const createThrusterEcsSystem = (
   time: Time,

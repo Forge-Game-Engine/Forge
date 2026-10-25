@@ -18,7 +18,7 @@ import { CollisionPair } from '../types/collision-pair.js';
  * `BroadPhaseEcsComponent` that `createBroadPhase(world)` creates, and that
  * this system is the only writer of): a dynamic AABB tree of static
  * colliders and one of kinematic and dynamic colliders, plus the pairs it
- * found on earlier ticks. Each tick it recomputes the `aabb` of the
+ * found on earlier steps. Each step it recomputes the `aabb` of the
  * colliders whose world position, rotation, shape or component changed,
  * looks for new pairs only around the colliders whose tree box changed or
  * whose `category` or `mask` changed, and keeps a pair until the two
@@ -31,14 +31,16 @@ import { CollisionPair } from '../types/collision-pair.js';
  *
  * A collider entity needs a `PositionEcsComponent` and a
  * `ColliderEcsComponent` to take part; `RotationEcsComponent` is optional,
- * and an entity without one is treated as unrotated. Must run after
- * whatever system computes `PositionEcsComponent.world`/
- * `RotationEcsComponent.world` (e.g. `createTransformEcsSystem`), since
- * local values are only meaningful to the parenting system.
+ * and an entity without one is treated as unrotated. Register it in the
+ * fixed-update group after that group's `createTransformEcsSystem`, which
+ * computes `PositionEcsComponent.world`/`RotationEcsComponent.world`, since
+ * local values are only meaningful to the parenting system. The `aabb`s it
+ * writes then describe the colliders as of the latest step, which is what
+ * a raycast or another query made outside the step sees.
  * @param collisionPairs - The array the system clears and refills with the
- * current tick's overlapping entity pairs. A pair keeps the same object on
- * every tick it's listed.
- * @returns An ECS system that populates `collisionPairs` every tick.
+ * current step's overlapping entity pairs. A pair keeps the same object on
+ * every step it's listed.
+ * @returns An ECS system that populates `collisionPairs` every step.
  * @throws An error on update if the world has no broad phase (see
  * `createBroadPhase`), or more than one.
  */

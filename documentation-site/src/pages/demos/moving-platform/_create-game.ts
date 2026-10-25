@@ -5,7 +5,10 @@ import {
   getCameraView,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   CollisionManifold,
   CollisionPair,
@@ -76,20 +79,24 @@ export const createMovingPlatformGame = async (): Promise<Game> => {
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  // `createTransformEcsSystem` runs first so every body's `world` pose
-  // matches the `local` pose euler integration wrote at the end of the
-  // previous tick before the physics and render systems read it. Gravity and
-  // the platform's own mover must run before collision resolution, so this
-  // tick's velocity changes are reflected in the solver; euler integration
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  // Once per fixed step. `createTransformEcsSystem` runs first so every
+  // body's `world` pose matches the `local` pose the previous step's
+  // integration wrote before the physics systems read it. Gravity and the
+  // platform's own mover must run before collision resolution, so this
+  // step's velocity changes are reflected in the solver; euler integration
   // runs last so it moves every body (dynamic crates and the kinematic
-  // platform alike) from this tick's resolved velocity.
-  world.addSystem(createTransformEcsSystem());
-  world.addSystem(createGravityEcsSystem(time));
-  world.addSystem(createPlatformMoverEcsSystem());
+  // platform alike) from this step's resolved velocity.
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createGravityEcsSystem(time), physics);
+  world.addSystem(createPlatformMoverEcsSystem(), physics);
   createBroadPhase(world);
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
   );
   world.addSystem(
     createCollisionResolutionEcsSystem(
@@ -97,11 +104,16 @@ export const createMovingPlatformGame = async (): Promise<Game> => {
       contactConstraints,
       time,
     ),
+    physics,
   );
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createContinuousCollisionEcsSystem(), physics);
+
+  // Once per frame, after the fixed steps, so the frame draws the latest
+  // step's poses.
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
-  world.addSystem(createContinuousCollisionEcsSystem());
 
   // Click anywhere to drop another crate at that position.
   renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {

@@ -13,13 +13,14 @@ import { SpringLineEcsComponent, springLineId } from './_spring-line.component';
 /**
  * Repositions and resizes each matched entity's (nine-sliced) sprite to span
  * the line between its `SpringLineEcsComponent.anchorPosition` and the
- * target entity's current position every tick, purely a visual aid for the
+ * target entity's current position every frame, purely a visual aid for the
  * demo (the anchor and body are always vertically aligned here, so no
- * rotation is needed). Reads the target's `local` position (it has no
- * parent, so that's its current position even before
- * `createTransformEcsSystem` has run this tick) and writes only the line's
- * `local` position, so it must run before `createTransformEcsSystem` for the
- * render pass to see this tick's updated line.
+ * rotation is needed). Runs in the default group, after the frame's fixed
+ * steps. Reads the target's `local` position (it has no parent, so that's
+ * the position the latest fixed step left it at, while its `world` is still
+ * the one from the start of that step) and writes only the line's `local`
+ * position, so it must run before the default group's
+ * `createTransformEcsSystem` for the render pass to see this frame's line.
  */
 export const createSpringLineEcsSystem = (): EcsSystem<
   [SpringLineEcsComponent, PositionEcsComponent, SpriteEcsComponent]

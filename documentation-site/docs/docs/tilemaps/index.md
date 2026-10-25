@@ -63,7 +63,10 @@ physics systems and the render system read. A game that edits its tiles,
 collides with them and draws them registers them in this order:
 
 ```ts
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   createBroadPhase,
   createBroadPhaseEcsSystem,
@@ -80,36 +83,48 @@ import {
 } from '@forge-game-engine/forge/tilemaps';
 
 createBroadPhase(world);
-world.addSystem(tileEditingSystem);
-world.addSystem(createTilemapColliderEcsSystem());
-world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
-world.addSystem(createTransformEcsSystem());
-world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
-world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
-world.addSystem(createSleepEcsSystem(collisionManifolds, time));
-world.addSystem(createGravityEcsSystem(time));
+
+const physics = { group: registerFixedUpdate(world, time) };
+
+// Once per fixed step.
+world.addSystem(createTransformEcsSystem(), physics);
+world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
+world.addSystem(
+  createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+  physics,
+);
+world.addSystem(createSleepEcsSystem(collisionManifolds, time), physics);
+world.addSystem(createGravityEcsSystem(time), physics);
 world.addSystem(
   createCollisionResolutionEcsSystem(
     collisionManifolds,
     contactConstraints,
     time,
   ),
+  physics,
 );
+world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+
+// Once per frame.
+world.addSystem(tileEditingSystem);
+world.addSystem(createTilemapColliderEcsSystem());
+world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
+world.addSystem(createTransformEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
-world.addSystem(createEulerIntegrationEcsSystem(time));
 ```
 
-1. The game's systems that set and clear tiles run first, so an edit
-   collides and draws on the tick it's made.
-2. The tilemap collider system rebuilds the collider of each layer whose
-   cells changed, before the broad phase reads it.
-3. The tilemap render system rebuilds the meshes of each changed chunk,
+1. The physics systems run once per fixed step, in the order
+   [Registering the physics systems](../physics/index.md#registering-the-physics-systems)
+   gives, before the default group.
+2. The game's systems that set and clear tiles run first in the default
+   group, so an edit draws on the frame it's made.
+3. The tilemap collider system rebuilds the collider of each layer whose
+   cells changed. The broad phase reads it in the next fixed step, so an
+   edit collides from the next step.
+4. The tilemap render system rebuilds the meshes of each changed chunk,
    and creates the entities of new chunks, before the transform system
    gives them their world transform.
-4. The physics systems follow in the order
-   [Registering the physics systems](../physics/index.md#registering-the-physics-systems)
-   gives. The render system, registered before Euler integration, draws
-   the tiles with everything else.
+5. The render system draws the tiles with everything else.
 
 A game that doesn't collide with its tiles leaves out the tilemap collider
 system and the physics systems.

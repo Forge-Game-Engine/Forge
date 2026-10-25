@@ -62,7 +62,7 @@ with that edge's normal. Each contact's normal comes from the surface the
 body touches, so a body resting where two edges meet isn't pushed sideways.
 
 Each edge a body touches adds a contact that collision resolution solves
-every tick, so closely spaced points give a wide body more contacts. Space
+every step, so closely spaced points give a wide body more contacts. Space
 points only as closely as the ground's shape needs.
 
 :::caution
@@ -76,7 +76,7 @@ terrain from any side (see [Raycasting](./raycasting.md)).
 Two `TerrainCollider`s, or a `TerrainCollider` and a `ChainCollider`, never
 collide with each other.
 
-A fast circle can sink into or pass through the surface within one tick;
+A fast circle can sink into or pass through the surface within one step;
 [Continuous Collision Detection](./continuous-collision-detection.md) stops
 it at the surface.
 
