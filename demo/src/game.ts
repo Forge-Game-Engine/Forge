@@ -32,6 +32,7 @@ import {
   ContactConstraint,
   ContactsEcsComponent,
   contactsId,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -320,6 +321,7 @@ const physics = { group: fixedUpdate };
 // Once per fixed step.
 world.addSystem(createTransformEcsSystem(), physics);
 world.addSystem(createGravityEcsSystem(time), physics);
+createBroadPhase(world);
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
 world.addSystem(
   createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

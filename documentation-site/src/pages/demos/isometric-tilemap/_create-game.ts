@@ -8,6 +8,7 @@ import {
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createEulerIntegrationEcsSystem,
@@ -167,6 +168,7 @@ export const createIsometricTilemapGame = async (
   world.addSystem(createTransformEcsSystem(), physics);
   // Sets the velocity the solver starts from.
   world.addSystem(createPlayerMoveEcsSystem(moveInput), physics);
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

@@ -68,6 +68,7 @@ import {
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createEulerIntegrationEcsSystem,
@@ -80,6 +81,8 @@ import {
   createTilemapColliderEcsSystem,
   createTilemapRenderEcsSystem,
 } from '@forge-game-engine/forge/tilemaps';
+
+createBroadPhase(world);
 
 const physics = { group: registerFixedUpdate(world, time) };
 

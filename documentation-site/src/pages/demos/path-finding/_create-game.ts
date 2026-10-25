@@ -10,6 +10,7 @@ import {
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createEulerIntegrationEcsSystem,
@@ -95,6 +96,7 @@ export const createPathFindingGame = async (
   world.addSystem(createNavigationAgentEcsSystem(time), physics);
   world.addSystem(createApplyVelocityEcsSystem(), physics);
   // A top-down level: no gravity.
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

@@ -24,9 +24,12 @@ is one of three values, `'dynamic'` by default:
   which game code sets. Gravity, forces, collisions and joints don't change
   them. A dynamic body that touches a kinematic body is pushed by it. Use
   it for moving platforms and other bodies that follow a scripted path.
+  Give a collider that game code moves a kinematic body when it has to
+  collide with colliders that have no rigid body.
 - **Static**: never moves. A collider entity with no `RigidBodyEcsComponent`
   is static, and so is one whose `RigidBodyEcsComponent` has
-  `type: 'static'`. Use it for floors, walls and other fixed geometry.
+  `type: 'static'`. Two static colliders never collide with each other.
+  Use it for floors, walls and other fixed geometry.
 
 ## Collider shapes
 

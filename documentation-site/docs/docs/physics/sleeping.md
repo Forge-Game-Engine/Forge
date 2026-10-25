@@ -40,6 +40,7 @@ import {
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createEulerIntegrationEcsSystem,
@@ -48,6 +49,7 @@ import {
   createSleepEcsSystem,
 } from '@forge-game-engine/forge/physics';
 
+createBroadPhase(world);
 const physics = { group: registerFixedUpdate(world, time) };
 
 world.addSystem(createTransformEcsSystem(), physics);

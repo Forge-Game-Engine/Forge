@@ -7,6 +7,7 @@ import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
 import { ChainCollider } from '../colliders/chain-collider.js';
 import { addColliderComponent } from '../components/collider-component.js';
+import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from '../systems/broad-phase-system.js';
 import { CollisionBody } from '../types/collision-body.js';
 import { raycast } from './raycast.js';
@@ -119,6 +120,7 @@ describe('raycastChain', () => {
   it('is found by raycast', () => {
     const world = new EcsWorld();
 
+    createBroadPhase(world);
     world.addSystem(createBroadPhaseEcsSystem([]));
 
     const entity = world.createEntity();

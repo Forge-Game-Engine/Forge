@@ -11,6 +11,7 @@ import {
 } from '@forge-game-engine/forge/common';
 import {
   CollisionPair,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   raycast,
 } from '@forge-game-engine/forge/physics';
@@ -67,6 +68,7 @@ export const createRaycastingGame = async (): Promise<Game> => {
   // step's `createTransformEcsSystem` runs first so the targets' `world`
   // poses, which the broad phase reads, are up to date.
   world.addSystem(createTransformEcsSystem(), physics);
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
 
   // Once per frame, after the fixed steps, so the ray visual's `world` pose

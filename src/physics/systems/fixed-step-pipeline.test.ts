@@ -10,6 +10,7 @@ import {
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
+import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { addColliderComponent } from '../components/collider-component.js';
@@ -121,6 +122,7 @@ function dropBall(
     world.addSystem(createTransformEcsSystem(), physics);
   }
 
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
