@@ -8,6 +8,7 @@ import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
   CollisionPair,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   raycast,
 } from '@forge-game-engine/forge/physics';
@@ -62,6 +63,7 @@ export const createRaycastingGame = async (): Promise<Game> => {
   // (which `updateRayVisual` writes as `local` from the mouse handler below)
   // are up to date before the broad-phase and render systems read them.
   world.addSystem(createTransformEcsSystem());
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));

@@ -8,6 +8,7 @@ import {
   CollisionPair,
   colliderId,
   ContactConstraint,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createEulerIntegrationEcsSystem,
@@ -178,6 +179,7 @@ export const createTiledMapsGame = async (
   world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
   world.addSystem(createTransformEcsSystem());
   world.addSystem(createGravityEcsSystem(time));
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

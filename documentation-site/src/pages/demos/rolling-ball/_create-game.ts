@@ -9,6 +9,7 @@ import {
   CollisionPair,
   ContactConstraint,
   createAngularVelocityMotorEcsSystem,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -115,6 +116,7 @@ export const createRollingBallGame = async (): Promise<Game> => {
   world.addSystem(createTransformEcsSystem());
   world.addSystem(createAngularVelocityMotorEcsSystem(time));
   world.addSystem(createGravityEcsSystem(time));
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

@@ -9,6 +9,7 @@ import {
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createEulerIntegrationEcsSystem,
@@ -167,6 +168,7 @@ export const createIsometricPathFindingGame = async (
   world.addSystem(createFindPathEcsSystem());
   world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
   world.addSystem(createTransformEcsSystem());
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

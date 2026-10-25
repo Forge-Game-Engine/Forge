@@ -32,6 +32,7 @@ import { CollisionManifold } from '../types/collision-manifold.js';
 import { CollisionPair } from '../types/collision-pair.js';
 import { ContactConstraint } from '../types/contact-constraint.js';
 import { createAngularVelocityMotorEcsSystem } from './angular-velocity-motor-system.js';
+import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from './broad-phase-system.js';
 import { createCollisionResolutionEcsSystem } from './collision-resolution-system.js';
 import { createEulerIntegrationEcsSystem } from './euler-integration-system.js';
@@ -80,6 +81,7 @@ describe('sleeping bodies in a physics scene', () => {
     collisionManifolds = [];
     contactConstraints = [];
 
+    createBroadPhase(world);
     world.addSystem(createTransformEcsSystem());
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(

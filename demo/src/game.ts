@@ -31,6 +31,7 @@ import {
   ContactConstraint,
   ContactsEcsComponent,
   contactsId,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -326,6 +327,7 @@ world.addSystem(
 );
 world.addSystem(createTransformEcsSystem());
 world.addSystem(createGravityEcsSystem(time));
+createBroadPhase(world);
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
 world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
 world.addSystem(

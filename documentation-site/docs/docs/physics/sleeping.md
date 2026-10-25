@@ -37,6 +37,7 @@ every system that changes velocity, and pass it the narrow phase's
 ```ts
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createEulerIntegrationEcsSystem,
@@ -45,6 +46,7 @@ import {
   createSleepEcsSystem,
 } from '@forge-game-engine/forge/physics';
 
+createBroadPhase(world);
 world.addSystem(createTransformEcsSystem());
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
 world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));

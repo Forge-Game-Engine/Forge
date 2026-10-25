@@ -18,10 +18,14 @@ import {
   addContactsComponent,
   ContactsEcsComponent,
 } from '../components/contacts-component.js';
-import { addRigidBodyComponent } from '../components/rigidbody-component.js';
+import {
+  addRigidBodyComponent,
+  RigidBodyType,
+} from '../components/rigidbody-component.js';
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { CollisionPair } from '../types/collision-pair.js';
 import { ContactConstraint } from '../types/contact-constraint.js';
+import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from './broad-phase-system.js';
 import { createCollisionResolutionEcsSystem } from './collision-resolution-system.js';
 import { createEulerIntegrationEcsSystem } from './euler-integration-system.js';
@@ -37,6 +41,7 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
     collisionPairs = [];
     collisionManifolds = [];
 
+    createBroadPhase(world);
     world.addSystem(createTransformEcsSystem());
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(
@@ -44,9 +49,15 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
     );
   });
 
+  // Circles are kinematic unless a test says otherwise: two static
+  // colliders are never paired.
   function addCircle(
     position: Vector2,
-    options: { sensor?: boolean; contacts?: boolean } = {},
+    options: {
+      sensor?: boolean;
+      contacts?: boolean;
+      type?: RigidBodyType;
+    } = {},
   ): { entity: number; contacts: ContactsEcsComponent | null } {
     const entity = world.createEntity();
 
@@ -54,6 +65,9 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
     addColliderComponent(world, entity, {
       collider: new CircleCollider(1),
       sensor: options.sensor ?? false,
+    });
+    addRigidBodyComponent(world, entity, {
+      type: options.type ?? 'kinematic',
     });
 
     const contacts = options.contacts
@@ -240,6 +254,7 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
         category: 0b01,
         mask: 0b01,
       });
+      addRigidBodyComponent(world, entity, { type: 'kinematic' });
 
       const contacts = addContactsComponent(world, entity);
       const other = world.createEntity();
@@ -249,6 +264,7 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
         collider: new CircleCollider(1),
         category: 0b10,
       });
+      addRigidBodyComponent(world, other, { type: 'kinematic' });
 
       world.update();
 
@@ -288,6 +304,22 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
 
       expect(collisionManifolds).toHaveLength(0);
       expect(contacts?.touching).toEqual([wall]);
+    });
+
+    it('should not report a static sensor overlapping a static collider', () => {
+      const { contacts } = addCircle(
+        { x: 0, y: 0 },
+        { sensor: true, contacts: true, type: 'static' },
+      );
+      const wall = world.createEntity();
+
+      addPositionComponent(world, wall, { local: { x: 1, y: 0 } });
+      addColliderComponent(world, wall, { collider: new CircleCollider(1) });
+
+      world.update();
+
+      expect(collisionPairs).toHaveLength(0);
+      expect(contacts?.touching).toEqual([]);
     });
 
     it('should report two overlapping sensors to each other', () => {
@@ -342,8 +374,7 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
 
       addCircle({ x: 0, y: 0 }, { sensor: true });
 
-      const { entity: body } = addCircle({ x: 0.5, y: 0 });
-      addRigidBodyComponent(world, body);
+      const { entity: body } = addCircle({ x: 0.5, y: 0 }, { type: 'dynamic' });
 
       for (let i = 0; i < 10; i++) {
         time.update(i * 16);

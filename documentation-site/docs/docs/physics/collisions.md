@@ -9,7 +9,8 @@ apart:
 
 - [`createBroadPhaseEcsSystem`](/Forge/docs/api/functions/createBroadPhaseEcsSystem)
   writes each collider's world-space bounds to its `aabb` field and lists
-  every pair of colliders whose bounds overlap.
+  the pairs of colliders whose bounds overlap, except pairs of two static
+  colliders.
 - [`createNarrowPhaseEcsSystem`](/Forge/docs/api/functions/createNarrowPhaseEcsSystem)
   tests each of those pairs' shapes. It writes every collision between two
   solid colliders to `collisionManifolds`, and every overlap to the
@@ -19,9 +20,59 @@ apart:
   and restitution.
 
 [Registering the physics systems](./index.md#registering-the-physics-systems)
-shows their order. The collider's `aabb` is written only by the broad
-phase: it is empty, and overlaps nothing, until the broad phase first runs
-after the collider is added.
+shows their order.
+
+## Finding colliding pairs
+
+The broad phase keeps its colliders and the pairs it found from one tick to
+the next, in a [`BroadPhaseEcsComponent`](/Forge/docs/api/interfaces/BroadPhaseEcsComponent)
+on an entity of its own. Create that entity once per world, before the
+first update, with [`createBroadPhase`](/Forge/docs/api/functions/createBroadPhase):
+
+```ts
+import {
+  type CollisionPair,
+  createBroadPhase,
+  createBroadPhaseEcsSystem,
+} from '@forge-game-engine/forge/physics';
+
+const collisionPairs: CollisionPair[] = [];
+
+createBroadPhase(world);
+world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+```
+
+The broad phase system throws when the world has no broad phase. It is the
+only system that writes the broad phase and each collider's `aabb`.
+
+Every collider is in one of two
+[dynamic AABB trees](./dynamic-aabb-tree.md): static colliders (no
+`RigidBodyEcsComponent`, or a `'static'` one) in one, kinematic and dynamic
+colliders in the other. Each tick, the broad phase:
+
+1. recomputes the `aabb` of each collider whose world position, rotation,
+   shape or `ColliderEcsComponent` changed, and moves it in its tree. The
+   `aabb` of a collider that didn't change isn't recomputed. It is empty,
+   and overlaps nothing, until the broad phase first runs after the
+   collider is added.
+2. looks for new pairs only around the colliders whose box in the tree
+   changed, or whose `category` or `mask` changed. A pair is kept until
+   the two colliders' boxes in the tree stop overlapping.
+3. writes the pairs whose `aabb`s overlap to `collisionPairs`, sorted by
+   entity, with `entityA` the lower entity.
+
+Its cost grows with the number of colliders that move, not with the total
+number of colliders.
+
+Two static colliders are never paired, so they never collide and never
+appear in each other's contacts, even when game code moves one of them. A
+collider that game code moves and that has to collide with colliders that
+have no rigid body needs a `'kinematic'` rigid body (see
+[Body types](./rigid-bodies.md#body-types)).
+
+A collider's shape doesn't change in place. To change it, assign a new
+`Collider` to `ColliderEcsComponent.collider`, and the broad phase
+recomputes its `aabb` on its next run.
 
 ## Filtering which colliders collide
 

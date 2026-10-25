@@ -7,6 +7,7 @@ import {
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createEulerIntegrationEcsSystem,
@@ -170,6 +171,7 @@ export const createIsometricTilemapGame = async (
   // water.
   world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
   world.addSystem(createTransformEcsSystem());
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

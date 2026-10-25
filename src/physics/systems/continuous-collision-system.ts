@@ -19,6 +19,7 @@ import {
   RigidBodyEcsComponent,
   rigidBodyId,
 } from '../components/rigidbody-component.js';
+import { isStaticBody } from '../is-static-body.js';
 import { Aabb } from '../types/aabb.js';
 import { CollisionBody } from '../types/collision-body.js';
 
@@ -90,10 +91,7 @@ export const createContinuousCollisionEcsSystem = (): EcsSystem<
     for (let i = 0; i < entities.length; i++) {
       const rigidBody = getRigidBody(entities[i]);
 
-      if (
-        !colliders[i].sensor &&
-        (rigidBody === null || rigidBody.type === 'static')
-      ) {
+      if (!colliders[i].sensor && isStaticBody(rigidBody)) {
         targets.push({
           collider: colliders[i],
           body: {

@@ -32,6 +32,7 @@ import { Random, Vec2 } from '@forge-game-engine/forge/math';
 import {
   CollisionManifold,
   CollisionPair,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createNarrowPhaseEcsSystem,
 } from '@forge-game-engine/forge/physics';
@@ -300,6 +301,7 @@ export const createSpaceShooterGame = async (
   world.addSystem(createGaussianBlurEcsSystem(renderContext));
   world.addSystem(createToneMapEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

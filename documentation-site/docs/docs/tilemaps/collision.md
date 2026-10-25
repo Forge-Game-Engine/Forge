@@ -115,7 +115,12 @@ different tile in it with `setTile`.
 The system is the only writer of the `collider` field: anything else
 written there is replaced on its next tick. Register it after every system
 that edits tiles and before `createBroadPhaseEcsSystem`, so a tile set or
-cleared during a tick collides on that tick.
+cleared during a tick collides on that tick: the broad phase recomputes
+the bounds of a layer whose collider was replaced.
+
+A layer with no rigid body is a static collider, so two such layers never
+collide with each other (see
+[Finding colliding pairs](../physics/collisions.md#finding-colliding-pairs)).
 
 :::caution
 Colliders ignore an entity's scale, so a scaled layer collides at its

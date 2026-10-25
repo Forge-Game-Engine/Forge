@@ -9,6 +9,7 @@ import {
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -53,6 +54,7 @@ export const createNewtonsCradleGame = async (): Promise<Game> => {
   world.addSystem(createArmEcsSystem());
   world.addSystem(createTransformEcsSystem());
   world.addSystem(createGravityEcsSystem(time));
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

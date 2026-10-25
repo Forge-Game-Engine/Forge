@@ -65,6 +65,7 @@ collides with them and draws them registers them in this order:
 ```ts
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
 import {
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createEulerIntegrationEcsSystem,
@@ -78,6 +79,7 @@ import {
   createTilemapRenderEcsSystem,
 } from '@forge-game-engine/forge/tilemaps';
 
+createBroadPhase(world);
 world.addSystem(tileEditingSystem);
 world.addSystem(createTilemapColliderEcsSystem());
 world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
