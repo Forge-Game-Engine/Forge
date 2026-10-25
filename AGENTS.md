@@ -270,9 +270,11 @@ factory functions, not classes:
    `create<Name>EcsSystem` factory functions, not classes. A system declares
    a `query` (the component keys it reads, in order) and an optional set of
    `tags`, and implements `update(world, queryResult)`. `queryResult` is a
-   batch for the whole tick - `entities: readonly number[]` and a
+   batch for the whole run - `entities: readonly number[]` and a
    `components` array (one array per queried component type, in query
-   order) - so `update` runs exactly once per tick regardless of how many
+   order) - so `update` runs exactly once per run of the system's group
+   (once per tick, unless the group repeats with `runWhile`, as
+   `registerFixedUpdate`'s fixed-update group does) regardless of how many
    entities matched (including zero), and the system iterates the batch
    itself. An optional `cleanup(world)` hook runs once when the system is
    removed from an `EcsWorld` or the world is stopped. See "System Pattern"
