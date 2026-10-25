@@ -22,13 +22,17 @@ import { TileToggleInputs } from './_tile-toggle.system';
  * @param world - The world to register the inputs in.
  * @param time - The game's time.
  * @param container - The element the mouse is read over.
- * @returns The player's and the tile toggle's inputs.
+ * @returns The player's walk and jump inputs and the tile toggle's inputs.
  */
 export function createInputs(
   world: EcsWorld,
   time: Time,
   container: HTMLElement,
-): { moveInputs: PlayerMoveInputs; toggleInputs: TileToggleInputs } {
+): {
+  moveInputs: PlayerMoveInputs;
+  jumpInput: TriggerAction;
+  toggleInputs: TileToggleInputs;
+} {
   const walkInput = new Axis1dAction('walk');
   const jumpInput = new TriggerAction('jump');
   const toggleInput = new TriggerAction('toggle-tile');
@@ -62,7 +66,8 @@ export function createInputs(
   );
 
   return {
-    moveInputs: { walkInput, jumpInput },
+    moveInputs: { walkInput },
+    jumpInput,
     toggleInputs: { mouse, toggleInput },
   };
 }

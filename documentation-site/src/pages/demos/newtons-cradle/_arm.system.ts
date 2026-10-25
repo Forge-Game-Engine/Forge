@@ -15,15 +15,17 @@ import { ArmEcsComponent, armId } from './_arm.component';
 /**
  * Repositions, resizes, and rotates each matched entity's (nine-sliced)
  * sprite to span the rod between its `ArmEcsComponent.pivotPosition` and
- * `entity`'s current position every tick, so the arm visibly swings with the
+ * `entity`'s current position every frame, so the arm visibly swings with the
  * ball instead of only the (otherwise invisible) revolute joint moving it.
  * The angle is derived so that a vertical (pointing down) sprite at
  * rotation 0 aligns with the pivot-to-ball direction, matching this
  * engine's `Vector2.rotate` convention (a positive angle turns `+X` towards
- * `+Y`, which is clockwise on the Y-down screen). Reads the ball's `local` position (it has no parent, so
- * that's its current pose even before `createTransformEcsSystem` has run
- * this tick) and writes only the arm's `local` pose, so it must run before
- * `createTransformEcsSystem` for the render pass to see this tick's arm.
+ * `+Y`, which is clockwise on the Y-down screen). Runs in the default group,
+ * after the frame's fixed steps. Reads the ball's `local` position (it has no
+ * parent, so that's the pose the latest fixed step left it in, while its
+ * `world` is still the one from the start of that step) and writes only the
+ * arm's `local` pose, so it must run before the default group's
+ * `createTransformEcsSystem` for the render pass to see this frame's arm.
  */
 export const createArmEcsSystem = (): EcsSystem<
   [

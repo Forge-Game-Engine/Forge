@@ -1,8 +1,12 @@
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -62,29 +66,41 @@ export const createSensorsGame = async (): Promise<Game> => {
   // The narrow phase fills every `ContactsEcsComponent` and writes only
   // solid (non-sensor) collisions to `collisionManifolds`, so resolution
   // never pushes a ball out of a sensor zone. The zone and drain systems
-  // read the contacts after it, in the same tick.
-  world.addSystem(
-    createBallSpawnerEcsSystem(time, ballSprite, -height / 2 - 40, width * 0.4),
-  );
-  world.addSystem(createTransformEcsSystem());
-  world.addSystem(createGravityEcsSystem(time));
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  // read the contacts after it, in the same fixed step: `started` and
+  // `ended` describe one step, so a system that runs once per frame could
+  // miss them or see them twice.
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createGravityEcsSystem(time), physics);
+  createBroadPhase(world);
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
   );
-  world.addSystem(createTriggerZoneEcsSystem());
-  world.addSystem(createDrainEcsSystem());
+  world.addSystem(createTriggerZoneEcsSystem(), physics);
+  world.addSystem(createDrainEcsSystem(), physics);
   world.addSystem(
     createCollisionResolutionEcsSystem(
       collisionManifolds,
       contactConstraints,
       time,
     ),
+    physics,
   );
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createContinuousCollisionEcsSystem(), physics);
+
+  // Once per frame, after the fixed steps. A spawned ball joins the
+  // simulation at the next fixed step.
+  world.addSystem(
+    createBallSpawnerEcsSystem(time, ballSprite, -height / 2 - 40, width * 0.4),
+  );
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
-  world.addSystem(createContinuousCollisionEcsSystem());
 
   return game;
 };

@@ -20,7 +20,7 @@ import { withDefaults } from '../../utilities/with-defaults.js';
  */
 export interface PrismaticJointSystemOptions {
   /**
-   * The number of velocity-solve iterations run per joint, per tick. See
+   * The number of velocity-solve iterations run per joint, per step. See
    * `RevoluteJointSystemOptions.iterations` for the same rationale.
    */
   iterations: number;
@@ -60,11 +60,11 @@ interface PreparedPrismaticJoint {
  * integrates velocity into position (`createEulerIntegrationEcsSystem`).
  * A joint is skipped, keeping its accumulated impulses, while neither of its
  * bodies is awake (see {@link isBodyAwake}).
- * @param time - Used to read the tick's delta time.
+ * @param time - Used to read the step's delta time.
  * @param options - Tuning overrides for the solver; see
  * {@link PrismaticJointSystemOptions}.
  * @returns An ECS system that resolves every `PrismaticJointEcsComponent`
- * every tick.
+ * every step.
  */
 export const createPrismaticJointEcsSystem = (
   time: Time,
@@ -129,10 +129,10 @@ function prepareJoint(
   const rA = getJointLeverArm(bodyA, joint.localAnchorA);
   const rB = getJointLeverArm(bodyB, joint.localAnchorB);
   // Clone before rotating: `joint.axis` is a persistent component field
-  // reused every tick.
+  // reused every step.
   const axis = Vec2.rotate(Vec2.clone(joint.axis), bodyA.rotation);
   // Clone before computing the perpendicular: `axis` is reused for the rest
-  // of this tick (stored on `PreparedPrismaticJoint`).
+  // of this step (stored on `PreparedPrismaticJoint`).
   const perp = Vec2.perpendicular(Vec2.clone(axis));
 
   // Clone before adding: the bodies' `centerOfMass` is read again by
@@ -203,7 +203,7 @@ function applyAxisImpulse(
 ): void {
   const { bodyA, bodyB } = prepared;
   // Clone before scaling: `axisVector` (`perp`/`axis`) persists across the
-  // whole tick, reused by every remaining solve iteration.
+  // whole step, reused by every remaining solve iteration.
   const impulse = Vec2.multiply(Vec2.clone(axisVector), lambda);
 
   if (bodyA.rigidBody !== null) {

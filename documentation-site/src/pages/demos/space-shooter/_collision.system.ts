@@ -15,12 +15,14 @@ import { PlayerId } from './_player.component';
 
 /**
  * Creates an ECS system that checks what each asteroid is touching this
- * tick (its `ContactsEcsComponent`, filled by `createNarrowPhaseEcsSystem`)
- * for a bullet or the player, spawning an explosion and removing the
- * involved entities. Must run after `createNarrowPhaseEcsSystem`, so this
- * tick's contacts are available before this system checks them.
+ * physics step (its `ContactsEcsComponent`, filled by
+ * `createNarrowPhaseEcsSystem`) for a bullet or the player, spawning an
+ * explosion and removing the involved entities. Register it in the
+ * fixed-update group after `createNarrowPhaseEcsSystem`, so it checks the
+ * contacts of the step it runs in.
  * @param time - The time instance used to seed the spawned explosion's
- * animation start time.
+ * animation start time (the fixed step's time, inside the fixed-update
+ * group).
  * @param explosionSpawner - Spawns an explosion effect at a world position.
  * @param onPlayerDeath - Called when the player is destroyed by an
  * asteroid.

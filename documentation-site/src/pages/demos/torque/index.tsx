@@ -23,7 +23,7 @@ export default function Torque(): JSX.Element {
       ]}
       highlights={[
         {
-          text: 'While Space is held, a small game system calls applyTorque on the left flywheel every tick.',
+          text: 'While Space is held, a small game system calls applyTorque on the left flywheel every fixed step.',
           file: 'thruster.system.ts',
         },
         {

@@ -19,7 +19,7 @@ import { PolygonFaces } from './polygon-faces-collision.js';
  *
  * Every edge the polygon touches contributes its own manifold, with feature
  * ids in a range of that edge's own, so a box resting across several edges
- * keeps its warm-started contacts from tick to tick. A contact normal never
+ * keeps its warm-started contacts from step to step. A contact normal never
  * comes from the joint between two edges: one that would push the polygon
  * along the outline is resolved against the edge instead, so a box sliding
  * across a floor made of many edges never snags where they meet.

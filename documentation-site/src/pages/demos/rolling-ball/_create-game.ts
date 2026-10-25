@@ -9,6 +9,7 @@ import {
   CollisionPair,
   ContactConstraint,
   createAngularVelocityMotorEcsSystem,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -20,6 +21,7 @@ import {
   createTransformEcsSystem,
   PositionEcsComponent,
   positionId,
+  registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import { Vec2 } from '@forge-game-engine/forge/math';
 import { getAssetUrl } from '@site/src/utils/get-asset-url';
@@ -100,24 +102,25 @@ export const createRollingBallGame = async (): Promise<Game> => {
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  // Roll input must be applied before the motor system, which must in turn
-  // run before the broad/narrow-phase and resolution systems, so this
-  // tick's input reaches this tick's physics step - see the Applying
-  // Forces guide's registration order caution. createTransformEcsSystem
-  // turns every entity's `local` pose into the `world` pose that the physics
-  // and render systems read, so it runs before all of them. The jump/respawn
-  // system reads the narrow phase's collisions, so it runs after it; it and
-  // the camera-follow system write `local` positions after the transform
-  // system has run, so their changes are rendered from the next tick on. The
-  // terrain mesh draws behind the ball's sprite because the terrain entity is
-  // created first: the render system draws them in creation order.
-  world.addSystem(createRollEcsSystem(rollInput));
-  world.addSystem(createTransformEcsSystem());
-  world.addSystem(createAngularVelocityMotorEcsSystem(time));
-  world.addSystem(createGravityEcsSystem(time));
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  // The physics systems run once per fixed step, so the ball rolls the same
+  // at any frame rate. Roll input must be applied before the motor system,
+  // which must in turn run before the broad/narrow-phase and resolution
+  // systems, so each step's motor target reaches that step's physics - see
+  // the Applying Forces guide's registration order caution. The transform
+  // system runs first, so each step reads the poses the previous step left
+  // in `local`.
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  world.addSystem(createRollEcsSystem(rollInput), physics);
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createAngularVelocityMotorEcsSystem(time), physics);
+  world.addSystem(createGravityEcsSystem(time), physics);
+  createBroadPhase(world);
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
   );
   world.addSystem(
     createCollisionResolutionEcsSystem(
@@ -125,7 +128,17 @@ export const createRollingBallGame = async (): Promise<Game> => {
       contactConstraints,
       time,
     ),
+    physics,
   );
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createContinuousCollisionEcsSystem(), physics);
+
+  // Once per frame, after the fixed steps. The jump reads a press made this
+  // frame, so it runs here, where it sees each press exactly once. It and
+  // the camera-follow system write `local` positions before the transform
+  // system, so the frame shows their changes. The terrain mesh draws behind
+  // the ball's sprite because the terrain entity is created first: the
+  // render system draws them in creation order.
   world.addSystem(
     createJumpEcsSystem(
       player.entity,
@@ -135,9 +148,8 @@ export const createRollingBallGame = async (): Promise<Game> => {
     ),
   );
   world.addSystem(createCameraFollowEcsSystem(playerPosition, time));
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
-  world.addSystem(createContinuousCollisionEcsSystem());
 
   return game;
 };

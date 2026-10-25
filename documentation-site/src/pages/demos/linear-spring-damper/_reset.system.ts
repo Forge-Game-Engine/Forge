@@ -7,10 +7,11 @@ import { ResetEcsComponent, resetId } from './_reset.component';
 /**
  * Teleports each matched entity back to its recorded initial position and
  * velocity every `intervalSeconds`, replaying the same "just hit a bump"
- * disturbance on a loop. Writes the entity's `local` position, so it must
- * run before `createTransformEcsSystem` (and the spring/damper systems after
- * it), so a reset applied this tick is reflected in the same tick's force
- * calculation.
+ * disturbance on a loop. Runs in the fixed-update group, so it counts its
+ * interval in fixed steps. Writes the entity's `local` position, so it must
+ * run before that group's `createTransformEcsSystem` (and the spring/damper
+ * systems after it), so a reset applied this step is reflected in the same
+ * step's force calculation.
  */
 export const createResetEcsSystem = (
   time: Time,

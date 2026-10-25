@@ -22,7 +22,11 @@ export default function PhysicsStressTest(): JSX.Element {
           file: 'body-spawner.system.ts',
         },
         {
-          text: 'Every physics system is registered in the order the physics guide lists, including springs, dampers, joints and motors that no body here uses.',
+          text: 'Every physics system is registered in the fixed-update group, in the order the physics guide lists, including springs, dampers, joints and motors that no body here uses.',
+          file: 'create-game.ts',
+        },
+        {
+          text: 'Physics runs 60 steps a second whatever the display rate, so its cost per frame stays flat on fast displays, and below 60 FPS a frame runs several steps and costs more.',
           file: 'create-game.ts',
         },
         {

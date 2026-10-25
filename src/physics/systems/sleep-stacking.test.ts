@@ -33,6 +33,7 @@ import { CollisionManifold } from '../types/collision-manifold.js';
 import { CollisionPair } from '../types/collision-pair.js';
 import { ContactConstraint } from '../types/contact-constraint.js';
 import { createAngularVelocityMotorEcsSystem } from './angular-velocity-motor-system.js';
+import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from './broad-phase-system.js';
 import { createCollisionResolutionEcsSystem } from './collision-resolution-system.js';
 import { createEulerIntegrationEcsSystem } from './euler-integration-system.js';
@@ -81,6 +82,7 @@ describe('sleeping bodies in a physics scene', () => {
     collisionManifolds = [];
     contactConstraints = [];
 
+    createBroadPhase(world);
     world.addSystem(createTransformEcsSystem());
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(
@@ -209,7 +211,7 @@ describe('sleeping bodies in a physics scene', () => {
     it('both wake on the tick after an impulse on the top box, then sleep again', () => {
       tickUntilAsleep([bottom, top], 3 * ticksPerSecond);
 
-      applyImpulse(world, top.entity, { x: 0.5, y: 0 }, top.position.world);
+      applyImpulse(world, top.entity, { x: 0.5, y: 0 }, top.position.local);
       tick();
 
       expect(bottom.rigidBody.isSleeping).toBe(false);
@@ -423,7 +425,7 @@ describe('sleeping bodies in a physics scene', () => {
         world,
         middle.entity,
         { x: 0.1, y: 0 },
-        middle.position.world,
+        middle.position.local,
       );
       tick();
 

@@ -200,7 +200,7 @@ unattended:
   /input                   # Input handling (keyboard, mouse, gamepad, hidden-DOM text entry)
   /lifecycle               # Lifecycle management
   /math                    # Math utilities
-  /navigation              # Path finding: the NavigationGraph interface and findPath, an A* search over any graph of integer node ids; navigation grids (walkable cells and costs on a GridLayout), findGridPath, hasLineOfSight and smoothGridPath (string pulling a grid path into straight-line waypoints), and markGridFromColliders, which blocks the cells static colliders overlap; waypoint graphs (points and connections placed by the game) and findWaypointPath; path planners (createGridPathPlanner, createWaypointPathPlanner) that plan a unit's whole world-space path; navigation agents (NavigationAgentEcsComponent and createNavigationAgentEcsSystem, which plans, re-plans and follows a path within a per-frame search budget and outputs a desiredVelocity for the game to apply)
+  /navigation              # Path finding: the NavigationGraph interface and findPath, an A* search over any graph of integer node ids; navigation grids (walkable cells and costs on a GridLayout), findGridPath, hasLineOfSight and smoothGridPath (string pulling a grid path into straight-line waypoints), and markGridFromColliders, which blocks the cells static colliders overlap; waypoint graphs (points and connections placed by the game) and findWaypointPath; path planners (createGridPathPlanner, createWaypointPathPlanner) that plan a unit's whole world-space path; navigation agents (NavigationAgentEcsComponent and createNavigationAgentEcsSystem, which plans, re-plans and follows a path within a search budget spent once per update and outputs a desiredVelocity for the game to apply)
   /particles               # Particle system
   /physics                 # Physics integration
   /pooling                 # Object pooling
@@ -425,8 +425,10 @@ caller build up a composite entity by calling several `add<Name>Component`
 functions against the same entity (position + rotation + scale + sprite +
 ...), which is how entities are assembled throughout this codebase.
 `add<Name>Component` never creates its own entity; a handful of components
-that are always the root of their own entity in practice (currently just
-`camera`) additionally get a `create<Name>` aggregate factory that creates
+that are always the root of their own entity in practice (currently
+`camera`, and `broadPhase`, which `createBroadPhase(world)` puts on the
+world's one broad-phase entity) additionally get a `create<Name>`
+aggregate factory that creates
 an entity and calls the relevant `add<Name>Component` functions against it.
 See the `create-component` skill for the full pattern, including the
 default-options-object convention and `create-camera.ts` as the
@@ -984,10 +986,23 @@ docs samples. The transform system overwrites it on its next pass. The
 `add{Position,Rotation,Scale}Component` factories only take `local`, and
 start `world` as a copy of it.
 
-The transform system runs once per frame, after the systems that write
-`local` and before physics and rendering, which read `world`.
+Physics runs in the `fixed-update` group (`registerFixedUpdate`), so a
+world with physics registers two instances of the transform system: one
+first in the fixed-update group, so every fixed step's physics systems read
+current poses, and one in the default group before rendering, so a frame
+draws the latest step. Both are the same owner of `world`. A world without
+physics registers one, after the systems that write `local` and before
+rendering. A once-per-frame system that reads a dynamic or kinematic
+body's pose reads `local` (bodies are always root entities): before the
+default group's transform pass, its `world` is a step behind.
+Systems that apply forces or react to `ContactsEcsComponent.started`/`ended`
+go in the fixed-update group; systems that read `TriggerAction.isTriggered`
+stay in the default group and hand a press to a fixed-step system through a
+request field (like `wakeRequested`).
 `documentation-site/docs/docs/common/transforms.md` covers the ordering and
-following other entities.
+following other entities, and
+`documentation-site/docs/docs/physics/index.md` covers the physics
+registration and where game systems go.
 
 ### Angles and Directions
 
@@ -1035,9 +1050,9 @@ with its `sleepRecord`, so nothing else needs a `wakeUp` call:
   resolution, joints, springs, dampers, motors) or moves them (integration,
   continuous collision) skips a body that isn't awake (`isBodyAwake`), and
   skips a contact or joint when neither of its bodies is awake. Otherwise
-  it writes a velocity into a sleeping body every tick and the sleep
+  it writes a velocity into a sleeping body every step and the sleep
   system wakes it on the next.
-- Something that drives a body every tick from a setting the data doesn't
+- Something that drives a body every step from a setting the data doesn't
   show changing (an angular velocity motor's non-zero `targetVelocity`)
   keeps the body from resting: the sleep system reads it, resets the
   body's `restTime` and wakes its island, like repeated `AddTorque` in

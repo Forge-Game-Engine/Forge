@@ -5,12 +5,16 @@ import {
   getCameraView,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   applyExplosiveForce,
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -51,15 +55,19 @@ export const createPhysicsGame = async (): Promise<Game> => {
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  // `createTransformEcsSystem` turns each body's `local` pose (which
-  // `createEulerIntegrationEcsSystem` moved at the end of the previous tick)
-  // into the `world` pose that the physics and render systems read, so it
-  // runs before all of them.
-  world.addSystem(createTransformEcsSystem());
-  world.addSystem(createGravityEcsSystem(time));
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  // Once per fixed step. The transform system runs first, turning each
+  // body's `local` pose (which the previous step's integration moved) into
+  // the `world` pose the physics systems read.
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createGravityEcsSystem(time), physics);
+  createBroadPhase(world);
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
   );
   world.addSystem(
     createCollisionResolutionEcsSystem(
@@ -67,11 +75,16 @@ export const createPhysicsGame = async (): Promise<Game> => {
       contactConstraints,
       time,
     ),
+    physics,
   );
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createContinuousCollisionEcsSystem(), physics);
+
+  // Once per frame, after the fixed steps, so the frame draws the latest
+  // step's poses.
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
-  world.addSystem(createContinuousCollisionEcsSystem());
 
   renderContext.canvas.addEventListener('mousedown', (event: MouseEvent) => {
     const canvasBounds = renderContext.canvas.getBoundingClientRect();

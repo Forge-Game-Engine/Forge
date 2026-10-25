@@ -6,6 +6,8 @@ import createInputsCode from '!!raw-loader!./_create-inputs';
 import createPlayerCode from '!!raw-loader!./_create-player';
 import playerComponentCode from '!!raw-loader!./_player.component';
 import playerMoveSystemCode from '!!raw-loader!./_player-move.system';
+import playerRespawnSystemCode from '!!raw-loader!./_player-respawn.system';
+import jumpInputSystemCode from '!!raw-loader!./_jump-input.system';
 import tileToggleComponentCode from '!!raw-loader!./_tile-toggle.component';
 import tileToggleSystemCode from '!!raw-loader!./_tile-toggle.system';
 import colliderOutlineComponentCode from '!!raw-loader!./_collider-outline.component';
@@ -82,16 +84,20 @@ export default function TiledMaps(): JSX.Element {
           file: 'create-game.ts',
         },
         {
-          text: 'The water tiles have an animation in Tiled, and collision shapes. Their layer is made a sensor, so the player falls in and is sent back to the start.',
-          file: 'player-move.system.ts',
+          text: "The water tiles have an animation in Tiled, and collision shapes. Their layer is made a sensor, so the player falls in and is sent back to the start. The respawn runs before the physics step's transform pass, so the step finds the player's contacts at the start.",
+          file: 'player-respawn.system.ts',
         },
         {
           text: "The player is created after the map, so it draws over the map's layers, and the foreground layer's draw layer puts its grass and fence in front of it.",
           file: 'create-player.ts',
         },
         {
-          text: 'A click finds its cell through the camera view and worldToCell, and sets or clears the tile there before the tilemap systems run, so the new tile draws and collides on the same frame.',
+          text: 'A click finds its cell through the camera view and worldToCell, and sets or clears the tile there before the tilemap systems run, so the new tile draws on the same frame and collides from the next physics step.',
           file: 'tile-toggle.system.ts',
+        },
+        {
+          text: 'Physics runs in fixed steps, but a jump press lasts one frame, so the jump-input system reads it once per frame and sets jumpRequested, which the next step acts on and clears.',
+          file: 'jump-input.system.ts',
         },
       ]}
       docLinks={[
@@ -132,9 +138,20 @@ export default function TiledMaps(): JSX.Element {
             },
             {
               name: 'player-move.system.ts',
-              summary:
-                'Walks and jumps the player, and sends it back to the start from the water.',
+              summary: 'Walks and jumps the player in each physics step.',
               content: playerMoveSystemCode,
+            },
+            {
+              name: 'player-respawn.system.ts',
+              summary:
+                'Sends the player back to the start from the water, or when it falls out of the map, before the physics step finds its contacts.',
+              content: playerRespawnSystemCode,
+            },
+            {
+              name: 'jump-input.system.ts',
+              summary:
+                'Reads the jump press once per frame and asks the next physics step to jump.',
+              content: jumpInputSystemCode,
             },
             {
               name: 'create-inputs.ts',

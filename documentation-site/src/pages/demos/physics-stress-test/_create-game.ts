@@ -1,10 +1,14 @@
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import { Random } from '@forge-game-engine/forge/math';
 import {
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
   createAngularVelocityMotorEcsSystem,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -58,28 +62,27 @@ export const createPhysicsStressTestGame = async (): Promise<Game> => {
     renderLayers.world,
   );
 
-  // Registers the UI layout systems, which write the readout's `local`
-  // poses, so they run before the transform system below.
-  await createFpsMonitor(world, renderContext, time, spawner, renderLayers.ui);
-
-  // Before the transform system, so each body it spawns (with only a
-  // `local` pose) gets its `world` pose before physics first reads it.
-  world.addSystem(createBodySpawnerEcsSystem(time, new Random()));
-
-  // The whole physics pipeline, in the order the physics guide lists. The
-  // spring, damper, joint and motor systems match no entities here; they're
-  // registered so the frame cost is that of a game using every feature.
+  // The whole physics pipeline, in the order the physics guide lists, once
+  // per fixed step. The spring, damper, joint and motor systems match no
+  // entities here; they're registered so the cost is that of a game using
+  // every feature. Physics runs 60 steps a second whatever the display rate,
+  // so below 60 FPS a frame runs several steps and costs more.
   const collisionPairs: CollisionPair[] = [];
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  world.addSystem(createTransformEcsSystem());
-  world.addSystem(createGravityEcsSystem(time));
-  world.addSystem(createLinearSpringEcsSystem(time));
-  world.addSystem(createLinearDamperEcsSystem(time));
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createGravityEcsSystem(time), physics);
+  world.addSystem(createLinearSpringEcsSystem(time), physics);
+  world.addSystem(createLinearDamperEcsSystem(time), physics);
+  createBroadPhase(world);
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
   );
   world.addSystem(
     createCollisionResolutionEcsSystem(
@@ -87,13 +90,24 @@ export const createPhysicsStressTestGame = async (): Promise<Game> => {
       contactConstraints,
       time,
     ),
+    physics,
   );
-  world.addSystem(createRevoluteJointEcsSystem(time));
-  world.addSystem(createPrismaticJointEcsSystem(time));
-  world.addSystem(createAngularVelocityMotorEcsSystem(time));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
-  world.addSystem(createContinuousCollisionEcsSystem());
+  world.addSystem(createRevoluteJointEcsSystem(time), physics);
+  world.addSystem(createPrismaticJointEcsSystem(time), physics);
+  world.addSystem(createAngularVelocityMotorEcsSystem(time), physics);
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createContinuousCollisionEcsSystem(), physics);
 
+  // Once per frame, after the fixed steps. Registers the UI layout systems,
+  // which write the readout's `local` poses, so they run before the
+  // transform system below.
+  await createFpsMonitor(world, renderContext, time, spawner, renderLayers.ui);
+
+  // The bodies it spawns enter the simulation at the next fixed step, whose
+  // transform system gives them a `world` pose before physics reads it.
+  world.addSystem(createBodySpawnerEcsSystem(time, new Random()));
+
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));

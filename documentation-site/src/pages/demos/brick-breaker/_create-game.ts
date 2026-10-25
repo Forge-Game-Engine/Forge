@@ -4,11 +4,15 @@ import {
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -32,6 +36,7 @@ import { createPaddle } from './_create-paddle';
 import { createPaddleEcsSystem } from './_paddle.system';
 import { createBall } from './_create-ball';
 import { createBallEcsSystem } from './_ball.system';
+import { createBallResetEcsSystem } from './_ball-reset.system';
 import { createBrickField } from './_create-bricks';
 import { createBrickEcsSystem } from './_brick.system';
 import { createBackground } from './_create-background';
@@ -147,20 +152,22 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  world.addSystem(createCameraEcsSystem(time));
-  world.addSystem(createBackgroundEcsSystem(time));
-  world.addSystem(createPaddleEcsSystem(moveInput, time));
-  world.addSystem(createBrickEcsSystem(time));
-  // Runs after the paddle's input-driven movement and before the physics
-  // and render systems, which all read the `world` pose it derives from
-  // each entity's `local` pose. The ball's integrated movement (and a reset
-  // after a miss) is written to `local` after this, so it reaches `world`
-  // on the next frame's transform pass.
-  world.addSystem(createTransformEcsSystem());
-  world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  // Physics runs once per fixed step, so the ball moves the same at any
+  // frame rate. The transform system comes first, so each step reads the
+  // poses the previous step (and the paddle) left in `local`. The ball's
+  // reset after a miss is a teleport, so it runs before the transform
+  // system: continuous collision then sweeps the ball from its start
+  // position instead of from where it fell.
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  world.addSystem(createBallResetEcsSystem(random, missY), physics);
+  world.addSystem(createTransformEcsSystem(), physics);
+  createBroadPhase(world);
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
   );
   world.addSystem(
     createCollisionResolutionEcsSystem(
@@ -168,10 +175,20 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
       contactConstraints,
       time,
     ),
+    physics,
   );
-  world.addSystem(createBallEcsSystem(random, missY, brickField));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
-  world.addSystem(createContinuousCollisionEcsSystem());
+  world.addSystem(createBallEcsSystem(brickField), physics);
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createContinuousCollisionEcsSystem(), physics);
+
+  // Once per frame, after the fixed steps. The paddle moves every frame by
+  // its `local` pose, which the next fixed step collides with.
+  world.addSystem(createCameraEcsSystem(time));
+  world.addSystem(createBackgroundEcsSystem(time));
+  world.addSystem(createPaddleEcsSystem(moveInput, time));
+  world.addSystem(createBrickEcsSystem(time));
+  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;
 };

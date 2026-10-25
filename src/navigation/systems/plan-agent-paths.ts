@@ -207,7 +207,7 @@ export const collectPlanRequests = (
  * Plans paths for waiting agents within one shared node budget, longest
  * waiting first, then the entity created first. A search cut short by the
  * shared budget is thrown away and keeps its place in line, so it's first
- * next tick and gets the whole budget. A search that used the whole budget
+ * next update and gets the whole budget. A search that used the whole budget
  * is kept: it would never finish within it, so its partial path is the
  * best the agent gets.
  * @param world - The world, for the entities' creation order.
@@ -215,7 +215,7 @@ export const collectPlanRequests = (
  * @param agents - Their agents.
  * @param positions - Their positions.
  * @param pending - The batch indices of the agents waiting for a path.
- * @param maxExpandedPerFrame - The node budget every search shares.
+ * @param maxExpandedPerUpdate - The node budget every search shares.
  */
 export const planAgentPaths = (
   world: EcsWorld,
@@ -223,7 +223,7 @@ export const planAgentPaths = (
   agents: readonly NavigationAgentEcsComponent[],
   positions: readonly PositionEcsComponent[],
   pending: number[],
-  maxExpandedPerFrame: number,
+  maxExpandedPerUpdate: number,
 ): void => {
   pending.sort(
     (a, b) =>
@@ -232,7 +232,7 @@ export const planAgentPaths = (
         world.getCreationSequence(entities[b]),
   );
 
-  let budget = maxExpandedPerFrame;
+  let budget = maxExpandedPerUpdate;
 
   for (const index of pending) {
     if (budget <= 0) {
@@ -246,7 +246,7 @@ export const planAgentPaths = (
       continue;
     }
 
-    const whole = budget === maxExpandedPerFrame;
+    const whole = budget === maxExpandedPerUpdate;
     const result = planner.planPath(positions[index].world, target, {
       maxExpanded: budget,
       keepPartialPath: whole,

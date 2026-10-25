@@ -17,6 +17,12 @@ import {
  * Creates the system that centers each following camera on its target's X,
  * stopping where the view would show past `minX` or `maxX`. A view wider
  * than the range stays centered on it.
+ *
+ * Register it in the default group, after the fixed steps and before the
+ * frame's transform system. It reads the target's `local` X: the player is
+ * a root body, so that's its pose after the frame's last physics step,
+ * where its `world` would still be a step behind and the camera would trail
+ * the sprite.
  * @param renderContext - The render context the cameras draw to.
  * @returns The ECS system.
  */
@@ -39,7 +45,7 @@ export const createCameraFollowEcsSystem = (
       positions[i].local.x =
         maxX - minX < halfWidth * 2
           ? (minX + maxX) / 2
-          : clamp(targetPosition.world.x, minX + halfWidth, maxX - halfWidth);
+          : clamp(targetPosition.local.x, minX + halfWidth, maxX - halfWidth);
     }
   },
 });

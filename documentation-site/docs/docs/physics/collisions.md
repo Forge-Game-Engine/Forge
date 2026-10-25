@@ -4,12 +4,13 @@ sidebar_position: 1.5
 
 # Collisions
 
-Every tick, three systems find the colliders that overlap and push them
+Every fixed step, three systems find the colliders that overlap and push them
 apart:
 
 - [`createBroadPhaseEcsSystem`](/Forge/docs/api/functions/createBroadPhaseEcsSystem)
   writes each collider's world-space bounds to its `aabb` field and lists
-  every pair of colliders whose bounds overlap.
+  the pairs of colliders whose bounds overlap, except pairs of two static
+  colliders.
 - [`createNarrowPhaseEcsSystem`](/Forge/docs/api/functions/createNarrowPhaseEcsSystem)
   tests each of those pairs' shapes. It writes every collision between two
   solid colliders to `collisionManifolds`, and every overlap to the
@@ -19,9 +20,61 @@ apart:
   and restitution.
 
 [Registering the physics systems](./index.md#registering-the-physics-systems)
-shows their order. The collider's `aabb` is written only by the broad
-phase: it is empty, and overlaps nothing, until the broad phase first runs
-after the collider is added.
+shows their order.
+
+## Finding colliding pairs
+
+The broad phase keeps its colliders and the pairs it found from one step to
+the next, in a [`BroadPhaseEcsComponent`](/Forge/docs/api/interfaces/BroadPhaseEcsComponent)
+on an entity of its own. Create that entity once per world, before the
+first update, with [`createBroadPhase`](/Forge/docs/api/functions/createBroadPhase):
+
+```ts
+import {
+  type CollisionPair,
+  createBroadPhase,
+  createBroadPhaseEcsSystem,
+} from '@forge-game-engine/forge/physics';
+
+const collisionPairs: CollisionPair[] = [];
+
+createBroadPhase(world);
+world.addSystem(createBroadPhaseEcsSystem(collisionPairs), {
+  group: fixedUpdate,
+});
+```
+
+The broad phase system throws when the world has no broad phase. It is the
+only system that writes the broad phase and each collider's `aabb`.
+
+Every collider is in one of two
+[dynamic AABB trees](./dynamic-aabb-tree.md): static colliders (no
+`RigidBodyEcsComponent`, or a `'static'` one) in one, kinematic and dynamic
+colliders in the other. Each step, the broad phase:
+
+1. recomputes the `aabb` of each collider whose world position, rotation,
+   shape or `ColliderEcsComponent` changed, and moves it in its tree. The
+   `aabb` of a collider that didn't change isn't recomputed. It is empty,
+   and overlaps nothing, until the broad phase first runs after the
+   collider is added.
+2. looks for new pairs only around the colliders whose box in the tree
+   changed, or whose `category` or `mask` changed. A pair is kept until
+   the two colliders' boxes in the tree stop overlapping.
+3. writes the pairs whose `aabb`s overlap to `collisionPairs`, sorted by
+   entity, with `entityA` the lower entity.
+
+Its cost grows with the number of colliders that move, not with the total
+number of colliders.
+
+Two static colliders are never paired, so they never collide and never
+appear in each other's contacts, even when game code moves one of them. A
+collider that game code moves and that has to collide with colliders that
+have no rigid body needs a `'kinematic'` rigid body (see
+[Body types](./rigid-bodies.md#body-types)).
+
+A collider's shape doesn't change in place. To change it, assign a new
+`Collider` to `ColliderEcsComponent.collider`, and the broad phase
+recomputes its `aabb` on its next run.
 
 ## Filtering which colliders collide
 
@@ -107,28 +160,30 @@ addColliderComponent(world, zone, {
 addContactsComponent(world, zone);
 ```
 
-A sensor without a `RigidBodyEcsComponent` is static. A sensor on a moving
-body moves with it.
+A sensor without a `RigidBodyEcsComponent` is static, so it detects only
+kinematic and dynamic bodies. A sensor on a moving body moves with it.
 
 :::note
 A sensor overlap is detected only when at least one of the two entities has
 a `ContactsEcsComponent`: on the sensor to list what is inside it, or on
 the other body to list the sensors it is in. Two overlapping sensors are
-reported to each other, unless their categories and masks exclude each
-other.
+reported to each other, unless both are static or their categories and
+masks exclude each other.
 :::
 
 ## Reading contacts
 
 Add a [`ContactsEcsComponent`](/Forge/docs/api/interfaces/ContactsEcsComponent)
 with `addContactsComponent`, and `createNarrowPhaseEcsSystem` writes three
-lists to it every tick:
+lists to it every step:
 
-- `touching`: every entity the collider overlaps this tick, each listed
+- `touching`: every entity the collider overlaps this step, each listed
   once.
-- `started`: the entities in `touching` that weren't in it last tick.
-- `ended`: the entities that were in `touching` last tick and aren't now,
-  because they moved apart, lost their collider or were removed.
+- `started`: the entities in `touching` that weren't in it the previous
+  step.
+- `ended`: the entities that were in `touching` the previous step and
+  aren't now, because they moved apart, lost their collider or were
+  removed.
 
 Only entities with a `ContactsEcsComponent` have their contacts recorded.
 When two entities touch, add it to the one whose system reacts. A system
@@ -158,17 +213,27 @@ const contactLogSystem: EcsSystem<[ContactsEcsComponent]> = {
   },
 };
 
-world.addSystem(contactLogSystem);
+world.addSystem(contactLogSystem, { group: fixedUpdate });
 ```
 
-Register a system that reads contacts after `createNarrowPhaseEcsSystem`;
-one registered before it reads the previous tick's lists. The narrow phase
-replaces the lists every tick, and is the only system that writes them.
+Register a system that reads `started` or `ended` in the fixed-update group
+(see [Registering the physics systems](./index.md#registering-the-physics-systems)),
+after `createNarrowPhaseEcsSystem`; one registered before it reads the
+previous step's lists. The narrow phase replaces the lists every step, and
+is the only system that writes them.
+
+:::caution
+A frame can run several fixed steps or none. A system in the default group
+runs once per frame, so it doesn't read the `started` and `ended` of a
+frame's earlier steps, and on a frame with no step it reads the same
+`started` and `ended` as on the previous frame. `touching` is the state
+after the latest step, and a system in any group can read it.
+:::
 
 :::caution
 A contact can name an entity that has been removed. Another system can
-remove an entity in `touching` or `started` later in the same tick, and
-`ended` lists entities removed since the last tick. Check
+remove an entity in `touching` or `started` later in the same step, and
+`ended` lists entities removed since the previous step. Check
 `world.isAlive(other)` before reading the other entity's components.
 :::
 
@@ -176,11 +241,11 @@ remove an entity in `touching` or `started` later in the same tick, and
 
 `collisionManifolds`, the array passed to `createNarrowPhaseEcsSystem`,
 holds a [`CollisionManifold`](/Forge/docs/api/interfaces/CollisionManifold)
-for every collision between two solid colliders this tick: the two
+for every collision between two solid colliders this step: the two
 entities, the contact `normal`, the penetration `depth` and the
 `contactPoints`. Collision resolution reads it. Read it in a system
-registered after the narrow phase when game code needs a collision's
-geometry, such as the point of an impact.
+registered in the fixed-update group after the narrow phase when game code
+needs a collision's geometry, such as the point of an impact.
 
 A pair of entities can have several manifolds (a body touching several of a
 terrain's surface edges has one per edge), and manifolds don't include
@@ -199,5 +264,5 @@ Removing a collider's entity removes it from collision detection, and so
 does removing a static body's `ColliderEcsComponent` (a dynamic body needs
 its collider, see
 [Mass and center of mass](./rigid-bodies.md#mass-and-center-of-mass)). On
-the next tick, the entity is listed in `ended` of every entity whose
+the next step, the entity is listed in `ended` of every entity whose
 contacts listed it in `touching`.

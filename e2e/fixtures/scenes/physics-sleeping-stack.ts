@@ -10,6 +10,7 @@ import {
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCanvas,
   createCollisionResolutionEcsSystem,
@@ -193,6 +194,7 @@ export const createScene: CreateScene = (
   const contactConstraints: ContactConstraint[] = [];
 
   world.addSystem(createTransformEcsSystem());
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

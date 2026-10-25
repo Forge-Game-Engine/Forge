@@ -126,7 +126,7 @@ export default function PathFinding(): JSX.Element {
           file: 'bake-grid.system.ts',
         },
         {
-          text: 'Each unit has a navigation agent that plans with a grid path planner. Clicking sets every agent’s target, and the agent system plans the paths within a per-frame search budget.',
+          text: 'Each unit has a navigation agent that plans with a grid path planner. Clicking sets every agent’s target, and the agent system plans the paths within a search budget it spends once per fixed physics step.',
           file: 'pointer.system.ts',
         },
         {
@@ -134,11 +134,11 @@ export default function PathFinding(): JSX.Element {
           file: 'path-lines.system.ts',
         },
         {
-          text: 'The agents don’t move the units. A system copies each agent’s desiredVelocity into its rigid body, and physics moves the units and pushes them apart.',
+          text: 'The agents don’t move the units. A system copies each agent’s desiredVelocity into its rigid body, and physics moves the units and pushes them apart. The agents run in the same fixed steps as physics, so they steer with the delta their velocity is integrated over.',
           file: 'apply-velocity.system.ts',
         },
         {
-          text: 'Moving a wall bakes the grid again. That raises the grid’s version, and every agent plans a new path on the same tick.',
+          text: 'Moving a wall bakes the grid again. That raises the grid’s version, and every agent plans a new path in the next physics step.',
           file: 'create-game.ts',
         },
       ]}

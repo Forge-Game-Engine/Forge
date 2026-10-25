@@ -29,6 +29,7 @@ import {
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { CollisionPair } from '../types/collision-pair.js';
 import { ContactConstraint } from '../types/contact-constraint.js';
+import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from './broad-phase-system.js';
 import { createCollisionResolutionEcsSystem } from './collision-resolution-system.js';
 import { createContinuousCollisionEcsSystem } from './continuous-collision-system.js';
@@ -121,6 +122,7 @@ describe('createContinuousCollisionEcsSystem', () => {
     time = new Time();
     time.update(0);
 
+    createBroadPhase(world);
     world.addSystem(createTransformEcsSystem());
     world.addSystem(createBroadPhaseEcsSystem([]));
     world.addSystem(createEulerIntegrationEcsSystem(time));
@@ -345,6 +347,8 @@ describe('continuous collision of sleeping circles', () => {
 
     moveAfterTransformPass = (): void => {};
 
+    createBroadPhase(world);
+
     world.addSystem(createTransformEcsSystem());
     // Game code moving a body after the transform pass, so the sweep sees
     // a `local` position far from the `world` one.
@@ -434,6 +438,8 @@ describe('a sleeping circle in the full physics pipeline', () => {
     const collisionManifolds: CollisionManifold[] = [];
     const contactConstraints: ContactConstraint[] = [];
 
+    createBroadPhase(world);
+
     world.addSystem(createTransformEcsSystem());
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(
@@ -503,7 +509,7 @@ describe('a sleeping circle in the full physics pipeline', () => {
 
     const x = ball.position.local.x;
 
-    applyImpulse(world, ball.entity, { x: 1, y: 0 }, ball.position.world);
+    applyImpulse(world, ball.entity, { x: 1, y: 0 }, ball.position.local);
     tick();
 
     expect(ball.rigidBody.isSleeping).toBe(false);
@@ -554,6 +560,7 @@ describe('continuous collision in the full physics pipeline', () => {
 
     time.update(0);
 
+    createBroadPhase(world);
     world.addSystem(createTransformEcsSystem());
     world.addSystem(createGravityEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));

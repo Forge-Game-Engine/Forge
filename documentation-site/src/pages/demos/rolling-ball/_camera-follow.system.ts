@@ -14,15 +14,15 @@ const followSpeed = 4;
 
 /**
  * Creates an ECS system that smoothly pans the camera towards
- * `targetPosition` every tick, using exponential smoothing so it eases
+ * `targetPosition` every frame, using exponential smoothing so it eases
  * towards the ball rather than snapping to it or lagging at a fixed offset.
  *
- * Reads the ball's `local` position (it has no parent, so that's its current
- * position whenever this runs) and writes the camera's `local` position,
- * which `createTransformEcsSystem` turns into the `world` position the render
- * system reads. Registered after the physics systems, so the camera's new
- * position is rendered from the next tick on - the smoothing already eases
- * it towards the ball over many ticks, so that tick of delay isn't visible.
+ * Register it in the default group, after the fixed steps and before the
+ * frame's transform system. It reads the ball's `local` position (the ball
+ * has no parent, so that's its pose after the frame's last physics step,
+ * where its `world` would still be a step behind) and writes the camera's
+ * `local` position, which the transform system turns into the `world`
+ * position the render system reads that frame.
  * @param targetPosition - The position component to follow, typically the ball's.
  * @param time - The time instance used to scale the follow speed by delta time.
  */

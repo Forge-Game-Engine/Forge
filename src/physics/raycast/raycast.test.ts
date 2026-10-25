@@ -9,6 +9,7 @@ import { Vector2 } from '../../math/index.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { addColliderComponent } from '../components/collider-component.js';
+import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from '../systems/broad-phase-system.js';
 
 describe('raycast', () => {
@@ -16,6 +17,7 @@ describe('raycast', () => {
 
   beforeEach(() => {
     world = new EcsWorld();
+    createBroadPhase(world);
     world.addSystem(createBroadPhaseEcsSystem([]));
   });
 

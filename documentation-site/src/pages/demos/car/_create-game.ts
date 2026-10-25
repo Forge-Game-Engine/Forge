@@ -5,12 +5,16 @@ import {
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
   createAngularVelocityMotorEcsSystem,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -86,25 +90,32 @@ export const createCarGame = async (): Promise<Game> => {
   // dig itself out of the ground.
   const collisionResolutionOptions = { maxBiasSpeed: 300 };
 
+  // The physics systems, and the car's own systems that sit between them,
+  // run once per fixed step, so the car drives the same at any frame rate.
   // System order matters:
-  // 1. Reset, then transforms, so a restart shows up this tick.
+  // 1. Transforms first, so each step reads the poses the previous step
+  //    (or a restart) left in `local`.
   // 2. Ground contact after narrow phase (which fills contacts), and before
   //    the systems that read it (wheel drive, stabilizer, air control).
   // 3. Springs and dampers before collision resolution; joints after it, so
   //    they get the last word on velocity.
   // 4. Continuous collision right after integration, so a fast wheel stops
   //    at the ground instead of sinking into it.
-  world.addSystem(createCarResetEcsSystem());
-  world.addSystem(createTransformEcsSystem());
-  world.addSystem(createGravityEcsSystem(time));
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createGravityEcsSystem(time), physics);
+  createBroadPhase(world);
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
   );
-  world.addSystem(createGroundContactEcsSystem());
-  world.addSystem(createWheelDriveEcsSystem());
-  world.addSystem(createLinearSpringEcsSystem(time));
-  world.addSystem(createLinearDamperEcsSystem(time));
+  world.addSystem(createGroundContactEcsSystem(), physics);
+  world.addSystem(createWheelDriveEcsSystem(), physics);
+  world.addSystem(createLinearSpringEcsSystem(time), physics);
+  world.addSystem(createLinearDamperEcsSystem(time), physics);
   world.addSystem(
     createCollisionResolutionEcsSystem(
       collisionManifolds,
@@ -112,17 +123,27 @@ export const createCarGame = async (): Promise<Game> => {
       time,
       collisionResolutionOptions,
     ),
+    physics,
   );
-  world.addSystem(createPrismaticJointEcsSystem(time, jointIterations));
-  world.addSystem(createRevoluteJointEcsSystem(time, jointIterations));
-  world.addSystem(createAngularVelocityMotorEcsSystem(time));
-  world.addSystem(createChassisStabilizerEcsSystem(time));
-  world.addSystem(createAirControlEcsSystem(time));
+  world.addSystem(
+    createPrismaticJointEcsSystem(time, jointIterations),
+    physics,
+  );
+  world.addSystem(createRevoluteJointEcsSystem(time, jointIterations), physics);
+  world.addSystem(createAngularVelocityMotorEcsSystem(time), physics);
+  world.addSystem(createChassisStabilizerEcsSystem(time), physics);
+  world.addSystem(createAirControlEcsSystem(time), physics);
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createContinuousCollisionEcsSystem(), physics);
+
+  // Once per frame, after the fixed steps. The restart reads a press made
+  // this frame, and it and the camera follow write `local` before the
+  // transform system, so the frame shows their changes.
+  world.addSystem(createCarResetEcsSystem());
   world.addSystem(createCameraFollowEcsSystem(time));
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
-  world.addSystem(createContinuousCollisionEcsSystem());
 
   return game;
 };

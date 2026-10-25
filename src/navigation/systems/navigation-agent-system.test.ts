@@ -355,7 +355,7 @@ describe('createNavigationAgentEcsSystem', () => {
 
     it('turns corners with a large arrival radius without re-planning', () => {
       const budget = 4096;
-      const scene = createScene({ maxExpandedPerFrame: budget });
+      const scene = createScene({ maxExpandedPerUpdate: budget });
       const grid = createGrid(12, 12);
 
       // An L-shaped wall: down column 5 from the top, and along row 9 to
@@ -624,7 +624,7 @@ describe('createNavigationAgentEcsSystem', () => {
 
     it('keeps walking its current path while it waits for a new one', () => {
       // Each plan takes the whole budget, so one agent plans a tick.
-      const scene = createScene({ maxExpandedPerFrame: 1 });
+      const scene = createScene({ maxExpandedPerUpdate: 1 });
       const planner = createFixedPlanner([
         { x: 0, y: 0 },
         { x: 100, y: 0 },
@@ -657,7 +657,7 @@ describe('createNavigationAgentEcsSystem', () => {
   describe('the planning budget', () => {
     it('spreads 50 simultaneous requests over ticks within the budget, in order, without dropping any', () => {
       const budget = 120;
-      const scene = createScene({ maxExpandedPerFrame: budget });
+      const scene = createScene({ maxExpandedPerUpdate: budget });
       const spy = spyOnPlanner(createGridPathPlanner(createGrid(40, 60)));
       const units: Unit[] = [];
 
@@ -716,7 +716,7 @@ describe('createNavigationAgentEcsSystem', () => {
     });
 
     it('plans the agent waiting longest first, then the one created first', () => {
-      const scene = createScene({ maxExpandedPerFrame: 1 });
+      const scene = createScene({ maxExpandedPerUpdate: 1 });
       const planner = createFixedPlanner([
         { x: 0, y: 0 },
         { x: 10, y: 0 },
@@ -741,7 +741,7 @@ describe('createNavigationAgentEcsSystem', () => {
     });
 
     it('keeps its place in line when its target changes while it waits', () => {
-      const scene = createScene({ maxExpandedPerFrame: 1 });
+      const scene = createScene({ maxExpandedPerUpdate: 1 });
       const spy = spyOnPlanner(
         createFixedPlanner([
           { x: 0, y: 0 },
@@ -771,7 +771,7 @@ describe('createNavigationAgentEcsSystem', () => {
 
     it('walks a search larger than the whole budget and re-plans from its end', () => {
       const budget = 8;
-      const scene = createScene({ maxExpandedPerFrame: budget });
+      const scene = createScene({ maxExpandedPerUpdate: budget });
       // A corridor longer than the budget's worth of cells.
       const grid = createGrid(40, 3);
       const spy = spyOnPlanner(createGridPathPlanner(grid));
@@ -866,7 +866,7 @@ describe('createNavigationAgentEcsSystem', () => {
 
     it('gives the same output from a fresh system instance mid-walk', () => {
       const run = (swap: boolean): Unit => {
-        const scene = createScene({ maxExpandedPerFrame: 30 });
+        const scene = createScene({ maxExpandedPerUpdate: 30 });
         const grid = createWalledGrid();
         const planner = createGridPathPlanner(grid);
         const unit = scene.addUnit(center(1, 1), planner, {
@@ -884,7 +884,7 @@ describe('createNavigationAgentEcsSystem', () => {
           scene.world.removeSystem(scene.system);
           scene.world.addSystem(
             createNavigationAgentEcsSystem(scene.time, {
-              maxExpandedPerFrame: 30,
+              maxExpandedPerUpdate: 30,
             }),
           );
         }
@@ -929,17 +929,19 @@ describe('createNavigationAgentEcsSystem', () => {
   });
 
   describe('errors', () => {
-    it('throws for an invalid maxExpandedPerFrame', () => {
+    it('throws for an invalid maxExpandedPerUpdate', () => {
       const time = new Time();
 
       expect(() =>
-        createNavigationAgentEcsSystem(time, { maxExpandedPerFrame: 0 }),
-      ).toThrow(/maxExpandedPerFrame/);
+        createNavigationAgentEcsSystem(time, { maxExpandedPerUpdate: 0 }),
+      ).toThrow(/maxExpandedPerUpdate/);
       expect(() =>
-        createNavigationAgentEcsSystem(time, { maxExpandedPerFrame: 2.5 }),
-      ).toThrow(/maxExpandedPerFrame/);
+        createNavigationAgentEcsSystem(time, { maxExpandedPerUpdate: 2.5 }),
+      ).toThrow(/maxExpandedPerUpdate/);
       expect(() =>
-        createNavigationAgentEcsSystem(time, { maxExpandedPerFrame: Infinity }),
+        createNavigationAgentEcsSystem(time, {
+          maxExpandedPerUpdate: Infinity,
+        }),
       ).not.toThrow();
     });
 

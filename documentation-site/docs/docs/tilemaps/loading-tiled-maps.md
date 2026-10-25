@@ -258,6 +258,7 @@ world.addSystem(
     maxBiasSpeed: 3 * pixelsPerMeter,
     restitutionThreshold: pixelsPerMeter,
   }),
+  { group: fixedUpdate },
 );
 ```
 

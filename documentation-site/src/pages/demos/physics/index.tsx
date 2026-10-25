@@ -27,7 +27,7 @@ export default function Physics(): JSX.Element {
           file: 'create-boundaries.ts',
         },
         {
-          text: 'Broad phase, narrow phase and collision resolution run each tick to find touching shapes and push them apart.',
+          text: 'Broad phase, narrow phase and collision resolution run once per fixed step (60 times a second, whatever the display rate) to find touching shapes and push them apart.',
           file: 'create-game.ts',
         },
         {

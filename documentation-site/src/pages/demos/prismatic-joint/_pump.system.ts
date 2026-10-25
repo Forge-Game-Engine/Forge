@@ -28,7 +28,7 @@ export const createPumpEcsSystem = (
       const position = world.getComponent(pump.entity, positionId);
 
       if (position !== null) {
-        applyImpulse(world, pump.entity, impulse, position.world);
+        applyImpulse(world, pump.entity, impulse, position.local);
       }
 
       if (pump.alternate) {

@@ -233,8 +233,9 @@ behind the wall.
 :::
 
 A system that sets or clears tiles in the picked cell runs before the
-tilemap systems, so the tile draws, sorts and collides on the tick it's
-changed (see [Registering the tilemap systems](./index.md#registering-the-tilemap-systems)).
+tilemap systems, so the tile draws and sorts on the frame it's changed,
+and collides from the next fixed step (see
+[Registering the tilemap systems](./index.md#registering-the-tilemap-systems)).
 
 ## Finding paths across the map
 

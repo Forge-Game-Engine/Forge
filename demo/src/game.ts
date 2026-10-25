@@ -15,6 +15,7 @@ import {
   PositionEcsComponent,
   positionId,
   Random,
+  registerFixedUpdate,
   SpriteEcsComponent,
   spriteId,
   Time,
@@ -31,6 +32,7 @@ import {
   ContactConstraint,
   ContactsEcsComponent,
   contactsId,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -313,6 +315,30 @@ const collisionPairs: CollisionPair[] = [];
 const collisionManifolds: CollisionManifold[] = [];
 const contactConstraints: ContactConstraint[] = [];
 
+const fixedUpdate = registerFixedUpdate(world, time);
+const physics = { group: fixedUpdate };
+
+// Once per fixed step.
+world.addSystem(createTransformEcsSystem(), physics);
+world.addSystem(createGravityEcsSystem(time), physics);
+createBroadPhase(world);
+world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
+world.addSystem(
+  createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+  physics,
+);
+world.addSystem(
+  createCollisionResolutionEcsSystem(
+    collisionManifolds,
+    contactConstraints,
+    time,
+  ),
+  physics,
+);
+world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+world.addSystem(createContinuousCollisionEcsSystem(), physics);
+
+// Once per frame, after the fixed steps.
 world.addSystem(
   createFountainSpawnEcsSystem(
     time,
@@ -324,19 +350,6 @@ world.addSystem(
     fountainY,
   ),
 );
-world.addSystem(createTransformEcsSystem());
-world.addSystem(createGravityEcsSystem(time));
-world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
-world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
-world.addSystem(
-  createCollisionResolutionEcsSystem(
-    collisionManifolds,
-    contactConstraints,
-    time,
-  ),
-);
-world.addSystem(createEulerIntegrationEcsSystem(time));
-world.addSystem(createContinuousCollisionEcsSystem());
 world.addSystem(
   createDespawnFallenShapesEcsSystem(
     spritesByEntity,
@@ -344,6 +357,7 @@ world.addSystem(
   ),
 );
 world.addSystem(createCollisionTintEcsSystem());
+world.addSystem(createTransformEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
 
 game.run();

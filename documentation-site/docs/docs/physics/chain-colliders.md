@@ -105,11 +105,11 @@ around it, and a wall thinner than a body never pushes the body out of
 both sides at once.
 
 :::caution
-A body that moves more than half its size into a chain in one tick has
+A body that moves more than half its size into a chain in one step has
 its center behind the edge it hit, and passes through it.
 [Continuous Collision Detection](./continuous-collision-detection.md)
 stops fast circles at a chain's edges; polygon bodies aren't swept, so
-make walls thicker than the distance a fast polygon moves in one tick.
+make walls thicker than the distance a fast polygon moves in one step.
 :::
 
 The collider keeps a tree of its edges' bounds, so collision detection

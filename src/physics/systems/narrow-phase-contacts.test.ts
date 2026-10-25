@@ -4,6 +4,7 @@ import {
   createTransformEcsSystem,
   PositionEcsComponent,
   positionId,
+  registerFixedUpdate,
   Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
@@ -18,10 +19,14 @@ import {
   addContactsComponent,
   ContactsEcsComponent,
 } from '../components/contacts-component.js';
-import { addRigidBodyComponent } from '../components/rigidbody-component.js';
+import {
+  addRigidBodyComponent,
+  RigidBodyType,
+} from '../components/rigidbody-component.js';
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { CollisionPair } from '../types/collision-pair.js';
 import { ContactConstraint } from '../types/contact-constraint.js';
+import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from './broad-phase-system.js';
 import { createCollisionResolutionEcsSystem } from './collision-resolution-system.js';
 import { createEulerIntegrationEcsSystem } from './euler-integration-system.js';
@@ -37,6 +42,7 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
     collisionPairs = [];
     collisionManifolds = [];
 
+    createBroadPhase(world);
     world.addSystem(createTransformEcsSystem());
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(
@@ -44,9 +50,15 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
     );
   });
 
+  // Circles are kinematic unless a test says otherwise: two static
+  // colliders are never paired.
   function addCircle(
     position: Vector2,
-    options: { sensor?: boolean; contacts?: boolean } = {},
+    options: {
+      sensor?: boolean;
+      contacts?: boolean;
+      type?: RigidBodyType;
+    } = {},
   ): { entity: number; contacts: ContactsEcsComponent | null } {
     const entity = world.createEntity();
 
@@ -54,6 +66,9 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
     addColliderComponent(world, entity, {
       collider: new CircleCollider(1),
       sensor: options.sensor ?? false,
+    });
+    addRigidBodyComponent(world, entity, {
+      type: options.type ?? 'kinematic',
     });
 
     const contacts = options.contacts
@@ -240,6 +255,7 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
         category: 0b01,
         mask: 0b01,
       });
+      addRigidBodyComponent(world, entity, { type: 'kinematic' });
 
       const contacts = addContactsComponent(world, entity);
       const other = world.createEntity();
@@ -249,6 +265,7 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
         collider: new CircleCollider(1),
         category: 0b10,
       });
+      addRigidBodyComponent(world, other, { type: 'kinematic' });
 
       world.update();
 
@@ -288,6 +305,22 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
 
       expect(collisionManifolds).toHaveLength(0);
       expect(contacts?.touching).toEqual([wall]);
+    });
+
+    it('should not report a static sensor overlapping a static collider', () => {
+      const { contacts } = addCircle(
+        { x: 0, y: 0 },
+        { sensor: true, contacts: true, type: 'static' },
+      );
+      const wall = world.createEntity();
+
+      addPositionComponent(world, wall, { local: { x: 1, y: 0 } });
+      addColliderComponent(world, wall, { collider: new CircleCollider(1) });
+
+      world.update();
+
+      expect(collisionPairs).toHaveLength(0);
+      expect(contacts?.touching).toEqual([]);
     });
 
     it('should report two overlapping sensors to each other', () => {
@@ -342,8 +375,7 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
 
       addCircle({ x: 0, y: 0 }, { sensor: true });
 
-      const { entity: body } = addCircle({ x: 0.5, y: 0 });
-      addRigidBodyComponent(world, body);
+      const { entity: body } = addCircle({ x: 0.5, y: 0 }, { type: 'dynamic' });
 
       for (let i = 0; i < 10; i++) {
         time.update(i * 16);
@@ -355,5 +387,159 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
           .local,
       ).toEqual({ x: 0.5, y: 0 });
     });
+  });
+});
+
+describe('createNarrowPhaseEcsSystem contacts in the fixed-update group', () => {
+  // Exact in binary, so a 31.25 ms frame holds exactly two steps.
+  const fixedDeltaMilliseconds = 1000 / 64;
+
+  interface ContactsRecord {
+    touching: readonly number[];
+    started: readonly number[];
+    ended: readonly number[];
+  }
+
+  let world: EcsWorld;
+  let time: Time;
+  let now: number;
+  let contacts: ContactsEcsComponent;
+  let other: number;
+  let otherPosition: PositionEcsComponent;
+  let fixedRecords: ContactsRecord[];
+  let defaultRecords: ContactsRecord[];
+  let moves: Vector2[];
+
+  const record = (component: ContactsEcsComponent): ContactsRecord => ({
+    touching: [...component.touching],
+    started: [...component.started],
+    ended: [...component.ended],
+  });
+
+  const runFrame = (deltaMilliseconds: number): void => {
+    now += deltaMilliseconds;
+    time.update(now);
+    world.update();
+  };
+
+  beforeEach(() => {
+    world = new EcsWorld();
+    time = new Time();
+    time.fixedDeltaTimeInMilliseconds = fixedDeltaMilliseconds;
+    now = 0;
+    time.update(now);
+    fixedRecords = [];
+    defaultRecords = [];
+    moves = [];
+
+    const collisionPairs: CollisionPair[] = [];
+    const collisionManifolds: CollisionManifold[] = [];
+    const fixedUpdate = registerFixedUpdate(world, time);
+    const fixed = { group: fixedUpdate };
+
+    // Moves the other circle at the start of each step, before the step's
+    // transform pass, taking the next position from `moves`.
+    world.addSystem(
+      {
+        query: [],
+        update: (): void => {
+          const next = moves.shift();
+
+          if (next) {
+            otherPosition.local = next;
+          }
+        },
+      },
+      fixed,
+    );
+    world.addSystem(createTransformEcsSystem(), fixed);
+    createBroadPhase(world);
+    world.addSystem(createBroadPhaseEcsSystem(collisionPairs), fixed);
+    world.addSystem(
+      createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+      fixed,
+    );
+    world.addSystem(
+      {
+        query: [],
+        update: (): void => {
+          fixedRecords.push(record(contacts));
+        },
+      },
+      fixed,
+    );
+    world.addSystem(createTransformEcsSystem());
+    world.addSystem({
+      query: [],
+      update: (): void => {
+        defaultRecords.push(record(contacts));
+      },
+    });
+
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity);
+    addColliderComponent(world, entity, { collider: new CircleCollider(1) });
+    contacts = addContactsComponent(world, entity);
+
+    other = world.createEntity();
+    otherPosition = addPositionComponent(world, other, {
+      local: { x: 3, y: 0 },
+    });
+    addColliderComponent(world, other, { collider: new CircleCollider(1) });
+    // Game code moves the other circle, so it's kinematic: two static
+    // colliders are never paired.
+    addRigidBodyComponent(world, other, { type: 'kinematic' });
+  });
+
+  it('should report a contact that starts in the first of two steps in that step', () => {
+    moves = [{ x: 1, y: 0 }];
+
+    runFrame(2 * fixedDeltaMilliseconds);
+
+    expect(fixedRecords).toEqual([
+      { touching: [other], started: [other], ended: [] },
+      { touching: [other], started: [], ended: [] },
+    ]);
+  });
+
+  it('should leave a once-per-frame reader only the last step, missing the start', () => {
+    moves = [{ x: 1, y: 0 }];
+
+    runFrame(2 * fixedDeltaMilliseconds);
+
+    expect(defaultRecords).toEqual([
+      { touching: [other], started: [], ended: [] },
+    ]);
+  });
+
+  it('should leave the lists unchanged on a frame with no step', () => {
+    moves = [{ x: 1, y: 0 }];
+
+    runFrame(fixedDeltaMilliseconds);
+    runFrame(fixedDeltaMilliseconds / 2);
+
+    expect(fixedRecords).toHaveLength(1);
+    expect(defaultRecords).toEqual([
+      { touching: [other], started: [other], ended: [] },
+      { touching: [other], started: [other], ended: [] },
+    ]);
+  });
+
+  it('should report a contact that starts and ends within one frame in each step', () => {
+    moves = [
+      { x: 1, y: 0 },
+      { x: 3, y: 0 },
+    ];
+
+    runFrame(2 * fixedDeltaMilliseconds);
+
+    expect(fixedRecords).toEqual([
+      { touching: [other], started: [other], ended: [] },
+      { touching: [], started: [], ended: [other] },
+    ]);
+    expect(defaultRecords).toEqual([
+      { touching: [], started: [], ended: [other] },
+    ]);
   });
 });

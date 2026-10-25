@@ -142,7 +142,7 @@ function areSameVectors(
  * @param rigidBody - The body.
  * @param position - The body's position, if it has one.
  * @param rotation - The body's rotation, if it has one.
- * @returns Whether the body takes part in this tick's simulation.
+ * @returns Whether the body takes part in this step's simulation.
  */
 export function isRigidBodyAwake(
   world: EcsWorld,
@@ -171,7 +171,7 @@ export function isRigidBodyAwake(
 }
 
 /**
- * Whether `entity`'s rigid body takes part in this tick's simulation. The
+ * Whether `entity`'s rigid body takes part in this step's simulation. The
  * physics systems that change velocity or pose (gravity, collision
  * resolution, the joint, spring and damper systems, the angular velocity
  * motor system, integration, continuous collision) skip a body that isn't
@@ -223,7 +223,7 @@ export function isBodyAwake(world: EcsWorld, entity: number): boolean {
 
 /**
  * Whether a contact between two entities can't have changed since last
- * tick because it belongs to a sleeping island: neither entity is awake
+ * step because it belongs to a sleeping island: neither entity is awake
  * (see {@link isBodyAwake}) and at least one of them is a sleeping
  * `'dynamic'` body. A pair of static bodies, still kinematic bodies or
  * collider-only entities doesn't count, since nothing puts those to sleep

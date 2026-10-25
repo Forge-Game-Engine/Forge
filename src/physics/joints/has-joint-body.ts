@@ -16,7 +16,7 @@ export interface JointBodyTransform {
 
 /**
  * Finds the transform components `entity` needs to be one end of a joint,
- * spring or damper this tick: its `PositionEcsComponent` and
+ * spring or damper this step: its `PositionEcsComponent` and
  * `RotationEcsComponent`. A removed entity has neither.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to look up.
@@ -38,7 +38,7 @@ export function getJointBodyTransform(
 }
 
 /**
- * Whether `entity` can be one end of a joint, spring or damper this tick
+ * Whether `entity` can be one end of a joint, spring or damper this step
  * (see {@link getJointBodyTransform}). The joint systems skip a joint
  * unless both of its entities pass, and the sleep system counts a joint as
  * linking its bodies under the same condition, so a joint links bodies

@@ -41,16 +41,22 @@ import { CollisionPair } from '../types/collision-pair.js';
  * every sensor pair.
  *
  * The system also owns every `ContactsEcsComponent`: it queries for them
- * and, each tick, rewrites their `touching`, `started` and `ended` lists
- * from this tick's overlaps, sensors included. An entity that has a
+ * and, each step, rewrites their `touching`, `started` and `ended` lists
+ * from this step's overlaps, sensors included. An entity that has a
  * `ContactsEcsComponent` but no collider touches nothing, so its previous
  * contacts end.
+ *
+ * Register it in the fixed-update group (`registerFixedUpdate`) with the
+ * other physics systems, after a transform system and the broad phase, and
+ * register systems that react to `started`/`ended` or read
+ * `collisionManifolds` after it in the same group. Both describe one step,
+ * and a frame can run several steps or none.
  * @param collisionPairs - The broad-phase system's output: candidate
  * entity pairs whose AABBs overlap, each pair listed once.
  * @param collisionManifolds - The array the system clears and refills with
- * the current tick's confirmed collisions between solid colliders.
+ * the current step's confirmed collisions between solid colliders.
  * @returns An ECS system that populates `collisionManifolds` and every
- * `ContactsEcsComponent` every tick.
+ * `ContactsEcsComponent` every step.
  */
 export const createNarrowPhaseEcsSystem = (
   collisionPairs: CollisionPair[],

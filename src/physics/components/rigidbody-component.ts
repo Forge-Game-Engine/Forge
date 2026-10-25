@@ -10,14 +10,17 @@ import { CollisionManifold } from '../types/collision-manifold.js';
  * How a {@link RigidBodyEcsComponent} participates in the simulation:
  *
  * - `'dynamic'`: fully simulated. Affected by gravity, forces, and impulses;
- *   pushed apart by collisions; integrated into position every tick.
+ *   pushed apart by collisions; integrated into position every step.
  * - `'kinematic'`: moved directly by game code (by setting `velocity`, or
  *   position itself). Not affected by gravity, forces, or collision
- *   impulses, but still integrated into position from `velocity` every tick
+ *   impulses, but still integrated into position from `velocity` every step
  *   and still pushes dynamic bodies it contacts. Use this for moving
- *   platforms and other scripted movers that dynamic bodies should react to.
+ *   platforms and other scripted movers that dynamic bodies should react to,
+ *   and for colliders game code moves that must detect colliders with no
+ *   rigid body.
  * - `'static'`: never moves and is never integrated, with infinite effective
- *   mass in the solver. Equivalent to an entity with no
+ *   mass in the solver, and never collides with another static collider.
+ *   Equivalent to an entity with no
  *   `RigidBodyEcsComponent` at all (the convention every collider-only
  *   entity, e.g. `TerrainCollider` ground, already follows); attaching a
  *   `RigidBodyEcsComponent` with this type is only useful when other
@@ -117,7 +120,7 @@ export interface RigidBodyEcsComponent {
    */
   angularVelocity: number;
   /**
-   * Damps `angularVelocity` each tick, proportional to itself; `0` disables
+   * Damps `angularVelocity` each step, proportional to itself; `0` disables
    * damping. Applied by {@link createEulerIntegrationEcsSystem}. Defaults
    * to `0`.
    */
@@ -143,7 +146,7 @@ export interface RigidBodyEcsComponent {
    * Whether the body may fall asleep. A body that can't sleep keeps its
    * whole island (every dynamic body it's connected to through contacts and
    * joints) awake, and setting it to `false` on a sleeping body wakes the
-   * island. Use it for bodies the game moves every tick in ways the sleep
+   * island. Use it for bodies the game keeps moving in ways the sleep
    * system can't see, such as a player character. Defaults to `true`.
    */
   canSleep: boolean;

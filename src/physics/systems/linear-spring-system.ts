@@ -17,14 +17,14 @@ const minAnchorDistance = 1e-6;
 /**
  * Creates an ECS system that applies every `LinearSpringEcsComponent`'s
  * Hooke's-law force between its two anchor points, converted to an impulse
- * for the tick (`force * deltaTime`). A pure force generator - like gravity,
+ * for the step (`force * deltaTime`). A pure force generator - like gravity,
  * it has no warm-start state and should run before whatever system resolves
  * hard constraints (`createCollisionResolutionEcsSystem`, joint systems) so
- * they see this tick's spring force reflected in velocity, and after
+ * they see this step's spring force reflected in velocity, and after
  * `createSleepEcsSystem`. A spring is skipped while neither of its bodies is
  * awake (see {@link isBodyAwake}).
- * @param time - Used to read the tick's delta time.
- * @returns An ECS system that applies every spring's force every tick.
+ * @param time - Used to read the step's delta time.
+ * @returns An ECS system that applies every spring's force every step.
  */
 export const createLinearSpringEcsSystem = (
   time: Time,

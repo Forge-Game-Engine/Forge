@@ -26,7 +26,7 @@ export default function WreckingBall(): JSX.Element {
           file: 'create-wrecking-ball.ts',
         },
         {
-          text: 'Joints are invisible, so a demo system stretches and turns a sprite between the pivot and ball every tick.',
+          text: 'Joints are invisible, so a demo system stretches and turns a sprite between the pivot and ball every frame.',
           file: 'arm.system.ts',
         },
       ]}

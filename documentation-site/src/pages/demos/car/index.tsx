@@ -109,7 +109,8 @@ export default function Car(): JSX.Element {
             },
             {
               name: 'ground-contact.system.ts',
-              summary: "Counts each wheel's ground contacts every tick.",
+              summary:
+                "Counts each wheel's ground contacts every physics step.",
               content: groundContactSystemCode,
             },
             {

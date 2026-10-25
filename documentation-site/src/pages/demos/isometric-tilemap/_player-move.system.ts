@@ -10,9 +10,10 @@ import { PlayerEcsComponent, playerId } from './_player.component';
  * Creates the system that walks the player along the screen's axes: up the
  * screen is `-Y` in the world, as it is for the keyboard axis.
  *
- * It sets the velocity the solver starts from, so register it before
- * `createCollisionResolutionEcsSystem`, which stops the player's motion into
- * the walls and the water on the same tick.
+ * It sets the velocity the solver starts from, so register it in the
+ * fixed-update group before `createCollisionResolutionEcsSystem`, which
+ * stops the player's motion into the walls and the water in the same
+ * physics step.
  * @param moveInput - The walk axis, Y-down like the world.
  * @returns The ECS system.
  */

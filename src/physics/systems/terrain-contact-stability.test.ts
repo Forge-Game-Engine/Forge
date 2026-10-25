@@ -17,6 +17,7 @@ import {
   addRigidBodyComponent,
   RigidBodyEcsComponent,
 } from '../components/rigidbody-component.js';
+import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from './broad-phase-system.js';
 import { createCollisionResolutionEcsSystem } from './collision-resolution-system.js';
 import { createEulerIntegrationEcsSystem } from './euler-integration-system.js';
@@ -104,6 +105,7 @@ describe('contact stability on a multi-edge TerrainCollider', () => {
     collisionManifolds = [];
     contactConstraints = [];
 
+    createBroadPhase(world);
     world.addSystem(createTransformEcsSystem());
     world.addSystem(createGravityEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));

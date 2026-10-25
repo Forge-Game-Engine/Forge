@@ -86,7 +86,7 @@ interface SleepTick {
   readonly driven: Uint8Array;
   /** Each dynamic body's links: other entities and joint entities. */
   readonly links: number[][];
-  /** Each dynamic body's collision manifolds this tick. */
+  /** Each dynamic body's collision manifolds this step. */
   readonly manifolds: CollisionManifold[][];
   /**
    * Each dynamic body's linked entities that aren't dynamic bodies in the
@@ -102,7 +102,7 @@ interface SleepTick {
  * `RigidBodyEcsComponent.isSleeping`, `restTime` and `sleepRecord`, and the
  * only code that sets `wakeRequested` back to `false`.
  *
- * Bodies sleep per island: the dynamic bodies connected by this tick's
+ * Bodies sleep per island: the dynamic bodies connected by this step's
  * collision manifolds and by revolute joints, prismatic joints, linear
  * springs and linear dampers. Static and kinematic bodies (and
  * collider-only entities) don't join islands, so two bodies resting on the
@@ -147,23 +147,28 @@ interface SleepTick {
  * A body whose `type` isn't `'dynamic'` never sleeps: the system clears
  * `isSleeping` on one that changed type. A body created with
  * `isSleeping: true` gets its record the first time the system sees it.
- * While `time.deltaTimeInSeconds` is `0` (paused), rest times don't change
- * and nothing falls asleep, but disturbed islands still wake.
+ * In the fixed-update group, a paused game (`timeScale` `0`) runs no fixed
+ * steps, so the system doesn't run and nothing wakes or falls asleep until
+ * the game resumes. Run outside a fixed step while
+ * `time.deltaTimeInSeconds` is `0`, rest times don't change and nothing
+ * falls asleep, but disturbed islands still wake.
  *
- * Register it after `createNarrowPhaseEcsSystem`, so it reads this tick's
- * `collisionManifolds` and a body hit this tick wakes before the solver
+ * Register it in the fixed-update group (`registerFixedUpdate`) after
+ * `createNarrowPhaseEcsSystem`, so it reads this step's
+ * `collisionManifolds` and a body hit this step wakes before the solver
  * runs, and before every system that changes velocity
  * (`createGravityEcsSystem`, the spring and damper systems,
  * `createCollisionResolutionEcsSystem`, the joint systems,
  * `createAngularVelocityMotorEcsSystem` and
  * `createEulerIntegrationEcsSystem`). Game code that changes physics input
- * runs before `createTransformEcsSystem`.
- * @param collisionManifolds - The narrow-phase system's output: this tick's
+ * runs in the default group, or in the fixed-update group before its
+ * transform system.
+ * @param collisionManifolds - The narrow-phase system's output: this step's
  * confirmed collisions.
- * @param time - Used to read the tick's delta time.
+ * @param time - Used to read the step's delta time.
  * @param options - Threshold overrides; see {@link SleepOptions}.
  * @returns An ECS system that puts resting islands to sleep and wakes
- * disturbed ones every tick.
+ * disturbed ones every step.
  * @throws An error if an option is negative or not finite.
  */
 export const createSleepEcsSystem = (
@@ -287,7 +292,7 @@ function readWakeRequests(tick: SleepTick): void {
 /**
  * Marks every dynamic body a motor turns towards a non-zero target as
  * driven, and wakes it if it's asleep, so the motor turns it with its
- * contacts solved. A motor is a force applied every tick: a body it drives
+ * contacts solved. A motor is a force applied every step: a body it drives
  * isn't resting even while something stalls it.
  */
 function readMotors(tick: SleepTick): void {
@@ -340,7 +345,7 @@ function linkContacts(
 
 /**
  * Links the two bodies of every joint, spring and damper the joint systems
- * would solve this tick.
+ * would solve this step.
  */
 function linkJoints(tick: SleepTick): void {
   const { world } = tick;
@@ -414,7 +419,7 @@ function linkBodies(
 /**
  * Whether a body outside an island wakes the dynamic bodies linked to it: a
  * moving kinematic body, a body that stopped being dynamic or was asked to
- * wake this tick, or a dynamic body the system doesn't simulate (one with
+ * wake this step, or a dynamic body the system doesn't simulate (one with
  * no `RotationEcsComponent`).
  */
 function wakesLinkedBodies(

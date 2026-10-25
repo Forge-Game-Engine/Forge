@@ -1,4 +1,7 @@
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   createGridPathPlanner,
   createNavigationAgentEcsSystem,
@@ -7,6 +10,7 @@ import {
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createEulerIntegrationEcsSystem,
@@ -80,21 +84,23 @@ export const createPathFindingGame = async (
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  // Sets the units' targets and moves the dragged wall's `position.local`.
-  world.addSystem(createPointerEcsSystem(renderContext, inputs));
-  // Before the transform system, so what they draw is in place this frame.
-  world.addSystem(createGridOverlayEcsSystem());
-  world.addSystem(createPathLinesEcsSystem(renderContext));
-  world.addSystem(createTransformEcsSystem());
-  // Bakes the grid from the walls where the transform system just put
-  // them, so the agents plan around a moved wall on the same tick.
-  world.addSystem(createBakeGridEcsSystem());
-  world.addSystem(createNavigationAgentEcsSystem(time));
-  world.addSystem(createApplyVelocityEcsSystem());
+  // The agents and physics run once per fixed step. The agents plan and
+  // steer with the same delta physics integrates their velocity over, so a
+  // unit slows onto its target instead of overshooting it. The transform
+  // system comes first, so each step reads the poses the previous step left
+  // in `local`.
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createNavigationAgentEcsSystem(time), physics);
+  world.addSystem(createApplyVelocityEcsSystem(), physics);
   // A top-down level: no gravity.
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  createBroadPhase(world);
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
   );
   world.addSystem(
     createCollisionResolutionEcsSystem(
@@ -107,8 +113,20 @@ export const createPathFindingGame = async (
         restitutionThreshold: pixelsPerMeter,
       },
     ),
+    physics,
   );
-  world.addSystem(createEulerIntegrationEcsSystem(time));
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+
+  // Once per frame, after the fixed steps.
+  // Sets the units' targets and moves the dragged wall's `position.local`.
+  world.addSystem(createPointerEcsSystem(renderContext, inputs));
+  // Before the transform system, so what they draw is in place this frame.
+  world.addSystem(createGridOverlayEcsSystem());
+  world.addSystem(createPathLinesEcsSystem(renderContext));
+  world.addSystem(createTransformEcsSystem());
+  // Bakes the grid from the walls where the transform system just put
+  // them, so the agents plan around a moved wall from the next step.
+  world.addSystem(createBakeGridEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

@@ -168,7 +168,7 @@ const drawUnitPaths = (
   // to, then on through the remaining points.
   const smoothedPath =
     isWalking && view.showSmoothedPaths && agent.path.length > 0
-      ? [position.world, ...agent.path.slice(agent.waypointIndex)]
+      ? [position.local, ...agent.path.slice(agent.waypointIndex)]
       : [];
   const rawPath = isWalking && view.showRawPaths ? lines.rawPath : [];
 
@@ -188,9 +188,12 @@ const drawUnitPaths = (
  * centres the grid search found, in white. The panel's toggles turn each
  * on and off.
  *
- * Register it before `createTransformEcsSystem`, so the segments are drawn
- * where it puts them on the same frame. It draws the paths the agents
- * planned on the previous tick, from where the units were then.
+ * Register it in the default group, after the fixed steps and before the
+ * frame's transform system, so the segments are drawn where it puts them on
+ * the same frame. It draws the paths the agents planned in the frame's last
+ * physics step, starting at each unit's `local` position: a unit is a root
+ * body, so that's where it's drawn this frame, where its `world` would
+ * still be a step behind.
  * @param renderContext - The render context whose white texture the lines
  * are drawn with.
  * @returns The ECS system.

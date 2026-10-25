@@ -28,15 +28,16 @@ const asWritableTilemapCollider = (
  * Creates a system that gives every tilemap layer with a
  * `TilemapColliderEcsComponent` and a `ColliderEcsComponent` one static
  * `ChainCollider` outlining its solid tiles (see
- * `buildTilemapCollisionLoops`). It rebuilds a layer's collider on a tick
- * when the layer's `version` changed, the `TilemapLayerEcsComponent` was
- * replaced, or the collider isn't the one it last wrote; otherwise it does
- * nothing. Several edits in one tick rebuild once.
+ * `buildTilemapCollisionLoops`). It rebuilds a layer's collider on an
+ * update when the layer's `version` changed, the `TilemapLayerEcsComponent`
+ * was replaced, or the collider isn't the one it last wrote; otherwise it
+ * does nothing. Several edits between two updates rebuild once.
  *
- * Register it after every system that edits tiles and before
- * `createBroadPhaseEcsSystem`, so an edit collides on the tick it's made.
- * It reads only the layer, in the entity's local space, so it can go
- * before or after `createTransformEcsSystem`.
+ * Register it in the default group, after every system that edits tiles.
+ * The physics systems run in the fixed-update group before it, so an edit
+ * collides from the next physics step. It reads only the layer, in the
+ * entity's local space, so it can go before or after
+ * `createTransformEcsSystem`.
  * @returns The ECS system.
  */
 export const createTilemapColliderEcsSystem = (): EcsSystem<

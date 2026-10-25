@@ -9,8 +9,9 @@ export const drainId = createTagId('drain');
 
 /**
  * Creates an ECS system that removes every entity the drain sensor started
- * touching this tick. Must run after `createNarrowPhaseEcsSystem`, which
- * fills the drain's contacts.
+ * touching this physics step. Register it in the fixed-update group after
+ * `createNarrowPhaseEcsSystem`, which fills the drain's contacts once per
+ * step.
  */
 export const createDrainEcsSystem = (): EcsSystem<[ContactsEcsComponent]> => ({
   query: [contactsId],

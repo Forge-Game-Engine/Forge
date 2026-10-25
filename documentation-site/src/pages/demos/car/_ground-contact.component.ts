@@ -2,7 +2,7 @@ import { createComponentId, EcsWorld } from '@forge-game-engine/forge/ecs';
 
 /**
  * How many static (ground) bodies this wheel is touching. Updated every
- * tick by `createGroundContactEcsSystem`.
+ * physics step by `createGroundContactEcsSystem`.
  */
 export interface GroundContactEcsComponent {
   groundContacts: number;
