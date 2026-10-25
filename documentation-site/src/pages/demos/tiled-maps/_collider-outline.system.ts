@@ -83,12 +83,12 @@ function removeLines(world: EcsWorld, entity: number): void {
 
 /**
  * Creates the system that draws `ChainCollider`s as lines. When a target's
- * collider isn't the one its outline was built from, as on the tick the
+ * collider isn't the one its outline was built from, as on the frame the
  * tilemap collider system rebuilds a layer's collider, it replaces the
  * lines with one per loop of the new collider.
  *
  * Register it after `createTilemapColliderEcsSystem`, so the lines show the
- * collider of the tick they're drawn on.
+ * collider of the frame they're drawn on.
  * @param renderContext - The render context to build the lines' geometry in.
  * @returns The ECS system.
  */

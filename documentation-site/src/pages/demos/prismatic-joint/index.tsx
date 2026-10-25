@@ -26,7 +26,7 @@ export default function PrismaticJoint(): JSX.Element {
           file: 'pump.system.ts',
         },
         {
-          text: 'The joint solver runs after collision resolution, so the rail constraint has the last word on velocity each tick.',
+          text: 'The joint solver runs after collision resolution, so the rail constraint has the last word on velocity each step.',
           file: 'create-game.ts',
         },
       ]}

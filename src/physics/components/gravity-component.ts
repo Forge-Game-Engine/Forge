@@ -11,7 +11,7 @@ export interface GravityDefaultedOptions {
   /**
    * The acceleration, in world units per second squared, that
    * `createGravityEcsSystem` adds to the entity's
-   * `RigidBodyEcsComponent.velocity` every tick, scaled by the tick's
+   * `RigidBodyEcsComponent.velocity` every step, scaled by the step's
    * duration. Defaults to `(0, 9.81)` (down, since the
    * world is Y-down).
    */

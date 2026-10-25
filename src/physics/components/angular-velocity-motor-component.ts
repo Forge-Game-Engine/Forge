@@ -4,9 +4,9 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
 /**
  * ECS-style component interface for a standalone angular velocity motor,
  * driving a single entity's `RigidBodyEcsComponent.angularVelocity` toward
- * `targetVelocity` each tick, clamped by `maxTorque`. Unlike a joint, this
+ * `targetVelocity` each step, clamped by `maxTorque`. Unlike a joint, this
  * has no warm-start state: it's recomputed fresh from the body's current
- * angular velocity every tick, so it recovers automatically after an
+ * angular velocity every step, so it recovers automatically after an
  * external velocity change (e.g. a collision).
  *
  * A motor with a non-zero `targetVelocity` and a positive `maxTorque` keeps
@@ -18,7 +18,7 @@ import { EcsWorld } from '../../ecs/ecs-world.js';
 export interface AngularVelocityMotorEcsComponent {
   /** The angular velocity, in radians/second, the motor drives the entity toward. */
   targetVelocity: number;
-  /** The maximum torque, in newton-meters, the motor may apply in a single tick. */
+  /** The maximum torque, in newton-meters, the motor may apply in a single step. */
   maxTorque: number;
 }
 

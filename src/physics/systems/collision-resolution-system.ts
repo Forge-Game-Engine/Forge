@@ -26,7 +26,7 @@ import { withDefaults } from '../../utilities/with-defaults.js';
  */
 export interface CollisionResolutionOptions {
   /**
-   * The number of Gauss-Seidel iterations the solver runs per tick. Box2D
+   * The number of Gauss-Seidel iterations the solver runs per step. Box2D
    * recommends a minimum of 4; higher values converge more accurately at a
    * higher cost.
    */
@@ -47,7 +47,7 @@ export interface CollisionResolutionOptions {
 
   /**
    * The maximum speed, in world units/second, the penetration-correction
-   * bias is allowed to introduce in a single tick. The default mirrors
+   * bias is allowed to introduce in a single step. The default mirrors
    * Box2D's own `contactPushMaxSpeed`, which assumes meters-scale world
    * units - at a larger scale (e.g. a world where a typical dynamic body
    * spans hundreds of units, not roughly one), recovering from a deep
@@ -99,7 +99,7 @@ interface ActiveContact {
  * `collisionManifolds` into velocity changes, using a sequential-impulse
  * (Gauss-Seidel) solver with soft-constraint penetration correction,
  * Coulomb friction, and restitution. Warm-starts each contact point's
- * accumulated impulses across ticks via `contactConstraints`, matched up by
+ * accumulated impulses across steps via `contactConstraints`, matched up by
  * entity pair and feature id, for fast convergence and stable resting
  * contacts. Must run after whatever system populates `collisionManifolds`
  * (`createNarrowPhaseEcsSystem`) and before whatever system integrates
@@ -107,17 +107,17 @@ interface ActiveContact {
  * left unsolved, keeping its accumulated impulses, when neither of its
  * bodies is awake (see {@link isBodyAwake}). The narrow phase keeps such a
  * contact's manifolds while its island sleeps, so the constraint is still
- * matched every tick and warm-starts from those impulses when the island
+ * matched every step and warm-starts from those impulses when the island
  * wakes.
- * @param collisionManifolds - The narrow-phase system's output: this tick's
+ * @param collisionManifolds - The narrow-phase system's output: this step's
  * confirmed collisions.
  * @param contactConstraints - The array the system clears and refills with
- * the current tick's persistent contact solver state. Passing the same
- * array back in on the next tick is what enables warm-starting.
- * @param time - Used to read the tick's delta time.
+ * the current step's persistent contact solver state. Passing the same
+ * array back in on the next step is what enables warm-starting.
+ * @param time - Used to read the step's delta time.
  * @param options - Tuning overrides for the solver; see
  * {@link CollisionResolutionOptions}.
- * @returns An ECS system that resolves `collisionManifolds` every tick.
+ * @returns An ECS system that resolves `collisionManifolds` every step.
  */
 export const createCollisionResolutionEcsSystem = (
   collisionManifolds: CollisionManifold[],
@@ -192,7 +192,7 @@ function getRequiredCollider(
 }
 
 /**
- * Matches this tick's manifolds up with the previous tick's contact
+ * Matches this step's manifolds up with the previous step's contact
  * constraints (by entity pair and feature id) to carry accumulated
  * impulses forward, creating fresh constraints for any contact point that
  * has no match.
@@ -260,7 +260,7 @@ function buildContactConstraints(
 }
 
 /**
- * Looks up the current tick's bodies for a contact constraint, computing
+ * Looks up the current step's bodies for a contact constraint, computing
  * the (inverse) mass/inertia and the contact point's lever arms from each
  * body's world center of mass. An entity with no `RigidBodyEcsComponent`,
  * or one whose `RigidBodyEcsComponent.type` is `'static'`/`'kinematic'`, is
@@ -273,7 +273,7 @@ function prepareContact(
 ): ActiveContact | null {
   // A contact between bodies that are both asleep (or a sleeping body and
   // a static or still kinematic one) isn't solved. The narrow phase keeps
-  // its manifolds, so its constraint is still matched every tick, and the
+  // its manifolds, so its constraint is still matched every step, and the
   // accumulated impulses it fell asleep with warm-start it when the bodies
   // wake.
   if (
@@ -339,8 +339,8 @@ function prepareContact(
 }
 
 /**
- * Re-applies a contact's accumulated impulses from the previous tick before
- * this tick's iterative solve begins, so the solver starts close to its
+ * Re-applies a contact's accumulated impulses from the previous step before
+ * this step's iterative solve begins, so the solver starts close to its
  * previous solution instead of from zero.
  */
 function warmStart(contact: ActiveContact): void {
@@ -357,7 +357,7 @@ function warmStart(contact: ActiveContact): void {
   } = contact;
 
   // Clone before scaling: `constraint.normal`/`constraint.tangent` persist
-  // across the whole tick (read again by every solve iteration below).
+  // across the whole step (read again by every solve iteration below).
   const impulse = Vec2.add(
     Vec2.multiply(
       Vec2.clone(constraint.normal),
@@ -432,7 +432,7 @@ function solveNormal(
   constraint.accumulatedNormalImpulse = newAccumulatedImpulse;
 
   // Clone before scaling: `constraint.normal` persists across the whole
-  // tick, read again by every remaining solve iteration.
+  // step, read again by every remaining solve iteration.
   const impulse = Vec2.multiply(Vec2.clone(constraint.normal), lambda);
 
   applyPointImpulse(
@@ -488,7 +488,7 @@ function solveFriction(contact: ActiveContact): void {
   constraint.accumulatedTangentImpulse = newAccumulatedImpulse;
 
   // Clone before scaling: `constraint.tangent` persists across the whole
-  // tick, read again by every remaining solve iteration.
+  // step, read again by every remaining solve iteration.
   const impulse = Vec2.multiply(Vec2.clone(constraint.tangent), lambda);
 
   applyPointImpulse(
@@ -503,9 +503,9 @@ function solveFriction(contact: ActiveContact): void {
 
 /**
  * Applies a one-off restitution impulse to a freshly-appeared, fast-closing
- * contact, using the relative velocity sampled before this tick's solve.
+ * contact, using the relative velocity sampled before this step's solve.
  * Reused (already-resting) contacts are skipped so they don't keep
- * bouncing every tick.
+ * bouncing every step.
  */
 function applyRestitution(
   contact: ActiveContact,
@@ -555,7 +555,7 @@ function applyRestitution(
   }
 
   // Clone before scaling: `constraint.normal` persists across the whole
-  // tick.
+  // step.
   const impulse = Vec2.multiply(Vec2.clone(constraint.normal), lambda);
 
   applyPointImpulse(

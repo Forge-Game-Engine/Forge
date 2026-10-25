@@ -4,7 +4,10 @@ import {
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
@@ -37,22 +40,31 @@ export const createLinearSpringDamperGame = async (): Promise<Game> => {
     renderLayers.foreground,
   );
 
-  // A reset (teleport) and `createSpringLineEcsSystem` both write `local`
-  // positions, so they run before `createTransformEcsSystem`, which turns
-  // every entity's `local` position into the `world` position that the
-  // spring/damper and render systems read. That way a replayed disturbance
-  // is reflected in this same tick's forces, and the line spans the body's
-  // position in this tick's render.
-  world.addSystem(createResetEcsSystem(time));
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  // Once per fixed step. A reset (teleport) writes `local` positions, so it
+  // runs before `createTransformEcsSystem`, which turns every entity's
+  // `local` position into the `world` position that the spring/damper
+  // systems read. That way a replayed disturbance is reflected in this same
+  // step's forces, and continuous collision detection doesn't treat the
+  // jump as motion.
+  world.addSystem(createResetEcsSystem(time), physics);
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createGravityEcsSystem(time), physics);
+  world.addSystem(createLinearSpringEcsSystem(time), physics);
+  world.addSystem(createLinearDamperEcsSystem(time), physics);
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createContinuousCollisionEcsSystem(), physics);
+
+  // Once per frame, after the fixed steps. `createSpringLineEcsSystem`
+  // writes each line's `local` position from the body's latest position, so
+  // it runs before the transform system, and the line spans the body in
+  // this frame's render.
   world.addSystem(createSpringLineEcsSystem());
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createGravityEcsSystem(time));
-  world.addSystem(createLinearSpringEcsSystem(time));
-  world.addSystem(createLinearDamperEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
-  world.addSystem(createContinuousCollisionEcsSystem());
 
   return game;
 };

@@ -17,7 +17,7 @@ describe('applyImpulse on a sleeping body', () => {
     const { world, tick, addSleepingBody } = createSleepingBodyWorld();
     const body = addSleepingBody({ x: 0, y: 0 });
 
-    applyImpulse(world, body.entity, { x: 10, y: 0 }, body.position.world);
+    applyImpulse(world, body.entity, { x: 10, y: 0 }, body.position.local);
     tick();
 
     expect(body.rigidBody.isSleeping).toBe(false);
@@ -89,6 +89,57 @@ describe('applyImpulse', () => {
     applyImpulse(world, entity, { x: 5, y: 0 }, { x: 10, y: 1 });
 
     expect(rigidBody.velocity.x).toBeGreaterThan(0);
+    expect(rigidBody.angularVelocity).toBeCloseTo(0);
+  });
+
+  it("measures the lever arm from the body's local pose, which a world pose a step old lags behind", () => {
+    const entity = world.createEntity();
+    const position = addPositionComponent(world, entity);
+    const rotation = addRotationComponent(world, entity);
+
+    // A triangle whose centroid is (1, 0) in local space.
+    addColliderComponent(world, entity, {
+      collider: new PolygonCollider([
+        { x: 0, y: -1 },
+        { x: 3, y: 0 },
+        { x: 0, y: 1 },
+      ]),
+    });
+    const rigidBody = addRigidBodyComponent(world, entity);
+
+    // Moved and turned since the transform system last ran, so `world`
+    // still holds the spawn pose. The local pose puts the center of mass
+    // at (10, 1).
+    position.local = { x: 10, y: 0 };
+    rotation.local = Math.PI / 2;
+
+    applyImpulse(world, entity, { x: 5, y: 0 }, { x: 10, y: 1 });
+
+    expect(position.world).toEqual({ x: 0, y: 0 });
+    expect(rotation.world).toBe(0);
+    expect(rigidBody.velocity.x).toBeGreaterThan(0);
+    expect(rigidBody.angularVelocity).toBeCloseTo(0);
+  });
+
+  it('treats a body with no RotationEcsComponent as unrotated', () => {
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity, { local: { x: 10, y: 0 } });
+    // A triangle whose centroid is (1, 0) in local space: unrotated, a
+    // world center of mass at (11, 0). Any other rotation would move it off
+    // the impulse's line of action and spin the body.
+    addColliderComponent(world, entity, {
+      collider: new PolygonCollider([
+        { x: 0, y: -1 },
+        { x: 3, y: 0 },
+        { x: 0, y: 1 },
+      ]),
+    });
+    const rigidBody = addRigidBodyComponent(world, entity);
+
+    applyImpulse(world, entity, { x: 0, y: 5 }, { x: 11, y: 0 });
+
+    expect(rigidBody.velocity.y).toBeGreaterThan(0);
     expect(rigidBody.angularVelocity).toBeCloseTo(0);
   });
 

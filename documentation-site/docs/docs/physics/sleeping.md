@@ -15,7 +15,7 @@ a body's `isSleeping`.
 ## Islands
 
 Bodies fall asleep and wake in **islands**. An island is a group of dynamic
-bodies connected through this tick's collisions and through revolute
+bodies connected through this step's collisions and through revolute
 joints, prismatic joints, linear springs and linear dampers. An island
 falls asleep when every body in it has rested for long enough, and when any
 body in it is disturbed, every body in it wakes.
@@ -30,12 +30,15 @@ a sleeping body whose `type` changes.
 
 ## Registering the sleep system
 
-Register the sleep system after `createNarrowPhaseEcsSystem` and before
-every system that changes velocity, and pass it the narrow phase's
-`collisionManifolds`:
+Register the sleep system in the fixed-update group, after
+`createNarrowPhaseEcsSystem` and before every system that changes velocity,
+and pass it the narrow phase's `collisionManifolds`:
 
 ```ts
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
@@ -45,23 +48,29 @@ import {
   createSleepEcsSystem,
 } from '@forge-game-engine/forge/physics';
 
-world.addSystem(createTransformEcsSystem());
-world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
-world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
-world.addSystem(createSleepEcsSystem(collisionManifolds, time));
-world.addSystem(createGravityEcsSystem(time));
+const physics = { group: registerFixedUpdate(world, time) };
+
+world.addSystem(createTransformEcsSystem(), physics);
+world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
+world.addSystem(
+  createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+  physics,
+);
+world.addSystem(createSleepEcsSystem(collisionManifolds, time), physics);
+world.addSystem(createGravityEcsSystem(time), physics);
 world.addSystem(
   createCollisionResolutionEcsSystem(
     collisionManifolds,
     contactConstraints,
     time,
   ),
+  physics,
 );
-world.addSystem(createEulerIntegrationEcsSystem(time));
+world.addSystem(createEulerIntegrationEcsSystem(time), physics);
 ```
 
-The sleep system reads this tick's collisions, so a body that collides with
-a sleeping island wakes it before collision resolution runs on this tick.
+The sleep system reads this step's collisions, so a body that collides with
+a sleeping island wakes it before collision resolution runs in this step.
 [Registering the physics systems](./index.md#registering-the-physics-systems)
 gives the order of every physics system.
 
@@ -91,12 +100,14 @@ world.addSystem(
   createSleepEcsSystem(collisionManifolds, time, {
     maxRestingSpeed: 0.01 * pixelsPerMeter,
   }),
+  physics,
 );
 ```
 
 [`SleepOptions`](/Forge/docs/api/interfaces/SleepOptions) lists the
-options. While the tick's delta time is `0`, for example while the game is
-paused, `restTime` doesn't change and no island falls asleep.
+options. While a game is paused (`time.timeScale` is `0`), no fixed steps
+run, so the sleep system doesn't run: no island falls asleep or wakes
+until the game resumes.
 
 ## Waking a body
 
@@ -119,10 +130,11 @@ when it fell asleep, and wakes its island when any body in the island:
 A woken island's `restTime` values are set back to `0`, so it stays awake
 for at least `restDuration`.
 
-A system that writes a sleeping body's velocity or pose runs before
-`createTransformEcsSystem`, so the island wakes on the same tick, before
-collision resolution. Velocity written later in the tick moves the body in
-integration, and the island wakes on the next tick.
+A system that writes a sleeping body's velocity or pose runs in the default
+group, or in the fixed-update group before its `createTransformEcsSystem`,
+so the island wakes in the next step, before collision resolution. Velocity
+written later in a step moves the body in integration, and the island
+wakes in the step after.
 
 ### Waking a body after a settings change
 
@@ -204,7 +216,7 @@ Setting `canSleep` to `false` on a sleeping body wakes its island.
 
 An angular velocity motor with a non-zero `targetVelocity` keeps its body
 awake too, even while something stops the body turning, like a wheel
-pushed against a wall: a motor is a torque applied every tick, so a body it
+pushed against a wall: a motor is a torque applied every step, so a body it
 drives isn't resting. A motor whose `targetVelocity` is `0` (a brake) lets
 its body fall asleep, and setting a non-zero target on a sleeping body
 wakes its island before collision resolution on the sleep system's next
@@ -224,7 +236,7 @@ addRigidBodyComponent(world, crate, { isSleeping: true });
 
 The body stays asleep until it's disturbed. Bodies created asleep that
 touch each other form one sleeping island, and one that touches an awake
-body wakes on the first tick. `addRigidBodyComponent` throws for
+body wakes on the first step. `addRigidBodyComponent` throws for
 `isSleeping: true` on a kinematic or static body, or with
 `canSleep: false`.
 
@@ -232,7 +244,7 @@ body wakes on the first tick. `addRigidBodyComponent` throws for
 
 `rigidBody.isSleeping` is `true` while the body is asleep.
 [`isBodyAwake`](/Forge/docs/api/functions/isBodyAwake) returns whether a
-body takes part in this tick's simulation: `true` for a dynamic body that
+body takes part in this step's simulation: `true` for a dynamic body that
 isn't sleeping or was disturbed since it fell asleep, and for a kinematic
 body with a non-zero velocity; `false` otherwise. A sleeping body that
 gained or lost a joint, spring or damper, or whose motor's
@@ -243,6 +255,6 @@ wakes it on its next run, since only the sleep system checks for those.
 import { isBodyAwake } from '@forge-game-engine/forge/physics';
 
 if (isBodyAwake(world, crate)) {
-  // The crate moves this tick.
+  // The crate moves this step.
 }
 ```

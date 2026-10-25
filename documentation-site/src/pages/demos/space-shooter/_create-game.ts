@@ -23,7 +23,10 @@ import {
   SoundAssetCache,
   SoundMixer,
 } from '@forge-game-engine/forge/audio';
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   createLifetimeTrackingEcsSystem,
   createRemoveFromWorldEcsSystem,
@@ -269,6 +272,27 @@ export const createSpaceShooterGame = async (
   const collisionPairs: CollisionPair[] = [];
   const collisionManifolds: CollisionManifold[] = [];
 
+  // Collision detection runs once per fixed step, so asteroids are tested
+  // against bullets and the ship at the same rate on every display. The
+  // transform system comes first, so each step tests the poses the
+  // per-frame movement systems below last wrote to `local`.
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
+  world.addSystem(
+    createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
+  );
+  world.addSystem(
+    createAsteroidCollisionEcsSystem(time, explosionSpawner, onPlayerDeath),
+    physics,
+  );
+
+  // Once per frame, after the fixed steps. Nothing here has a rigid body:
+  // the ship, bullets and asteroids move by writing `local` every frame, so
+  // they move smoothly at any frame rate.
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createCameraShakeEcsSystem(time, random));
   world.addSystem(createMovementEcsSystem(moveInput, time));
@@ -289,24 +313,14 @@ export const createSpaceShooterGame = async (
   );
   // Every system above only writes `local` poses (and spawns entities with
   // only a `local` pose), so the transform system runs after all of them to
-  // turn this frame's poses into the `world` poses that rendering and
-  // collision detection read.
+  // turn this frame's poses into the `world` poses that rendering reads.
   world.addSystem(createTransformEcsSystem());
-  // Rendering runs right after the transform pass, so it draws
-  // this frame's poses. Explosions spawned and the player reset by the collision and
-  // game-over systems below show up on the next frame.
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createBloomEcsSystem(renderContext));
   world.addSystem(createGaussianBlurEcsSystem(renderContext));
   world.addSystem(createToneMapEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
-  world.addSystem(
-    createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
-  );
-  world.addSystem(
-    createAsteroidCollisionEcsSystem(time, explosionSpawner, onPlayerDeath),
-  );
+  // The player reset by the game-over system shows up on the next frame.
   world.addSystem(createGameOverEcsSystem(restartInput, respawnPlayer));
 
   return game;

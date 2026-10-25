@@ -6,7 +6,7 @@ sidebar_position: 4
 
 A joint constrains how two bodies, `entityA` and `entityB`, move relative to
 each other. A joint is a component on an entity of its own, which
-references the two bodies. Every tick, after collision resolution, a joint
+references the two bodies. Every step, after collision resolution, a joint
 system changes the bodies' velocities so they keep to the constraint.
 
 ## Joint types
@@ -127,8 +127,8 @@ limit, a revolute joint doesn't slow a turning body down.
 
 Register [`createRevoluteJointEcsSystem`](/Forge/docs/api/functions/createRevoluteJointEcsSystem)
 and [`createPrismaticJointEcsSystem`](/Forge/docs/api/functions/createPrismaticJointEcsSystem)
-after `createCollisionResolutionEcsSystem` and before
-`createEulerIntegrationEcsSystem` (see
+in the fixed-update group, after `createCollisionResolutionEcsSystem` and
+before `createEulerIntegrationEcsSystem` (see
 [Registering the physics systems](./index.md#registering-the-physics-systems)):
 
 ```ts
@@ -137,21 +137,23 @@ import {
   createRevoluteJointEcsSystem,
 } from '@forge-game-engine/forge/physics';
 
-world.addSystem(createRevoluteJointEcsSystem(time));
-world.addSystem(createPrismaticJointEcsSystem(time));
+world.addSystem(createRevoluteJointEcsSystem(time), { group: fixedUpdate });
+world.addSystem(createPrismaticJointEcsSystem(time), { group: fixedUpdate });
 ```
 
-Each system solves each joint once per tick. When several joints share a
+Each system solves each joint once per step. When several joints share a
 body, for example a chain of bodies, pass a higher `iterations` so the
 chain converges:
 
 ```ts
-world.addSystem(createRevoluteJointEcsSystem(time, { iterations: 8 }));
+world.addSystem(createRevoluteJointEcsSystem(time, { iterations: 8 }), {
+  group: fixedUpdate,
+});
 ```
 
 :::note
 A joint corrects a body's distance from its anchor point or axis over
-several ticks, at the rate its `hertz` and `dampingRatio` set. Under a
+several steps, at the rate its `hertz` and `dampingRatio` set. Under a
 constant load, such as gravity, a jointed body stays a small distance from
 its exact position.
 :::

@@ -11,14 +11,15 @@ const maxRollSpeed = 22;
 /**
  * Creates an ECS system that sets the ball's
  * `AngularVelocityMotorEcsComponent.targetVelocity` from `rollInput` every
- * tick. `createAngularVelocityMotorEcsSystem` then spends the motor's
+ * physics step. `createAngularVelocityMotorEcsSystem` then spends the motor's
  * `maxTorque` budget spinning the ball towards that target, and friction
  * against the terrain turns that spin into rolling motion.
  *
- * Must run before `createAngularVelocityMotorEcsSystem` (and, transitively,
- * before the broad/narrow-phase and resolution systems), so this tick's
- * input is reflected in this tick's physics step - see the Applying Forces
- * guide's registration order caution.
+ * Register it in the fixed-update group, before
+ * `createAngularVelocityMotorEcsSystem` (and, transitively, before the
+ * broad/narrow-phase and resolution systems), so each step's motor target
+ * comes from the held input - see the Applying Forces guide's registration
+ * order caution.
  * @param rollInput - The roll axis action, positive for rightward roll.
  */
 export const createRollEcsSystem = (

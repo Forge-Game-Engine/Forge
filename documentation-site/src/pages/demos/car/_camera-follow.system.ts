@@ -12,6 +12,11 @@ import {
 
 /**
  * Moves each following camera towards its target with `smoothDampVector2`.
+ *
+ * Register it in the default group, after the fixed steps and before the
+ * frame's transform system. It reads the target's `local` position (the
+ * chassis has no parent, so that's its pose after the frame's last physics
+ * step, where its `world` would still be a step behind).
  * @param time - The time instance used to advance the smoothing.
  */
 export const createCameraFollowEcsSystem = (

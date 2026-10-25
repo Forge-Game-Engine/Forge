@@ -123,9 +123,10 @@ const updateCursor = (
  * it, and a click on an empty cell places the cursor's tile, unless it would
  * overlap the collider of the entity to keep clear.
  *
- * Register it before `createTilemapColliderEcsSystem` and
- * `createTilemapRenderEcsSystem`, so a toggled tile collides, draws and
- * sorts as it is now on the tick it's clicked, and before
+ * It reads a click made this frame, so register it in the default group,
+ * before `createTilemapColliderEcsSystem` and `createTilemapRenderEcsSystem`,
+ * so a toggled tile draws and sorts as it is now on the frame it's clicked
+ * and collides from the next physics step, and before the frame's
  * `createTransformEcsSystem`, so the highlight is drawn where it's moved.
  * @param renderContext - The render context whose canvas the mouse is over.
  * @param inputs - The mouse and the toggle action.

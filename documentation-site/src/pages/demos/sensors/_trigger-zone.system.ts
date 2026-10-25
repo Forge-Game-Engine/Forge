@@ -18,10 +18,11 @@ const occupiedZoneOpacity = 0.45;
 
 /**
  * Creates an ECS system that reads each trigger zone's contacts: a ball
- * that entered the zone this tick (`started`) takes the zone's color, and a
- * ball that left it (`ended`) goes back to white. The zone itself brightens
- * while anything is inside (`touching`). Must run after
- * `createNarrowPhaseEcsSystem`, which fills the contacts.
+ * that entered the zone this physics step (`started`) takes the zone's
+ * color, and a ball that left it (`ended`) goes back to white. The zone
+ * itself brightens while anything is inside (`touching`). Register it in the
+ * fixed-update group after `createNarrowPhaseEcsSystem`, which fills the
+ * contacts once per step.
  */
 export const createTriggerZoneEcsSystem = (): EcsSystem<
   [TriggerZoneEcsComponent, ContactsEcsComponent, SpriteEcsComponent]

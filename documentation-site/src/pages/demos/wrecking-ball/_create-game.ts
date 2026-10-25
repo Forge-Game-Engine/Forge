@@ -4,7 +4,10 @@ import {
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   CollisionManifold,
   CollisionPair,
@@ -40,18 +43,19 @@ export const createWreckingBallGame = async (): Promise<Game> => {
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  // `createArmEcsSystem` writes the arm's `local` pose from the ball's
-  // current position, so it runs before `createTransformEcsSystem`, which
-  // turns every entity's `local` pose into the `world` pose that physics and
-  // rendering read. The revolute joint solver must run after collision
-  // resolution so the ball's hinge to the crane gets the "last word" on
-  // velocity each tick.
-  world.addSystem(createArmEcsSystem());
-  world.addSystem(createTransformEcsSystem());
-  world.addSystem(createGravityEcsSystem(time));
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  // Once per fixed step. The transform system runs first so each step reads
+  // the poses the previous step's integration left in `local`. The revolute
+  // joint solver must run after collision resolution so the ball's hinge to
+  // the crane gets the "last word" on velocity each step.
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createGravityEcsSystem(time), physics);
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
   );
   world.addSystem(
     createCollisionResolutionEcsSystem(
@@ -59,12 +63,20 @@ export const createWreckingBallGame = async (): Promise<Game> => {
       contactConstraints,
       time,
     ),
+    physics,
   );
-  world.addSystem(createRevoluteJointEcsSystem(time));
+  world.addSystem(createRevoluteJointEcsSystem(time), physics);
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createContinuousCollisionEcsSystem(), physics);
+
+  // Once per frame, after the fixed steps. `createArmEcsSystem` writes the
+  // arm's `local` pose from the ball's latest position, so it runs before
+  // the transform system that turns every `local` pose into the `world`
+  // pose rendering reads.
+  world.addSystem(createArmEcsSystem());
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
-  world.addSystem(createContinuousCollisionEcsSystem());
 
   return game;
 };

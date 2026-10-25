@@ -30,7 +30,7 @@ export default function NewtonsCradle(): JSX.Element {
           file: 'create-cradle.ts',
         },
         {
-          text: 'Joints are invisible, so a demo system stretches and turns a sprite between each pivot and ball every tick.',
+          text: 'Joints are invisible, so a demo system stretches and turns a sprite between each pivot and ball every frame.',
           file: 'arm.system.ts',
         },
       ]}

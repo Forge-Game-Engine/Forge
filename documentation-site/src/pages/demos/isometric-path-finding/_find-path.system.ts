@@ -56,7 +56,7 @@ const updatePath = (
   // walled-off goal gives the path to the cell nearest it.
   const { points } = findGridPath(
     grid,
-    agentPosition.world,
+    agentPosition.local,
     grid.cellToWorld(goal.column, goal.row),
   );
 
@@ -67,9 +67,12 @@ const updatePath = (
  * Creates the system that finds the path from the agent to the cell under
  * the mouse each frame, and draws it with one marker on each cell centre.
  *
- * It reads the cursor's cell and the baked grid, so register it after
- * the cell cursor and bake systems, and before `createTransformEcsSystem`,
- * so the markers are drawn where they're moved on the same frame.
+ * It reads the cursor's cell and the baked grid, so register it in the
+ * default group after the cell cursor and bake systems, and before the
+ * frame's `createTransformEcsSystem`, so the markers are drawn where they're
+ * moved on the same frame. It plans from the agent's `local` position: the
+ * player is a root body, so that's its pose after the frame's last physics
+ * step, where its `world` would still be a step behind.
  * @returns The ECS system.
  */
 export const createFindPathEcsSystem = (): EcsSystem<

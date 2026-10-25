@@ -375,7 +375,7 @@ function circleContactAgainstEdge(
  * edge reports a contact only when the circle actually reaches the part of
  * the outline that edge owns - so there is no comparison between candidates
  * to be decided by floating-point noise, and no single "winning" edge to
- * flip between from tick to tick. A circle resting on a flat run of edges
+ * flip between from step to step. A circle resting on a flat run of edges
  * or on a convex corner produces exactly one contact; one wedged into a
  * concave corner produces one per side it touches.
  * @param chain - The chain.
@@ -465,7 +465,7 @@ function toWorldFaces(
 ): PolygonFaces {
   const edge = chain.edges[edgeIndex];
   // Clone before transforming: `edge.start`/`edge.end`/`edge.normal` are the
-  // collider's own persistent local-space chain data, reused every tick.
+  // collider's own persistent local-space chain data, reused every step.
   const toWorld = (vertex: Vector2): Vector2 =>
     Vec2.add(
       Vec2.rotate(Vec2.clone(vertex), chainBody.rotation),
@@ -592,7 +592,7 @@ function polygonContactAgainstEdge(
  * polygon reaches that edge and disappears when it leaves, its feature ids
  * stay in a range of that edge's own (see {@link featureIdEdgeStride}), and
  * no amount of floating-point noise between two near-coplanar edges can make
- * the pair of them trade places from one tick to the next and lose their
+ * the pair of them trade places from one step to the next and lose their
  * warm-started impulses. A contact normal can never come from an interior
  * boundary between two neighboring edges, and one that would push the
  * polygon along the outline it was found on is resolved against that

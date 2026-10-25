@@ -235,7 +235,7 @@ road from the bridge to the town:
 roads.disconnect(bridge, town);
 ```
 
-raises the graph's `version`, so on the next tick the agent system plans a
+raises the graph's `version`, so on its next update the agent system plans a
 new path over the roads still open, from the vehicle's position through
 the enabled point closest to it. A vehicle that hasn't reached the bridge
 yet gets a path through the ford.

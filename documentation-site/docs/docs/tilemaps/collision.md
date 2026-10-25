@@ -113,9 +113,11 @@ rebuild the collider. To change a cell's collision over time, set a
 different tile in it with `setTile`.
 
 The system is the only writer of the `collider` field: anything else
-written there is replaced on its next tick. Register it after every system
-that edits tiles and before `createBroadPhaseEcsSystem`, so a tile set or
-cleared during a tick collides on that tick.
+written there is replaced on its next tick. Register it in the default
+group, after every system that edits tiles. The physics systems run in the
+fixed-update group (see
+[Registering the physics systems](../physics/index.md#registering-the-physics-systems)),
+so a tile set or cleared during a frame collides from the next fixed step.
 
 :::caution
 Colliders ignore an entity's scale, so a scaled layer collides at its
@@ -156,7 +158,8 @@ whatever order they were set in.
 The outline doesn't record which tile an edge came from. To find the tile
 at a contact, move a [collision manifold](../physics/collisions.md#reading-collision-manifolds)'s
 contact point a short distance into the layer, against the normal, and
-convert it to a cell:
+convert it to a cell, in a system registered in the fixed-update group
+after the narrow phase:
 
 ```ts
 import { getTile, worldToCell } from '@forge-game-engine/forge/tilemaps';

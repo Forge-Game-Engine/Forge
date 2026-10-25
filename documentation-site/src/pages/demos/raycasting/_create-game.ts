@@ -5,7 +5,10 @@ import {
   getCameraView,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   CollisionPair,
   createBroadPhaseEcsSystem,
@@ -53,16 +56,23 @@ export const createRaycastingGame = async (): Promise<Game> => {
 
   const collisionPairs: CollisionPair[] = [];
 
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
   // `raycast` reads each collider's `aabb` directly rather than recomputing
-  // it, so the broad-phase system still needs to run every tick to keep it
-  // in sync - even though nothing in this scene has a
+  // it, so the broad-phase system still needs to run every fixed step to
+  // keep it in sync - even though nothing in this scene has a
   // `RigidBodyEcsComponent` for it to actually resolve collisions between.
-  // `createTransformEcsSystem` runs first so the targets' `world` poses (which
-  // the broad phase and `raycast` read) and the ray visual's `world` pose
+  // A raycast sees the colliders as of the last fixed step. The fixed
+  // step's `createTransformEcsSystem` runs first so the targets' `world`
+  // poses, which the broad phase reads, are up to date.
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
+
+  // Once per frame, after the fixed steps, so the ray visual's `world` pose
   // (which `updateRayVisual` writes as `local` from the mouse handler below)
-  // are up to date before the broad-phase and render systems read them.
+  // is up to date before the render system reads it.
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 

@@ -2,7 +2,6 @@ import { positionId, rotationId } from '../common/index.js';
 import { EcsWorld } from '../ecs/ecs-world.js';
 import { formatEntity } from '../ecs/entity.js';
 import { Vec2, Vector2 } from '../math/index.js';
-import { getColliderRotation } from './collider-rotation.js';
 import { applyPointImpulse } from './joints/apply-point-impulse.js';
 import {
   getRigidBodyMassData,
@@ -17,15 +16,20 @@ import {
  * since `'static'`/`'kinematic'` bodies aren't affected by impulses.
  *
  * The body's center of mass (its collider's centroid, see
- * `getRigidBodyMassData`) is found from the entity's current world
- * transform, so to push a body without spinning it, apply the impulse at
- * its center of mass rather than at its position.
+ * `getRigidBodyMassData`) is found from the entity's `position.local` and
+ * `rotation.local`. A dynamic body is always a root entity, so its `local`
+ * pose is its world-space pose, and unlike `world`, which the transform
+ * system copies from it, it's current from any system group: called once
+ * per frame, after the frame's fixed steps, `world` would still hold the
+ * pose from the start of the last step. Measure `point` against the same
+ * pose: to push a body without spinning it, apply the impulse at its center
+ * of mass, which for a collider centered on the entity is
+ * `position.local`.
  *
  * A sleeping body needs no separate wake-up. The velocity this writes makes
- * it count as awake right away (see {@link isBodyAwake}), so integration
- * moves it this tick, and `createSleepEcsSystem` wakes its island on its
- * next pass: on this tick when the impulse is applied before
- * `createTransformEcsSystem` runs, otherwise on the next.
+ * it count as awake right away (see {@link isBodyAwake}), so the next
+ * integration pass moves it, and `createSleepEcsSystem` wakes its island
+ * on its next pass.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity whose rigid body to apply the impulse to.
  * @param impulse - The impulse to apply.
@@ -55,8 +59,8 @@ export function applyImpulse(
   }
 
   const centerOfMass = getWorldCenterOfMass(
-    position.world,
-    getColliderRotation(world.getComponent(entity, rotationId)),
+    position.local,
+    world.getComponent(entity, rotationId)?.local ?? 0,
     massData.localCenterOfMass,
   );
 
