@@ -120,6 +120,19 @@ describe('raycast', () => {
     expect(hits).toHaveLength(0);
   });
 
+  it('should not test the shape of a collider whose tree box the ray reaches but whose AABB it misses', () => {
+    // The tree's fat box is the AABB grown by `aabbMargin` (0.1) on every
+    // side, so a ray along y = 1.05 reaches the fat box of a radius-1 circle
+    // at the origin but passes above its AABB.
+    addEntity({ x: 0, y: 0 }, new CircleCollider(1));
+    world.update();
+
+    const hits = raycast(world, { x: -5, y: 1.05 }, { x: 5, y: 1.05 });
+
+    expect(hits).toHaveLength(0);
+    expect(raycastCircleSpy).not.toHaveBeenCalled();
+  });
+
   it('should hit an entity with no rotation component, treating it as unrotated', () => {
     const entity = world.createEntity();
 
