@@ -1065,11 +1065,20 @@ with its `sleepRecord`, so nothing else needs a `wakeUp` call:
   writes the manifolds the sleeping body recorded when it fell asleep
   (`sleepRecord.manifolds`, written by the sleep system) instead, so a
   sleeping island keeps its contacts, its links and its warm-start impulses
-  without collision tests. It only tests such a pair again when one of
-  `CollisionManifold.colliderA`/`colliderB` isn't the entity's current
-  `collider.collider` any more, so code that changes a collider's shape
-  assigns a new `Collider` object (as the tilemap collider system does)
-  rather than changing the old one in place.
+  without collision tests. A sleeping body counts as disturbed, and so
+  awake, as soon as anything its `sleepRecord` holds changed: its own
+  `collider.collider` object or gravity `amount`, or the `position.world`,
+  `rotation.world` or `collider.collider` object of a non-dynamic partner
+  (a static, kinematic or collider-only entity it touches or is jointed
+  to), or that partner was removed. So the narrow phase tests its pairs
+  again on that tick. Code that changes a collider's shape assigns a new
+  `Collider` object (as the tilemap collider system does) rather than
+  changing the old one in place, or nothing notices.
+- Anything new a sleeping body depends on that game code can change
+  without touching the body (another per-body force component, a
+  partner's property) goes in `RigidBodySleepRecord` and the
+  `isSleepingBodyDisturbed` comparison in `src/physics/is-body-awake.ts`,
+  or a sleeping island ignores the change.
 
 ### GPU Resources and Context Loss
 

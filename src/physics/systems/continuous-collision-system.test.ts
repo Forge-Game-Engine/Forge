@@ -18,6 +18,7 @@ import { TerrainCollider } from '../colliders/terrain-collider.js';
 import {
   addColliderComponent,
   ColliderDefaultedOptions,
+  colliderId,
 } from '../components/collider-component.js';
 import { addGravityComponent } from '../components/gravity-component.js';
 import {
@@ -369,6 +370,9 @@ describe('continuous collision of sleeping circles', () => {
     body.rigidBody.sleepRecord = {
       position: recordedPosition,
       rotation: 0,
+      collider: world.getComponent(body.entity, colliderId)?.collider ?? null,
+      gravity: null,
+      partners: [],
       links: [],
       manifolds: [],
     };

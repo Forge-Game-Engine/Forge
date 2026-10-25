@@ -68,10 +68,19 @@ world.addSystem(createDriftEcsSystem(time));
 `deltaTimeInMilliseconds` holds the same value in milliseconds.
 
 :::note
-The delta time is limited to the range `0` to `1/15` of a second, so a frame
-that takes longer (for example, after the browser tab was in the background)
-moves things by at most `1/15` of a second. `rawDeltaTimeInSeconds` and
-`rawDeltaTimeInMilliseconds` hold the unlimited, unscaled delta time.
+The delta time is limited to the range `0` to `0.25` seconds. A frame up to
+`0.25` seconds long advances the game by its full length, and a longer frame
+(for example, after the browser tab was in the background) advances it by
+`0.25` seconds; the rest of that frame's time is skipped.
+`rawDeltaTimeInSeconds` and `rawDeltaTimeInMilliseconds` hold the unlimited,
+unscaled delta time.
+
+So a system like this one, which runs once per frame, can move an entity by
+up to `0.25` seconds' worth of movement in one update, and a fast entity can
+pass through another one without the two ever overlapping. Move things that
+have to collide in the `fixed-update` group (see
+[Running systems at a fixed rate](#running-systems-at-a-fixed-rate)), or give
+them a rigid body and a velocity.
 :::
 
 ## Reading elapsed time and frame count
@@ -221,10 +230,11 @@ value that isn't finite and greater than `0` throws.
 ### Scaling fixed steps
 
 The accumulated time is fed the frame's `deltaTimeInMilliseconds`, which is
-scaled by `timeScale` and limited to `1/15` of a second. At
-`timeScale = 0.5`, fixed steps happen half as often; at `timeScale = 0`, no
-fixed steps happen. The size of a step doesn't change. The first `update`
-adds nothing, since its delta time isn't elapsed time.
+scaled by `timeScale` and limited to `250` milliseconds, so at most 15 steps
+of the default size run in one frame. At `timeScale = 0.5`, fixed steps happen
+half as often; at `timeScale = 0`, no fixed steps happen. The size of a step
+doesn't change. The first `update` adds nothing, since its delta time isn't
+elapsed time.
 
 ### Interpolating between fixed steps
 

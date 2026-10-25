@@ -62,12 +62,11 @@ Gravity is per entity, so each body can have a different `amount`, or none.
 
 ```ts
 gravity.amount.y = -600;
-rigidBody.wakeRequested = true;
 ```
 
-Changing `amount` doesn't change a sleeping body's data, so a sleeping body
-stays asleep until something wakes it. Setting the body's `wakeRequested`
-wakes it and every body it rests on or against (see
+Changing `amount` on a sleeping body, or adding or removing its
+`GravityEcsComponent`, wakes it and every body it rests on or against on
+the sleep system's next run (see
 [Waking a body](./sleeping.md#waking-a-body)).
 
 Register `createGravityEcsSystem` before `createCollisionResolutionEcsSystem`,

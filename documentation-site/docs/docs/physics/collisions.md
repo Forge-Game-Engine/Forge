@@ -254,8 +254,8 @@ contacts.
 
 Each manifold also records `colliderA` and `colliderB`, the collider shapes
 it was computed from. A sleeping body's contacts are written from the
-manifolds it fell asleep with, without testing them again, while both
-entities still have those colliders (see
+manifolds it fell asleep with, without testing them again, until either
+entity moves or gets a different collider (see
 [Collision detection for sleeping bodies](./sleeping.md#collision-detection-for-sleeping-bodies)).
 
 ## Removing a collider
