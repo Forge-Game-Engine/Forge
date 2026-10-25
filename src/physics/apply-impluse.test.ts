@@ -10,6 +10,21 @@ import {
   RigidBodyEcsComponent,
   RigidBodyType,
 } from './components/index.js';
+import { createSleepingBodyWorld } from './test-helpers/sleeping-body-world.js';
+
+describe('applyImpulse on a sleeping body', () => {
+  it('wakes the body and moves it on the same tick', () => {
+    const { world, tick, addSleepingBody } = createSleepingBodyWorld();
+    const body = addSleepingBody({ x: 0, y: 0 });
+
+    applyImpulse(world, body.entity, { x: 10, y: 0 }, body.position.world);
+    tick();
+
+    expect(body.rigidBody.isSleeping).toBe(false);
+    expect(body.rigidBody.velocity).toEqual({ x: 5, y: 0 });
+    expect(body.position.local.x).toBeCloseTo(5 / 60);
+  });
+});
 
 describe('applyImpulse', () => {
   let world: EcsWorld;
