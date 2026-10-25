@@ -17,6 +17,7 @@ import {
   RigidBodyEcsComponent,
   rigidBodyId,
 } from '../../physics/components/rigidbody-component.js';
+import { isStaticBody } from '../../physics/is-static-body.js';
 import { withDefaults } from '../../utilities/with-defaults.js';
 import { createCellFrame } from './baking/cell-distance.js';
 import { getColliderRegion } from './baking/collider-regions.js';
@@ -124,7 +125,7 @@ export function markGridFromColliders(
     if (
       collider.sensor ||
       (collider.category & mask) === 0 ||
-      (rigidBody !== null && rigidBody.type !== 'static')
+      !isStaticBody(rigidBody)
     ) {
       continue;
     }

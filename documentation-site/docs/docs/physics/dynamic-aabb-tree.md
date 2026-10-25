@@ -13,7 +13,9 @@ the player.
 
 The tree knows nothing about entities or colliders: each entry holds a box
 and a value of the tree's type parameter, and the caller decides what goes
-in it.
+in it. The [broad phase](./collisions.md#finding-colliding-pairs) keeps the
+world's colliders in two trees of its own, and [`raycast`](./raycasting.md)
+casts rays through them.
 
 ## Proxies and fat boxes
 

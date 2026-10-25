@@ -1,14 +1,16 @@
 /**
  * Times one tick of the collision detection pipeline (transform, broad
  * phase, narrow phase) over repeatable scenes, so a change to any of those
- * systems can be compared against the numbers it replaces.
+ * systems can be compared against the numbers it replaces. The "broad
+ * phase" cases leave the narrow phase out, so its cost doesn't hide the
+ * broad phase's.
  *
  * Each scene is built once and ticked repeatedly. Nothing integrates
  * positions, so every tick does the same work. In the scenes where nothing
- * moves, a broad phase that keeps state between ticks (a dynamic AABB tree,
- * a persistent pair cache) gets every tick after the first almost for free,
- * so compare the "10% moving" scene across such a change: its moving bodies
- * travel two radii every tick, far enough to leave any padded ("fat") AABB.
+ * moves, the broad phase keeps its trees and pairs from the warm-up tick,
+ * so every timed tick only checks that nothing changed. The "10% moving"
+ * scenes move their bodies two radii every tick, far enough to leave their
+ * padded ("fat") boxes in the trees.
  */
 import { bench, describe } from 'vitest';
 import {
@@ -20,6 +22,7 @@ import {
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Random, Vector2 } from '../../math/index.js';
+import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { TerrainCollider } from '../colliders/terrain-collider.js';
@@ -48,6 +51,7 @@ interface SceneOptions {
   name: string;
   dynamicBodyCount: number;
   includeStaticWorld: boolean;
+  includeNarrowPhase: boolean;
 }
 
 interface Scene {
@@ -97,8 +101,7 @@ function addDynamicCircles(
 
 /**
  * Adds static boxes one per cell of a jittered grid over the square. Each
- * box stays inside its cell, so no two boxes overlap: static/static pairs
- * would add narrow-phase work that has nothing to do with the broad phase.
+ * box stays inside its cell, so no two boxes overlap.
  */
 function addStaticBoxes(
   world: EcsWorld,
@@ -163,7 +166,8 @@ function addTerrain(world: EcsWorld, random: Random, halfSide: number): void {
 }
 
 function createScene(options: SceneOptions): Scene {
-  const { name, dynamicBodyCount, includeStaticWorld } = options;
+  const { name, dynamicBodyCount, includeStaticWorld, includeNarrowPhase } =
+    options;
   const random = new Random(name);
   const halfSide = (Math.sqrt(dynamicBodyCount) * areaPerBodySide) / 2;
 
@@ -171,11 +175,15 @@ function createScene(options: SceneOptions): Scene {
   const collisionPairs: CollisionPair[] = [];
   const collisionManifolds: CollisionManifold[] = [];
 
+  createBroadPhase(world);
   world.addSystem(createTransformEcsSystem(new Time()));
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
-  world.addSystem(
-    createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
-  );
+
+  if (includeNarrowPhase) {
+    world.addSystem(
+      createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    );
+  }
 
   const dynamicPositions = addDynamicCircles(
     world,
@@ -202,44 +210,12 @@ function createScene(options: SceneOptions): Scene {
 
 const bodyCounts = [500, 2_000, 5_000];
 
-describe('collision pipeline: dynamic circles', () => {
-  for (const dynamicBodyCount of bodyCounts) {
-    const name = `${dynamicBodyCount} circles`;
-    const { world } = createScene({
-      name,
-      dynamicBodyCount,
-      includeStaticWorld: false,
-    });
-
-    bench(name, () => {
-      world.update();
-    });
-  }
-});
-
-describe('collision pipeline: dynamic circles in a static world', () => {
-  for (const dynamicBodyCount of bodyCounts) {
-    const name = `${dynamicBodyCount} circles, ${staticBoxCount} static boxes and a terrain`;
-    const { world } = createScene({
-      name,
-      dynamicBodyCount,
-      includeStaticWorld: true,
-    });
-
-    bench(name, () => {
-      world.update();
-    });
-  }
-});
-
-describe('collision pipeline: some bodies moving', () => {
-  const name = '2000 circles, 10% moving';
-  const { world, dynamicPositions } = createScene({
-    name,
-    dynamicBodyCount: 2_000,
-    includeStaticWorld: false,
-  });
-
+/**
+ * Benches ticks of a scene in which the first {@link movingFraction} of its
+ * dynamic bodies move every tick.
+ */
+function benchMovingScene(name: string, scene: Scene): void {
+  const { world, dynamicPositions } = scene;
   // Bodies are placed in random order, so the first 10% are spread over the
   // whole scene.
   const movingPositions = dynamicPositions.slice(
@@ -250,9 +226,8 @@ describe('collision pipeline: some bodies moving', () => {
 
   bench(name, () => {
     // Vitest runs no hook before each call, so the move is timed too. It's a
-    // couple of hundred writes next to millions of pair tests. Alternating
-    // the direction keeps the bodies inside the scene however often the
-    // benchmark runs.
+    // few hundred writes. Alternating the direction keeps the bodies inside
+    // the scene however often the benchmark runs.
     for (const position of movingPositions) {
       position.local.x += moveDistance * direction;
     }
@@ -261,4 +236,68 @@ describe('collision pipeline: some bodies moving', () => {
 
     world.update();
   });
-});
+}
+
+for (const includeNarrowPhase of [true, false]) {
+  const stage = includeNarrowPhase ? 'collision pipeline' : 'broad phase';
+
+  describe(`${stage}: dynamic circles`, () => {
+    for (const dynamicBodyCount of bodyCounts) {
+      const name = `${dynamicBodyCount} circles`;
+      const { world } = createScene({
+        name,
+        dynamicBodyCount,
+        includeStaticWorld: false,
+        includeNarrowPhase,
+      });
+
+      bench(name, () => {
+        world.update();
+      });
+    }
+  });
+
+  describe(`${stage}: dynamic circles in a static world`, () => {
+    for (const dynamicBodyCount of bodyCounts) {
+      const name = `${dynamicBodyCount} circles, ${staticBoxCount} static boxes and a terrain`;
+      const { world } = createScene({
+        name,
+        dynamicBodyCount,
+        includeStaticWorld: true,
+        includeNarrowPhase,
+      });
+
+      bench(name, () => {
+        world.update();
+      });
+    }
+  });
+
+  describe(`${stage}: some bodies moving`, () => {
+    for (const dynamicBodyCount of bodyCounts) {
+      const name = `${dynamicBodyCount} circles, 10% moving`;
+
+      benchMovingScene(
+        name,
+        createScene({
+          name,
+          dynamicBodyCount,
+          includeStaticWorld: false,
+          includeNarrowPhase,
+        }),
+      );
+    }
+
+    const name = `5000 circles, 10% moving, ${staticBoxCount} static boxes and a terrain`;
+
+    benchMovingScene(
+      name,
+      createScene({
+        name,
+        dynamicBodyCount: 5_000,
+        includeStaticWorld: true,
+        includeNarrowPhase,
+      }),
+    );
+  });
+}

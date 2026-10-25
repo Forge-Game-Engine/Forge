@@ -11,6 +11,7 @@ import {
 } from '@forge-game-engine/forge/common';
 import {
   CollisionPair,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   raycast,
 } from '@forge-game-engine/forge/physics';
@@ -59,14 +60,15 @@ export const createRaycastingGame = async (): Promise<Game> => {
   const fixedUpdate = registerFixedUpdate(world, time);
   const physics = { group: fixedUpdate };
 
-  // `raycast` reads each collider's `aabb` directly rather than recomputing
-  // it, so the broad-phase system still needs to run every fixed step to
-  // keep it in sync - even though nothing in this scene has a
-  // `RigidBodyEcsComponent` for it to actually resolve collisions between.
+  // `raycast` casts through the broad phase's trees and tests each nearby
+  // collider's `aabb`, so the broad-phase system still needs to run every
+  // fixed step to keep them in sync - even though nothing in this scene has
+  // a `RigidBodyEcsComponent` for it to actually resolve collisions between.
   // A raycast sees the colliders as of the last fixed step. The fixed
   // step's `createTransformEcsSystem` runs first so the targets' `world`
   // poses, which the broad phase reads, are up to date.
   world.addSystem(createTransformEcsSystem(time), physics);
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
 
   // Once per frame, after the fixed steps, so the ray visual's `world` pose

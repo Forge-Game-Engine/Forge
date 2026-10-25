@@ -77,6 +77,8 @@ export const createEulerIntegrationEcsSystem = (
 
       if (
         !isRigidBodyAwake(
+          world,
+          entities[i],
           rigidBodyComponent,
           positionComponent,
           rotationComponent,

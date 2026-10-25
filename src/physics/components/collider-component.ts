@@ -71,16 +71,22 @@ export interface ColliderRequiredOptions {
  * ECS-style component interface for a collider: an entity's collision
  * shape and how it collides. An entity with a collider and a
  * `PositionEcsComponent` takes part in collision detection; one with no
- * `RigidBodyEcsComponent` is static. `RotationEcsComponent` is optional, and
- * an entity without one is treated as unrotated.
+ * `RigidBodyEcsComponent` (or a `'static'` one) is static, and two static
+ * colliders never collide with each other. `RotationEcsComponent` is
+ * optional, and an entity without one is treated as unrotated.
+ *
+ * Shapes don't change in place. To change one, assign a new `Collider` to
+ * {@link ColliderRequiredOptions.collider}.
  */
 export interface ColliderEcsComponent
   extends ColliderRequiredOptions, ColliderDefaultedOptions {
   /**
    * The collider's world-space bounds. Output only: written by
-   * `createBroadPhaseEcsSystem` every step, from the entity's world
-   * position and rotation. Until the broad phase first runs, the box is
-   * empty and overlaps nothing.
+   * `createBroadPhaseEcsSystem`, from the entity's world position and
+   * rotation, on each step where the position, rotation, `collider` shape
+   * or this component changed since the broad phase last ran, and left
+   * alone otherwise. Until the broad phase first runs, the box is empty and
+   * overlaps nothing.
    */
   readonly aabb: Aabb;
 }

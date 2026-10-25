@@ -1,4 +1,9 @@
+/**
+ * Two collider entities whose bounds overlap, written by
+ * `createBroadPhaseEcsSystem`. `entityA` is the lower entity handle. The
+ * broad phase keeps the same object for a pair on every step it's listed.
+ */
 export interface CollisionPair {
-  entityA: number;
-  entityB: number;
+  readonly entityA: number;
+  readonly entityB: number;
 }

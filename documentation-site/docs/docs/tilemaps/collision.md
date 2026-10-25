@@ -117,7 +117,13 @@ written there is replaced on its next tick. Register it in the default
 group, after every system that edits tiles. The physics systems run in the
 fixed-update group (see
 [Registering the physics systems](../physics/index.md#registering-the-physics-systems)),
-so a tile set or cleared during a frame collides from the next fixed step.
+so a tile set or cleared during a frame collides from the next fixed step:
+the broad phase recomputes the bounds of a layer whose collider was
+replaced.
+
+A layer with no rigid body is a static collider, so two such layers never
+collide with each other (see
+[Finding colliding pairs](../physics/collisions.md#finding-colliding-pairs)).
 
 :::caution
 Colliders ignore an entity's scale, so a scaled layer collides at its

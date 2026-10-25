@@ -20,6 +20,7 @@ import {
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { CollisionPair } from '../types/collision-pair.js';
 import { ContactConstraint } from '../types/contact-constraint.js';
+import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from './broad-phase-system.js';
 import { createCollisionResolutionEcsSystem } from './collision-resolution-system.js';
 import { createContinuousCollisionEcsSystem } from './continuous-collision-system.js';
@@ -103,6 +104,7 @@ describe('contact stability on a ChainCollider room', () => {
     collisionManifolds = [];
     contactConstraints = [];
 
+    createBroadPhase(world);
     world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createGravityEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));

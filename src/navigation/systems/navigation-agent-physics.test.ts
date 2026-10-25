@@ -15,6 +15,7 @@ import {
   RigidBodyEcsComponent,
   rigidBodyId,
 } from '../../physics/components/rigidbody-component.js';
+import { createBroadPhase } from '../../physics/broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from '../../physics/systems/broad-phase-system.js';
 import { createCollisionResolutionEcsSystem } from '../../physics/systems/collision-resolution-system.js';
 import { createEulerIntegrationEcsSystem } from '../../physics/systems/euler-integration-system.js';
@@ -82,6 +83,7 @@ describe('navigation agents with physics', () => {
     const contactConstraints: ContactConstraint[] = [];
     const unitRadius = 4;
 
+    createBroadPhase(world);
     world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createNavigationAgentEcsSystem(time));
     world.addSystem(createUnitVelocityEcsSystem());

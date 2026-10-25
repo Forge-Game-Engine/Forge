@@ -18,6 +18,7 @@ import { TerrainCollider } from '../colliders/terrain-collider.js';
 import {
   addColliderComponent,
   ColliderDefaultedOptions,
+  colliderId,
 } from '../components/collider-component.js';
 import { addGravityComponent } from '../components/gravity-component.js';
 import {
@@ -28,6 +29,7 @@ import {
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { CollisionPair } from '../types/collision-pair.js';
 import { ContactConstraint } from '../types/contact-constraint.js';
+import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from './broad-phase-system.js';
 import { createCollisionResolutionEcsSystem } from './collision-resolution-system.js';
 import { createContinuousCollisionEcsSystem } from './continuous-collision-system.js';
@@ -120,6 +122,7 @@ describe('createContinuousCollisionEcsSystem', () => {
     time = new Time();
     time.update(0);
 
+    createBroadPhase(world);
     world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem([]));
     world.addSystem(createEulerIntegrationEcsSystem(time));
@@ -344,6 +347,8 @@ describe('continuous collision of sleeping circles', () => {
 
     moveAfterTransformPass = (): void => {};
 
+    createBroadPhase(world);
+
     world.addSystem(createTransformEcsSystem(time));
     // Game code moving a body after the transform pass, so the sweep sees
     // a `local` position far from the `world` one.
@@ -365,6 +370,9 @@ describe('continuous collision of sleeping circles', () => {
     body.rigidBody.sleepRecord = {
       position: recordedPosition,
       rotation: 0,
+      collider: world.getComponent(body.entity, colliderId)?.collider ?? null,
+      gravity: null,
+      partners: [],
       links: [],
       manifolds: [],
     };
@@ -429,6 +437,8 @@ describe('a sleeping circle in the full physics pipeline', () => {
     const collisionPairs: CollisionPair[] = [];
     const collisionManifolds: CollisionManifold[] = [];
     const contactConstraints: ContactConstraint[] = [];
+
+    createBroadPhase(world);
 
     world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
@@ -550,6 +560,7 @@ describe('continuous collision in the full physics pipeline', () => {
 
     time.update(0);
 
+    createBroadPhase(world);
     world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createGravityEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));

@@ -20,6 +20,7 @@ import {
   rigidBodyId,
 } from '../components/rigidbody-component.js';
 import { isRigidBodyAwake } from '../is-body-awake.js';
+import { isStaticBody } from '../is-static-body.js';
 import { Aabb } from '../types/aabb.js';
 import { CollisionBody } from '../types/collision-body.js';
 
@@ -99,10 +100,7 @@ export const createContinuousCollisionEcsSystem = (): EcsSystem<
     for (let i = 0; i < entities.length; i++) {
       const rigidBody = getRigidBody(entities[i]);
 
-      if (
-        !colliders[i].sensor &&
-        (rigidBody === null || rigidBody.type === 'static')
-      ) {
+      if (!colliders[i].sensor && isStaticBody(rigidBody)) {
         targets.push({
           collider: colliders[i],
           body: {
@@ -132,7 +130,9 @@ export const createContinuousCollisionEcsSystem = (): EcsSystem<
 
       // A sleeping body wasn't integrated, so it hasn't moved since this
       // step's transform pass and there's nothing to sweep.
-      if (!isRigidBodyAwake(rigidBody, position, rotation)) {
+      if (
+        !isRigidBodyAwake(world, entities[i], rigidBody, position, rotation)
+      ) {
         continue;
       }
 

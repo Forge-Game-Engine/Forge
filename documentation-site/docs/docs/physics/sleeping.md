@@ -40,6 +40,7 @@ import {
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createEulerIntegrationEcsSystem,
@@ -48,6 +49,7 @@ import {
   createSleepEcsSystem,
 } from '@forge-game-engine/forge/physics';
 
+createBroadPhase(world);
 const physics = { group: registerFixedUpdate(world, time) };
 
 world.addSystem(createTransformEcsSystem(time), physics);
@@ -111,8 +113,11 @@ until the game resumes.
 
 ## Waking a body
 
-The sleep system compares a sleeping body with the pose and contacts it had
-when it fell asleep, and wakes its island when any body in the island:
+When a body falls asleep, the sleep system records in its `sleepRecord` its
+pose, contacts, collider and gravity, and the pose and collider of each
+static body, kinematic body and collider-only entity it touches or is
+jointed to. It compares a sleeping body with that record and wakes its
+island when any body in the island:
 
 - has a non-zero `velocity` or `angularVelocity`, written by game code,
   [`applyImpulse`](/Forge/docs/api/functions/applyImpulse),
@@ -120,12 +125,24 @@ when it fell asleep, and wakes its island when any body in the island:
 - has an angular velocity motor whose `targetVelocity` is set to something
   other than `0`;
 - has a `position.local` or `rotation.local` that changed (a teleport);
+- has a `ColliderEcsComponent` whose `collider` is a different object (a
+  new shape);
+- has a `GravityEcsComponent` whose `amount` changed, or gains or loses
+  its `GravityEcsComponent`;
 - touches a body it didn't touch when it fell asleep, or stops touching
   one, for example because that body was removed;
 - gains or loses a joint, spring or damper;
 - touches or is jointed to an awake dynamic body, or to a kinematic body
   with a non-zero velocity;
+- touches or is jointed to a static body, kinematic body or collider-only
+  entity that was removed, lost its `ColliderEcsComponent`, has a
+  different `collider` object, or has a different `position.world` or
+  `rotation.world`, for example a floor or a lift that game code moved by
+  writing its `position.local`;
 - has `canSleep` set to `false` or `wakeRequested` set to `true`.
+
+A sensor never wakes a sleeping body: an overlap with a sensor produces no
+collision manifold, so the sleep system doesn't count it as a contact.
 
 A woken island's `restTime` values are set back to `0`, so it stays awake
 for at least `restDuration`.
@@ -138,16 +155,13 @@ wakes in the step after.
 
 ### Waking a body after a settings change
 
-Some changes don't change a sleeping body's velocity, pose or contacts:
-changing a `GravityEcsComponent`'s `amount`, a joint's limits, a spring's
-`stiffness` or `restLength`, a collider's `friction`, or a collider's
-shape when the new shape still touches the same entities. (A motor's
-`targetVelocity` isn't one of them: the sleep system wakes a body whose
-motor target is set.) To wake a body after one of them, set its
+Some changes aren't in a sleeping body's record: changing a joint's
+limits, a spring's `stiffness` or `restLength`, or a collider's `friction`
+or `restitution`. To wake a body after one of them, set its
 `wakeRequested` to `true`:
 
 ```ts
-gravity.amount.y = -600;
+spring.stiffness = 200;
 rigidBody.wakeRequested = true;
 ```
 
@@ -156,15 +170,6 @@ body's `restTime` to `0` and sets `wakeRequested` back to `false`. On an
 awake body, `wakeRequested` keeps its island awake for another
 `restDuration`. On a kinematic or static body, it wakes the islands that
 touch or are jointed to it.
-
-:::note
-A kinematic body moved by writing its position, rather than its
-`velocity`, doesn't wake a sleeping body it already touches while their
-bounds still overlap (see
-[Collision detection for sleeping bodies](#collision-detection-for-sleeping-bodies)).
-Move kinematic bodies by their velocity, or set `wakeRequested` on them
-when they move.
-:::
 
 ## Collision detection for sleeping bodies
 
@@ -187,19 +192,18 @@ its contacts carry on as if they had been tested:
 
 The narrow phase tests the pair as usual when either entity is awake (an
 awake body hitting the pile is how the pile wakes), when the sleeping
-body's record has no manifolds for the pair, when either entity's collider
-shape object was replaced, and when either collider is a sensor. When the broad phase
-stops listing the pair, because their bounds no longer overlap or one of
-them was removed or lost its collider, the contact ends and the sleeping
-body wakes.
+body's record has no manifolds for the pair, and when either collider is a
+sensor. When the broad phase stops listing the pair, because their bounds
+no longer overlap or one of them was removed or lost its collider, the
+contact ends and the sleeping body wakes.
 
-Replacing a collider's shape, as a tilemap layer's collider system does
-when its tiles change, tests the pair again, and the body wakes if what it
-touches changes. Moving a static body, a collider-only entity or a still
-kinematic body by its position doesn't update its contact with a sleeping
-body it already touches while their bounds still overlap: set the sleeping
-body's `wakeRequested` when moving one of them. A move that makes it touch
-a sleeping body it didn't touch before is tested, and wakes the body.
+A sleeping body counts as awake as soon as anything in
+[Waking a body](#waking-a-body) changed, so the narrow phase tests its
+pairs again on the same tick. Replacing a collider's shape (as a tilemap
+layer's collider system does when its tiles change), or moving a static
+body, a collider-only entity or a still kinematic body that a sleeping
+body touches, tests their contact against the new shape or pose before
+collision resolution runs on that tick.
 
 ## Keeping a body awake
 

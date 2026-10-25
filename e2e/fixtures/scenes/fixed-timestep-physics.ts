@@ -9,6 +9,7 @@ import {
   CollisionPair,
   Color,
   ContactConstraint,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCamera,
   createCameraEcsSystem,
@@ -177,6 +178,7 @@ export const createScene: CreateScene = (
     physics,
   );
   world.addSystem(createGravityEcsSystem(time), physics);
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

@@ -42,8 +42,9 @@ The physics module has these parts:
   until they're disturbed. See [Sleeping Bodies](./sleeping.md).
 - **Dynamic AABB tree**: a
   [`DynamicAabbTree`](/Forge/docs/api/classes/DynamicAabbTree) is a spatial
-  index that finds the boxes overlapping a box or crossed by a segment,
-  for a game's own spatial queries. See
+  index that finds the boxes overlapping a box or crossed by a segment.
+  The broad phase keeps colliders in two of them, and a game can use one
+  for its own spatial queries. See
   [Dynamic AABB Tree](./dynamic-aabb-tree.md).
 
 ## Registering the physics systems
@@ -70,6 +71,7 @@ import {
   type CollisionPair,
   type ContactConstraint,
   createAngularVelocityMotorEcsSystem,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -90,6 +92,8 @@ import {
 const collisionPairs: CollisionPair[] = [];
 const collisionManifolds: CollisionManifold[] = [];
 const contactConstraints: ContactConstraint[] = [];
+
+createBroadPhase(world);
 
 const fixedUpdate = registerFixedUpdate(world, time);
 const physics = { group: fixedUpdate };
@@ -131,9 +135,14 @@ world.addSystem(createRenderEcsSystem(renderContext));
    systems read (see [Transforms](../common/transforms.md)). Each step
    reads the poses the previous step's integration, or the game code that
    ran before it, left in `local`.
-2. The broad phase writes each collider's bounds and lists the pairs whose
-   bounds overlap in `collisionPairs`. The narrow phase tests those pairs'
-   shapes and writes each collision to `collisionManifolds`.
+2. The broad phase writes the bounds of each collider that moved or
+   changed shape, and lists the pairs whose bounds overlap in
+   `collisionPairs`. It keeps every collider in the world's broad phase,
+   which [`createBroadPhase`](/Forge/docs/api/functions/createBroadPhase)
+   creates once per world, so it only looks for new pairs around the
+   colliders that moved (see [Finding colliding pairs](./collisions.md#finding-colliding-pairs)).
+   The narrow phase tests those pairs' shapes and writes each collision to
+   `collisionManifolds`.
 3. The sleep system reads this step's `collisionManifolds`, wakes sleeping
    bodies that were disturbed and puts resting ones to sleep, before any
    system changes a velocity (see [Sleeping Bodies](./sleeping.md)).

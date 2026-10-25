@@ -13,6 +13,7 @@ import {
   CollisionManifold,
   CollisionPair,
   ContactConstraint,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -163,6 +164,7 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
 
   world.addSystem(createBallResetEcsSystem(random, missY), physics);
   world.addSystem(createTransformEcsSystem(time), physics);
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
