@@ -175,11 +175,11 @@ export const createScene: CreateScene = (
   // `update` is a single batched call per tick regardless of how many
   // entities match `query`, so this system's body runs exactly once per
   // tick without needing to anchor itself on a particular entity.
-  // Registered at the default `normal` priority, it runs after
-  // `registerInputs`'s early input-update system (so this frame's
-  // key events have already been dispatched) and before its late
-  // reset-inputs system (so `isTriggered`/axis values are still valid) -
-  // the same ordering `createCameraEcsSystem` relies on for pan/zoom input.
+  // Registered in the default group, it runs after `registerInputs`'s
+  // input-update system in the first group (so this frame's key events have
+  // already been dispatched) and before its reset-inputs group (so
+  // `isTriggered`/axis values are still valid) - the same ordering
+  // `createCameraEcsSystem` relies on for pan/zoom input.
   const inputConsumerSystem: EcsSystem<[PositionEcsComponent]> = {
     query: [positionId],
     update: () => {

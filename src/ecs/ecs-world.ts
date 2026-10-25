@@ -48,9 +48,10 @@ export interface AddSystemOptions {
   after?: EcsSystem[];
 
   /**
-   * Runs the system only on ticks where this returns `true`. Checked each
-   * tick just before the system would run, after its group's own `runIf`.
-   * A system that doesn't run isn't queried.
+   * Runs the system only on ticks where this returns `true`. Checked just
+   * before the system would run, after its group's own `runIf`, and again
+   * on every run of a group with `runWhile`. A system that doesn't run
+   * isn't queried.
    */
   runIf?: RunCondition;
 }
@@ -73,9 +74,27 @@ export interface AddSystemGroupOptions {
 
   /**
    * Runs the group's systems only on ticks where this returns `true`.
-   * Checked each tick just before the group would run.
+   * Checked each tick just before the group would run. A group can't have
+   * both `runIf` and `runWhile`.
    */
   runIf?: RunCondition;
+
+  /**
+   * Runs the group's systems again and again while this returns `true`:
+   * the world calls it just before each run, and the group's turn in the
+   * tick ends the first time it returns `false`. So the group runs zero or
+   * more times per tick, and the condition is called once more than that,
+   * even when the group has no systems. Every system's own `runIf` is
+   * checked on every run.
+   *
+   * Unlike `runIf`, the condition may change the state it reads, which is
+   * what ends the loop: `() => time.consumeFixedStep()` takes a fixed step
+   * each time it returns `true`. A condition that never returns `false`
+   * never lets `update` return.
+   *
+   * A group can't have both `runIf` and `runWhile`.
+   */
+  runWhile?: RunCondition;
 }
 
 const noChildren: readonly number[] = Object.freeze([]);
@@ -135,6 +154,7 @@ export class EcsWorld implements Updatable, Stoppable {
     RunCondition
   >;
   private readonly _groupRunConditions: Map<EcsSystemGroup, RunCondition>;
+  private readonly _groupRepeatConditions: Map<EcsSystemGroup, RunCondition>;
 
   constructor() {
     this.onEntityRemoved = new ParameterizedForgeEvent('entityRemoved');
@@ -148,6 +168,7 @@ export class EcsWorld implements Updatable, Stoppable {
     this._restOfTickGroups = new Set();
     this._systemRunConditions = new Map();
     this._groupRunConditions = new Map();
+    this._groupRepeatConditions = new Map();
 
     this._firstSystemGroup = createSystemGroup('first');
     this._groupGraph.addNode(this._firstSystemGroup);
@@ -159,8 +180,8 @@ export class EcsWorld implements Updatable, Stoppable {
 
   /**
    * The group that runs before every other group of the tick, however the
-   * other groups are ordered. Game state transitions run in it. Ordering a
-   * group `before` it throws.
+   * other groups are ordered. Game state transitions and `registerInputs`'
+   * input update run in it. Ordering a group `before` it throws.
    *
    * A group ordered `after` it, or after another group ordered that way, is
    * a start-of-tick group: it runs before every other group, including
@@ -198,17 +219,19 @@ export class EcsWorld implements Updatable, Stoppable {
    * before every other group.
    * @param group - The group to register.
    * @param options - `before`/`after` groups to order this group against,
-   * and a `runIf` condition. Every referenced group must already be
-   * registered.
+   * and a `runIf` or `runWhile` condition. Every referenced group must
+   * already be registered. Calling it again for a registered group adds
+   * ordering constraints and replaces the condition of the same kind.
    * @throws An error if `group` is the first group, if it's ordered before
    * the first group, if a start-of-tick group is ordered after a group
-   * that isn't, or if a group that isn't is ordered before one that is.
+   * that isn't, if a group that isn't is ordered before one that is, or if
+   * the group would have both a `runIf` and a `runWhile` condition.
    */
   public addSystemGroup(
     group: EcsSystemGroup,
     options: AddSystemGroupOptions = {},
   ): void {
-    const { before = [], after = [], runIf } = options;
+    const { before = [], after = [], runIf, runWhile } = options;
 
     if (group === this._firstSystemGroup) {
       throw new Error(
@@ -229,6 +252,7 @@ export class EcsWorld implements Updatable, Stoppable {
       : after.some((afterGroup) => this._startOfTickGroups.has(afterGroup));
 
     this._requireTickPosition(group, isStartOfTick, before, after);
+    this._requireOneGroupCondition(group, runIf, runWhile);
 
     this._groupGraph.addNode(group);
 
@@ -244,6 +268,10 @@ export class EcsWorld implements Updatable, Stoppable {
 
     if (runIf) {
       this._groupRunConditions.set(group, runIf);
+    }
+
+    if (runWhile) {
+      this._groupRepeatConditions.set(group, runWhile);
     }
   }
 
@@ -308,8 +336,9 @@ export class EcsWorld implements Updatable, Stoppable {
 
   /**
    * Unregisters a system and calls its `cleanup`. A system removed while
-   * `update()` is running its systems still runs in that tick, since the
-   * tick's list of systems is taken before the first one runs.
+   * `update()` is running its systems still runs in that tick, including
+   * the remaining runs of a repeating group, since the tick's list of
+   * systems is taken before the first one runs.
    * @param system - The system to remove.
    */
   public removeSystem<T extends readonly unknown[]>(
@@ -329,24 +358,31 @@ export class EcsWorld implements Updatable, Stoppable {
 
   /**
    * Runs one tick: every group in order, and every system of each group in
-   * order. A group or system whose `runIf` returns `false` is skipped
-   * without being queried. Conditions are checked just before the group or
-   * system would run, so they see what earlier systems of the tick did.
+   * order. A group with `runIf` runs once if it returns `true`; a group
+   * with `runWhile` runs again while it returns `true`; any other group
+   * runs once. A system whose `runIf` returns `false` is skipped for that
+   * run without being queried. Conditions are checked just before the
+   * group or system would run, so they see what earlier systems of the
+   * tick did. The tick's list of groups and systems is taken once, before
+   * the first group runs.
    */
   public update(): void {
     for (const { group, systems } of this._getOrderedGroups()) {
+      const runWhile = this._groupRepeatConditions.get(group);
+
+      if (runWhile) {
+        while (runWhile(this)) {
+          this._runSystems(systems);
+        }
+
+        continue;
+      }
+
       if (!this._shouldRun(this._groupRunConditions.get(group))) {
         continue;
       }
 
-      for (const system of systems) {
-        if (!this._shouldRun(this._systemRunConditions.get(system))) {
-          continue;
-        }
-
-        const results = this.query(system.query, system.tags);
-        system.update(this, results);
-      }
+      this._runSystems(systems);
     }
   }
 
@@ -1047,6 +1083,33 @@ export class EcsWorld implements Updatable, Stoppable {
 
   private _getOrderedSystems(): EcsSystem<readonly unknown[]>[] {
     return this._getOrderedGroups().flatMap(({ systems }) => systems);
+  }
+
+  private _runSystems(systems: readonly EcsSystem<readonly unknown[]>[]): void {
+    for (const system of systems) {
+      if (!this._shouldRun(this._systemRunConditions.get(system))) {
+        continue;
+      }
+
+      const results = this.query(system.query, system.tags);
+      system.update(this, results);
+    }
+  }
+
+  private _requireOneGroupCondition(
+    group: EcsSystemGroup,
+    runIf: RunCondition | undefined,
+    runWhile: RunCondition | undefined,
+  ): void {
+    const hasRunIf = runIf !== undefined || this._groupRunConditions.has(group);
+    const hasRunWhile =
+      runWhile !== undefined || this._groupRepeatConditions.has(group);
+
+    if (hasRunIf && hasRunWhile) {
+      throw new Error(
+        `Unable to add system group "${group.name}" with both "runIf" and "runWhile", a group either runs at most once per tick or repeats. Put "runIf" on the group's systems instead.`,
+      );
+    }
   }
 
   private _shouldRun(runIf: RunCondition | undefined): boolean {

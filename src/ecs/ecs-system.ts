@@ -40,7 +40,9 @@ export interface EcsSystem<
   onRegister?(world: EcsWorld): void;
 
   /**
-   * Invoked once per tick with all entities and components matching `query` (and `tags`).
+   * Invoked once per run of the system's group with all entities and components
+   * matching `query` (and `tags`). That's once per tick, unless the group repeats
+   * (`runWhile`), and the entities are queried again on every run.
    * The system handles its own iteration, enabling operations across all matched entities
    * (e.g., spatial partitioning, batching, or sorting).
    *

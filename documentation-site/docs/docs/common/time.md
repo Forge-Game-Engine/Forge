@@ -7,8 +7,8 @@ sidebar_position: 1
 [`Time`](/Forge/docs/api/classes/Time) holds the timing of the current
 frame: the time since the previous frame (delta time), the total elapsed
 time, the frame count and the frame rate. Its `timeScale` multiplies the
-delta time, for slow motion or pausing. It also hands out fixed steps, for
-work that runs at a fixed rate.
+delta time, for slow motion or pausing. It also keeps a fixed clock, for work
+that runs in fixed steps.
 
 ## Creating and updating time
 
@@ -104,10 +104,71 @@ clock: each `update` adds the frame's delta time to an accumulated time, and
 [`consumeFixedStep`](/Forge/docs/api/classes/Time#consumefixedstep) takes one
 fixed step out of it.
 
+### Running systems at a fixed rate
+
+[`registerFixedUpdate`](/Forge/docs/api/functions/registerFixedUpdate)
+registers a system group in a world that runs once per fixed step, and
+returns it. Add fixed-rate systems to it with `addSystem`'s `group` option:
+
+```ts
+import { registerFixedUpdate } from '@forge-game-engine/forge/common';
+import { createGame } from '@forge-game-engine/forge/utilities';
+
+const { world, time } = createGame('game');
+
+const fixedUpdate = registerFixedUpdate(world, time);
+
+world.addSystem(createThrusterEcsSystem(time), { group: fixedUpdate });
+world.addSystem(createCameraFollowEcsSystem()); // once per frame
+```
+
+The group, named `fixed-update`, repeats while `time.consumeFixedStep()`
+returns `true` (see [Repeating a group](../ecs/world.md#repeating-a-group)):
+zero times on a frame shorter than the fixed delta time, and several times on
+a longer one. Each frame, the world runs:
+
+1. the first group (game state transitions, `registerInputs`' input update),
+2. the start-of-tick groups (a game state's exit and enter groups),
+3. `fixed-update`, once per fixed step,
+4. the default group and the groups around it,
+5. `registerInputs`' `input-reset` group.
+
+What `Time` reports depends on where a system runs:
+
+| Where                                 | `deltaTimeInSeconds` | `isInFixedStep` | `fixedOverstepFraction`                                 |
+| ------------------------------------- | -------------------- | --------------- | ------------------------------------------------------- |
+| First and start-of-tick groups        | frame delta time     | `false`         | includes this frame's delta time; can be `1` or more    |
+| `fixed-update`                        | fixed delta time     | `true`          | the time left after this step; can still be `1` or more |
+| Default group and the groups after it | frame delta time     | `false`         | from `0` up to but not including `1`                    |
+
+Put work that has to advance in steps of the same size in the group: physics
+simulation, and forces or velocities changed by the delta time. Leave in the
+default group the work that runs once per frame: reading trigger actions'
+`isTriggered` (a press is read by zero fixed steps on a short frame and by
+several on a long one), rendering, camera follow and UI. A system in the
+default group that reads a press and has to change the simulation writes it
+to a component that a system in `fixed-update` reads on its next step.
+
+Another group ordered only `before: [world.defaultSystemGroup]` has no order
+against `fixed-update`, so it runs before or after the fixed steps depending
+on which was registered first. Order it against the returned group to fix its
+place:
+
+```ts
+world.addSystemGroup(afterStepsGroup, {
+  after: [fixedUpdate],
+  before: [world.defaultSystemGroup],
+});
+```
+
+Call `registerFixedUpdate` once per `Time`. A `Game` updates one `Time` for
+all its worlds, so only one of its worlds can run fixed steps. A second call
+with the same `Time`, for the same world or another, throws.
+
 ### Running fixed steps
 
-Call `consumeFixedStep` in a loop after `time.update`, and run the fixed-rate
-work once per step:
+Without a world, call `consumeFixedStep` in a loop after `time.update`, and
+run the fixed-rate work once per step:
 
 ```ts
 time.update(performance.now());
@@ -132,9 +193,9 @@ system written against `deltaTimeInSeconds` runs at the fixed rate when it's
 updated inside the loop. The raw values, `frames`, `fps` and `timeScale` don't
 change.
 
-Run the loop once per frame, in the code that calls `time.update`, not inside
-a system: each step it takes is removed from the accumulated time.
-[`Game`](/Forge/docs/api/classes/Game) doesn't call `consumeFixedStep`.
+Run the loop once per frame, not inside a system: each step it takes is
+removed from the accumulated time. With a world, use `registerFixedUpdate`,
+whose group runs this loop.
 
 :::caution
 `update` throws while a fixed step is running. Call `consumeFixedStep` until
@@ -167,7 +228,10 @@ adds nothing, since its delta time isn't elapsed time.
 After the loop, `fixedOverstepFraction` is the accumulated time left over, as
 a fraction of the fixed delta time, from `0` up to but not including `1`. To
 draw a value that changes in fixed steps smoothly, interpolate between its
-values at the previous and the latest fixed step by this fraction.
+values at the previous and the latest fixed step by this fraction. With
+`registerFixedUpdate`, read it in the default group or a group after it:
+before the fixed steps run, it still includes this frame's delta time and can
+be `1` or more.
 
 ## Measuring the frame rate
 

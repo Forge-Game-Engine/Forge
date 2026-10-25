@@ -55,6 +55,13 @@ export const demos: Demo[] = [
     categories: ['physics'],
   },
   {
+    slug: 'physics-stress-test',
+    title: 'Physics Stress Test',
+    description:
+      'Drops physics bodies over time to find where the frame rate starts to drop.',
+    categories: ['physics'],
+  },
+  {
     slug: 'chain-collider',
     title: 'Chain Collider',
     description:

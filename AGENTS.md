@@ -270,9 +270,11 @@ factory functions, not classes:
    `create<Name>EcsSystem` factory functions, not classes. A system declares
    a `query` (the component keys it reads, in order) and an optional set of
    `tags`, and implements `update(world, queryResult)`. `queryResult` is a
-   batch for the whole tick - `entities: readonly number[]` and a
+   batch for the whole run - `entities: readonly number[]` and a
    `components` array (one array per queried component type, in query
-   order) - so `update` runs exactly once per tick regardless of how many
+   order) - so `update` runs exactly once per run of the system's group
+   (once per tick, unless the group repeats with `runWhile`, as
+   `registerFixedUpdate`'s fixed-update group does) regardless of how many
    entities matched (including zero), and the system iterates the batch
    itself. An optional `cleanup(world)` hook runs once when the system is
    removed from an `EcsWorld` or the world is stopped. See "System Pattern"
@@ -645,6 +647,22 @@ describe('MyClass', () => {
   tool, not a gate. Modules with thin test suites (check the per-file
   breakdown in the terminal summary or `coverage/index.html`) are good
   candidates for new tests.
+
+### Benchmarks
+
+- `npm run bench` runs Vitest's benchmark mode (`vitest bench --run`) over
+  every `src/**/*.bench.ts` file (`test.benchmark.include` in
+  `vite.config.base.js`). Put a benchmark next to the code it times, like a
+  test (`src/physics/systems/collision-pipeline.bench.ts`).
+- `tsconfig.build.json` and the coverage config exclude `**/*.bench.ts`, so
+  benchmarks never ship in `/dist` or count toward coverage.
+- Build each scene with a seeded `Random` so every run times the same
+  work, and build it outside the timed function so only the work under
+  test is timed. Vitest runs no hook before each timed call, so anything
+  that has to change between calls (moving bodies) happens inside it.
+- Benchmarks don't run in CI. Run one before and after a performance
+  change and put both sets of numbers, with the machine, in the pull
+  request.
 
 ## Integration & E2E Testing
 
