@@ -131,7 +131,7 @@ export const createContinuousCollisionEcsSystem = (): EcsSystem<
       const rotation = getRotation(entities[i]);
 
       // A sleeping body wasn't integrated, so it hasn't moved since this
-      // tick's transform pass and there's nothing to sweep.
+      // step's transform pass and there's nothing to sweep.
       if (!isRigidBodyAwake(rigidBody, position, rotation)) {
         continue;
       }
