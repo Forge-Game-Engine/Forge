@@ -9,6 +9,23 @@ import {
   addRigidBodyComponent,
   rigidBodyId,
 } from './components/index.js';
+import { createSleepingBodyWorld } from './test-helpers/sleeping-body-world.js';
+
+describe('applyExplosiveForce on a sleeping body', () => {
+  it('wakes the body and moves it on the same tick', () => {
+    const { world, tick, addSleepingBody } = createSleepingBodyWorld();
+    // Mass 2, a quarter of the radius from the center: an impulse of 750.
+    const body = addSleepingBody({ x: 50, y: 0 });
+
+    applyExplosiveForce(world, Vec2.zero, 1000, 200);
+    tick();
+
+    expect(body.rigidBody.isSleeping).toBe(false);
+    expect(body.rigidBody.velocity.x).toBeCloseTo(375);
+    expect(body.rigidBody.velocity.y).toBeCloseTo(0);
+    expect(body.position.local.x).toBeCloseTo(50 + 375 / 60);
+  });
+});
 
 describe('applyExplosiveForce', () => {
   let world: EcsWorld;

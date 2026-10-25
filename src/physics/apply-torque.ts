@@ -14,6 +14,12 @@ import { getRigidBodyMassData } from './rigid-body-mass-data.js';
  * A no-op unless the entity's `RigidBodyEcsComponent.type` (see
  * {@link RigidBodyType}) is `'dynamic'`, since `'static'`/`'kinematic'`
  * bodies aren't affected by torque.
+ *
+ * A sleeping body needs no separate wake-up. The angular velocity this
+ * writes makes it count as awake right away (see {@link isBodyAwake}), so
+ * integration turns it this tick, and `createSleepEcsSystem` wakes its
+ * island on its next pass: on this tick when the torque is applied before
+ * `createTransformEcsSystem` runs, otherwise on the next.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity whose rigid body to apply the torque to.
  * @param torque - The torque to apply, in newton-meters. Positive spins

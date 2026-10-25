@@ -4,11 +4,13 @@ import {
   addRotationComponent,
   createTransformEcsSystem,
   PositionEcsComponent,
+  RotationEcsComponent,
   rotationId,
   Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Random, Vector2 } from '../../math/index.js';
+import { applyImpulse } from '../apply-impluse.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { Collider } from '../colliders/collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
@@ -33,6 +35,7 @@ import { createContinuousCollisionEcsSystem } from './continuous-collision-syste
 import { createEulerIntegrationEcsSystem } from './euler-integration-system.js';
 import { createGravityEcsSystem } from './gravity-system.js';
 import { createNarrowPhaseEcsSystem } from './narrow-phase-system.js';
+import { createSleepEcsSystem } from './sleep-system.js';
 
 const fixedDeltaMilliseconds = 1000 / 60;
 
@@ -328,6 +331,185 @@ describe('createContinuousCollisionEcsSystem', () => {
 
     expect(ball.position.local.x).toBeCloseTo(100);
     expect(ball.position.local.y).toBeCloseTo(-9.5);
+  });
+});
+
+describe('continuous collision of sleeping circles', () => {
+  let world: EcsWorld;
+  let time: Time;
+  let moveAfterTransformPass: () => void;
+
+  beforeEach(() => {
+    world = new EcsWorld();
+    time = new Time();
+    time.update(0);
+
+    moveAfterTransformPass = (): void => {};
+
+    createBroadPhase(world);
+
+    world.addSystem(createTransformEcsSystem());
+    // Game code moving a body after the transform pass, so the sweep sees
+    // a `local` position far from the `world` one.
+    world.addSystem({ query: [], update: () => moveAfterTransformPass() });
+    world.addSystem(createBroadPhaseEcsSystem([]));
+    world.addSystem(createEulerIntegrationEcsSystem(time));
+    world.addSystem(createContinuousCollisionEcsSystem());
+
+    addStaticCollider(world, flatTerrain(), { x: 0, y: 0 });
+  });
+
+  function tick(): void {
+    time.update(time.rawTimeInMilliseconds + fixedDeltaMilliseconds);
+    world.update();
+  }
+
+  function putToSleep(body: Body, recordedPosition: Vector2): void {
+    body.rigidBody.isSleeping = true;
+    body.rigidBody.sleepRecord = {
+      position: recordedPosition,
+      rotation: 0,
+      links: [],
+      manifolds: [],
+    };
+  }
+
+  it('should not sweep a circle that is asleep', () => {
+    const sleeping = addBody(
+      world,
+      new CircleCollider(10),
+      { x: 0, y: -30 },
+      { x: 0, y: 0 },
+    );
+    const awake = addBody(
+      world,
+      new CircleCollider(10),
+      { x: 100, y: -30 },
+      { x: 0, y: 0 },
+    );
+
+    // Its sleep record matches where it ends up, so it isn't disturbed.
+    putToSleep(sleeping, { x: 0, y: 70 });
+
+    moveAfterTransformPass = (): void => {
+      sleeping.position.local.y = 70;
+      awake.position.local.y = 70;
+    };
+
+    tick();
+
+    expect(sleeping.position.local.y).toBe(70);
+    expect(awake.position.local.y).toBeCloseTo(-9.9);
+  });
+
+  it('should sweep a sleeping circle that was given a velocity', () => {
+    const ball = addBody(
+      world,
+      new CircleCollider(10),
+      { x: 0, y: -30 },
+      { x: 0, y: 0 },
+    );
+
+    putToSleep(ball, { x: 0, y: -30 });
+    ball.rigidBody.velocity.y = 6000;
+
+    tick();
+
+    expect(ball.position.local.y).toBeCloseTo(-9.9);
+  });
+});
+
+describe('a sleeping circle in the full physics pipeline', () => {
+  let world: EcsWorld;
+  let time: Time;
+  let ball: Body;
+  let rotation: RotationEcsComponent;
+
+  beforeEach(() => {
+    world = new EcsWorld();
+    time = new Time();
+    time.update(0);
+
+    const collisionPairs: CollisionPair[] = [];
+    const collisionManifolds: CollisionManifold[] = [];
+    const contactConstraints: ContactConstraint[] = [];
+
+    createBroadPhase(world);
+
+    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+    world.addSystem(
+      createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    );
+    world.addSystem(createSleepEcsSystem(collisionManifolds, time));
+    world.addSystem(createGravityEcsSystem(time));
+    world.addSystem(
+      createCollisionResolutionEcsSystem(
+        collisionManifolds,
+        contactConstraints,
+        time,
+      ),
+    );
+    world.addSystem(createEulerIntegrationEcsSystem(time));
+    world.addSystem(createContinuousCollisionEcsSystem());
+
+    // A static floor whose top face is at `y = 0`.
+    addStaticCollider(world, box(20), { x: 0, y: 20 });
+
+    ball = addBody(
+      world,
+      new CircleCollider(0.5),
+      { x: 0, y: -0.5 },
+      { x: 0, y: 0 },
+    );
+    rotation = world.getComponent(ball.entity, rotationId)!;
+    addGravityComponent(world, ball.entity);
+  });
+
+  function tick(): void {
+    time.update(time.rawTimeInMilliseconds + fixedDeltaMilliseconds);
+    world.update();
+  }
+
+  function tickUntilAsleep(maxTicks: number): void {
+    for (let i = 0; i < maxTicks; i++) {
+      tick();
+
+      if (ball.rigidBody.isSleeping) {
+        return;
+      }
+    }
+
+    throw new Error(`The ball didn't fall asleep in ${maxTicks} ticks.`);
+  }
+
+  it('should keep exactly the same pose and no velocity for 100 ticks', () => {
+    tickUntilAsleep(180);
+
+    const position = { ...ball.position.local };
+    const angle = rotation.local;
+
+    for (let i = 0; i < 100; i++) {
+      tick();
+
+      expect(ball.rigidBody.isSleeping).toBe(true);
+      expect(ball.position.local).toEqual(position);
+      expect(rotation.local).toBe(angle);
+      expect(ball.rigidBody.velocity).toEqual({ x: 0, y: 0 });
+      expect(ball.rigidBody.angularVelocity).toBe(0);
+    }
+  });
+
+  it('should move on the tick an impulse is applied', () => {
+    tickUntilAsleep(180);
+
+    const x = ball.position.local.x;
+
+    applyImpulse(world, ball.entity, { x: 1, y: 0 }, ball.position.world);
+    tick();
+
+    expect(ball.rigidBody.isSleeping).toBe(false);
+    expect(ball.position.local.x).toBeGreaterThan(x);
   });
 });
 

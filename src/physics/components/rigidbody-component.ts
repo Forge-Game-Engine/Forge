@@ -123,11 +123,11 @@ export interface RigidBodyEcsComponent {
 
   /**
    * Whether the body is asleep: left alone by gravity, collision
-   * resolution, joints, springs, dampers and integration until something
-   * disturbs it. Output, written only by `createSleepEcsSystem`, which only
-   * puts `'dynamic'` bodies to sleep. Pass `true` to `addRigidBodyComponent`
-   * to create a `'dynamic'` body asleep, such as a pile placed already
-   * settled. Defaults to `false`.
+   * resolution, joints, springs, dampers, motors, integration and
+   * continuous collision until something disturbs it. Output, written only
+   * by `createSleepEcsSystem`, which only puts `'dynamic'` bodies to sleep.
+   * Pass `true` to `addRigidBodyComponent` to create a `'dynamic'` body
+   * asleep, such as a pile placed already settled. Defaults to `false`.
    */
   isSleeping: boolean;
 
