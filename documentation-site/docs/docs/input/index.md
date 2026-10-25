@@ -75,3 +75,10 @@ keyboard.triggerBindings.add(
 `registerInputs` doesn't create any input sources. A system then reads
 `move.value` and `jump.isTriggered` each frame (see
 [Reading action state](./actions.md#reading-action-state)).
+
+The system that updates the `InputManager` runs in the world's
+[first group](../ecs/world.md#the-first-group), before every other group of
+the tick, including a game state's exit and enter groups and the
+[fixed-update group](../common/time.md#running-systems-at-a-fixed-rate). The
+system that resets it runs in an `input-reset` group after the default
+group.

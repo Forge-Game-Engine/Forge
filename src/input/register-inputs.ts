@@ -15,7 +15,11 @@ import {
 
 /**
  * Creates an InputManager, registers it on a new entity in the world, and
- * adds the update and reset systems that drive it each frame.
+ * adds the update and reset systems that drive it each frame. The update
+ * system runs in `world.firstSystemGroup`, before every other group of the
+ * tick (game-state transitions' enter and exit groups and the fixed-update
+ * group included), and the reset system in an `input-reset` group after
+ * `world.defaultSystemGroup`.
  * @param world - The world to register the input entity and systems with.
  * @param time - The Time instance used to advance the InputManager each frame.
  * @param options - Actions to register with the InputManager up front.
@@ -55,19 +59,19 @@ export const registerInputs = (
   inputManager.addAxis2dActions(...axis2dActions);
   inputManager.addHoldActions(...holdActions);
 
-  const updateInputSystemGroup = createSystemGroup('input-update');
+  // The first group runs before every other group, so game-state enter and
+  // exit systems, fixed steps and every other group read this frame's
+  // input, whatever order the game registered them in.
+  world.addSystem(createUpdateInputEcsSystem(time), {
+    group: world.firstSystemGroup,
+  });
+
   const resetInputSystemGroup = createSystemGroup('input-reset');
 
-  world.addSystemGroup(updateInputSystemGroup, {
-    before: [world.defaultSystemGroup],
-  });
   world.addSystemGroup(resetInputSystemGroup, {
     after: [world.defaultSystemGroup],
   });
 
-  world.addSystem(createUpdateInputEcsSystem(time), {
-    group: updateInputSystemGroup,
-  });
   world.addSystem(createResetInputsEcsSystem(), {
     group: resetInputSystemGroup,
   });

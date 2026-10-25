@@ -273,13 +273,13 @@ before adding systems into it, then pass `group` to `addSystem`.
 ```ts
 import { createSystemGroup } from '@forge-game-engine/forge/ecs';
 
-const physicsGroup = createSystemGroup('physics');
-world.addSystemGroup(physicsGroup, { before: [world.defaultSystemGroup] });
+const aiGroup = createSystemGroup('ai');
+world.addSystemGroup(aiGroup, { before: [world.defaultSystemGroup] });
 
-world.addSystem(gravitySystem, { group: physicsGroup });
-world.addSystem(integrationSystem, {
-  group: physicsGroup,
-  after: [gravitySystem],
+world.addSystem(perceptionSystem, { group: aiGroup });
+world.addSystem(decisionSystem, {
+  group: aiGroup,
+  after: [perceptionSystem],
 });
 ```
 
@@ -288,6 +288,12 @@ system into when you don't specify a `group`. A group ordered relative to
 `world.defaultSystemGroup` (as above) runs before or after every system
 registered without a `group`, including systems added later.
 
+Two groups that are both ordered only `before` (or only `after`) the default
+group have no order between them, so they run in the order they were
+registered. Order one against the other when it matters. This includes the
+group [`registerFixedUpdate`](../common/time.md#running-systems-at-a-fixed-rate)
+returns, which is where physics and other fixed-rate work goes.
+
 `before`/`after` passed to `addSystem` can only reference systems in the same
 group; ordering systems across different groups is done by ordering their
 groups against each other instead.
@@ -295,7 +301,8 @@ groups against each other instead.
 ### The first group
 
 `world.firstSystemGroup` runs before every other group on every tick.
-Ordering a group `before` it throws.
+Ordering a group `before` it throws. A game state's transition system and
+`registerInputs`' input update run in it.
 
 A group registered with `after` containing `firstSystemGroup`, or containing
 another group registered that way, is a start-of-tick group. Start-of-tick
@@ -319,12 +326,49 @@ containing a start-of-tick group throws.
 tick, whether the system or group runs. See
 [System](./system.md#run-conditions).
 
+### Repeating a group
+
+`addSystemGroup` also takes a `runWhile` condition. The world calls it before
+each run of the group and runs the group's systems again while it returns
+`true`, so the group runs zero or more times in its place in the tick:
+
+```ts
+const messageGroup = createSystemGroup('messages');
+
+world.addSystemGroup(messageGroup, {
+  before: [world.defaultSystemGroup],
+  runWhile: () => messageQueue.length > 0,
+});
+
+world.addSystem(handleNextMessageSystem, { group: messageGroup });
+```
+
+- The condition is called once more than the group runs, including when the
+  group has no systems. It may change the state it reads (here, a system
+  removes a message from the queue; `time.consumeFixedStep()` takes a fixed
+  step), which is what ends the loop. A condition that never returns `false`
+  makes `update` never return.
+- Each run queries every system's entities again, and each system's own
+  `runIf` is checked on every run.
+- All runs of the group happen before the next group in the tick starts.
+- The list of the tick's groups and systems is taken before the first group
+  runs: a system added during a run first runs on the next tick, and a
+  system removed during a run still runs in the remaining runs of that tick.
+
+A group can't have both `runIf` and `runWhile`: `addSystemGroup` throws when
+both are passed, or when one is passed for a group already registered with
+the other. Put `runIf` on the group's systems instead.
+
+[`registerFixedUpdate`](../common/time.md#running-systems-at-a-fixed-rate)
+registers a group that repeats once per fixed step.
+
 ## Running a world tick
 
 Call `world.update()` to run the registered systems for a single frame. For
-each registered system, the world queries `query` (and `tags`) and invokes the
-system's `update` exactly once with the batch of matches, regardless of how
-many entities matched (including zero). A system or group whose `runIf`
+each run of a system's group, the world queries the system's `query` (and
+`tags`) and invokes its `update` once with the batch of matches, regardless
+of how many entities matched (including zero). A group runs once per tick
+unless it has a `runWhile` condition. A system or group whose `runIf`
 returns `false` is skipped, and the skipped system isn't queried.
 
 A [`Game`](game.md) calls `update()` on its worlds every frame. Call
