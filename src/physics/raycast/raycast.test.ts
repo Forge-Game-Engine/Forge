@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { raycast } from './raycast.js';
+import { raycastCircle } from './raycast-circle.js';
 import {
   addPositionComponent,
   addRotationComponent,
@@ -12,10 +13,15 @@ import { addColliderComponent } from '../components/collider-component.js';
 import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from '../systems/broad-phase-system.js';
 
+vi.mock('./raycast-circle.js', { spy: true });
+
+const raycastCircleSpy = vi.mocked(raycastCircle);
+
 describe('raycast', () => {
   let world: EcsWorld;
 
   beforeEach(() => {
+    raycastCircleSpy.mockClear();
     world = new EcsWorld();
     createBroadPhase(world);
     world.addSystem(createBroadPhaseEcsSystem([]));
@@ -75,7 +81,7 @@ describe('raycast', () => {
     expect(hits.map((hit) => hit.entity)).toEqual([near, far]);
   });
 
-  it('should preserve query order when sort is disabled', () => {
+  it('should return every hit, in no particular order, when sort is disabled', () => {
     addEntity({ x: 3, y: 0 }, new CircleCollider(1));
     addEntity({ x: -3, y: 0 }, new CircleCollider(1));
     world.update();
@@ -160,7 +166,7 @@ describe('raycast', () => {
     expect(hits.map((hit) => hit.entity)).toEqual([wall]);
   });
 
-  it('should not hit a collider whose bounds the broad phase has not computed yet', () => {
+  it('should not hit a collider the broad phase has no proxy for yet', () => {
     addEntity({ x: 3, y: 0 }, new CircleCollider(1));
     world.update();
     // Added after the broad phase ran, at the origin the ray passes through.
@@ -169,6 +175,67 @@ describe('raycast', () => {
     const hits = raycast(world, { x: -10, y: 0 }, { x: 10, y: 0 });
 
     expect(hits).toHaveLength(1);
+  });
+
+  it('should not hit a collider whose component was replaced since the broad phase ran', () => {
+    const entity = addEntity({ x: 0, y: 0 }, new CircleCollider(1));
+    world.update();
+    // The proxy is still in the tree, but the new component's bounds
+    // haven't been computed yet.
+    addColliderComponent(world, entity, { collider: new CircleCollider(1) });
+
+    const hits = raycast(world, { x: -10, y: 0 }, { x: 10, y: 0 });
+
+    expect(hits).toHaveLength(0);
+  });
+
+  it('should not hit an entity removed since the broad phase ran', () => {
+    const entity = addEntity({ x: 0, y: 0 }, new CircleCollider(1));
+    world.update();
+    world.removeEntity(entity);
+
+    const hits = raycast(world, { x: -10, y: 0 }, { x: 10, y: 0 });
+
+    expect(hits).toHaveLength(0);
+  });
+
+  it('should only test the shapes of colliders on the ray', () => {
+    const gridSize = 10;
+    const spacing = 2;
+    const diagonal: number[] = [];
+
+    for (let row = 0; row < gridSize; row++) {
+      for (let column = 0; column < gridSize; column++) {
+        const entity = addEntity(
+          { x: column * spacing, y: row * spacing },
+          new CircleCollider(0.5),
+        );
+
+        if (row === column) {
+          diagonal.push(entity);
+        }
+      }
+    }
+
+    world.update();
+
+    const last = (gridSize - 1) * spacing;
+    const hits = raycast(world, { x: -1, y: -1 }, { x: last + 1, y: last + 1 });
+
+    expect(hits.map((hit) => hit.entity)).toEqual(diagonal);
+    expect(raycastCircleSpy).toHaveBeenCalledTimes(gridSize);
+
+    for (const [body] of raycastCircleSpy.mock.calls) {
+      expect(body.position.x).toBe(body.position.y);
+    }
+  });
+
+  it('should throw when the world has no broad phase', () => {
+    const worldWithoutBroadPhase = new EcsWorld();
+
+    expect(() =>
+      raycast(worldWithoutBroadPhase, { x: -10, y: 0 }, { x: 10, y: 0 }),
+    ).toThrow('The world has no broad phase');
   });
 
   it('should pass through sensors unless asked to include them', () => {
