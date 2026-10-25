@@ -25,6 +25,11 @@ A loop's winding says which side of it is solid:
   loop needs no loop around it: on its own it is a room in solid that has
   no outer edge.
 
+When the loop with the largest area is a hole, the plane outside every
+loop is solid, and
+[`outsideIsSolid`](/Forge/docs/api/classes/ChainCollider#outsideissolid)
+is `true`.
+
 Every edge's outward normal points away from solid, into empty space.
 [`calculateSignedArea`](/Forge/docs/api/functions/calculateSignedArea)
 returns a loop's signed area, so it shows which kind a loop is:
@@ -127,8 +132,22 @@ collide with each other, since neither can move in response.
 
 ## Raycasting against a chain
 
-[`raycast`](./raycasting.md) hits a chain's edges from the side their
+[`raycast`](./queries.md#casting-a-ray) hits a chain's edges from the side their
 normals face, at the point where the ray enters solid, with that edge's
 normal. A ray that starts inside solid passes out through the edge it
 leaves by without hitting it, and hits the next edge where it enters solid
 again.
+
+## Finding a chain at a point
+
+[`overlapPoint`](./queries.md#finding-colliders-at-a-point) finds a chain
+at a point on one of its edges or inside its solid, so a point inside a
+wall finds the chain and a point inside a room doesn't.
+
+:::caution
+`overlapPoint` only finds a chain at points inside the chain's bounds. When
+`outsideIsSolid` is `true`, the solid outside the loops goes on beyond the
+bounds, where `overlapPoint` doesn't find the chain, though
+`colliderContainsPoint` and navigation baking treat those points as solid.
+Surround the rooms with a solid loop to give the solid bounds.
+:::

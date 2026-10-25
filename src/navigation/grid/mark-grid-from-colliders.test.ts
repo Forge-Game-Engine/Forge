@@ -9,6 +9,7 @@ import { createOrthogonalGridLayout } from '../../math/grid-layout/create-orthog
 import { GridLayout } from '../../math/grid-layout/grid-layout.js';
 import { Random } from '../../math/random.js';
 import { Vector2 } from '../../math/vector2.js';
+import { createBroadPhase } from '../../physics/broad-phase/create-broad-phase.js';
 import { ChainCollider } from '../../physics/colliders/chain-collider.js';
 import { CircleCollider } from '../../physics/colliders/circle-collider.js';
 import { Collider } from '../../physics/colliders/collider.js';
@@ -19,6 +20,10 @@ import {
   addRigidBodyComponent,
   RigidBodyType,
 } from '../../physics/components/rigidbody-component.js';
+import { containsPointChain } from '../../physics/queries/contains-point-chain.js';
+import { overlapPoint } from '../../physics/queries/overlap-point.js';
+import { createBroadPhaseEcsSystem } from '../../physics/systems/broad-phase-system.js';
+import { Aabb } from '../../physics/types/aabb.js';
 import { buildTilemapCollisionLoops } from '../../tilemaps/collision/build-tilemap-collision-loops.js';
 import {
   clearTile,
@@ -362,6 +367,76 @@ describe('markGridFromColliders chains', () => {
     expect(getBlockedCells(holeLarger)).toEqual(
       getRangeCells(0, 0, 11, 11).filter((cell) => !hole.includes(cell)),
     );
+  });
+});
+
+describe('markGridFromColliders and point queries on chains', () => {
+  /** Bakes a chain into a grid larger than it, with a broad phase that has run. */
+  const bakeWithBroadPhase = (
+    collider: ChainCollider,
+  ): { world: EcsWorld; grid: NavigationGrid; entity: number } => {
+    const world = new EcsWorld();
+
+    createBroadPhase(world);
+    world.addSystem(createBroadPhaseEcsSystem([]));
+
+    const entity = addBody(world, collider);
+    const grid = createSquareGrid();
+
+    world.update();
+    markGridFromColliders(world, grid);
+
+    return { world, grid, entity };
+  };
+
+  const isInsideBounds = (point: Vector2, bounds: Aabb): boolean =>
+    point.x >= bounds.min.x &&
+    point.x <= bounds.max.x &&
+    point.y >= bounds.min.y &&
+    point.y <= bounds.max.y;
+
+  it.each([
+    ['a solid loop with a hole', [cellSquare(1, 8), cellSquare(3, 6, true)]],
+    ['a lone hole', [cellSquare(3, 8, true)]],
+  ])(
+    'agree on which cell centres of %s are solid',
+    (_name, loops: Vector2[][]) => {
+      const collider = new ChainCollider(loops);
+      const { world, grid, entity } = bakeWithBroadPhase(collider);
+      const body = { position: { x: 0, y: 0 }, rotation: 0, collider };
+      const bounds = collider.computeAabb({ x: 0, y: 0 }, 0);
+      let insideBoundsCount = 0;
+
+      for (let row = 0; row < 12; row++) {
+        for (let column = 0; column < 12; column++) {
+          const centre = grid.cellToWorld(column, row);
+          const isBlocked = !grid.isWalkable(column, row);
+
+          expect(containsPointChain(body, centre)).toBe(isBlocked);
+
+          if (isInsideBounds(centre, bounds)) {
+            insideBoundsCount++;
+            expect(overlapPoint(world, centre).includes(entity)).toBe(
+              isBlocked,
+            );
+          }
+        }
+      }
+
+      expect(insideBoundsCount).toBeGreaterThan(0);
+    },
+  );
+
+  it('leaves overlapPoint blind to a lone hole’s solid beyond its bounds', () => {
+    const collider = new ChainCollider([cellSquare(3, 8, true)]);
+    const { world, grid, entity } = bakeWithBroadPhase(collider);
+    const body = { position: { x: 0, y: 0 }, rotation: 0, collider };
+    // Cell (0, 0) is outside the room's bounds (cells 3 to 8).
+    const centre = grid.cellToWorld(0, 0);
+
+    expect(grid.isWalkable(0, 0)).toBe(false);
+    expect(containsPointChain(body, centre)).toBe(true);
+    expect(overlapPoint(world, centre)).not.toContain(entity);
   });
 });
 

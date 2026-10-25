@@ -11,12 +11,16 @@ import { getColliderRotation } from '../collider-rotation.js';
 import { ColliderType } from '../colliders/collider.js';
 import { segmentReachesBox } from '../collision/flat-bounds.js';
 import {
-  allCollisionCategories,
   ColliderEcsComponent,
   colliderId,
 } from '../components/collider-component.js';
 import { CollisionBody } from '../types/collision-body.js';
 import { RaycastHit, RaycastShapeHit } from '../types/raycast-hit.js';
+import {
+  defaultPhysicsQueryFilter,
+  PhysicsQueryFilter,
+  readQueryCandidate,
+} from './physics-query-filter.js';
 import { raycastChain } from './raycast-chain.js';
 import { raycastCircle } from './raycast-circle.js';
 import { raycastPolygon } from './raycast-polygon.js';
@@ -34,9 +38,10 @@ const raycastDetectors: Record<
 };
 
 /**
- * Options for {@link raycast}.
+ * Options for {@link raycast}: the {@link PhysicsQueryFilter} every physics
+ * query takes, and whether to sort the hits.
  */
-export interface RaycastOptions {
+export interface RaycastOptions extends PhysicsQueryFilter {
   /**
    * When `true`, results are ordered by distance from `start`, so the first
    * result is the nearest entity along the ray. Pass `false` to skip the
@@ -46,25 +51,11 @@ export interface RaycastOptions {
    * `true`.
    */
   sort: boolean;
-
-  /**
-   * The collider categories the ray can hit: a collider is tested only if
-   * its `category` shares a bit with this mask. Defaults to
-   * {@link allCollisionCategories}.
-   */
-  mask: number;
-
-  /**
-   * When `true`, the ray also hits sensor colliders. Defaults to `false`,
-   * so a ray aimed at walls passes through trigger zones.
-   */
-  includeSensors: boolean;
 }
 
 const defaultRaycastOptions: RaycastOptions = {
+  ...defaultPhysicsQueryFilter,
   sort: true,
-  mask: allCollisionCategories,
-  includeSensors: false,
 };
 
 /**
@@ -111,10 +102,7 @@ export function raycast(
     );
   }
 
-  const { sort, mask, includeSensors } = withDefaults(
-    defaultRaycastOptions,
-    options,
-  );
+  const { sort, ...filter } = withDefaults(defaultRaycastOptions, options);
   const { staticTree, movingTree } = findBroadPhase(world);
   const getPosition =
     world.getComponentAccessor<PositionEcsComponent>(positionId);
@@ -138,28 +126,19 @@ export function raycast(
     maxFraction: number,
     entity: number,
   ): number => {
-    const collider = getCollider(entity);
-    const position = getPosition(entity);
+    const candidate = readQueryCandidate(
+      entity,
+      getCollider,
+      getPosition,
+      filter,
+    );
 
-    // The trees are as of the broad phase's last run, so an entity in them
-    // may have lost its collider or position, or been removed, since.
-    if (
-      collider === null ||
-      position === null ||
-      (collider.category & mask) === 0 ||
-      (collider.sensor && !includeSensors)
-    ) {
+    if (candidate === null) {
       return maxFraction;
     }
 
+    const { collider, position } = candidate;
     const { min, max } = collider.aabb;
-
-    // A collider component added since the broad phase ran (replacing the
-    // one its proxy was made from) still has its empty starting box, which
-    // the slab test below would wrongly let through.
-    if (!(min.x <= max.x && min.y <= max.y)) {
-      return maxFraction;
-    }
 
     bounds[0] = min.x;
     bounds[1] = min.y;
