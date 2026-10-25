@@ -30,22 +30,24 @@ export class Time {
 
   private readonly _times: number[];
 
-  // `requestAnimationFrame` callback timestamps aren't guaranteed to be
-  // monotonic relative to a `performance.now()` call made just before
-  // scheduling them (the callback's timestamp can reflect when the frame
-  // *started*, which can land slightly before that call) - occasionally
-  // producing a negative raw delta on the frame right after a heavy
-  // synchronous setup (e.g. constructing hundreds of entities), followed by
-  // an oversized delta on the next frame once the browser catches up. Left
-  // unclamped, a negative delta integrates bodies backwards for a tick, and
-  // the following oversized delta then integrates a single, huge step from
-  // that corrupted state - both can otherwise fling every unstable body
-  // (e.g. a freshly-spawned stack of contacts with no warm-start data yet)
-  // across the world in one frame. Clamping keeps every consumer of
-  // `deltaTimeInMilliseconds`/`deltaTimeInSeconds` safe without requiring
-  // each one (gravity, Euler integration, ...) to defend against this
-  // individually.
-  private static readonly _maxDeltaTimeInMilliseconds = 1000 / 15;
+  // A frame's delta time is also what the fixed steps catch up on, so a long
+  // stall (a background tab, a GC pause, a breakpoint) would otherwise run
+  // hundreds of fixed steps in one frame. If those steps take longer than
+  // the frame they're catching up on, every frame falls further behind (the
+  // "spiral of death"). Capping the delta at 250 ms bounds the work one frame
+  // can trigger - 15 fixed steps at the default 60 Hz - while frames up to
+  // that long still advance the game in real time. Time past the cap is
+  // dropped, not carried to later frames.
+  //
+  // The delta is also clamped to `0` from below: `requestAnimationFrame`
+  // callback timestamps aren't guaranteed to be monotonic relative to a
+  // `performance.now()` call made just before scheduling them (the
+  // callback's timestamp can reflect when the frame *started*, which can
+  // land slightly before that call), occasionally producing a negative raw
+  // delta on the frame right after a heavy synchronous setup. Left
+  // unclamped, it would run every consumer of the delta time backwards for a
+  // frame.
+  private static readonly _maxDeltaTimeInMilliseconds = 250;
 
   /**
    * Creates an instance of Time.
@@ -104,7 +106,7 @@ export class Time {
 
   /**
    * Gets the delta time in milliseconds: the raw delta time multiplied by
-   * `timeScale`, limited to the range `0` to `1000 / 15` (except on the first
+   * `timeScale`, limited to the range `0` to `250` (except on the first
    * `update`). While `isInFixedStep` is `true`, it's the size of the running
    * fixed step instead.
    * @returns The delta time in milliseconds.
@@ -161,7 +163,7 @@ export class Time {
 
   /**
    * Gets the delta time in seconds: the raw delta time multiplied by
-   * `timeScale`, limited to the range `0` to `1 / 15` (except on the first
+   * `timeScale`, limited to the range `0` to `0.25` (except on the first
    * `update`). While `isInFixedStep` is `true`, it's the size of the running
    * fixed step instead.
    * @returns The delta time in seconds.
@@ -217,7 +219,9 @@ export class Time {
 
   /**
    * Gets the fixed delta time in milliseconds: the size of each fixed step
-   * `consumeFixedStep` takes. Defaults to `1000 / 60`.
+   * `consumeFixedStep` takes. Defaults to `1000 / 60`. Since a frame adds at
+   * most `250` milliseconds to the accumulated time, at most 15 fixed steps
+   * run per frame at the default.
    * @returns The fixed delta time in milliseconds.
    */
   get fixedDeltaTimeInMilliseconds(): number {
@@ -285,8 +289,11 @@ export class Time {
 
   /**
    * Updates the time-related information and adds the frame's delta time to
-   * the time accumulated towards fixed steps. `Game` calls it once per frame,
-   * before updating its worlds.
+   * the time accumulated towards fixed steps. The delta time is limited to
+   * `250` milliseconds, so after a long stall the game skips the time past
+   * that instead of catching up on all of it, and at most 15 fixed steps of
+   * the default size run in one frame. `Game` calls it once per frame, before
+   * updating its worlds.
    * @param time - The current time in milliseconds, such as
    * `performance.now()`.
    * @throws An error if a fixed step is running, because `consumeFixedStep`
@@ -355,7 +362,9 @@ export class Time {
    * it subtracts one fixed delta time, advances the fixed time by it, starts
    * a fixed step (`isInFixedStep` becomes `true`) and returns `true`.
    * Otherwise it ends the fixed step and returns `false`, and the rest stays
-   * accumulated for the next frame.
+   * accumulated for the next frame. Each `update` adds at most `250`
+   * milliseconds, so it returns `true` at most 15 times per frame at the
+   * default fixed delta time.
    * @returns `true` if a fixed step was taken, `false` otherwise.
    */
   public consumeFixedStep(): boolean {

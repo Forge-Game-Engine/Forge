@@ -9,7 +9,7 @@ import type {
 type Hooks = TilemapAnimatedTilesSceneHandle;
 type Page = import('@playwright/test').Page;
 
-// `Time` clamps a frame's delta to 1000 / 15 ms, so one frame duration is
+// `Time` clamps a frame's delta to 250 ms, so one frame duration is
 // advanced in steps shorter than that.
 const stepMilliseconds = 50;
 
