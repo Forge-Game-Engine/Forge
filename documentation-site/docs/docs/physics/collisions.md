@@ -161,7 +161,9 @@ addContactsComponent(world, zone);
 ```
 
 A sensor without a `RigidBodyEcsComponent` is static, so it detects only
-kinematic and dynamic bodies. A sensor on a moving body moves with it.
+kinematic and dynamic bodies. A sensor on a moving body moves with it. A
+sensor detects a [sleeping body](./sleeping.md) inside it, and an overlap
+with a sensor never wakes a sleeping body.
 
 :::note
 A sensor overlap is detected only when at least one of the two entities has
@@ -184,6 +186,12 @@ lists to it every step:
 - `ended`: the entities that were in `touching` the previous step and
   aren't now, because they moved apart, lost their collider or were
   removed.
+
+While a body sleeps, its contacts keep the entities it touched when it fell
+asleep in `touching`, with nothing in `started` or `ended` (see
+[Collision detection for sleeping bodies](./sleeping.md#collision-detection-for-sleeping-bodies)).
+A new contact with a solid collider is listed in `started` and wakes the
+body.
 
 Only entities with a `ContactsEcsComponent` have their contacts recorded.
 When two entities touch, add it to the one whose system reacts. A system

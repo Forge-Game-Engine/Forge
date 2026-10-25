@@ -158,6 +158,31 @@ constant load, such as gravity, a jointed body stays a small distance from
 its exact position.
 :::
 
+## Sleeping jointed bodies
+
+Two dynamic bodies a joint connects are in one
+[island](./sleeping.md#islands): they fall asleep together, and when
+either is disturbed, both wake. A joint to a static body, a kinematic body
+or a collider-only entity doesn't put that entity in the island. The
+sleep system records its pose and collider instead, and wakes the sleeping
+body when that entity is moved, turned, removed or given a different
+collider, or
+when a kinematic body at that end has a non-zero velocity. A joint links
+its bodies only while both have a `PositionEcsComponent` and a
+`RotationEcsComponent`, the same condition under which the joint system
+solves it.
+
+Adding or removing a joint wakes its bodies' islands on the sleep system's
+next run, and so does changing its `entityA` or `entityB`. Changing its
+other fields, such as its limits, anchors, `hertz` or `dampingRatio`,
+doesn't. To wake the bodies after such a change, set
+`wakeRequested` on one of them:
+
+```ts
+hinge.upperAngle = Math.PI / 2;
+rigidBody.wakeRequested = true;
+```
+
 ## Removing a joint
 
 Remove the joint's entity with `world.removeEntity`. The bodies are no
