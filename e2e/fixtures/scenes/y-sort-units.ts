@@ -158,7 +158,7 @@ export const createScene: CreateScene = async (
     positionId,
   );
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   let clockInMilliseconds = 0;

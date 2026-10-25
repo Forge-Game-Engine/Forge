@@ -7,6 +7,7 @@ import {
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
@@ -88,7 +89,7 @@ export const createMovingPlatformGame = async (): Promise<Game> => {
   // step's velocity changes are reflected in the solver; euler integration
   // runs last so it moves every body (dynamic crates and the kinematic
   // platform alike) from this step's resolved velocity.
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createGravityEcsSystem(time), physics);
   world.addSystem(createPlatformMoverEcsSystem(), physics);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
@@ -106,10 +107,11 @@ export const createMovingPlatformGame = async (): Promise<Game> => {
   );
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
   world.addSystem(createContinuousCollisionEcsSystem(), physics);
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps, so the frame draws the latest
   // step's poses.
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 

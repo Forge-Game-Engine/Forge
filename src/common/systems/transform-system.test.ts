@@ -5,8 +5,13 @@ import {
   addPositionComponent,
   addRotationComponent,
   addScaleComponent,
+  addTransformInterpolationComponent,
+  PositionEcsComponent,
   positionId,
+  transformInterpolationId,
 } from '../components/index.js';
+import { registerFixedUpdate, Time } from '../time/index.js';
+import { createTransformInterpolationEcsSystem } from './transform-interpolation-system.js';
 import { createTransformEcsSystem } from './transform-system.js';
 
 describe('transform-system', () => {
@@ -14,7 +19,7 @@ describe('transform-system', () => {
 
   beforeEach(() => {
     world = new EcsWorld();
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(new Time()));
   });
 
   it('should set world position to local position for a root entity', () => {
@@ -420,5 +425,333 @@ describe('transform-system', () => {
 
     expect(childScale.local).toEqual({ x: 2, y: 2 });
     expect(childScale.world).toEqual({ x: 6, y: 6 });
+  });
+});
+
+// A fixed step of 31.25 ms and frames of 7.8125 ms, both exact in binary: the
+// first step runs on the fourth frame, and every fourth frame after it, so
+// the frames between steps have overstep fractions of exactly 0.25, 0.5 and
+// 0.75.
+const fixedDeltaMilliseconds = 1000 / 32;
+const frameMilliseconds = 1000 / 128;
+
+interface SteppedWorld {
+  world: EcsWorld;
+  time: Time;
+  /** Runs one frame of `frameMilliseconds`. */
+  frame: () => void;
+  /** Run in each fixed step, before the step's transform pass. */
+  beforeFixedPass: (() => void)[];
+  /** Run in each fixed step, after the step's transform pass. */
+  inStep: (() => void)[];
+}
+
+function createSteppedWorld(withEndRecord = true): SteppedWorld {
+  const world = new EcsWorld();
+  const time = new Time();
+  const beforeFixedPass: (() => void)[] = [];
+  const inStep: (() => void)[] = [];
+
+  time.fixedDeltaTimeInMilliseconds = fixedDeltaMilliseconds;
+
+  let now = 0;
+
+  time.update(now);
+
+  const physics = { group: registerFixedUpdate(world, time) };
+
+  world.addSystem(
+    {
+      query: [],
+      update: (): void => {
+        for (const callback of beforeFixedPass) {
+          callback();
+        }
+      },
+    },
+    physics,
+  );
+  world.addSystem(createTransformEcsSystem(time), physics);
+  world.addSystem(
+    {
+      query: [],
+      update: (): void => {
+        for (const callback of inStep) {
+          callback();
+        }
+      },
+    },
+    physics,
+  );
+
+  if (withEndRecord) {
+    world.addSystem(createTransformInterpolationEcsSystem(), physics);
+  }
+
+  world.addSystem(createTransformEcsSystem(time));
+
+  return {
+    world,
+    time,
+    frame: (): void => {
+      now += frameMilliseconds;
+      time.update(now);
+      world.update();
+    },
+    beforeFixedPass,
+    inStep,
+  };
+}
+
+function frames(stepped: SteppedWorld, count: number): void {
+  for (let i = 0; i < count; i++) {
+    stepped.frame();
+  }
+}
+
+const movingEntities = new WeakMap<PositionEcsComponent, number>();
+
+// An entity moved 16 units along `+X` in each fixed step.
+function addMovingEntity(
+  stepped: SteppedWorld,
+  x = 0,
+  interpolated = true,
+): PositionEcsComponent {
+  const entity = stepped.world.createEntity();
+  const position = addPositionComponent(stepped.world, entity, {
+    local: { x, y: 0 },
+  });
+
+  if (interpolated) {
+    addTransformInterpolationComponent(stepped.world, entity);
+  }
+
+  stepped.inStep.push(() => {
+    position.local.x += 16;
+  });
+
+  movingEntities.set(position, entity);
+
+  return position;
+}
+
+function entityOf(position: PositionEcsComponent): number {
+  const entity = movingEntities.get(position);
+
+  if (entity === undefined) {
+    throw new Error('The position does not belong to a moving entity.');
+  }
+
+  return entity;
+}
+
+describe('transform-system interpolation', () => {
+  it('should draw an interpolated entity between the start and end of the latest step', () => {
+    const stepped = createSteppedWorld();
+    const position = addMovingEntity(stepped);
+    const drawn: number[] = [];
+
+    for (let i = 0; i < 9; i++) {
+      stepped.frame();
+      drawn.push(position.world.x);
+    }
+
+    // The first step runs on frame 4 (alpha 0), the second on frame 8.
+    expect(drawn).toEqual([0, 0, 0, 0, 4, 8, 12, 16, 20]);
+    expect(position.local.x).toBe(32);
+  });
+
+  it('should draw the end of the step when the overstep fraction reaches 1', () => {
+    const world = new EcsWorld();
+    const time = new Time();
+    const entity = world.createEntity();
+    const position = addPositionComponent(world, entity, {
+      local: { x: 16, y: 0 },
+    });
+    const interpolation = addTransformInterpolationComponent(world, entity);
+
+    interpolation.stepStart.position.x = 0;
+    world.addSystem(createTransformEcsSystem(time));
+    time.fixedDeltaTimeInMilliseconds = fixedDeltaMilliseconds;
+    time.update(0);
+    // Nothing takes fixed steps, so the fraction passes 1.
+    time.update(fixedDeltaMilliseconds * 1.5);
+    world.update();
+
+    expect(time.fixedOverstepFraction).toBe(1.5);
+    expect(position.world.x).toBe(16);
+  });
+
+  it('should draw an entity without the component at local', () => {
+    const stepped = createSteppedWorld();
+    const position = addMovingEntity(stepped, 0, false);
+
+    frames(stepped, 5);
+
+    expect(position.world.x).toBe(16);
+  });
+
+  it('should blend rotation the shorter way across ±π', () => {
+    const stepped = createSteppedWorld();
+    const entity = stepped.world.createEntity();
+
+    addPositionComponent(stepped.world, entity);
+
+    const rotation = addRotationComponent(stepped.world, entity, {
+      local: 3,
+    });
+
+    addTransformInterpolationComponent(stepped.world, entity);
+    stepped.inStep.push(() => {
+      rotation.local = -3;
+    });
+
+    frames(stepped, 6);
+
+    expect(rotation.world).toBeCloseTo(Math.PI);
+  });
+
+  it('should compose a child on its interpolated parent', () => {
+    const stepped = createSteppedWorld();
+    const parentPosition = addMovingEntity(stepped);
+    const parent = entityOf(parentPosition);
+    const child = stepped.world.createEntity();
+    const childPosition = addPositionComponent(stepped.world, child, {
+      local: { x: 1, y: 0 },
+    });
+
+    stepped.world.setParent(child, parent);
+
+    frames(stepped, 6);
+
+    expect(parentPosition.world.x).toBe(8);
+    expect(childPosition.world).toEqual({ x: 9, y: 0 });
+  });
+
+  it('should blend an interpolated child and compose it on its interpolated parent', () => {
+    const stepped = createSteppedWorld();
+
+    const parent = entityOf(addMovingEntity(stepped));
+    const child = stepped.world.createEntity();
+    const childPosition = addPositionComponent(stepped.world, child);
+
+    addTransformInterpolationComponent(stepped.world, child);
+    stepped.world.setParent(child, parent);
+    stepped.inStep.push(() => {
+      childPosition.local.y += 8;
+    });
+
+    frames(stepped, 6);
+
+    expect(childPosition.world).toEqual({ x: 8, y: 4 });
+  });
+
+  it('should compose world from local exactly in the fixed step, and record the step start', () => {
+    const stepped = createSteppedWorld();
+    const position = addMovingEntity(stepped);
+    const interpolation = stepped.world.getComponent(
+      entityOf(position),
+      transformInterpolationId,
+    );
+    const seenInStep: { world: number; stepStart: number }[] = [];
+
+    stepped.inStep.unshift(() => {
+      seenInStep.push({
+        world: position.world.x,
+        stepStart: interpolation?.stepStart.position.x ?? Number.NaN,
+      });
+    });
+
+    frames(stepped, 8);
+
+    // Frame 7 drew the entity at 12, a step behind its local 16.
+    expect(seenInStep).toEqual([
+      { world: 0, stepStart: 0 },
+      { world: 16, stepStart: 16 },
+    ]);
+  });
+
+  it('should draw a teleport made between frames at once and blend again from it after the next step', () => {
+    const stepped = createSteppedWorld();
+    const position = addMovingEntity(stepped);
+    const drawn: number[] = [];
+
+    frames(stepped, 5);
+    position.local.x = 100;
+
+    for (let i = 0; i < 4; i++) {
+      stepped.frame();
+      drawn.push(position.world.x);
+    }
+
+    // Frames 6 and 7 draw the teleport, frame 8 steps from it to 116.
+    expect(drawn).toEqual([100, 100, 100, 104]);
+  });
+
+  it('should blend from a teleport made in the step before its transform pass without a slide', () => {
+    const stepped = createSteppedWorld();
+    const position = addMovingEntity(stepped);
+    const drawn: number[] = [];
+    let teleport = false;
+
+    stepped.beforeFixedPass.push(() => {
+      if (teleport) {
+        position.local.x = 100;
+        teleport = false;
+      }
+    });
+
+    frames(stepped, 5);
+    teleport = true;
+
+    for (let i = 0; i < 4; i++) {
+      stepped.frame();
+      drawn.push(position.world.x);
+    }
+
+    expect(drawn).toEqual([8, 12, 100, 104]);
+  });
+
+  it('should draw an entity created between steps at local until its first step', () => {
+    const stepped = createSteppedWorld();
+
+    frames(stepped, 5);
+
+    const position = addMovingEntity(stepped, 50);
+    const drawn: number[] = [];
+
+    for (let i = 0; i < 4; i++) {
+      stepped.frame();
+      drawn.push(position.world.x);
+    }
+
+    expect(drawn).toEqual([50, 50, 50, 54]);
+  });
+
+  it('should draw a moving interpolated entity at local without the end-of-step record', () => {
+    const stepped = createSteppedWorld(false);
+    const position = addMovingEntity(stepped);
+
+    frames(stepped, 5);
+
+    expect(position.world.x).toBe(16);
+  });
+
+  it('should keep freezing a static interpolated entity', () => {
+    const stepped = createSteppedWorld();
+    const entity = stepped.world.createEntity();
+    const position = addPositionComponent(stepped.world, entity, {
+      local: { x: 10, y: 20 },
+      isStatic: true,
+    });
+
+    addTransformInterpolationComponent(stepped.world, entity);
+
+    // Both transform passes have computed it once by the first step.
+    frames(stepped, 4);
+    position.local.x = 999;
+    frames(stepped, 5);
+
+    expect(position.world).toEqual({ x: 10, y: 20 });
   });
 });

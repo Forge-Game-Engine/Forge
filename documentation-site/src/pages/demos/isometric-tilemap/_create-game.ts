@@ -1,6 +1,7 @@
 import {
   addPositionComponent,
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   positionId,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
@@ -164,7 +165,7 @@ export const createIsometricTilemapGame = async (
   const fixedUpdate = registerFixedUpdate(world, time);
   const physics = { group: fixedUpdate };
 
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   // Sets the velocity the solver starts from.
   world.addSystem(createPlayerMoveEcsSystem(moveInput), physics);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
@@ -189,6 +190,7 @@ export const createIsometricTilemapGame = async (
     physics,
   );
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps.
   // Edits the walls layer before the tilemap systems read it, so a toggled
@@ -202,7 +204,7 @@ export const createIsometricTilemapGame = async (
   // world transform before they're drawn. It reads `time` to play the
   // water.
   world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

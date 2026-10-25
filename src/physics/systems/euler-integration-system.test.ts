@@ -100,7 +100,7 @@ describe('createEulerIntegrationEcsSystem', () => {
   it('keeps a moving body where it integrated to when the transform system runs', () => {
     // The transform system derives `world` from `local` every frame, so
     // physics has to move bodies through `local` or they snap back.
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
 
     const entity = createBody('dynamic');
 
@@ -196,7 +196,7 @@ describe('createEulerIntegrationEcsSystem', () => {
   it('keeps a teleport written to local after the transform pass', () => {
     world = new EcsWorld();
 
-    const transformSystem = createTransformEcsSystem();
+    const transformSystem = createTransformEcsSystem(time);
     const integrationSystem = createEulerIntegrationEcsSystem(time);
     let teleportTo: { x: number; y: number } | null = null;
 

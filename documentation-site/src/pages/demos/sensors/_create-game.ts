@@ -1,5 +1,6 @@
 import {
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
@@ -71,7 +72,7 @@ export const createSensorsGame = async (): Promise<Game> => {
   const fixedUpdate = registerFixedUpdate(world, time);
   const physics = { group: fixedUpdate };
 
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createGravityEcsSystem(time), physics);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
@@ -90,13 +91,14 @@ export const createSensorsGame = async (): Promise<Game> => {
   );
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
   world.addSystem(createContinuousCollisionEcsSystem(), physics);
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps. A spawned ball joins the
   // simulation at the next fixed step.
   world.addSystem(
     createBallSpawnerEcsSystem(time, ballSprite, -height / 2 - 40, width * 0.4),
   );
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 

@@ -76,7 +76,7 @@ describe('tile layer collision in the physics pipeline', () => {
     collisionManifolds = [];
 
     world.addSystem(createTilemapColliderEcsSystem());
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createGravityEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(

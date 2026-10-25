@@ -6,6 +6,7 @@ import {
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
@@ -54,7 +55,7 @@ export const createNewtonsCradleGame = async (): Promise<Game> => {
   // the poses the previous step's integration left in `local`. The revolute
   // joint solver must run after collision resolution so each ball's hinge
   // gets the "last word" on velocity each step.
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createGravityEcsSystem(time), physics);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
@@ -72,13 +73,14 @@ export const createNewtonsCradleGame = async (): Promise<Game> => {
   world.addSystem(createRevoluteJointEcsSystem(time), physics);
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
   world.addSystem(createContinuousCollisionEcsSystem(), physics);
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps. `createArmEcsSystem` writes each
-  // arm's `local` pose from its ball's latest position, so it runs before
-  // the transform system that turns every `local` pose into the `world`
-  // pose rendering reads.
-  world.addSystem(createArmEcsSystem());
-  world.addSystem(createTransformEcsSystem());
+  // arm's `local` pose from where its ball is drawn this frame, so it runs
+  // before the transform system that turns every `local` pose into the
+  // `world` pose rendering reads.
+  world.addSystem(createArmEcsSystem(time));
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 

@@ -31,6 +31,10 @@ export default function Physics(): JSX.Element {
           file: 'create-game.ts',
         },
         {
+          text: 'Each frame draws the bodies between their last two fixed steps, so they move smoothly on displays faster than 60 Hz.',
+          file: 'create-game.ts',
+        },
+        {
           text: 'A click converts the cursor to world space and applies an explosive force that blasts nearby shapes away.',
           file: 'create-game.ts',
         },

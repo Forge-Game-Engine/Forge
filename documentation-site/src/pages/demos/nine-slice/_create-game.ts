@@ -28,7 +28,7 @@ export const createNineSliceGame = async (): Promise<Game> => {
   world.addSystem(createPanelEcsSystem(time));
   // After the panel system spins each panel's `local` rotation, so the
   // render system draws this frame's `world` rotation.
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

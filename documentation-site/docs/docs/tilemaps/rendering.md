@@ -29,7 +29,7 @@ import { createTilemapRenderEcsSystem } from '@forge-game-engine/forge/tilemaps'
 
 world.addSystem(tileEditingSystem);
 world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
-world.addSystem(createTransformEcsSystem());
+world.addSystem(createTransformEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
 ```
 

@@ -38,7 +38,7 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
     collisionPairs = [];
     collisionManifolds = [];
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(new Time()));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(
       createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
@@ -421,7 +421,7 @@ describe('createNarrowPhaseEcsSystem contacts in the fixed-update group', () => 
       },
       fixed,
     );
-    world.addSystem(createTransformEcsSystem(), fixed);
+    world.addSystem(createTransformEcsSystem(time), fixed);
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs), fixed);
     world.addSystem(
       createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
@@ -436,7 +436,7 @@ describe('createNarrowPhaseEcsSystem contacts in the fixed-update group', () => 
       },
       fixed,
     );
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem({
       query: [],
       update: (): void => {

@@ -35,7 +35,7 @@ export const createTextureFilteringGame = async (): Promise<Game> => {
   world.addSystem(createCameraEcsSystem(time));
   // Derives each sprite's `world` pose from its `local` pose for the render
   // system to draw.
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

@@ -1,5 +1,6 @@
 import {
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
@@ -91,7 +92,7 @@ export const createPathFindingGame = async (
   const fixedUpdate = registerFixedUpdate(world, time);
   const physics = { group: fixedUpdate };
 
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createNavigationAgentEcsSystem(time), physics);
   world.addSystem(createApplyVelocityEcsSystem(), physics);
   // A top-down level: no gravity.
@@ -114,14 +115,15 @@ export const createPathFindingGame = async (
     physics,
   );
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps.
   // Sets the units' targets and moves the dragged wall's `position.local`.
   world.addSystem(createPointerEcsSystem(renderContext, inputs));
   // Before the transform system, so what they draw is in place this frame.
   world.addSystem(createGridOverlayEcsSystem());
-  world.addSystem(createPathLinesEcsSystem(renderContext));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createPathLinesEcsSystem(renderContext, time));
+  world.addSystem(createTransformEcsSystem(time));
   // Bakes the grid from the walls where the transform system just put
   // them, so the agents plan around a moved wall from the next step.
   world.addSystem(createBakeGridEcsSystem());

@@ -82,7 +82,7 @@ describe('navigation agents with physics', () => {
     const contactConstraints: ContactConstraint[] = [];
     const unitRadius = 4;
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createNavigationAgentEcsSystem(time));
     world.addSystem(createUnitVelocityEcsSystem());
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));

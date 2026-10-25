@@ -6,6 +6,7 @@ import {
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
@@ -161,7 +162,7 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
   const physics = { group: fixedUpdate };
 
   world.addSystem(createBallResetEcsSystem(random, missY), physics);
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
@@ -178,6 +179,7 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
   world.addSystem(createBallEcsSystem(brickField), physics);
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
   world.addSystem(createContinuousCollisionEcsSystem(), physics);
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps. The paddle moves every frame by
   // its `local` pose, which the next fixed step collides with.
@@ -185,7 +187,7 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
   world.addSystem(createBackgroundEcsSystem(time));
   world.addSystem(createPaddleEcsSystem(moveInput, time));
   world.addSystem(createBrickEcsSystem(time));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

@@ -234,7 +234,9 @@ draw a value that changes in fixed steps smoothly, interpolate between its
 values at the previous and the latest fixed step by this fraction. With
 `registerFixedUpdate`, read it in the default group or a group after it:
 before the fixed steps run, it still includes this frame's delta time and can
-be `1` or more.
+be `1` or more. The transform system interpolates transforms by it (see
+[Interpolating between fixed steps](./transforms.md#interpolating-between-fixed-steps)
+in Transforms).
 
 ## Measuring the frame rate
 

@@ -46,7 +46,7 @@ const trail = addTrailComponent(world, ship, {
   endColor: new Color(1, 0.2, 0, 0),
 });
 
-world.addSystem(createTransformEcsSystem());
+world.addSystem(createTransformEcsSystem(time));
 world.addSystem(createTrailEcsSystem(time, renderContext));
 world.addSystem(createRenderEcsSystem(renderContext));
 ```

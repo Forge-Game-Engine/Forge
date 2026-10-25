@@ -428,6 +428,13 @@ functions against the same entity (position + rotation + scale + sprite +
 that are always the root of their own entity in practice (currently just
 `camera`) additionally get a `create<Name>` aggregate factory that creates
 an entity and calls the relevant `add<Name>Component` functions against it.
+An `add<Name>Component` factory may also attach a companion component when
+every entity with its own component needs the companion to behave
+correctly by default: `addRigidBodyComponent` adds a
+`TransformInterpolationEcsComponent`, so bodies don't stutter between
+fixed steps. It adds the companion only when the entity doesn't have one,
+and its JSDoc names the companion and how to remove it. Anything a caller
+can reasonably go without stays a separate call.
 See the `create-component` skill for the full pattern, including the
 default-options-object convention and `create-camera.ts` as the
 aggregate-factory example.
@@ -985,14 +992,30 @@ docs samples. The transform system overwrites it on its next pass. The
 start `world` as a copy of it.
 
 Physics runs in the `fixed-update` group (`registerFixedUpdate`), so a
-world with physics registers two instances of the transform system: one
-first in the fixed-update group, so every fixed step's physics systems read
-current poses, and one in the default group before rendering, so a frame
-draws the latest step. Both are the same owner of `world`. A world without
-physics registers one, after the systems that write `local` and before
-rendering. A once-per-frame system that reads a dynamic or kinematic
-body's pose reads `local` (bodies are always root entities): before the
-default group's transform pass, its `world` is a step behind.
+world with physics registers two instances of the transform system
+(`createTransformEcsSystem(time)`): one first in the fixed-update group, so
+every fixed step's physics systems read current poses, and one in the
+default group before rendering. Both are the same owner of `world`. A world
+without physics registers one, after the systems that write `local` and
+before rendering.
+
+Entities with a `TransformInterpolationEcsComponent` (every rigid body:
+`addRigidBodyComponent` adds it) are interpolated between fixed steps. The
+transform system owns the component's `stepStart` as well as `world`: its
+fixed-step pass composes `world` from `local` exactly and records `local`
+as `stepStart`. `createTransformInterpolationEcsSystem`, registered last in
+the fixed-update group, owns `stepEnd`. The default group's pass composes
+`world` from `local` blended between `stepStart` and `stepEnd` by
+`time.fixedOverstepFraction`, while `local` still equals `stepEnd`; when
+something else wrote `local` since the step (a teleport), it draws `local`.
+So outside a fixed step a body's `world` is its drawn pose, up to a step
+behind `local`. A once-per-frame system reads a body's `local` for game
+logic (bodies are always root entities, so it's the simulated world pose),
+and `getInterpolatedLocalPosition`/`getInterpolatedLocalRotation` to place
+something on screen from it (a camera, a sprite drawn between bodies).
+Physics queries (`raycast`) test a moving body at its `local` pose.
+Teleports go in the default group, or in the fixed-update group before its
+transform pass.
 Systems that apply forces or react to `ContactsEcsComponent.started`/`ended`
 go in the fixed-update group; systems that read `TriggerAction.isTriggered`
 stay in the default group and hand a press to a fixed-step system through a

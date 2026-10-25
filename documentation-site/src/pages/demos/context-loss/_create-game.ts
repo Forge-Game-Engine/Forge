@@ -19,7 +19,7 @@ export const createContextLossGame = async (): Promise<Game> => {
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createSpinEcsSystem(time));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

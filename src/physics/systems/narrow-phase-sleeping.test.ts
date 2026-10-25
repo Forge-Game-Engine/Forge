@@ -310,7 +310,7 @@ describe('collision detection in a sleeping pile', () => {
     collisionManifolds = [];
     contactConstraints = [];
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(
       createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

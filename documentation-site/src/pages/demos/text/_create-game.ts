@@ -23,7 +23,7 @@ import { createPlayground, Playground } from './_create-playground';
 export const createTextGame = async (
   onPlaygroundReady: (playground: Playground) => void,
 ): Promise<Game> => {
-  const { game, world, renderContext } = createGame('demo-game');
+  const { game, world, renderContext, time } = createGame('demo-game');
 
   createCamera(world, {
     isStatic: true,
@@ -48,7 +48,7 @@ export const createTextGame = async (
 
   onPlaygroundReady(playground);
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
 

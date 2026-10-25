@@ -314,7 +314,7 @@ export const createScene: CreateScene = (
   }
 
   world.addSystem(createSpriteAnimationEcsSystem(time, clips));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

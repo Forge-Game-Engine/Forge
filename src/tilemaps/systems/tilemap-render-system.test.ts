@@ -257,7 +257,7 @@ describe('createTilemapRenderEcsSystem', () => {
   });
 
   it('gives chunk entities the layer’s world transform once the transform system runs', () => {
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
 
     const { entity, layer } = addLayer();
 

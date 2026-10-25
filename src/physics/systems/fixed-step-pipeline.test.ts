@@ -3,6 +3,8 @@ import {
   addPositionComponent,
   addRotationComponent,
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
+  getInterpolatedLocalPosition,
   PositionEcsComponent,
   registerFixedUpdate,
   RotationEcsComponent,
@@ -62,8 +64,13 @@ interface FallResult {
   halfway: BallState;
   /** The ball after the frames that end at 1000 ms. */
   end: BallState;
-  /** Whether every frame ended with the ball's `world` equal to its `local`. */
-  worldFollowedLocal: boolean;
+  /**
+   * Whether every frame ended with the ball's `world` equal to the pose
+   * `getInterpolatedLocalPosition` reports it's drawn at.
+   */
+  worldFollowedDrawnPose: boolean;
+  /** Whether any frame ended with the ball's `world` behind its `local`. */
+  worldTrailedLocal: boolean;
 }
 
 function boxCollider(width: number, height: number): PolygonCollider {
@@ -118,7 +125,7 @@ function dropBall(
   );
 
   if (withFixedTransformPass) {
-    world.addSystem(createTransformEcsSystem(), physics);
+    world.addSystem(createTransformEcsSystem(time), physics);
   }
 
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
@@ -143,7 +150,8 @@ function dropBall(
   world.addSystem(createAngularVelocityMotorEcsSystem(time), physics);
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
   world.addSystem(createContinuousCollisionEcsSystem(), physics);
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time));
 
   // A static floor whose top face is at `y = 0` (`+Y` is down).
   const floor = world.createEntity();
@@ -176,16 +184,19 @@ function dropBall(
   });
 
   let halfway: BallState | null = null;
-  let worldFollowedLocal = true;
+  let worldFollowedDrawnPose = true;
+  let worldTrailedLocal = false;
 
   for (const frame of frames) {
     now += frame;
     time.update(now);
     world.update();
 
-    worldFollowedLocal &&=
-      position.world.x === position.local.x &&
-      position.world.y === position.local.y;
+    const drawn = getInterpolatedLocalPosition(world, ball, time);
+
+    worldFollowedDrawnPose &&=
+      position.world.x === drawn.x && position.world.y === drawn.y;
+    worldTrailedLocal ||= position.world.y !== position.local.y;
 
     if (now === 500) {
       halfway = snapshot();
@@ -198,7 +209,12 @@ function dropBall(
     );
   }
 
-  return { halfway, end: snapshot(), worldFollowedLocal };
+  return {
+    halfway,
+    end: snapshot(),
+    worldFollowedDrawnPose,
+    worldTrailedLocal,
+  };
 }
 
 describe('the physics pipeline in the fixed-update group', () => {
@@ -234,9 +250,12 @@ describe('the physics pipeline in the fixed-update group', () => {
   );
 
   it.each(Object.keys(frameRatePatterns))(
-    'should leave every frame with the ball drawn where it is with %s',
+    'should leave every frame with the ball drawn at its interpolated pose with %s',
     (name) => {
-      expect(results[name].worldFollowedLocal).toBe(true);
+      expect(results[name].worldFollowedDrawnPose).toBe(true);
+      // Interpolation draws the ball between its last two steps, behind
+      // where the simulation has it.
+      expect(results[name].worldTrailedLocal).toBe(true);
     },
   );
 

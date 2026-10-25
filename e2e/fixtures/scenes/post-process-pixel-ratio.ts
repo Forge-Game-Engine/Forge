@@ -107,7 +107,7 @@ export const createScene: CreateScene = (
     height: squareWorldSize,
   });
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   if (effect === 'bloom') {

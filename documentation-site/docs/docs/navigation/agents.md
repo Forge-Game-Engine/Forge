@@ -135,6 +135,7 @@ velocity is computed with the fixed delta time physics integrates with:
 ```ts
 import {
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import { createNavigationAgentEcsSystem } from '@forge-game-engine/forge/navigation';
@@ -143,10 +144,11 @@ const physics = { group: registerFixedUpdate(world, time) };
 
 // Systems that set targets, and anything that changes the grid or graph,
 // run in the default group.
-world.addSystem(createTransformEcsSystem(), physics);
+world.addSystem(createTransformEcsSystem(time), physics);
 world.addSystem(createNavigationAgentEcsSystem(time), physics);
 world.addSystem(createUnitVelocityEcsSystem(), physics);
 // The physics systems, from gravity to integration, with `physics`.
+world.addSystem(createTransformInterpolationEcsSystem(), physics);
 ```
 
 The agent system runs after the fixed-update group's

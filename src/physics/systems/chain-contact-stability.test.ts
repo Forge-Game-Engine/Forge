@@ -103,7 +103,7 @@ describe('contact stability on a ChainCollider room', () => {
     collisionManifolds = [];
     contactConstraints = [];
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createGravityEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(

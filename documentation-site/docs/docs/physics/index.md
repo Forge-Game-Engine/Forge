@@ -62,6 +62,7 @@ order:
 ```ts
 import {
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
@@ -94,7 +95,7 @@ const fixedUpdate = registerFixedUpdate(world, time);
 const physics = { group: fixedUpdate };
 
 // Once per fixed step.
-world.addSystem(createTransformEcsSystem(), physics);
+world.addSystem(createTransformEcsSystem(time), physics);
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
 world.addSystem(
   createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
@@ -117,9 +118,10 @@ world.addSystem(createPrismaticJointEcsSystem(time), physics);
 world.addSystem(createAngularVelocityMotorEcsSystem(time), physics);
 world.addSystem(createEulerIntegrationEcsSystem(time), physics);
 world.addSystem(createContinuousCollisionEcsSystem(), physics);
+world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
 // Once per frame, after the fixed steps.
-world.addSystem(createTransformEcsSystem());
+world.addSystem(createTransformEcsSystem(time));
 world.addSystem(createCameraEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
 ```
@@ -146,10 +148,17 @@ world.addSystem(createRenderEcsSystem(renderContext));
 7. `createEulerIntegrationEcsSystem` moves each body's local position and
    rotation by its velocity, and continuous collision detection checks
    that movement.
-8. The second `createTransformEcsSystem`, in the default group, runs once
-   per frame after the fixed steps, so the camera and rendering read the
-   latest step's poses. Without it, a frame draws each body where it was
-   at the start of the frame's last step.
+8. `createTransformInterpolationEcsSystem` records where each body ended
+   the step, so the frame's transform system can draw it between its last
+   two poses (see
+   [Interpolating between fixed steps](../common/transforms.md#interpolating-between-fixed-steps)).
+   It runs after every system that moves bodies in the step.
+9. The second `createTransformEcsSystem`, in the default group, runs once
+   per frame after the fixed steps. It draws each body between where it
+   started and ended the latest step, by how far the frame is towards the
+   next step, so bodies move on every frame at any display rate. Without
+   it, a frame draws each body where it was at the start of the frame's
+   last step.
 
 Register only the systems for the features a game uses, in the same
 relative order. The `physics` object is a local variable, not part of the
@@ -182,10 +191,15 @@ something that is true for one frame or when it draws:
 - it spawns entities, edits tiles or colliders, or changes the camera,
   rendering, UI or audio.
 
-A once-per-frame system that reads a dynamic or kinematic body's pose
-reads its `position.local` and `rotation.local`. These bodies have no
-parent, so `local` is their world pose. Before the frame's transform system
-runs, their `world` is the pose from the start of the frame's last step.
+A dynamic or kinematic body has no parent, so its `position.local` and
+`rotation.local` are its simulated world pose. A once-per-frame system
+reads them for game logic. A system that positions or draws something
+from a body's pose reads the pose the body is drawn at this frame, with
+[`getInterpolatedLocalPosition`](/Forge/docs/api/functions/getInterpolatedLocalPosition)
+and
+[`getInterpolatedLocalRotation`](/Forge/docs/api/functions/getInterpolatedLocalRotation),
+so it lines up with the body on screen (see
+[Reading the drawn pose](../common/transforms.md#reading-the-drawn-pose)).
 
 `ContactsEcsComponent.touching` is the state after the latest step, so a
 system in either group can read it.

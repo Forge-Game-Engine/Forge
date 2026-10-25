@@ -39,14 +39,27 @@ enter a terrain from any side, including from below. A ray hits a
 enters solid, so a ray that starts inside a chain's solid doesn't hit the
 edge it leaves by.
 
+## Which pose a ray tests
+
+A ray tests each collider at its simulated pose:
+
+- A collider on a dynamic or kinematic body is tested at the body's
+  `position.local` and `rotation.local`: where the latest fixed step left
+  it, or where game code has since placed it. Bodies are drawn between
+  their last two fixed steps (see
+  [Interpolating between fixed steps](../common/transforms.md#interpolating-between-fixed-steps)),
+  so a hit on a moving body can be up to one step ahead of where the body
+  is drawn.
+- Every other collider is tested at its `position.world` and
+  `rotation.world`.
+
 :::caution
-`raycast` skips every collider whose `aabb` doesn't overlap the ray, and
-`createBroadPhaseEcsSystem` is the system that writes `aabb`, once per
-fixed step. Register the broad phase, and cast rays after it has run: a
-collider is tested where it was when the broad phase last ran, and a
-collider added since then isn't hit. A ray cast from the default group or
-an event handler tests the colliders as of the latest fixed step, and on
-the frames before the first fixed step it hits nothing.
+`raycast` skips every collider without a dynamic or kinematic body whose
+`aabb` doesn't overlap the ray, and `createBroadPhaseEcsSystem` is the
+system that writes `aabb`, once per fixed step. Register the broad phase,
+and cast rays after it has run: such a collider's bounds are where it was
+when the broad phase last ran, one added since then isn't hit, and on the
+frames before the first fixed step none is hit.
 :::
 
 ## Choosing which colliders a ray hits

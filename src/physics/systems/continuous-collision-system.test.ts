@@ -120,7 +120,7 @@ describe('createContinuousCollisionEcsSystem', () => {
     time = new Time();
     time.update(0);
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem([]));
     world.addSystem(createEulerIntegrationEcsSystem(time));
     world.addSystem(createContinuousCollisionEcsSystem());
@@ -344,7 +344,7 @@ describe('continuous collision of sleeping circles', () => {
 
     moveAfterTransformPass = (): void => {};
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     // Game code moving a body after the transform pass, so the sweep sees
     // a `local` position far from the `world` one.
     world.addSystem({ query: [], update: () => moveAfterTransformPass() });
@@ -430,7 +430,7 @@ describe('a sleeping circle in the full physics pipeline', () => {
     const collisionManifolds: CollisionManifold[] = [];
     const contactConstraints: ContactConstraint[] = [];
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(
       createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
@@ -550,7 +550,7 @@ describe('continuous collision in the full physics pipeline', () => {
 
     time.update(0);
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createGravityEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(

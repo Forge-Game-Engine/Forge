@@ -268,7 +268,7 @@ export const createScene: CreateScene = (
 
   const characterVisibility = addVisibilityComponent(world, characterEntity);
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   let clockInMilliseconds = 0;

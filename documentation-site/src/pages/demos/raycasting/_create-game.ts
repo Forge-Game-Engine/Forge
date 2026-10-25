@@ -66,13 +66,13 @@ export const createRaycastingGame = async (): Promise<Game> => {
   // A raycast sees the colliders as of the last fixed step. The fixed
   // step's `createTransformEcsSystem` runs first so the targets' `world`
   // poses, which the broad phase reads, are up to date.
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
 
   // Once per frame, after the fixed steps, so the ray visual's `world` pose
   // (which `updateRayVisual` writes as `local` from the mouse handler below)
   // is up to date before the render system reads it.
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 

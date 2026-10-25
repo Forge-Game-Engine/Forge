@@ -166,7 +166,7 @@ export const createScene: CreateScene = (
     spriteWorldSizes.push({ width: sprite.width, height: sprite.height });
   }
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

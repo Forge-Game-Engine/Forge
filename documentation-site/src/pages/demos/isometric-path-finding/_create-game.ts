@@ -1,6 +1,7 @@
 import {
   addPositionComponent,
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   positionId,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
@@ -161,7 +162,7 @@ export const createIsometricPathFindingGame = async (
   const fixedUpdate = registerFixedUpdate(world, time);
   const physics = { group: fixedUpdate };
 
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createPlayerMoveEcsSystem(moveInput), physics);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
@@ -182,6 +183,7 @@ export const createIsometricPathFindingGame = async (
     physics,
   );
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps.
   // Picks the goal cell, and edits the walls layer before the tilemap
@@ -195,7 +197,7 @@ export const createIsometricPathFindingGame = async (
   // puts them on the same frame.
   world.addSystem(createFindPathEcsSystem());
   world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   // The floor's `position.world` includes the map root's position once the

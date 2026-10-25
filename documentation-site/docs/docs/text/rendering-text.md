@@ -38,7 +38,7 @@ addTextComponent(world, label, {
   size: 24,
 });
 
-world.addSystem(createTransformEcsSystem());
+world.addSystem(createTransformEcsSystem(time));
 world.addSystem(createTextShapingEcsSystem());
 world.addSystem(createRenderEcsSystem(renderContext));
 ```
