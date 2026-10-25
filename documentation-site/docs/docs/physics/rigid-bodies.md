@@ -206,7 +206,8 @@ uses:
   `addRigidBodyComponent` to create a dynamic body asleep.
 - `wakeRequested`: set to `true` to wake the body.
 - `restTime` and `sleepRecord`: how long the body has been resting, and
-  its pose and contacts when it fell asleep. Only the sleep system writes
+  what it recorded when the body fell asleep (its pose, contacts, collider
+  and gravity, and what it rests on). Only the sleep system writes
   them.
 
 [Sleeping Bodies](./sleeping.md) describes each of them.
