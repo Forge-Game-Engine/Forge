@@ -646,6 +646,22 @@ describe('MyClass', () => {
   breakdown in the terminal summary or `coverage/index.html`) are good
   candidates for new tests.
 
+### Benchmarks
+
+- `npm run bench` runs Vitest's benchmark mode (`vitest bench --run`) over
+  every `src/**/*.bench.ts` file (`test.benchmark.include` in
+  `vite.config.base.js`). Put a benchmark next to the code it times, like a
+  test (`src/physics/systems/collision-pipeline.bench.ts`).
+- `tsconfig.build.json` and the coverage config exclude `**/*.bench.ts`, so
+  benchmarks never ship in `/dist` or count toward coverage.
+- Build each scene with a seeded `Random` so every run times the same
+  work, and build it outside the timed function so only the work under
+  test is timed. Vitest runs no hook before each timed call, so anything
+  that has to change between calls (moving bodies) happens inside it.
+- Benchmarks don't run in CI. Run one before and after a performance
+  change and put both sets of numbers, with the machine, in the pull
+  request.
+
 ## Integration & E2E Testing
 
 `/e2e` holds real-browser tests (Playwright) for cross-system behavior that
