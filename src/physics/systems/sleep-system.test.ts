@@ -96,9 +96,8 @@ describe('createSleepEcsSystem', () => {
   }
 
   /**
-   * A collider-only entity, static by convention, such as a floor. With no
-   * transform system in these tests, its `world` pose stays the `local` one
-   * it was created with until a test writes it.
+   * A collider-only entity, static by convention, such as a floor. Tests
+   * move it by writing `local`; the transform system composes `world`.
    */
   function addStaticCollider(
     position: Vector2 = { x: 0, y: 0 },
@@ -234,6 +233,60 @@ describe('createSleepEcsSystem', () => {
       expect(record.partners[0].position).not.toBe(
         world.getComponent(later, positionId)!.world,
       );
+    });
+
+    it('records no collider or gravity for a body without them, and no rotation for a partner without one', () => {
+      const entity = world.createEntity();
+      const position = addPositionComponent(world, entity);
+      const rotation = addRotationComponent(world, entity);
+      const rigidBody = addRigidBodyComponent(world, entity);
+      const floor = world.createEntity();
+
+      addPositionComponent(world, floor, { local: { x: 0, y: 2 } });
+      addColliderComponent(world, floor, { collider: new CircleCollider(1) });
+      setContacts([entity, floor]);
+
+      tick(ticksToSleep);
+
+      expect(rigidBody.sleepRecord).toEqual({
+        position: position.local,
+        rotation: rotation.local,
+        collider: null,
+        gravity: null,
+        partners: [
+          {
+            entity: floor,
+            position: { x: 0, y: 2 },
+            rotation: null,
+            collider: world.getComponent(floor, colliderId)!.collider,
+          },
+        ],
+        links: [floor],
+        manifolds,
+      });
+
+      tick(ticksToSleep);
+
+      expect(rigidBody.isSleeping).toBe(true);
+    });
+
+    it('records no partner for a contact whose entity was removed after the narrow phase, and wakes when the contact ends', () => {
+      const body = addBody();
+      const floor = addStaticCollider();
+
+      setContacts([body.entity, floor]);
+      tick(ticksToSleep - 1);
+      world.removeEntity(floor);
+      tick();
+
+      expect(body.rigidBody.isSleeping).toBe(true);
+      expect(body.rigidBody.sleepRecord!.partners).toEqual([]);
+      expect(body.rigidBody.sleepRecord!.links).toEqual([floor]);
+
+      setContacts();
+      tick();
+
+      expect(body.rigidBody.isSleeping).toBe(false);
     });
 
     it('keeps a moving body and its whole island awake', () => {

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addPositionComponent,
   addRotationComponent,
+  createTransformEcsSystem,
   positionId,
   rotationId,
 } from '../common/index.js';
@@ -27,6 +28,9 @@ describe('isBodyAwake', () => {
 
   beforeEach(() => {
     world = new EcsWorld();
+    // Game code moves a partner by writing `local`; the transform system
+    // composes the `world` pose a sleeping body compares with its record.
+    world.addSystem(createTransformEcsSystem());
   });
 
   function createSleepingBody(): {
@@ -224,13 +228,15 @@ describe('isBodyAwake', () => {
     [
       'moved',
       (floor): void => {
-        world.getComponent(floor, positionId)!.world.y += 0.5;
+        world.getComponent(floor, positionId)!.local.y += 0.5;
+        world.update();
       },
     ],
     [
       'turned',
       (floor): void => {
-        world.getComponent(floor, rotationId)!.world = 0;
+        world.getComponent(floor, rotationId)!.local = 0;
+        world.update();
       },
     ],
     [
@@ -245,7 +251,7 @@ describe('isBodyAwake', () => {
     expect(isBodyAwake(world, entity)).toBe(true);
   });
 
-  it('is false for a sleeping body when only its partner’s local position changed', () => {
+  it('wakes a sleeping body only once the transform system composes its partner’s new local position', () => {
     const { entity, floor } = createSleepingBody();
 
     // Collision reads `world`, so a `local` the transform system hasn't
@@ -253,6 +259,10 @@ describe('isBodyAwake', () => {
     world.getComponent(floor, positionId)!.local.y += 0.5;
 
     expect(isBodyAwake(world, entity)).toBe(false);
+
+    world.update();
+
+    expect(isBodyAwake(world, entity)).toBe(true);
   });
 
   it('compares a sleeping body with no record on its velocity, canSleep and wake request only', () => {
