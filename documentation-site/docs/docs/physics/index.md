@@ -40,6 +40,11 @@ The physics module has these parts:
 - **Sleeping bodies**: groups of touching or jointed bodies that have
   stopped moving are put to sleep, and the other physics systems skip them
   until they're disturbed. See [Sleeping Bodies](./sleeping.md).
+- **Dynamic AABB tree**: a
+  [`DynamicAabbTree`](/Forge/docs/api/classes/DynamicAabbTree) is a spatial
+  index that finds the boxes overlapping a box or crossed by a segment,
+  for a game's own spatial queries. See
+  [Dynamic AABB Tree](./dynamic-aabb-tree.md).
 
 ## Registering the physics systems
 
