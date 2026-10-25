@@ -9,37 +9,30 @@ import type {
 type Hooks = TilemapAnimatedTilesSceneHandle;
 type Page = import('@playwright/test').Page;
 
-// `Time` clamps a frame's delta to 250 ms, so one frame duration is
-// advanced in steps shorter than that.
-const stepMilliseconds = 50;
-
 /**
  * Advances the scene's time by `frames` of the animated tile's frame
- * durations, then reads the canvas in the same task - see AGENTS.md's "Be
- * wary of pixel-level rendering assertions" for why the last `step()` and
- * the read must happen in one `page.evaluate` call.
+ * durations, one step per frame duration, then reads the canvas in the same
+ * task - see AGENTS.md's "Be wary of pixel-level rendering assertions" for
+ * why the last `step()` and the read must happen in one `page.evaluate`
+ * call.
  */
 const advanceAndMeasure = (
   page: Page,
   frames: number,
 ): Promise<TilemapAnimatedTilesMeasurement> =>
-  page.evaluate(
-    ([frameCount, step]) => {
-      const scene = window.__forgeTestHooks as unknown as Hooks;
-      const steps = (frameCount * scene.frameDurationMilliseconds) / step;
+  page.evaluate((frameCount) => {
+    const scene = window.__forgeTestHooks as unknown as Hooks;
 
-      for (let i = 0; i < steps; i++) {
-        scene.step(step);
-      }
+    for (let i = 0; i < frameCount; i++) {
+      scene.step(scene.frameDurationMilliseconds);
+    }
 
-      if (steps === 0) {
-        scene.step();
-      }
+    if (frameCount === 0) {
+      scene.step();
+    }
 
-      return scene.measure();
-    },
-    [frames, stepMilliseconds] as const,
-  );
+    return scene.measure();
+  }, frames);
 
 test.beforeEach(async ({ page }) => {
   await test.step('load the tilemap-animated-tiles scene', async () => {
