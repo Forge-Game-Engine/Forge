@@ -1,11 +1,7 @@
-import { positionId } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { Axis1dAction } from '@forge-game-engine/forge/input';
-import { Vec2 } from '@forge-game-engine/forge/math';
 import {
   CollisionManifold,
-  ContactsEcsComponent,
-  contactsId,
   RigidBodyEcsComponent,
   rigidBodyId,
 } from '@forge-game-engine/forge/physics';
@@ -45,9 +41,8 @@ const isStandingOnGround = (
   });
 
 /**
- * Creates the system that walks the player, jumps it when the jump-input
- * system has set `jumpRequested`, and puts it back at its spawn point when
- * it touches the water layer or falls out of the map.
+ * Creates the system that walks the player and jumps it when the
+ * jump-input system has set `jumpRequested`.
  *
  * It sets the velocity the solver starts from, so register it in the
  * fixed-update group, after `createNarrowPhaseEcsSystem`, which finds the
@@ -62,39 +57,16 @@ const isStandingOnGround = (
 export const createPlayerMoveEcsSystem = (
   manifolds: readonly CollisionManifold[],
   inputs: PlayerMoveInputs,
-): EcsSystem<
-  [PlayerEcsComponent, RigidBodyEcsComponent, ContactsEcsComponent]
-> => ({
-  query: [playerId, rigidBodyId, contactsId],
-  update: (
-    world,
-    { entities, components: [players, rigidBodies, contacts] },
-  ) => {
+): EcsSystem<[PlayerEcsComponent, RigidBodyEcsComponent]> => ({
+  query: [playerId, rigidBodyId],
+  update: (_world, { entities, components: [players, rigidBodies] }) => {
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
       const player = players[i];
       const rigidBody = rigidBodies[i];
-      const position = world.getComponent(entity, positionId);
-
-      if (!position) {
-        continue;
-      }
-
       const { jumpRequested } = player;
 
       player.jumpRequested = false;
-
-      // The water layer is a sensor: it's reported in `touching`, and
-      // nothing pushes the player out of it.
-      if (
-        contacts[i].touching.includes(player.water) ||
-        position.world.y > player.fallLimit
-      ) {
-        position.local = Vec2.clone(player.spawn);
-        rigidBody.velocity = Vec2.zero;
-
-        continue;
-      }
 
       const walk = inputs.walkInput.value;
       const isGrounded = isStandingOnGround(manifolds, entity, player.ground);

@@ -121,6 +121,28 @@ describe('applyImpulse', () => {
     expect(rigidBody.angularVelocity).toBeCloseTo(0);
   });
 
+  it('treats a body with no RotationEcsComponent as unrotated', () => {
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity, { local: { x: 10, y: 0 } });
+    // A triangle whose centroid is (1, 0) in local space: unrotated, a
+    // world center of mass at (11, 0). Any other rotation would move it off
+    // the impulse's line of action and spin the body.
+    addColliderComponent(world, entity, {
+      collider: new PolygonCollider([
+        { x: 0, y: -1 },
+        { x: 3, y: 0 },
+        { x: 0, y: 1 },
+      ]),
+    });
+    const rigidBody = addRigidBodyComponent(world, entity);
+
+    applyImpulse(world, entity, { x: 0, y: 5 }, { x: 11, y: 0 });
+
+    expect(rigidBody.velocity.y).toBeGreaterThan(0);
+    expect(rigidBody.angularVelocity).toBeCloseTo(0);
+  });
+
   it.each(['static', 'kinematic'] as const)(
     'does not change velocity or angularVelocity for a %s body',
     (type) => {

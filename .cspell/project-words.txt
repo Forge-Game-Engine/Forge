@@ -276,6 +276,7 @@ reparents
 requizits
 resettables
 resizables
+respawn
 respawns
 retuned
 RGBA

@@ -44,6 +44,7 @@ import { createPlayer } from './_create-player';
 import { createJumpInputEcsSystem } from './_jump-input.system';
 import { outlineFragmentShader, outlineVertexShader } from './_outline.shader';
 import { createPlayerMoveEcsSystem } from './_player-move.system';
+import { createPlayerRespawnEcsSystem } from './_player-respawn.system';
 import { addTileToggleComponent } from './_tile-toggle.component';
 import { createTileToggleEcsSystem } from './_tile-toggle.system';
 
@@ -171,10 +172,14 @@ export const createTiledMapsGame = async (
 
   // The physics systems run once per fixed step, so the player walks and
   // jumps the same at any frame rate. The transform system comes first, so
-  // each step reads the poses the previous step left in `local`.
+  // each step reads the poses the previous step left in `local`. The
+  // respawn is a teleport, so it runs before the transform system: the
+  // step then finds the player's contacts at the spawn point instead of
+  // where it fell.
   const fixedUpdate = registerFixedUpdate(world, time);
   const physics = { group: fixedUpdate };
 
+  world.addSystem(createPlayerRespawnEcsSystem(), physics);
   world.addSystem(createTransformEcsSystem(), physics);
   world.addSystem(createGravityEcsSystem(time), physics);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
