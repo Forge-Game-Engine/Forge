@@ -34,11 +34,9 @@ const respawnFallDistance = 2000;
  * state and safe to read once per frame. The jump's velocity and a respawn's
  * `local` position reach the simulation at the next fixed step.
  *
- * The fall check reads the ball's `local` position, which is current
- * whenever this runs (the ball has no parent). The jump passes the ball's
- * `position.world` as the impulse point because `applyImpulse` measures the
- * lever arm from the center of mass it finds from `position.world` too: the
- * same pose on both sides gives no lever arm, so the jump adds no spin.
+ * It reads the ball's `local` position, which is current whenever this
+ * runs (the ball has no parent), where `world` is still the pose from the
+ * start of the frame's last step.
  * @param playerEntity - The ball's entity id.
  * @param terrainEntity - The terrain's entity id.
  * @param jumpInput - The jump trigger action.
@@ -69,7 +67,7 @@ export const createJumpEcsSystem = (
         world,
         playerEntity,
         { x: 0, y: -jumpImpulse },
-        position.world,
+        position.local,
       );
     }
 

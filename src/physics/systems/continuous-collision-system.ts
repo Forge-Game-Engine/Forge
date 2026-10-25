@@ -66,7 +66,6 @@ const contactDepthRatio = 0.01;
  * step's narrow phase reports that contact and collision resolution
  * responds to it (friction, restitution) as it does for any other.
  *
-<<<<<<< HEAD
  * Register it in the fixed-update group, directly after
  * `createEulerIntegrationEcsSystem`, whose output it checks. A body moved
  * directly (a teleport) must be moved before the step's transform pass

@@ -35,6 +35,7 @@ import { createPaddle } from './_create-paddle';
 import { createPaddleEcsSystem } from './_paddle.system';
 import { createBall } from './_create-ball';
 import { createBallEcsSystem } from './_ball.system';
+import { createBallResetEcsSystem } from './_ball-reset.system';
 import { createBrickField } from './_create-bricks';
 import { createBrickEcsSystem } from './_brick.system';
 import { createBackground } from './_create-background';
@@ -152,10 +153,14 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
 
   // Physics runs once per fixed step, so the ball moves the same at any
   // frame rate. The transform system comes first, so each step reads the
-  // poses the previous step (and the paddle) left in `local`.
+  // poses the previous step (and the paddle) left in `local`. The ball's
+  // reset after a miss is a teleport, so it runs before the transform
+  // system: continuous collision then sweeps the ball from its start
+  // position instead of from where it fell.
   const fixedUpdate = registerFixedUpdate(world, time);
   const physics = { group: fixedUpdate };
 
+  world.addSystem(createBallResetEcsSystem(random, missY), physics);
   world.addSystem(createTransformEcsSystem(), physics);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
@@ -170,7 +175,7 @@ export const createBrickBreakerGame = async (): Promise<Game> => {
     ),
     physics,
   );
-  world.addSystem(createBallEcsSystem(random, missY, brickField), physics);
+  world.addSystem(createBallEcsSystem(brickField), physics);
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
   world.addSystem(createContinuousCollisionEcsSystem(), physics);
 

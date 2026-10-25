@@ -161,10 +161,10 @@ cameraPosition.local.y = targetPosition.local.y;
 A dynamic or kinematic rigid body never has a parent, so read its `local`
 from a system in the default group. Before the default group's transform
 system runs, the body's `world` is its pose from the start of the frame's
-last fixed step, one step behind `local`. The exception is a point passed
-to [`applyImpulse`](/Forge/docs/api/functions/applyImpulse): it measures the
-point against the body's center of mass, which it reads from
-`position.world`, so pass a point taken from `position.world` too.
+last fixed step, one step behind `local`.
+[`applyImpulse`](/Forge/docs/api/functions/applyImpulse) and
+[`applyExplosiveForce`](/Forge/docs/api/functions/applyExplosiveForce) read a
+body's `local` pose for the same reason.
 
 ## Converting points between local and world space
 

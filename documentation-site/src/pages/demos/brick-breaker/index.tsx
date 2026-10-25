@@ -12,6 +12,7 @@ import createPaddleCode from '!!raw-loader!./_create-paddle';
 import ballComponentCode from '!!raw-loader!./_ball.component';
 import createBallCode from '!!raw-loader!./_create-ball';
 import ballSystemCode from '!!raw-loader!./_ball.system';
+import ballResetSystemCode from '!!raw-loader!./_ball-reset.system';
 import createBricksCode from '!!raw-loader!./_create-bricks';
 import brickComponentCode from '!!raw-loader!./_brick.component';
 import brickSystemCode from '!!raw-loader!./_brick.system';
@@ -127,9 +128,14 @@ export default function BrickBreaker(): JSX.Element {
             },
             {
               name: 'ball.system.ts',
-              summary:
-                'Breaks bricks the ball touches and relaunches it after a miss.',
+              summary: 'Breaks the bricks the ball touches in each step.',
               content: ballSystemCode,
+            },
+            {
+              name: 'ball-reset.system.ts',
+              summary:
+                'Moves the ball back and relaunches it after a miss, before the step moves anything.',
+              content: ballResetSystemCode,
             },
           ],
         },

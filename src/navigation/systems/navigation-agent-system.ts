@@ -20,15 +20,15 @@ export interface NavigationAgentSystemOptions {
    * 45 x 45 grid, or a path across open ground about as many cells long.
    *
    * In the fixed-update group the system updates once per fixed step, so
-   * the budget is spent once per step, not once per frame. A long frame
-   * that catches up with several steps can expand that many budgets of
-   * nodes, adding search work to a frame that's already behind; a game
-   * with many agents planning at once picks a smaller budget there.
+   * the budget is spent once per step. A long frame that catches up with
+   * several steps can expand that many budgets of nodes, adding search work
+   * to a frame that's already behind; a game with many agents planning at
+   * once picks a smaller budget there.
    */
-  maxExpandedPerFrame?: number;
+  maxExpandedPerUpdate?: number;
 }
 
-const defaultNavigationAgentSystemOptions = { maxExpandedPerFrame: 2048 };
+const defaultNavigationAgentSystemOptions = { maxExpandedPerUpdate: 2048 };
 
 /**
  * Creates an ECS system that plans and follows the paths of navigation
@@ -41,7 +41,7 @@ const defaultNavigationAgentSystemOptions = { maxExpandedPerFrame: 2048 };
  * `maxPathDistance` (or the agent's `arrivalRadius`, if that's larger), or
  * reaching the end of a path cut short by the node limit. Those agents
  * plan in the order they started waiting, then the order their entities
- * were created, sharing `maxExpandedPerFrame` nodes between them; the rest
+ * were created, sharing `maxExpandedPerUpdate` nodes between them; the rest
  * wait for a later update, still walking the path they have. Then every agent
  * moves on along its path and gets a `desiredVelocity` towards its next
  * waypoint at `speed`, slowing over the last `arrivalRadius` to stop on the
@@ -63,7 +63,7 @@ const defaultNavigationAgentSystemOptions = { maxExpandedPerFrame: 2048 };
  * exactly on their target.
  * @param options - The planning budget.
  * @returns The navigation agent ECS system.
- * @throws An error if `maxExpandedPerFrame` isn't a positive integer or
+ * @throws An error if `maxExpandedPerUpdate` isn't a positive integer or
  * `Infinity`. Its `update` throws, naming the entity, if an agent's target
  * isn't finite or its speed or arrival radius is negative or not finite.
  */
@@ -71,17 +71,17 @@ export const createNavigationAgentEcsSystem = (
   time: Time,
   options?: NavigationAgentSystemOptions,
 ): EcsSystem<[NavigationAgentEcsComponent, PositionEcsComponent]> => {
-  const { maxExpandedPerFrame } = withDefaults(
+  const { maxExpandedPerUpdate } = withDefaults(
     defaultNavigationAgentSystemOptions,
     options,
   );
 
   if (
-    maxExpandedPerFrame !== Infinity &&
-    (!Number.isInteger(maxExpandedPerFrame) || maxExpandedPerFrame < 1)
+    maxExpandedPerUpdate !== Infinity &&
+    (!Number.isInteger(maxExpandedPerUpdate) || maxExpandedPerUpdate < 1)
   ) {
     throw new Error(
-      `createNavigationAgentEcsSystem: maxExpandedPerFrame must be a positive integer or Infinity, received ${maxExpandedPerFrame}.`,
+      `createNavigationAgentEcsSystem: maxExpandedPerUpdate must be a positive integer or Infinity, received ${maxExpandedPerUpdate}.`,
     );
   }
 
@@ -101,7 +101,7 @@ export const createNavigationAgentEcsSystem = (
         agents,
         positions,
         pending,
-        maxExpandedPerFrame,
+        maxExpandedPerUpdate,
       );
 
       for (let i = 0; i < agents.length; i++) {

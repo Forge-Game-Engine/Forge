@@ -18,9 +18,8 @@ import { getRigidBodyMassData } from './rigid-body-mass-data.js';
  *
  * A sleeping body needs no separate wake-up. The angular velocity this
  * writes makes it count as awake right away (see {@link isBodyAwake}), so
- * integration turns it this tick, and `createSleepEcsSystem` wakes its
- * island on its next pass: on this tick when the torque is applied before
- * `createTransformEcsSystem` runs, otherwise on the next.
+ * the next integration pass turns it, and `createSleepEcsSystem` wakes its
+ * island on its next pass.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity whose rigid body to apply the torque to.
  * @param torque - The torque to apply, in newton-meters. Positive spins

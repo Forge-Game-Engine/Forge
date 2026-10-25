@@ -140,12 +140,10 @@ narrow phase and the solver), which a helper would hide (FP5).
   (`sleep-stacking.test.ts`, `chain-contact-stability.test.ts` and the
   others) into a fixed-update group. They step one pipeline run per `world.update()` with a constant
   delta, which is a fixed step already (FP7).
-- **Changing `createNavigationAgentEcsSystem`'s search budget**: renaming
-  `maxExpandedPerFrame`, or splitting planning from following so the
-  budget is spent once per frame (open question 4). This design only
-  documents that the budget is spent once per fixed step.
-- **Making `applyImpulse` and `applyExplosiveForce` read a moving body's
-  `local`** (open question 5).
+- **Splitting `createNavigationAgentEcsSystem`'s planning from its
+  following** so the budget is spent once per frame (open question 4).
+  The pull request's review round renamed `maxExpandedPerFrame` to
+  `maxExpandedPerUpdate`, which fixes the name but not the cost.
 
 ## Concepts
 
@@ -349,7 +347,8 @@ Two reads of `world` in the default group are correct and stay:
   there intends. Passing `local` would put the point one step of motion
   away from the center of mass the helper uses and spin the ball. The
   jump's JSDoc says so. Whether the helpers should read a body's `local`
-  is open question 5.
+  is open question 5. (Resolved in review: the helpers now read `local`,
+  so this exception is gone. See open question 5.)
 - **Static colliders.** `markGridFromColliders` (both bake-grid systems)
   reads the `world` of colliders without a moving body, which can be
   parented (tile layers) and which no step moves. In `path-finding` the
@@ -559,6 +558,14 @@ and comments that explain behavior this change removes (the
 `brick-breaker` and `space-shooter` paragraphs about the integrated
 movement reaching `world` "on the next frame's transform pass") are
 deleted or rewritten.
+
+The review round split `brick-breaker`'s ball system in two. Its reset
+after a miss is a teleport, so it runs first in the fixed-update group,
+before the transform pass, the way `linear-spring-damper/_reset` does.
+After the transform pass, continuous collision would sweep the ball from
+below the paddle up to its start position. The brick breaking stays
+after the narrow phase. The `rolling-ball` row's impulse point is now
+`position.local` (open question 5).
 
 ## JSDoc changes in `/src`
 
@@ -964,6 +971,12 @@ different answer changes details or adds later work, not the approach.
      a component boundary between them; it's its own design in
      `/src/navigation`.
 
+   **Resolved in review:** renamed in this change. Forge fixes a wrong
+   name outright rather than documenting around it, and
+   `maxExpandedPerUpdate` stays accurate after a later split, since a
+   default-group planning system updates once per frame. The split, and
+   with it the per-frame cost, is still open.
+
 5. **Physics helpers that read `position.world`** (non-blocking).
    `applyImpulse` and `applyExplosiveForce` find a body's center of mass
    from its `position.world`. Called from
@@ -979,6 +992,16 @@ different answer changes details or adds later work, not the approach.
      entity), so every default-group caller reads `local` with no
      exception. Within a step it changes only calls made after
      integration; it's a `/src` change with its own tests.
+
+   **Resolved in review:** the helpers read `local`. Keeping `world` made
+   every default-group caller compensate for one helper, the kind of
+   exception Forge fixes at the layer that causes it. A dynamic body's
+   `local` pose is its own simulation pose, which is what Box2D
+   (`b2Body_ApplyLinearImpulse`, using the body's sweep) and Unity
+   (`Rigidbody.AddForceAtPosition`, using `Rigidbody.position`) measure
+   from. `rolling-ball/_jump`, `prismatic-joint/_pump`,
+   `revolute-joint/_push` and `forces.md` pass points from `local`, and
+   `transforms.md` no longer lists an exception.
 
 6. **A narrower fixed pass** (non-blocking). Default: the full
    `createTransformEcsSystem` in the fixed-update group.

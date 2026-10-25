@@ -211,7 +211,7 @@ shouldn't rub against walls.
 ## The planning budget
 
 Every search the system runs in one update shares a budget of
-`maxExpandedPerFrame` nodes, `2048` by default. Agents waiting for a path
+`maxExpandedPerUpdate` nodes, `2048` by default. Agents waiting for a path
 are planned in the order they started waiting, then in the order their
 entities were created. Once the budget is used up, the rest stay
 `'planning'` and are planned first on later updates, so many agents
@@ -219,7 +219,7 @@ re-planning at once spread over several updates and none is dropped:
 
 ```ts
 world.addSystem(
-  createNavigationAgentEcsSystem(time, { maxExpandedPerFrame: 1024 }),
+  createNavigationAgentEcsSystem(time, { maxExpandedPerUpdate: 1024 }),
   physics,
 );
 ```

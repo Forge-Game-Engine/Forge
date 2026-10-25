@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { applyExplosiveForce } from './apply-explosive-force.js';
-import { addPositionComponent } from '../common/index.js';
+import { addPositionComponent, positionId } from '../common/index.js';
 import { EcsWorld } from '../ecs/index.js';
 import { Vec2, Vector2 } from '../math/index.js';
 import { CircleCollider } from './colliders/index.js';
@@ -96,6 +96,24 @@ describe('applyExplosiveForce', () => {
     expect(rigidBody.velocity.x).toBeCloseTo(0);
     expect(rigidBody.velocity.y).toBeLessThan(0);
     expect(rigidBody.angularVelocity).toBe(0);
+  });
+
+  it("measures from the body's local pose, which a world pose a step old lags behind", () => {
+    // Moved since the transform system last ran: `world` is still at the
+    // spawn point, outside the radius, while `local` is inside it.
+    const entity = createBody({ x: 300, y: 0 });
+    const position = world.getComponent(entity, positionId)!;
+
+    position.local = { x: 50, y: 0 };
+
+    applyExplosiveForce(world, Vec2.zero, 1000, 200);
+
+    const rigidBody = world.getComponent(entity, rigidBodyId)!;
+
+    // A quarter of the radius from the center: an impulse of 750, on a
+    // unit circle of density 1 (mass π).
+    expect(rigidBody.velocity.x).toBeCloseTo(750 / Math.PI);
+    expect(rigidBody.velocity.y).toBeCloseTo(0);
   });
 
   it('does not affect static bodies (no RigidBodyEcsComponent)', () => {

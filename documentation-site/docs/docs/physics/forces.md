@@ -81,6 +81,13 @@ world-space point. It changes the body's velocity by `impulse / mass`. An
 impulse applied anywhere other than the body's center of mass also changes
 its angular velocity.
 
+`applyImpulse` finds the center of mass from the body's `position.local`
+and `rotation.local`. A dynamic body never has a parent, so its `local`
+pose is where it is in the world, and it's current from any system group.
+Its `world` pose is a step behind in a once-per-frame system (see
+[Transforms](../common/transforms.md)), so take the point from `local`
+too:
+
 ```ts
 import { positionId } from '@forge-game-engine/forge/common';
 import { applyImpulse } from '@forge-game-engine/forge/physics';
@@ -90,7 +97,7 @@ const position = world.getComponent(body, positionId);
 if (position !== null) {
   // For a collider centered on the entity's origin, the position is the
   // center of mass, so the body doesn't start to turn.
-  applyImpulse(world, body, { x: 0, y: -500 }, position.world);
+  applyImpulse(world, body, { x: 0, y: -500 }, position.local);
 }
 ```
 
@@ -106,7 +113,7 @@ applyImpulse(
   world,
   body,
   Vec2.multiply(Vec2.clone(force), time.deltaTimeInSeconds),
-  position.world,
+  position.local,
 );
 ```
 
@@ -248,7 +255,8 @@ screen, convert the point with the camera's view (see
 
 `applyExplosiveForce` measures the distance to every entity with a
 `RigidBodyEcsComponent` and a `PositionEcsComponent`, whatever the
-`radius`.
+`radius`. Like `applyImpulse`, it finds each body's center of mass from
+its `local` pose, so it can be called from any system group.
 
 ## Removing a force
 
