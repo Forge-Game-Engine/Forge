@@ -6,8 +6,8 @@ sidebar_position: 8
 
 A dynamic body that has moved slower than a small speed for long enough is
 put to sleep: gravity, collision resolution, joints, springs, dampers,
-angular velocity motors and integration skip it until something disturbs
-it.
+angular velocity motors, integration and continuous collision detection
+skip it until something disturbs it.
 [`createSleepEcsSystem`](/Forge/docs/api/functions/createSleepEcsSystem)
 puts bodies to sleep and wakes them, and it is the only system that writes
 a body's `isSleeping`.

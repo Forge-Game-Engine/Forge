@@ -19,6 +19,7 @@ import {
   RigidBodyEcsComponent,
   rigidBodyId,
 } from '../components/rigidbody-component.js';
+import { isRigidBodyAwake } from '../is-body-awake.js';
 import { Aabb } from '../types/aabb.js';
 import { CollisionBody } from '../types/collision-body.js';
 
@@ -65,6 +66,7 @@ const contactDepthRatio = 0.01;
  * step's narrow phase reports that contact and collision resolution
  * responds to it (friction, restitution) as it does for any other.
  *
+<<<<<<< HEAD
  * Register it in the fixed-update group, directly after
  * `createEulerIntegrationEcsSystem`, whose output it checks. A body moved
  * directly (a teleport) must be moved before the step's transform pass
@@ -74,7 +76,11 @@ const contactDepthRatio = 0.01;
  * next step's transform pass copies it into `world` first. A swept body
  * keeps its full velocity but covers less ground this step, the same trade
  * Box2D makes.
- * Polygon bodies and kinematic or dynamic targets aren't swept.
+ * Polygon bodies and kinematic or dynamic targets aren't swept, and
+ * neither are bodies that aren't awake (see {@link isBodyAwake}):
+ * integration skips them, so they haven't moved. A sleeping body that was
+ * disturbed this step counts as awake, so integration moves it and this
+ * system sweeps it.
  * @returns The ECS system.
  */
 export const createContinuousCollisionEcsSystem = (): EcsSystem<
@@ -111,10 +117,11 @@ export const createContinuousCollisionEcsSystem = (): EcsSystem<
 
     for (let i = 0; i < entities.length; i++) {
       const mover = colliders[i];
+      const rigidBody = getRigidBody(entities[i]);
 
       if (
         mover.sensor ||
-        getRigidBody(entities[i])?.type !== 'dynamic' ||
+        rigidBody?.type !== 'dynamic' ||
         !(mover.collider instanceof CircleCollider)
       ) {
         continue;
@@ -123,6 +130,13 @@ export const createContinuousCollisionEcsSystem = (): EcsSystem<
       const circle = mover.collider;
       const position = positions[i];
       const rotation = getRotation(entities[i]);
+
+      // A sleeping body wasn't integrated, so it hasn't moved since this
+      // tick's transform pass and there's nothing to sweep.
+      if (!isRigidBodyAwake(rigidBody, position, rotation)) {
+        continue;
+      }
+
       const start = circle.getWorldCenter(
         position.world,
         getColliderRotation(rotation),

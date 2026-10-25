@@ -21,6 +21,13 @@ import {
  * Bodies with no `RigidBodyEcsComponent`, `'static'`/`'kinematic'` bodies
  * (see {@link RigidBodyType}), and bodies whose center of mass is at or
  * beyond `radius` are untouched.
+ *
+ * Sleeping bodies are pushed too, and need no separate wake-up. The
+ * velocity this writes makes each of them count as awake right away (see
+ * {@link isBodyAwake}), so integration moves it this tick, and
+ * `createSleepEcsSystem` wakes its island on its next pass: on this tick
+ * when the explosion is applied before `createTransformEcsSystem` runs,
+ * otherwise on the next.
  * @param world - The ECS world to search for dynamic bodies in.
  * @param center - The explosion's world-space origin.
  * @param force - The impulse magnitude at `center`.

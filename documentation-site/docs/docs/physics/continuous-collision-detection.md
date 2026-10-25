@@ -48,7 +48,9 @@ new position to `world` before any physics system reads it.
 ## Which bodies are swept
 
 - **Swept bodies**: dynamic bodies with a `CircleCollider` that isn't a
-  sensor.
+  sensor. A [sleeping body](./sleeping.md) isn't swept, since integration
+  doesn't move it. A sleeping body that gets a velocity or is moved during
+  the tick is integrated and swept like an awake one.
 - **Targets**: static colliders (entities with no `RigidBodyEcsComponent`,
   or a `'static'` one) of every shape, whose bounds overlap the circle's
   path and whose category and mask let the two collide. Sensors aren't

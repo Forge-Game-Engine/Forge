@@ -20,6 +20,12 @@ import {
  * `getRigidBodyMassData`) is found from the entity's current world
  * transform, so to push a body without spinning it, apply the impulse at
  * its center of mass rather than at its position.
+ *
+ * A sleeping body needs no separate wake-up. The velocity this writes makes
+ * it count as awake right away (see {@link isBodyAwake}), so integration
+ * moves it this tick, and `createSleepEcsSystem` wakes its island on its
+ * next pass: on this tick when the impulse is applied before
+ * `createTransformEcsSystem` runs, otherwise on the next.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity whose rigid body to apply the impulse to.
  * @param impulse - The impulse to apply.
