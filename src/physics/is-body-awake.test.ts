@@ -6,7 +6,14 @@ import {
   rotationId,
 } from '../common/index.js';
 import { EcsWorld } from '../ecs/index.js';
-import { addColliderComponent } from './components/collider-component.js';
+import {
+  addColliderComponent,
+  colliderId,
+} from './components/collider-component.js';
+import {
+  addGravityComponent,
+  gravityId,
+} from './components/gravity-component.js';
 import {
   addRigidBodyComponent,
   RigidBodyEcsComponent,
@@ -25,25 +32,51 @@ describe('isBodyAwake', () => {
   function createSleepingBody(): {
     entity: number;
     rigidBody: RigidBodyEcsComponent;
+    floor: number;
   } {
     const entity = world.createEntity();
 
     addPositionComponent(world, entity, { local: { x: 1, y: 2 } });
     addRotationComponent(world, entity, { local: 0.5 });
-    addColliderComponent(world, entity, { collider: new CircleCollider(1) });
+
+    const { collider } = addColliderComponent(world, entity, {
+      collider: new CircleCollider(1),
+    });
+    const gravity = addGravityComponent(world, entity, {
+      amount: { x: 0, y: 10 },
+    });
 
     const rigidBody = addRigidBodyComponent(world, entity, {
       isSleeping: true,
     });
 
+    const floor = world.createEntity();
+
+    addPositionComponent(world, floor, { local: { x: 1, y: 4 } });
+    addRotationComponent(world, floor, { local: 0.25 });
+
+    const { collider: floorCollider } = addColliderComponent(world, floor, {
+      collider: new CircleCollider(1),
+    });
+
     rigidBody.sleepRecord = {
       position: { x: 1, y: 2 },
       rotation: 0.5,
-      links: [],
+      collider,
+      gravity: { x: gravity.amount.x, y: gravity.amount.y },
+      partners: [
+        {
+          entity: floor,
+          position: { x: 1, y: 4 },
+          rotation: 0.25,
+          collider: floorCollider,
+        },
+      ],
+      links: [floor],
       manifolds: [],
     };
 
-    return { entity, rigidBody };
+    return { entity, rigidBody, floor };
   }
 
   it('is false for an entity with no rigid body', () => {
@@ -125,6 +158,101 @@ describe('isBodyAwake', () => {
     world.getComponent(entity, rotationId)!.local = 0.6;
 
     expect(isBodyAwake(world, entity)).toBe(true);
+  });
+
+  it.each<[string, (entity: number) => void]>([
+    [
+      'given a new collider object',
+      (entity): void => {
+        world.getComponent(entity, colliderId)!.collider = new CircleCollider(
+          1,
+        );
+      },
+    ],
+    [
+      'that lost its collider',
+      (entity): void => world.removeComponent(entity, colliderId),
+    ],
+    [
+      'whose gravity changed',
+      (entity): void => {
+        world.getComponent(entity, gravityId)!.amount.y = -10;
+      },
+    ],
+    [
+      'whose gravity was removed',
+      (entity): void => world.removeComponent(entity, gravityId),
+    ],
+  ])('is true for a sleeping body %s', (_name, change) => {
+    const { entity } = createSleepingBody();
+
+    change(entity);
+
+    expect(isBodyAwake(world, entity)).toBe(true);
+  });
+
+  it('is true for a sleeping body given gravity it fell asleep without', () => {
+    const { entity, rigidBody } = createSleepingBody();
+
+    world.removeComponent(entity, gravityId);
+    rigidBody.sleepRecord = { ...rigidBody.sleepRecord!, gravity: null };
+
+    expect(isBodyAwake(world, entity)).toBe(false);
+
+    addGravityComponent(world, entity);
+
+    expect(isBodyAwake(world, entity)).toBe(true);
+  });
+
+  it.each<[string, (floor: number) => void]>([
+    [
+      'was removed',
+      (floor): void => {
+        world.removeEntity(floor);
+      },
+    ],
+    [
+      'lost its collider',
+      (floor): void => world.removeComponent(floor, colliderId),
+    ],
+    [
+      'got a new collider object',
+      (floor): void => {
+        world.getComponent(floor, colliderId)!.collider = new CircleCollider(1);
+      },
+    ],
+    [
+      'moved',
+      (floor): void => {
+        world.getComponent(floor, positionId)!.world.y += 0.5;
+      },
+    ],
+    [
+      'turned',
+      (floor): void => {
+        world.getComponent(floor, rotationId)!.world = 0;
+      },
+    ],
+    [
+      'lost its rotation',
+      (floor): void => world.removeComponent(floor, rotationId),
+    ],
+  ])('is true for a sleeping body whose partner %s', (_name, change) => {
+    const { entity, floor } = createSleepingBody();
+
+    change(floor);
+
+    expect(isBodyAwake(world, entity)).toBe(true);
+  });
+
+  it('is false for a sleeping body when only its partner’s local position changed', () => {
+    const { entity, floor } = createSleepingBody();
+
+    // Collision reads `world`, so a `local` the transform system hasn't
+    // composed yet changes nothing the body rests on.
+    world.getComponent(floor, positionId)!.local.y += 0.5;
+
+    expect(isBodyAwake(world, entity)).toBe(false);
   });
 
   it('compares a sleeping body with no record on its velocity, canSleep and wake request only', () => {

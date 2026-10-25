@@ -2,17 +2,29 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addPositionComponent,
   addRotationComponent,
+  createTransformEcsSystem,
   PositionEcsComponent,
+  positionId,
   RotationEcsComponent,
+  rotationId,
   Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
+import { Vector2 } from '../../math/index.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import {
   addAngularVelocityMotorComponent,
   AngularVelocityMotorEcsComponent,
 } from '../components/angular-velocity-motor-component.js';
-import { addColliderComponent } from '../components/collider-component.js';
+import {
+  addColliderComponent,
+  colliderId,
+} from '../components/collider-component.js';
+import {
+  addGravityComponent,
+  GravityEcsComponent,
+  gravityId,
+} from '../components/gravity-component.js';
 import { addLinearDamperComponent } from '../components/linear-damper-component.js';
 import {
   addLinearSpringComponent,
@@ -83,12 +95,19 @@ describe('createSleepEcsSystem', () => {
     return { entity, rigidBody, position, rotation };
   }
 
-  /** A collider-only entity, static by convention, such as a floor. */
-  function addStaticCollider(): number {
+  /**
+   * A collider-only entity, static by convention, such as a floor. With no
+   * transform system in these tests, its `world` pose stays the `local` one
+   * it was created with until a test writes it.
+   */
+  function addStaticCollider(
+    position: Vector2 = { x: 0, y: 0 },
+    rotation = 0,
+  ): number {
     const entity = world.createEntity();
 
-    addPositionComponent(world, entity);
-    addRotationComponent(world, entity);
+    addPositionComponent(world, entity, { local: position });
+    addRotationComponent(world, entity, { local: rotation });
     addColliderComponent(world, entity, { collider: new CircleCollider(1) });
 
     return entity;
@@ -117,6 +136,9 @@ describe('createSleepEcsSystem', () => {
   }
 
   beforeEach(() => {
+    // Game code moves entities by writing `local`; the sleep system reads
+    // the `world` pose the transform system composes from it.
+    world.addSystem(createTransformEcsSystem());
     addSleepSystem();
   });
 
@@ -155,13 +177,16 @@ describe('createSleepEcsSystem', () => {
       expect(sleepingStates(bottom, top)).toEqual([true, true]);
     });
 
-    it('zeroes resting velocities and records the pose, sorted links and manifolds', () => {
+    it('zeroes resting velocities and records the pose, sorted links, manifolds, collider, gravity and partners', () => {
       const body = addBody({
         velocity: { x: 0.005, y: -0.005 },
         angularVelocity: 0.01,
       });
-      const later = addStaticCollider();
-      const earlier = addStaticCollider();
+      const gravity = addGravityComponent(world, body.entity, {
+        amount: { x: 0, y: 12 },
+      });
+      const later = addStaticCollider({ x: 5, y: 6 }, 0.5);
+      const earlier = addStaticCollider({ x: -1, y: 2 });
 
       body.position.local = { x: 3, y: 4 };
       body.rotation.local = 1.25;
@@ -173,18 +198,41 @@ describe('createSleepEcsSystem', () => {
 
       tick(ticksToSleep);
 
+      const record = body.rigidBody.sleepRecord!;
+
       expect(body.rigidBody.isSleeping).toBe(true);
       expect(body.rigidBody.velocity).toEqual({ x: 0, y: 0 });
       expect(body.rigidBody.angularVelocity).toBe(0);
-      expect(body.rigidBody.sleepRecord).toEqual({
+      expect(record).toEqual({
         position: { x: 3, y: 4 },
         rotation: 1.25,
+        collider: world.getComponent(body.entity, colliderId)!.collider,
+        gravity: { x: 0, y: 12 },
+        partners: [
+          {
+            entity: later,
+            position: { x: 5, y: 6 },
+            rotation: 0.5,
+            collider: world.getComponent(later, colliderId)!.collider,
+          },
+          {
+            entity: earlier,
+            position: { x: -1, y: 2 },
+            rotation: 0,
+            collider: world.getComponent(earlier, colliderId)!.collider,
+          },
+        ],
         links: [earlier, later].sort((a, b) => a - b),
         manifolds,
       });
-      expect(body.rigidBody.sleepRecord!.manifolds[0]).toBe(manifolds[0]);
-      expect(body.rigidBody.sleepRecord!.position).not.toBe(
-        body.position.local,
+      expect(record.manifolds[0]).toBe(manifolds[0]);
+      expect(record.collider).toBe(
+        world.getComponent(body.entity, colliderId)!.collider,
+      );
+      expect(record.position).not.toBe(body.position.local);
+      expect(record.gravity).not.toBe(gravity.amount);
+      expect(record.partners[0].position).not.toBe(
+        world.getComponent(later, positionId)!.world,
       );
     });
 
@@ -365,6 +413,194 @@ describe('createSleepEcsSystem', () => {
       tick();
 
       expect(body.rigidBody.isSleeping).toBe(false);
+    });
+
+    describe('a stack asleep on a floor', () => {
+      let floor: number;
+      let bottom: TestBody;
+      let top: TestBody;
+
+      beforeEach(() => {
+        floor = addStaticCollider({ x: 0, y: 10 });
+        bottom = addBody();
+        top = addBody();
+
+        setContacts([floor, bottom.entity], [bottom.entity, top.entity]);
+        tick(ticksToSleep);
+
+        expect(sleepingStates(bottom, top)).toEqual([true, true]);
+      });
+
+      it.each<[string, () => void]>([
+        [
+          'is removed',
+          (): void => {
+            world.removeEntity(floor);
+          },
+        ],
+        [
+          'loses its collider',
+          (): void => world.removeComponent(floor, colliderId),
+        ],
+        [
+          'is moved through position.local',
+          (): void => {
+            world.getComponent(floor, positionId)!.local.y += 0.25;
+          },
+        ],
+        [
+          'is turned through rotation.local',
+          (): void => {
+            world.getComponent(floor, rotationId)!.local += 0.1;
+          },
+        ],
+        [
+          'gets a new collider object that still touches the stack',
+          (): void => {
+            world.getComponent(floor, colliderId)!.collider =
+              new CircleCollider(2);
+          },
+        ],
+      ])(
+        'wakes the whole stack on the tick its floor %s, with the contacts unchanged',
+        (_name, change) => {
+          change();
+          tick();
+
+          expect(sleepingStates(bottom, top)).toEqual([false, false]);
+        },
+      );
+
+      it('stays asleep when an unrelated static collider moves', () => {
+        const wall = addStaticCollider({ x: 50, y: 0 });
+
+        tick();
+        world.getComponent(wall, positionId)!.local.x += 5;
+        world.getComponent(wall, colliderId)!.collider = new CircleCollider(3);
+        tick();
+
+        expect(sleepingStates(bottom, top)).toEqual([true, true]);
+      });
+
+      it('stays asleep when the floor’s position is written with the same value', () => {
+        world.getComponent(floor, positionId)!.local = { x: 0, y: 10 };
+        tick();
+
+        expect(sleepingStates(bottom, top)).toEqual([true, true]);
+      });
+
+      it.each<[string, (body: TestBody) => void]>([
+        [
+          'gets a new collider object',
+          (body): void => {
+            world.getComponent(body.entity, colliderId)!.collider =
+              new CircleCollider(1);
+          },
+        ],
+        [
+          'gets gravity',
+          (body): void => {
+            addGravityComponent(world, body.entity);
+          },
+        ],
+      ])('wakes the whole stack when one member %s', (_name, change) => {
+        change(top);
+        tick();
+
+        expect(sleepingStates(bottom, top)).toEqual([false, false]);
+      });
+    });
+
+    describe('gravity', () => {
+      let bottom: TestBody;
+      let top: TestBody;
+      let gravity: GravityEcsComponent;
+
+      beforeEach(() => {
+        bottom = addBody();
+        top = addBody();
+        gravity = addGravityComponent(world, top.entity);
+        addGravityComponent(world, bottom.entity);
+
+        setContacts([bottom.entity, top.entity]);
+        tick(ticksToSleep);
+
+        expect(sleepingStates(bottom, top)).toEqual([true, true]);
+      });
+
+      it.each<[string, () => void]>([
+        [
+          'its amount is written with a new value',
+          (): void => {
+            gravity.amount.y = -gravity.amount.y;
+          },
+        ],
+        [
+          'its amount is replaced',
+          (): void => {
+            gravity.amount = { x: 1, y: 9.81 };
+          },
+        ],
+        [
+          'it is removed',
+          (): void => world.removeComponent(top.entity, gravityId),
+        ],
+      ])(
+        'wakes the whole island when one member’s gravity changes: %s',
+        (_name, change) => {
+          change();
+          tick();
+
+          expect(sleepingStates(bottom, top)).toEqual([false, false]);
+        },
+      );
+
+      it('stays asleep when gravity is replaced by an equal amount', () => {
+        gravity.amount = { x: 0, y: 9.81 };
+        tick();
+
+        expect(sleepingStates(bottom, top)).toEqual([true, true]);
+      });
+    });
+
+    it('wakes the bodies on a still kinematic platform teleported through position.local', () => {
+      const platform = addBody({ type: 'kinematic' });
+      const crate = addBody();
+      const other = addBody();
+
+      setContacts(
+        [platform.entity, crate.entity],
+        [other.entity, platform.entity],
+      );
+      tick(ticksToSleep);
+
+      expect(sleepingStates(crate, other)).toEqual([true, true]);
+
+      platform.position.local.y -= 2;
+      tick();
+
+      expect(sleepingStates(crate, other)).toEqual([false, false]);
+    });
+
+    it('wakes a pendulum whose static pivot is teleported', () => {
+      const pivot = addBody({ type: 'static' });
+      const bob = addBody();
+
+      addRevoluteJointComponent(world, world.createEntity(), {
+        entityA: pivot.entity,
+        entityB: bob.entity,
+      });
+      tick(ticksToSleep);
+
+      expect(bob.rigidBody.isSleeping).toBe(true);
+      expect(bob.rigidBody.sleepRecord!.partners).toEqual([
+        expect.objectContaining({ entity: pivot.entity }),
+      ]);
+
+      pivot.position.local.x += 1;
+      tick();
+
+      expect(bob.rigidBody.isSleeping).toBe(false);
     });
 
     it('wakes the bodies touching a sleeping body whose type changed, and clears its isSleeping', () => {
@@ -744,6 +980,9 @@ describe('createSleepEcsSystem', () => {
       expect(body.rigidBody.sleepRecord).toEqual({
         position: { x: 2, y: 1 },
         rotation: 0,
+        collider: world.getComponent(body.entity, colliderId)!.collider,
+        gravity: null,
+        partners: [],
         links: [],
         manifolds: [],
       });

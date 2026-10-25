@@ -4,6 +4,7 @@ import {
   addRotationComponent,
   createTransformEcsSystem,
   PositionEcsComponent,
+  positionId,
   RotationEcsComponent,
   Time,
 } from '../../common/index.js';
@@ -232,7 +233,7 @@ describe('sleeping bodies in a physics scene', () => {
       expect(top.position.local.y).toBeCloseTo(-0.5, 1);
     });
 
-    it('both rise when gravity reverses and one asks to wake', () => {
+    it('both rise on the tick gravity reverses', () => {
       tickUntilAsleep([bottom, top], 3 * ticksPerSecond);
 
       const bottomY = bottom.position.local.y;
@@ -240,27 +241,74 @@ describe('sleeping bodies in a physics scene', () => {
 
       bottom.gravity.amount.y = -9.81;
       top.gravity.amount.y = -9.81;
-      bottom.rigidBody.wakeRequested = true;
       tick();
 
+      expect(bottom.rigidBody.isSleeping).toBe(false);
+      expect(top.rigidBody.isSleeping).toBe(false);
       expect(bottom.rigidBody.velocity.y).toBeLessThan(0);
       expect(top.rigidBody.velocity.y).toBeLessThan(0);
       expect(bottom.position.local.y).toBeLessThan(bottomY);
       expect(top.position.local.y).toBeLessThan(topY);
     });
 
-    it('stay asleep under reversed gravity without a wake request', () => {
+    it('both wake when only the top box’s gravity changes', () => {
       tickUntilAsleep([bottom, top], 3 * ticksPerSecond);
 
-      bottom.gravity.amount.y = -9.81;
-      top.gravity.amount.y = -9.81;
+      top.gravity.amount.x = 5;
+      tick();
+
+      expect(bottom.rigidBody.isSleeping).toBe(false);
+      expect(top.rigidBody.isSleeping).toBe(false);
+    });
+
+    it('both fall on the tick after the floor is removed', () => {
+      tickUntilAsleep([bottom, top], 3 * ticksPerSecond);
+
+      const bottomY = bottom.position.local.y;
+
+      world.removeEntity(floor);
+      tick();
+
+      expect(bottom.rigidBody.isSleeping).toBe(false);
+      expect(top.rigidBody.isSleeping).toBe(false);
+      expect(bottom.position.local.y).toBeGreaterThan(bottomY);
+    });
+
+    it('are pushed up on the tick the floor is raised into them, against its new pose', () => {
+      tickUntilAsleep([bottom, top], 3 * ticksPerSecond);
+
+      world.getComponent(floor, positionId)!.local.y -= 0.2;
+      tick();
+
+      // The narrow phase tests the moved floor again instead of reusing the
+      // manifold the bottom box recorded against its old pose, so this
+      // tick's solve already pushes the bottom box out of it.
+      expect(bottom.rigidBody.isSleeping).toBe(false);
+      expect(top.rigidBody.isSleeping).toBe(false);
+      expect(floorPenetration(bottom.entity)).toBeGreaterThan(0.15);
+      expect(bottom.rigidBody.velocity.y).toBeLessThan(0);
+
+      tickUntilAsleep([bottom, top], 5 * ticksPerSecond);
+
+      expect(bottom.position.local.y).toBeCloseTo(-0.7, 1);
+    });
+
+    it('stay asleep when a static collider they don’t touch moves', () => {
+      tickUntilAsleep([bottom, top], 3 * ticksPerSecond);
+
+      const wall = world.createEntity();
+
+      addPositionComponent(world, wall, { local: { x: 15, y: -5 } });
+      addColliderComponent(world, wall, { collider: boxCollider(1, 4) });
+      tick();
 
       for (let i = 0; i < ticksPerSecond; i++) {
+        world.getComponent(wall, positionId)!.local.x += 0.01;
         tick();
-      }
 
-      expect(bottom.rigidBody.isSleeping).toBe(true);
-      expect(top.rigidBody.isSleeping).toBe(true);
+        expect(bottom.rigidBody.isSleeping).toBe(true);
+        expect(top.rigidBody.isSleeping).toBe(true);
+      }
     });
   });
 

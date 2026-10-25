@@ -14,9 +14,12 @@ import {
   AngularVelocityMotorEcsComponent,
   angularVelocityMotorId,
 } from '../components/angular-velocity-motor-component.js';
+import { colliderId } from '../components/collider-component.js';
+import { gravityId } from '../components/gravity-component.js';
 import {
   RigidBodyEcsComponent,
   rigidBodyId,
+  RigidBodySleepPartner,
   RigidBodySleepRecord,
 } from '../components/rigidbody-component.js';
 import {
@@ -69,6 +72,7 @@ const defaultSleepOptions: SleepOptions = {
  */
 interface SleepTick {
   readonly world: EcsWorld;
+  readonly entities: readonly number[];
   readonly bodies: readonly RigidBodyEcsComponent[];
   readonly positions: readonly PositionEcsComponent[];
   readonly rotations: readonly RotationEcsComponent[];
@@ -84,6 +88,11 @@ interface SleepTick {
   readonly links: number[][];
   /** Each dynamic body's collision manifolds this tick. */
   readonly manifolds: CollisionManifold[][];
+  /**
+   * Each dynamic body's linked entities that aren't dynamic bodies in the
+   * batch: what it rests on or is jointed to outside its island.
+   */
+  readonly partners: Set<number>[];
   readonly islands: UnionFind;
 }
 
@@ -104,10 +113,14 @@ interface SleepTick {
  * `targetVelocity` (a motor stalled against a wall still drives its body);
  * its `restTime` counts how long. When every body of an island has rested for
  * `restDuration`, the system zeroes their velocities, sets `isSleeping` and
- * records each body's `local` pose, links and collision manifolds in its
- * `sleepRecord`. The physics systems that change velocity or pose then
- * leave the island alone (see `isBodyAwake`), and the narrow phase reuses
- * the recorded manifolds instead of testing the island's contacts again.
+ * records in each body's `sleepRecord` its `local` pose, links, collision
+ * manifolds, `ColliderEcsComponent.collider` object and
+ * `GravityEcsComponent.amount`, and the partners it's linked to outside the
+ * island (collider-only entities, `'static'` and `'kinematic'` bodies) with
+ * their `position.world`, `rotation.world` and collider object. The physics
+ * systems that change velocity or pose then leave the island alone (see
+ * `isBodyAwake`), and the narrow phase reuses the recorded manifolds instead
+ * of testing the island's contacts again.
  *
  * A sleeping island wakes, and every member's `restTime` restarts at `0`,
  * when any member:
@@ -117,10 +130,19 @@ interface SleepTick {
  * - has `canSleep` set to `false` or `wakeRequested` set to `true`;
  * - has an angular velocity motor whose `targetVelocity` was set to
  *   something other than `0`;
+ * - has a different `ColliderEcsComponent.collider` object (a new shape), or
+ *   a `GravityEcsComponent.amount` that changed, was added or was removed;
  * - gains or loses a link: a new contact, a removed support or collider, a
  *   joint added or removed;
  * - is linked to an awake body, a `'kinematic'` body with a velocity, or a
- *   body whose `type` stopped being `'dynamic'`.
+ *   body whose `type` stopped being `'dynamic'`;
+ * - has a recorded partner that was removed, lost its
+ *   `ColliderEcsComponent`, got a different `collider` object, or has a
+ *   different `position.world` or `rotation.world` (a floor, door or lift
+ *   game code moved, or a still kinematic body teleported).
+ *
+ * Sensor overlaps never wake a body: a sensor has no collision manifolds, so
+ * it's never a link or a partner.
  *
  * A body whose `type` isn't `'dynamic'` never sleeps: the system clears
  * `isSleeping` on one that changed type. A body created with
@@ -179,6 +201,7 @@ export const createSleepEcsSystem = (
 
       const tick: SleepTick = {
         world,
+        entities,
         bodies,
         positions,
         rotations,
@@ -189,6 +212,7 @@ export const createSleepEcsSystem = (
         driven: new Uint8Array(count),
         links: Array.from({ length: count }, (): number[] => []),
         manifolds: Array.from({ length: count }, (): CollisionManifold[] => []),
+        partners: Array.from({ length: count }, () => new Set<number>()),
         islands: new UnionFind(count),
       };
 
@@ -211,8 +235,16 @@ export const createSleepEcsSystem = (
  * as woken.
  */
 function readWakeRequests(tick: SleepTick): void {
-  const { bodies, positions, rotations, isDynamic, wakesNeighbors, woken } =
-    tick;
+  const {
+    world,
+    entities,
+    bodies,
+    positions,
+    rotations,
+    isDynamic,
+    wakesNeighbors,
+    woken,
+  } = tick;
 
   for (let i = 0; i < bodies.length; i++) {
     const body = bodies[i];
@@ -239,7 +271,13 @@ function readWakeRequests(tick: SleepTick): void {
     if (
       requested ||
       (body.isSleeping &&
-        isSleepingBodyDisturbed(body, positions[i], rotations[i]))
+        isSleepingBodyDisturbed(
+          world,
+          entities[i],
+          body,
+          positions[i],
+          rotations[i],
+        ))
     ) {
       woken[i] = 1;
     }
@@ -325,9 +363,9 @@ function linkJoints(tick: SleepTick): void {
 
 /**
  * Records a link on each dynamic side and joins two dynamic bodies' islands.
- * A dynamic body linked to a non-dynamic one that's moving (or changed
- * type, or was asked to wake) is woken instead, since static and kinematic
- * bodies don't join islands.
+ * A dynamic body linked to a non-dynamic one records it as a partner, and is
+ * woken if that one is moving (or changed type, or was asked to wake), since
+ * static and kinematic bodies don't join islands.
  */
 function linkBodies(
   tick: SleepTick,
@@ -336,7 +374,7 @@ function linkBodies(
   linkForA: number,
   linkForB: number,
 ): void {
-  const { indexOf, isDynamic, links, islands, woken } = tick;
+  const { indexOf, isDynamic, links, partners, islands, woken } = tick;
   const indexA = indexOf.get(entityA);
   const indexB = indexOf.get(entityB);
   const dynamicA = indexA !== undefined && isDynamic[indexA] === 1;
@@ -356,12 +394,20 @@ function linkBodies(
     return;
   }
 
-  if (dynamicA && wakesLinkedBodies(tick, entityB, indexB)) {
-    woken[indexA] = 1;
+  if (dynamicA) {
+    partners[indexA].add(entityB);
+
+    if (wakesLinkedBodies(tick, entityB, indexB)) {
+      woken[indexA] = 1;
+    }
   }
 
-  if (dynamicB && wakesLinkedBodies(tick, entityA, indexA)) {
-    woken[indexB] = 1;
+  if (dynamicB) {
+    partners[indexB].add(entityA);
+
+    if (wakesLinkedBodies(tick, entityA, indexA)) {
+      woken[indexB] = 1;
+    }
   }
 }
 
@@ -383,6 +429,8 @@ function wakesLinkedBodies(
   return (
     tick.wakesNeighbors[index] === 1 ||
     isRigidBodyAwake(
+      tick.world,
+      entity,
       tick.bodies[index],
       tick.positions[index],
       tick.rotations[index],
@@ -515,11 +563,32 @@ function createSleepRecord(
   tick: SleepTick,
   index: number,
 ): RigidBodySleepRecord {
+  const { world, entities } = tick;
+  const entity = entities[index];
   const { local } = tick.positions[index];
+  const gravity = world.getComponent(entity, gravityId);
+  const partners: RigidBodySleepPartner[] = [];
+
+  for (const partner of tick.partners[index]) {
+    const position = world.getComponent(partner, positionId);
+
+    if (position !== null) {
+      partners.push({
+        entity: partner,
+        position: { x: position.world.x, y: position.world.y },
+        rotation: world.getComponent(partner, rotationId)?.world ?? null,
+        collider: world.getComponent(partner, colliderId)?.collider ?? null,
+      });
+    }
+  }
 
   return {
     position: { x: local.x, y: local.y },
     rotation: tick.rotations[index].local,
+    collider: world.getComponent(entity, colliderId)?.collider ?? null,
+    gravity:
+      gravity === null ? null : { x: gravity.amount.x, y: gravity.amount.y },
+    partners,
     links: tick.links[index],
     manifolds: tick.manifolds[index],
   };
