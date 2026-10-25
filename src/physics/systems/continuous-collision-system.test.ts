@@ -413,6 +413,27 @@ describe('continuous collision against colliders the broad phase has not seen', 
     expect(nextBall.position.local.y).toBeCloseTo(-9.9);
   });
 
+  it('should sweep a body made dynamic after the broad phase ran', () => {
+    addStaticCollider(world, flatTerrain(), { x: 0, y: 0 });
+
+    // Still in the static tree this step, as a static body.
+    const ball = addBody(
+      world,
+      new CircleCollider(10),
+      { x: 0, y: -30 },
+      { x: 0, y: 6000 },
+      'static',
+    );
+
+    afterBroadPhase = (): void => {
+      ball.rigidBody.type = 'dynamic';
+    };
+
+    tick();
+
+    expect(ball.position.local.y).toBeCloseTo(-9.9);
+  });
+
   it('should not sweep against a static collider removed after the broad phase ran', () => {
     const wall = addStaticCollider(world, flatTerrain(), { x: 0, y: 0 });
     const ball = addBody(

@@ -138,7 +138,7 @@ export const createContinuousCollisionEcsSystem = (): EcsSystem<
       );
       const endRotation = rotation === null ? 0 : rotation.local;
       const end = circle.getWorldCenter(position.local, endRotation);
-      const stopT = findStopT(mover, circle, start, end, targets);
+      const stopT = findStopT(entities[i], mover, circle, start, end, targets);
 
       if (stopT < 1) {
         // Move the origin so the circle's center lands at the stop point,
@@ -175,6 +175,7 @@ interface SweepTargets {
  * Finds how far along this step's motion, from `0` to `1`, a circle should
  * stop so that it ends up just inside the first static collider it would
  * otherwise sink deeply into.
+ * @param moverEntity - The moving circle's entity.
  * @param mover - The moving circle's collider component, for its category
  * and mask.
  * @param collider - The moving circle.
@@ -185,6 +186,7 @@ interface SweepTargets {
  * @returns The fraction of the motion to keep; `1` keeps all of it.
  */
 function findStopT(
+  moverEntity: number,
   mover: ColliderEcsComponent,
   collider: CircleCollider,
   start: Vector2,
@@ -215,7 +217,11 @@ function findStopT(
 
   // Every candidate is visited: the query never stops early.
   targets.staticTree.query(sweep.box, (_proxyId, entity) => {
-    stopT = Math.min(stopT, findTargetStopT(sweep, targets, entity));
+    // A body made dynamic since the broad phase ran is still in the static
+    // tree until its next run, and isn't swept against itself.
+    if (entity !== moverEntity) {
+      stopT = Math.min(stopT, findTargetStopT(sweep, targets, entity));
+    }
 
     return true;
   });
