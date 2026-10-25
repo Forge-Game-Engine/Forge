@@ -4,6 +4,7 @@ import {
   addRotationComponent,
   createTransformEcsSystem,
   PositionEcsComponent,
+  positionId,
   Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
@@ -61,6 +62,7 @@ describe('createNarrowPhaseEcsSystem with sleeping bodies', () => {
     collisionPairs = [];
     collisionManifolds = [];
 
+    world.addSystem(createTransformEcsSystem());
     world.addSystem(
       createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
     );
@@ -255,6 +257,34 @@ describe('createNarrowPhaseEcsSystem with sleeping bodies', () => {
     expect(collisionManifolds).toHaveLength(0);
     expect(body.contacts.touching).toEqual([]);
     expect(body.contacts.ended).toEqual([floor.entity]);
+  });
+
+  it('tests a sleeping pair again when the body’s own collider was replaced', () => {
+    const floor = addCircle({ x: 0, y: 1.5 });
+    const body = addSleepingCircle({ x: 0, y: 0 });
+
+    tickPair(body.entity, floor.entity);
+    body.collider.collider = new CircleCollider(1);
+    tickPair(body.entity, floor.entity);
+
+    expect(detectCollisionSpy).toHaveBeenCalledTimes(1);
+    expect(collisionManifolds[0].colliderA).toBe(body.collider.collider);
+  });
+
+  it('tests a sleeping pair again on the tick its static partner is moved', () => {
+    const floor = addCircle({ x: 0, y: 1.5 });
+    const body = addSleepingCircle({ x: 0, y: 0 });
+
+    tickPair(body.entity, floor.entity);
+
+    const [recorded] = collisionManifolds;
+
+    world.getComponent(floor.entity, positionId)!.local.y = 1.25;
+    tickPair(body.entity, floor.entity);
+
+    expect(detectCollisionSpy).toHaveBeenCalledTimes(1);
+    expect(collisionManifolds).toHaveLength(1);
+    expect(collisionManifolds[0].depth).toBeGreaterThan(recorded.depth);
   });
 
   it('ends the contact with a removed partner and drops its manifolds', () => {
