@@ -11,8 +11,9 @@ import { isGrounded } from './_ground-contact.component';
 /**
  * While both wheels are airborne, applies the torque that moves the
  * chassis's spin towards the throttle's target speed, capped at `maxTorque`.
- * Does nothing on the ground.
- * @param time - The time instance used to scale torque by the tick's delta
+ * Does nothing on the ground. Register it in the fixed-update group, so the
+ * torque is applied once per physics step.
+ * @param time - The time instance used to scale torque by the step's delta
  * time.
  */
 export const createAirControlEcsSystem = (

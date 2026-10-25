@@ -61,7 +61,7 @@ export default function IsometricTilemap(): JSX.Element {
           file: 'cell-cursor.system.ts',
         },
         {
-          text: 'A click sets or clears the cell before the tilemap systems run, so the wall draws, sorts and collides on the frame it is clicked.',
+          text: 'A click sets or clears the cell before the tilemap systems run, so the wall draws and sorts on the frame it is clicked, and collides from the next fixed physics step.',
           file: 'cell-cursor.system.ts',
         },
       ]}

@@ -1,4 +1,7 @@
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   buttonMoments,
   KeyboardInputSource,
@@ -86,6 +89,33 @@ export const createChainColliderGame = async (): Promise<Game> => {
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  // Once per fixed step. The level's `ChainCollider` is one broad-phase
+  // entry; the narrow phase asks it for the edges near each body, so a level
+  // of any size costs one pair per body.
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createGravityEcsSystem(time), physics);
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
+  world.addSystem(
+    createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
+  );
+  world.addSystem(
+    createCollisionResolutionEcsSystem(
+      collisionManifolds,
+      contactConstraints,
+      time,
+    ),
+    physics,
+  );
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  // Sweeps fast circles against the chain's edges, so the fired ball stops
+  // at the near side of the thin wall instead of passing through it.
+  world.addSystem(createContinuousCollisionEcsSystem(), physics);
+
+  // Once per frame, after the fixed steps.
   world.addSystem(
     createSpawnBodiesEcsSystem({
       dropBoxInput,
@@ -98,28 +128,9 @@ export const createChainColliderGame = async (): Promise<Game> => {
       ballSprite: { ...createImageSprite(ballTexture), category: renderLayer },
     }),
   );
-  // The level's `ChainCollider` is one broad-phase entry; the narrow phase
-  // asks it for the edges near each body, so a level of any size costs one
-  // pair per body.
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createGravityEcsSystem(time));
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
-  world.addSystem(
-    createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
-  );
-  world.addSystem(
-    createCollisionResolutionEcsSystem(
-      collisionManifolds,
-      contactConstraints,
-      time,
-    ),
-  );
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
-  // Sweeps fast circles against the chain's edges, so the fired ball stops
-  // at the near side of the thin wall instead of passing through it.
-  world.addSystem(createContinuousCollisionEcsSystem());
 
   return game;
 };

@@ -29,9 +29,10 @@ const ballRadius = 16;
 const fastBallRadius = 10;
 
 /**
- * 2000 units a second is over 33 units a tick, more than the thin wall's
- * thickness and the fast ball's diameter together, so without continuous
- * collision detection the ball would pass through the wall in one tick.
+ * 2000 units a second is over 33 units a fixed step (at 60 steps a second),
+ * more than the thin wall's thickness and the fast ball's diameter together,
+ * so without continuous collision detection the ball would pass through the
+ * wall in one step.
  */
 const fastBallSpeed = 2000;
 const fastBallStart = { x: -390, y: -50 };
@@ -87,7 +88,9 @@ function boxCollider(): PolygonCollider {
 /**
  * Creates a system that drops a box or a ball at the cursor, and fires a
  * fast ball at the thin wall, when their actions trigger. It queries no
- * components: it only reads the actions and adds entities.
+ * components: it only reads the actions and adds entities. It reads trigger
+ * presses, which last one frame, so it runs in the default group; the bodies
+ * it adds join the simulation at the next fixed step.
  * @param dependencies - The actions, input source and sprites it uses.
  * @returns The ECS system.
  */

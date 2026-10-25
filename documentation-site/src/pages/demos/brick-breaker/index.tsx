@@ -41,7 +41,7 @@ export default function BrickBreaker(): JSX.Element {
           file: 'create-ball.ts',
         },
         {
-          text: "The ball's contacts list which bricks it touched this tick, and the ball system removes them.",
+          text: "The ball's contacts list which bricks it touched in each fixed physics step, and the ball system, running in the same step, removes them.",
           file: 'ball.system.ts',
         },
         {

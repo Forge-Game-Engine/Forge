@@ -13,8 +13,10 @@ import {
  * Reverses a `PlatformMoverEcsComponent` entity's kinematic `velocity.x`
  * once its `PositionEcsComponent.local.x` reaches either `leftX`/`rightX`.
  * Nothing else drives the platform's motion - `createEulerIntegrationEcsSystem`
- * moves it every tick from `velocity` alone, exactly like a dynamic body,
- * the platform just never has gravity/impulses applied to it.
+ * moves it every fixed step from `velocity` alone, exactly like a dynamic
+ * body, the platform just never has gravity/impulses applied to it. Runs in
+ * the fixed-update group, before collision resolution, so the solver sees
+ * the reversed velocity in the same step.
  */
 export const createPlatformMoverEcsSystem = (): EcsSystem<
   [PlatformMoverEcsComponent, RigidBodyEcsComponent]

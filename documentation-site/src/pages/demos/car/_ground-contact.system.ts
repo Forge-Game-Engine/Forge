@@ -11,7 +11,8 @@ import {
 
 /**
  * Counts how many static bodies each wheel is touching, from the contacts
- * the narrow phase found this tick.
+ * the narrow phase found this physics step. Register it in the fixed-update
+ * group after `createNarrowPhaseEcsSystem`.
  */
 export const createGroundContactEcsSystem = (): EcsSystem<
   [GroundContactEcsComponent, ContactsEcsComponent]

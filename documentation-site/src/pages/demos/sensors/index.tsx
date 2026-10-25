@@ -24,7 +24,7 @@ export default function Sensors(): JSX.Element {
           file: 'create-scene.ts',
         },
         {
-          text: 'Each band reads its contacts every tick, tinting a ball when it enters, resetting it when it leaves, and brightening while occupied.',
+          text: 'Each band reads its contacts in every fixed physics step, tinting a ball when it enters, resetting it when it leaves, and brightening while occupied.',
           file: 'trigger-zone.system.ts',
         },
         {

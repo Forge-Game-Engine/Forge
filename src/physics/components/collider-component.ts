@@ -78,7 +78,7 @@ export interface ColliderEcsComponent
   extends ColliderRequiredOptions, ColliderDefaultedOptions {
   /**
    * The collider's world-space bounds. Output only: written by
-   * `createBroadPhaseEcsSystem` every tick, from the entity's world
+   * `createBroadPhaseEcsSystem` every step, from the entity's world
    * position and rotation. Until the broad phase first runs, the box is
    * empty and overlaps nothing.
    */

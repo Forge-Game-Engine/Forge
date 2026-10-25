@@ -21,7 +21,7 @@ export interface AirControlEcsComponent {
 
   /**
    * The maximum torque, in N·m, spent reaching `maxAngularSpeed` in a
-   * single tick.
+   * single physics step.
    */
   maxTorque: number;
 }

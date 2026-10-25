@@ -7,7 +7,7 @@ import {
 
 /**
  * Creates the system that bakes the navigation grid from the level's walls
- * whenever a wall has moved since the last bake, and on the first tick.
+ * whenever a wall has moved since the last bake, and on the first frame.
  *
  * `markGridFromColliders` only ever blocks cells, so the bake opens every
  * cell first. It bakes every static collider: the walls have no rigid body,
@@ -17,10 +17,12 @@ import {
  * the walkable cells never scrapes a wall.
  *
  * Baking raises the grid's `version`, so every navigation agent plans its
- * path again on this tick.
+ * path again in the next physics step.
  *
- * Register it after `createTransformEcsSystem`, which places the colliders
- * where it reads them, and before `createNavigationAgentEcsSystem`.
+ * Register it in the default group, after the frame's transform system,
+ * which places the walls where it reads them. The navigation agent system
+ * runs in the fixed-update group, so it plans on the new grid from the next
+ * step.
  * @returns The ECS system.
  */
 export const createBakeGridEcsSystem = (): EcsSystem<

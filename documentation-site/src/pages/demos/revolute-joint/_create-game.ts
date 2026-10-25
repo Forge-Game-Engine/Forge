@@ -4,7 +4,10 @@ import {
   createRenderEcsSystem,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   CollisionManifold,
   CollisionPair,
@@ -40,19 +43,25 @@ export const createRevoluteJointGame = async (): Promise<Game> => {
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  // `createTransformEcsSystem` runs first so every body's `world` pose
-  // matches the `local` pose euler integration wrote at the end of the
-  // previous tick before the push, physics and render systems read it.
-  // Gravity and pushes must run before collision/joint resolution, so this
-  // tick's forces are reflected in the velocities those solvers see; the
-  // revolute joint solver must run after collision resolution so the door's
-  // hinge gets the "last word" on velocity each tick.
-  world.addSystem(createTransformEcsSystem());
-  world.addSystem(createGravityEcsSystem(time));
-  world.addSystem(createPushEcsSystem(time));
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  // Once per fixed step. `createTransformEcsSystem` runs first so every
+  // body's `world` pose matches the `local` pose the previous step's
+  // integration wrote before the push and physics systems read it. Gravity
+  // and pushes must run before collision/joint resolution, so this step's
+  // forces are reflected in the velocities those solvers see; the revolute
+  // joint solver must run after collision resolution so the door's hinge
+  // gets the "last word" on velocity each step. The push counts its
+  // interval in fixed steps, so it fires at the same simulated time at any
+  // frame rate.
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createGravityEcsSystem(time), physics);
+  world.addSystem(createPushEcsSystem(time), physics);
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
   );
   world.addSystem(
     createCollisionResolutionEcsSystem(
@@ -60,12 +69,17 @@ export const createRevoluteJointGame = async (): Promise<Game> => {
       contactConstraints,
       time,
     ),
+    physics,
   );
-  world.addSystem(createRevoluteJointEcsSystem(time));
+  world.addSystem(createRevoluteJointEcsSystem(time), physics);
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createContinuousCollisionEcsSystem(), physics);
+
+  // Once per frame, after the fixed steps, so the frame draws the latest
+  // step's poses.
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
-  world.addSystem(createContinuousCollisionEcsSystem());
 
   return game;
 };

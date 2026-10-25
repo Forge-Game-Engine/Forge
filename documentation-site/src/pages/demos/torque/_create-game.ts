@@ -5,7 +5,10 @@ import {
   getCameraView,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
-import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
 import {
   createAngularVelocityMotorEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -72,22 +75,28 @@ export const createTorqueGame = async (): Promise<Game> => {
     y: -height * 0.1,
   });
 
-  // `createThrusterEcsSystem` and `createGustEcsSystem` change
-  // `RigidBodyEcsComponent.angularVelocity` directly for this tick, and
-  // `createAngularVelocityMotorEcsSystem` reads/corrects it, so all three
-  // must run before whatever system integrates velocity into position
-  // (`createEulerIntegrationEcsSystem`). `createTransformEcsSystem` runs
-  // first so each flywheel's `world` rotation matches the `local` rotation
-  // euler integration wrote at the end of the previous tick before the
-  // render system draws it.
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  // Once per fixed step. `createThrusterEcsSystem` and
+  // `createGustEcsSystem` change `RigidBodyEcsComponent.angularVelocity`
+  // directly for this step, and `createAngularVelocityMotorEcsSystem`
+  // reads/corrects it, so all three must run before whatever system
+  // integrates velocity into position (`createEulerIntegrationEcsSystem`).
+  // The thruster's torque is scaled by the step's duration, so it spins the
+  // flywheel up the same way at any frame rate.
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createThrusterEcsSystem(time), physics);
+  world.addSystem(createGustEcsSystem(time), physics);
+  world.addSystem(createAngularVelocityMotorEcsSystem(time), physics);
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createContinuousCollisionEcsSystem(), physics);
+
+  // Once per frame, after the fixed steps, so the frame draws the latest
+  // step's rotations.
   world.addSystem(createTransformEcsSystem());
-  world.addSystem(createThrusterEcsSystem(time));
-  world.addSystem(createGustEcsSystem(time));
-  world.addSystem(createAngularVelocityMotorEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
-  world.addSystem(createContinuousCollisionEcsSystem());
 
   return game;
 };

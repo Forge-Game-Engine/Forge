@@ -116,7 +116,7 @@ export async function createBall(
     restitution: 1,
     friction: 0,
   });
-  // Lets the ball system see which bricks the ball hit this tick.
+  // Lets the ball system see which bricks the ball hit each physics step.
   addContactsComponent(world, entity);
 
   const rigidBody = addRigidBodyComponent(world, entity);

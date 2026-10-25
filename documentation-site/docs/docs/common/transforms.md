@@ -51,7 +51,7 @@ Rotation is in radians (see [Angles and Rotation](../math/angles-and-rotation.md
 
 ## Registering the transform system
 
-Register one transform system per world:
+Register a transform system in the default group:
 
 ```ts
 import { createTransformEcsSystem } from '@forge-game-engine/forge/common';
@@ -66,11 +66,44 @@ after the systems that write `local` and before the systems that read
 
 1. Game logic, and `registerUiSystems` when the world has UI.
 2. `createTransformEcsSystem()`.
-3. Physics (see [Physics](../physics/index.md)).
+3. Rendering.
+
+### Registering transform systems with physics
+
+A world with physics has two transform systems. The first runs at the start
+of each fixed step, in the group
+[`registerFixedUpdate`](/Forge/docs/api/functions/registerFixedUpdate)
+returns, before the physics systems. The second runs once per frame, in
+the default group, before rendering:
+
+```ts
+import {
+  createTransformEcsSystem,
+  registerFixedUpdate,
+} from '@forge-game-engine/forge/common';
+
+const fixedUpdate = registerFixedUpdate(world, time);
+
+world.addSystem(createTransformEcsSystem(), { group: fixedUpdate });
+// The physics systems, in the fixed-update group.
+
+world.addSystem(createTransformEcsSystem());
+// Rendering.
+```
+
+Each frame, the world runs:
+
+1. Once per fixed step: the first transform system, then physics (see
+   [Registering the physics systems](../physics/index.md#registering-the-physics-systems)).
+2. Game logic in the default group, and `registerUiSystems` when the world
+   has UI.
+3. The second transform system.
 4. Rendering.
 
 Physics reads `world` and writes the movement it integrates to `local`.
-That movement reaches `world` on the next frame's transform update.
+That movement reaches `world` in the next fixed step's transform system,
+and in the frame's second transform system, so the frame draws the latest
+step's poses. Both systems are the only writers of `world`.
 
 ## Moving an entity
 
@@ -124,6 +157,14 @@ value equals its world transform and is always current, so read `local`:
 cameraPosition.local.x = targetPosition.local.x;
 cameraPosition.local.y = targetPosition.local.y;
 ```
+
+A dynamic or kinematic rigid body never has a parent, so read its `local`
+from a system in the default group. Before the default group's transform
+system runs, the body's `world` is its pose from the start of the frame's
+last fixed step, one step behind `local`. The exception is a point passed
+to [`applyImpulse`](/Forge/docs/api/functions/applyImpulse): it measures the
+point against the body's center of mass, which it reads from
+`position.world`, so pass a point taken from `position.world` too.
 
 ## Converting points between local and world space
 

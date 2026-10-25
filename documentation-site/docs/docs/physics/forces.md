@@ -11,17 +11,17 @@ and static bodies are never affected by forces (see
 [locked rotation](./rigid-bodies.md#locking-a-bodys-rotation). The physics
 module has these kinds of force:
 
-- **Gravity**: a constant acceleration applied every tick, by a
+- **Gravity**: a constant acceleration applied every step, by a
   [`GravityEcsComponent`](/Forge/docs/api/type-aliases/GravityEcsComponent).
 - **Impulses**: an instant change of velocity, by
   [`applyImpulse`](/Forge/docs/api/functions/applyImpulse).
 - **Torque**: a change of angular velocity, by
   [`applyTorque`](/Forge/docs/api/functions/applyTorque).
 - **Angular velocity motors**: torque that turns a body towards a target
-  angular velocity every tick, by an
+  angular velocity every step, by an
   [`AngularVelocityMotorEcsComponent`](/Forge/docs/api/interfaces/AngularVelocityMotorEcsComponent).
 - **Springs and dampers**: forces between two bodies' anchor points every
-  tick, by a
+  step, by a
   [`LinearSpringEcsComponent`](/Forge/docs/api/interfaces/LinearSpringEcsComponent)
   or a
   [`LinearDamperEcsComponent`](/Forge/docs/api/interfaces/LinearDamperEcsComponent).
@@ -32,11 +32,16 @@ How far a force moves a body depends on the body's mass and moment of
 inertia, which come from its collider (see
 [Mass and center of mass](./rigid-bodies.md#mass-and-center-of-mass)).
 
+The examples on this page register the physics systems in `fixedUpdate`,
+the group [`registerFixedUpdate`](/Forge/docs/api/functions/registerFixedUpdate)
+returns (see
+[Registering the physics systems](./index.md#registering-the-physics-systems)).
+
 ## Gravity
 
 Add a `GravityEcsComponent` to a body with `addGravityComponent`, and
 register [`createGravityEcsSystem`](/Forge/docs/api/functions/createGravityEcsSystem).
-Every tick, the system adds `amount` times the tick's duration to the
+Every step, the system adds `amount` times the step's duration to the
 body's velocity:
 
 ```ts
@@ -49,7 +54,7 @@ const gravity = addGravityComponent(world, body, {
   amount: { x: 0, y: 600 },
 });
 
-world.addSystem(createGravityEcsSystem(time));
+world.addSystem(createGravityEcsSystem(time), { group: fixedUpdate });
 ```
 
 Gravity is per entity, so each body can have a different `amount`, or none.
@@ -66,7 +71,7 @@ wakes it and every body it rests on or against (see
 [Waking a body](./sleeping.md#waking-a-body)).
 
 Register `createGravityEcsSystem` before `createCollisionResolutionEcsSystem`,
-so collision resolution works with the velocity gravity changed this tick,
+so collision resolution works with the velocity gravity changed this step,
 and after `createSleepEcsSystem` if the game registers it.
 
 ## Impulses
@@ -91,7 +96,8 @@ if (position !== null) {
 
 An impulse is a single change, for something that happens once, such as a
 jump or a hit. For a push that lasts over time, such as wind or thrust,
-apply the force times the tick's duration every tick:
+apply the force times the step's duration every step, from a system
+registered in `fixedUpdate`:
 
 ```ts
 import { Vec2 } from '@forge-game-engine/forge/math';
@@ -105,8 +111,9 @@ applyImpulse(
 ```
 
 :::caution
-An impulse applied every tick without being multiplied by the tick's
-duration pushes a body further at a higher frame rate.
+An impulse applied every step without being multiplied by the step's
+duration pushes a body further at a higher fixed rate, and one applied from
+a system in the default group pushes it further at a higher frame rate.
 :::
 
 ## Torque
@@ -114,7 +121,7 @@ duration pushes a body further at a higher frame rate.
 `applyTorque(world, entity, torque, deltaTimeInSeconds)` changes a body's
 angular velocity by `torque / momentOfInertia * deltaTimeInSeconds`. A
 positive torque turns the body clockwise on screen (from `+X` towards `+Y`,
-see [Angles and Rotation](../math/angles-and-rotation.md)). Call it every tick for a
+see [Angles and Rotation](../math/angles-and-rotation.md)). Call it every step for a
 continuous torque:
 
 ```ts
@@ -123,12 +130,13 @@ import { applyTorque } from '@forge-game-engine/forge/physics';
 applyTorque(world, body, -50, time.deltaTimeInSeconds);
 ```
 
-Call it from a system registered before `createEulerIntegrationEcsSystem`,
-so the change moves the body in the same tick.
+Call it from a system registered in `fixedUpdate` before
+`createEulerIntegrationEcsSystem`, so the change moves the body in the same
+step.
 
 A body keeps its angular velocity when nothing turns it. A
 `RigidBodyEcsComponent`'s `angularDrag` (`0` by default) reduces
-`angularVelocity` towards `0` every tick, in proportion to its value:
+`angularVelocity` towards `0` every step, in proportion to its value:
 
 ```ts
 addRigidBodyComponent(world, wheel, { angularDrag: 1.5 });
@@ -152,10 +160,12 @@ const motor = addAngularVelocityMotorComponent(world, body, {
   maxTorque: 40,
 });
 
-world.addSystem(createAngularVelocityMotorEcsSystem(time));
+world.addSystem(createAngularVelocityMotorEcsSystem(time), {
+  group: fixedUpdate,
+});
 ```
 
-The system computes the torque every tick from the body's current angular
+The system computes the torque every step from the body's current angular
 velocity, so after a collision or another torque changes it, the motor
 turns the body back towards `targetVelocity`. Change `targetVelocity` or
 `maxTorque` on the component at any time. Register the system after
@@ -203,8 +213,8 @@ addLinearDamperComponent(world, connection, {
   dampingCoefficient: 40,
 });
 
-world.addSystem(createLinearSpringEcsSystem(time));
-world.addSystem(createLinearDamperEcsSystem(time));
+world.addSystem(createLinearSpringEcsSystem(time), { group: fixedUpdate });
+world.addSystem(createLinearDamperEcsSystem(time), { group: fixedUpdate });
 ```
 
 The anchor points `localAnchorA` and `localAnchorB` are in each body's

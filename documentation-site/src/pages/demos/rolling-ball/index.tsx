@@ -34,7 +34,7 @@ export default function RollingBall(): JSX.Element {
           file: 'roll.system.ts',
         },
         {
-          text: 'The ball can jump only while its contacts list the terrain, and it respawns if it falls off the end.',
+          text: 'Physics runs in fixed steps, but the jump reads its key press once per frame, so every press is seen exactly once. The ball can jump only while its contacts list the terrain, and it respawns if it falls off the end.',
           file: 'jump.system.ts',
         },
         {
@@ -97,7 +97,7 @@ export default function RollingBall(): JSX.Element {
             },
             {
               name: 'camera-follow.system.ts',
-              summary: 'Eases the camera towards the ball every tick.',
+              summary: 'Eases the camera towards the ball every frame.',
               content: cameraFollowSystemCode,
             },
           ],

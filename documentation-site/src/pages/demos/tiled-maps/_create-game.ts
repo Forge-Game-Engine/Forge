@@ -2,6 +2,7 @@ import {
   addPositionComponent,
   createTransformEcsSystem,
   positionId,
+  registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
   CollisionManifold,
@@ -40,6 +41,7 @@ import { addColliderOutlineComponent } from './_collider-outline.component';
 import { createColliderOutlineEcsSystem } from './_collider-outline.system';
 import { createInputs } from './_create-inputs';
 import { createPlayer } from './_create-player';
+import { createJumpInputEcsSystem } from './_jump-input.system';
 import { outlineFragmentShader, outlineVertexShader } from './_outline.shader';
 import { createPlayerMoveEcsSystem } from './_player-move.system';
 import { addTileToggleComponent } from './_tile-toggle.component';
@@ -158,7 +160,7 @@ export const createTiledMapsGame = async (
 
   onReady({ outlineVisibility });
 
-  const { moveInputs, toggleInputs } = createInputs(
+  const { moveInputs, jumpInput, toggleInputs } = createInputs(
     world,
     time,
     game.container,
@@ -167,24 +169,25 @@ export const createTiledMapsGame = async (
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  world.addSystem(createCameraFollowEcsSystem(renderContext));
-  // Edits the ground layer before the tilemap systems read it, so a toggled
-  // tile collides and draws on the tick it's clicked.
-  world.addSystem(createTileToggleEcsSystem(renderContext, toggleInputs));
-  world.addSystem(createTilemapColliderEcsSystem());
-  world.addSystem(createColliderOutlineEcsSystem(renderContext));
-  // Before the transform system, so new chunk entities get their world
-  // transform before they're drawn. It reads `time` to play the water.
-  world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
-  world.addSystem(createTransformEcsSystem());
-  world.addSystem(createGravityEcsSystem(time));
-  world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+  // The physics systems run once per fixed step, so the player walks and
+  // jumps the same at any frame rate. The transform system comes first, so
+  // each step reads the poses the previous step left in `local`.
+  const fixedUpdate = registerFixedUpdate(world, time);
+  const physics = { group: fixedUpdate };
+
+  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createGravityEcsSystem(time), physics);
+  world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+    physics,
   );
-  // Reads this tick's contacts, and sets the velocity the solver starts
+  // Reads the step's contacts, and sets the velocity the solver starts
   // from.
-  world.addSystem(createPlayerMoveEcsSystem(collisionManifolds, moveInputs));
+  world.addSystem(
+    createPlayerMoveEcsSystem(collisionManifolds, moveInputs),
+    physics,
+  );
   // The resolver's defaults are in meters. At 3 units a second the
   // push-out couldn't keep up with a player walking into a wall, which
   // would creep through it.
@@ -199,9 +202,26 @@ export const createTiledMapsGame = async (
         restitutionThreshold: pixelsPerMeter,
       },
     ),
+    physics,
   );
+  world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+
+  // Once per frame, after the fixed steps.
+  world.addSystem(createCameraFollowEcsSystem(renderContext));
+  // Edits the ground layer before the tilemap systems read it, so a toggled
+  // tile draws on the frame it's clicked and collides from the next physics
+  // step.
+  world.addSystem(createTileToggleEcsSystem(renderContext, toggleInputs));
+  world.addSystem(createTilemapColliderEcsSystem());
+  world.addSystem(createColliderOutlineEcsSystem(renderContext));
+  // Before the transform system, so new chunk entities get their world
+  // transform before they're drawn. It reads `time` to play the water.
+  world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
+  // A press lasts one frame, so it's read here and handed to the next
+  // physics step through the player's `jumpRequested`.
+  world.addSystem(createJumpInputEcsSystem(jumpInput));
+  world.addSystem(createTransformEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
-  world.addSystem(createEulerIntegrationEcsSystem(time));
 
   return game;
 };

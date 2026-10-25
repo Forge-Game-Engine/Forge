@@ -233,8 +233,9 @@ const updatePointer = (
  * picks it up and the wall follows the mouse until the button is released;
  * a press anywhere else sends the units there.
  *
- * Register it before `createTransformEcsSystem`, so a moved wall's
- * `position.world` is up to date when the grid is baked on the same tick.
+ * Register it in the default group, before the frame's transform system, so
+ * a moved wall's `position.world` is up to date when the grid is baked on
+ * the same frame. A new target reaches the agents at the next physics step.
  * @param renderContext - The render context whose canvas the mouse is over.
  * @param inputs - The mouse and its actions.
  * @returns The ECS system.

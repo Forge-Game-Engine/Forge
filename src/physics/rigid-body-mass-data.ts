@@ -47,7 +47,7 @@ export interface RigidBodyMassData {
  * the whole impulse into its linear motion.
  *
  * It's resolved fresh on every read, so changing a body's `type`,
- * `fixedRotation` or collider at runtime takes effect on the next tick.
+ * `fixedRotation` or collider at runtime takes effect on the next step.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to resolve.
  * @returns The resolved mass data.

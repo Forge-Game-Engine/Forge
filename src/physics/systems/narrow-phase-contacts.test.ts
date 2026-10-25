@@ -4,6 +4,7 @@ import {
   createTransformEcsSystem,
   PositionEcsComponent,
   positionId,
+  registerFixedUpdate,
   Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
@@ -355,5 +356,155 @@ describe('createNarrowPhaseEcsSystem contacts and sensors', () => {
           .local,
       ).toEqual({ x: 0.5, y: 0 });
     });
+  });
+});
+
+describe('createNarrowPhaseEcsSystem contacts in the fixed-update group', () => {
+  // Exact in binary, so a 31.25 ms frame holds exactly two steps.
+  const fixedDeltaMilliseconds = 1000 / 64;
+
+  interface ContactsRecord {
+    touching: readonly number[];
+    started: readonly number[];
+    ended: readonly number[];
+  }
+
+  let world: EcsWorld;
+  let time: Time;
+  let now: number;
+  let contacts: ContactsEcsComponent;
+  let other: number;
+  let otherPosition: PositionEcsComponent;
+  let fixedRecords: ContactsRecord[];
+  let defaultRecords: ContactsRecord[];
+  let moves: Vector2[];
+
+  const record = (component: ContactsEcsComponent): ContactsRecord => ({
+    touching: [...component.touching],
+    started: [...component.started],
+    ended: [...component.ended],
+  });
+
+  const runFrame = (deltaMilliseconds: number): void => {
+    now += deltaMilliseconds;
+    time.update(now);
+    world.update();
+  };
+
+  beforeEach(() => {
+    world = new EcsWorld();
+    time = new Time();
+    time.fixedDeltaTimeInMilliseconds = fixedDeltaMilliseconds;
+    now = 0;
+    time.update(now);
+    fixedRecords = [];
+    defaultRecords = [];
+    moves = [];
+
+    const collisionPairs: CollisionPair[] = [];
+    const collisionManifolds: CollisionManifold[] = [];
+    const fixedUpdate = registerFixedUpdate(world, time);
+    const fixed = { group: fixedUpdate };
+
+    // Moves the other circle at the start of each step, before the step's
+    // transform pass, taking the next position from `moves`.
+    world.addSystem(
+      {
+        query: [],
+        update: (): void => {
+          const next = moves.shift();
+
+          if (next) {
+            otherPosition.local = next;
+          }
+        },
+      },
+      fixed,
+    );
+    world.addSystem(createTransformEcsSystem(), fixed);
+    world.addSystem(createBroadPhaseEcsSystem(collisionPairs), fixed);
+    world.addSystem(
+      createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
+      fixed,
+    );
+    world.addSystem(
+      {
+        query: [],
+        update: (): void => {
+          fixedRecords.push(record(contacts));
+        },
+      },
+      fixed,
+    );
+    world.addSystem(createTransformEcsSystem());
+    world.addSystem({
+      query: [],
+      update: (): void => {
+        defaultRecords.push(record(contacts));
+      },
+    });
+
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity);
+    addColliderComponent(world, entity, { collider: new CircleCollider(1) });
+    contacts = addContactsComponent(world, entity);
+
+    other = world.createEntity();
+    otherPosition = addPositionComponent(world, other, {
+      local: { x: 3, y: 0 },
+    });
+    addColliderComponent(world, other, { collider: new CircleCollider(1) });
+  });
+
+  it('should report a contact that starts in the first of two steps in that step', () => {
+    moves = [{ x: 1, y: 0 }];
+
+    runFrame(2 * fixedDeltaMilliseconds);
+
+    expect(fixedRecords).toEqual([
+      { touching: [other], started: [other], ended: [] },
+      { touching: [other], started: [], ended: [] },
+    ]);
+  });
+
+  it('should leave a once-per-frame reader only the last step, missing the start', () => {
+    moves = [{ x: 1, y: 0 }];
+
+    runFrame(2 * fixedDeltaMilliseconds);
+
+    expect(defaultRecords).toEqual([
+      { touching: [other], started: [], ended: [] },
+    ]);
+  });
+
+  it('should leave the lists unchanged on a frame with no step', () => {
+    moves = [{ x: 1, y: 0 }];
+
+    runFrame(fixedDeltaMilliseconds);
+    runFrame(fixedDeltaMilliseconds / 2);
+
+    expect(fixedRecords).toHaveLength(1);
+    expect(defaultRecords).toEqual([
+      { touching: [other], started: [other], ended: [] },
+      { touching: [other], started: [other], ended: [] },
+    ]);
+  });
+
+  it('should report a contact that starts and ends within one frame in each step', () => {
+    moves = [
+      { x: 1, y: 0 },
+      { x: 3, y: 0 },
+    ];
+
+    runFrame(2 * fixedDeltaMilliseconds);
+
+    expect(fixedRecords).toEqual([
+      { touching: [other], started: [other], ended: [] },
+      { touching: [], started: [], ended: [other] },
+    ]);
+    expect(defaultRecords).toEqual([
+      { touching: [], started: [], ended: [other] },
+    ]);
   });
 });

@@ -16,13 +16,13 @@ import { BrickField } from './_create-bricks';
 
 /**
  * Creates an ECS system that destroys any brick the ball is touching this
- * tick (via the ball's `ContactsEcsComponent`, filled by
+ * physics step (via the ball's `ContactsEcsComponent`, filled by
  * `createNarrowPhaseEcsSystem`)
  * and resets the ball back to its start position - relaunching it - once it
  * falls below `missY`.
  *
- * Must run after `createNarrowPhaseEcsSystem`, so this tick's contacts are
- * available before this system checks them.
+ * Register it in the fixed-update group after `createNarrowPhaseEcsSystem`,
+ * so it checks the contacts of the step it runs in.
  * @param random - The random source used to vary the relaunch angle.
  * @param missY - The world-space y coordinate below which the ball is
  * considered to have missed the paddle.

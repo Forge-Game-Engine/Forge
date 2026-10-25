@@ -32,17 +32,20 @@ import { getRigidBodyMassData } from '../rigid-body-mass-data.js';
  * `getRigidBodyMassData`; for a `'kinematic'` body that's the entity's
  * origin). Both are integrated into the body's
  * `local` position and rotation, which `createTransformEcsSystem` turns
- * into `world`. Register the transform system before the physics systems,
- * which read `world`, so they see every entity's current pose, including
- * ones created or moved this tick. A body's integrated movement then
- * reaches `world` on the next tick's transform pass.
+ * into `world`. Register the physics systems in the fixed-update group
+ * (`registerFixedUpdate`) with a transform system first, so each step's
+ * physics systems, which read `world`, see every entity's current pose,
+ * including ones created or moved since the previous step. A body's
+ * integrated movement then reaches `world` on the next step's transform
+ * pass, and a second transform system in the default group, before
+ * rendering, shows it on screen the same frame.
  *
  * A moving body must be a root entity. Its velocity is in world space, so
  * adding it to the local position of a body with a `ParentEcsComponent`
  * would be wrong as soon as the parent rotated, scaled or moved. Connect
  * bodies with joints and springs instead.
- * @param time - The time instance used to scale velocity by the frame's
- * duration.
+ * @param time - The time instance used to scale velocity by the step's
+ * duration (the fixed delta inside a fixed step).
  * @throws An error if a `'dynamic'` or `'kinematic'` body has a
  * `ParentEcsComponent`.
  */
@@ -89,7 +92,7 @@ export const createEulerIntegrationEcsSystem = (
         rigidBodyComponent.angularVelocity * time.deltaTimeInSeconds;
 
       // The position is moved by an increment, not set from the center of
-      // mass, so a teleport written to `local` after this tick's transform
+      // mass, so a teleport written to `local` after this step's transform
       // pass survives. Moving the origin by how far turning swings the
       // center of mass around it, the other way, keeps the center of mass
       // exactly where `velocity` puts it. Clone before scaling/rotating:

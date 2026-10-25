@@ -6,6 +6,7 @@ import createInputsCode from '!!raw-loader!./_create-inputs';
 import createPlayerCode from '!!raw-loader!./_create-player';
 import playerComponentCode from '!!raw-loader!./_player.component';
 import playerMoveSystemCode from '!!raw-loader!./_player-move.system';
+import jumpInputSystemCode from '!!raw-loader!./_jump-input.system';
 import tileToggleComponentCode from '!!raw-loader!./_tile-toggle.component';
 import tileToggleSystemCode from '!!raw-loader!./_tile-toggle.system';
 import colliderOutlineComponentCode from '!!raw-loader!./_collider-outline.component';
@@ -90,8 +91,12 @@ export default function TiledMaps(): JSX.Element {
           file: 'create-player.ts',
         },
         {
-          text: 'A click finds its cell through the camera view and worldToCell, and sets or clears the tile there before the tilemap systems run, so the new tile draws and collides on the same frame.',
+          text: 'A click finds its cell through the camera view and worldToCell, and sets or clears the tile there before the tilemap systems run, so the new tile draws on the same frame and collides from the next physics step.',
           file: 'tile-toggle.system.ts',
+        },
+        {
+          text: 'Physics runs in fixed steps, but a jump press lasts one frame, so the jump-input system reads it once per frame and sets jumpRequested, which the next step acts on and clears.',
+          file: 'jump-input.system.ts',
         },
       ]}
       docLinks={[
@@ -133,8 +138,14 @@ export default function TiledMaps(): JSX.Element {
             {
               name: 'player-move.system.ts',
               summary:
-                'Walks and jumps the player, and sends it back to the start from the water.',
+                'Walks and jumps the player in each physics step, and sends it back to the start from the water.',
               content: playerMoveSystemCode,
+            },
+            {
+              name: 'jump-input.system.ts',
+              summary:
+                'Reads the jump press once per frame and asks the next physics step to jump.',
+              content: jumpInputSystemCode,
             },
             {
               name: 'create-inputs.ts',

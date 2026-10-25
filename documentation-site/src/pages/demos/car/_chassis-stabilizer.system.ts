@@ -9,8 +9,9 @@ import { isGrounded } from './_ground-contact.component';
 
 /**
  * Applies a spring-like torque towards level while either wheel is on the
- * ground. Does nothing in the air, where air control takes over.
- * @param time - The time instance used to scale the torque by the tick's
+ * ground. Does nothing in the air, where air control takes over. Register it
+ * in the fixed-update group, so the torque is applied once per physics step.
+ * @param time - The time instance used to scale the torque by the step's
  * delta time.
  */
 export const createChassisStabilizerEcsSystem = (

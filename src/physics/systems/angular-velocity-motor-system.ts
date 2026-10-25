@@ -16,7 +16,7 @@ import { getRigidBodyMassData } from '../rigid-body-mass-data.js';
  * Creates an ECS system that drives every entity with an
  * `AngularVelocityMotorEcsComponent` toward `targetVelocity`, clamped by
  * `maxTorque`. Recomputed fresh from the body's current angular velocity
- * every tick (no warm-starting), so it automatically recovers after an
+ * every step (no warm-starting), so it automatically recovers after an
  * external disturbance (a collision, a scripted torque). Register it after
  * `createSleepEcsSystem` and before whatever system integrates velocity
  * into position (`createEulerIntegrationEcsSystem`); its order relative to
@@ -30,9 +30,9 @@ import { getRigidBodyMassData } from '../rigid-body-mass-data.js';
  * doesn't count the body as resting, and wakes its island before this
  * system runs when the target is set on a sleeping body. A motor whose
  * `targetVelocity` is `0` (a brake) lets its body fall asleep.
- * @param time - Used to read the tick's delta time.
+ * @param time - Used to read the step's delta time.
  * @returns An ECS system that drives every motor-equipped entity's angular
- * velocity every tick.
+ * velocity every step.
  */
 export const createAngularVelocityMotorEcsSystem = (
   time: Time,

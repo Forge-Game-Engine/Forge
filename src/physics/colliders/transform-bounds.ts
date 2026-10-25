@@ -7,7 +7,7 @@ import { Aabb } from '../types/aabb.js';
  * slightly larger than the shape's tightest box otherwise, which only adds
  * broad-phase candidates. Chain shapes cache their local bounds and use
  * this, so the broad phase never transforms their (possibly thousands of)
- * points every tick.
+ * points every step.
  * @param bounds - The local-space box.
  * @param position - The entity's world position.
  * @param rotation - The entity's world rotation, in radians.

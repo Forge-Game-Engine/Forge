@@ -21,7 +21,7 @@ import { PolygonFaces } from './polygon-faces-collision.js';
  * polygon reaches that edge and disappears when it leaves, its feature ids
  * stay in a range of that edge's own, and no amount of floating-point noise
  * between two near-coplanar edges can make the pair of them trade places
- * from one tick to the next and lose their warm-started impulses.
+ * from one step to the next and lose their warm-started impulses.
  *
  * The terrain's solid slab is never tested, only its surface, so a contact
  * normal can never come from an interior boundary between two neighboring

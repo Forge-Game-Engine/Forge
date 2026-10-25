@@ -984,10 +984,23 @@ docs samples. The transform system overwrites it on its next pass. The
 `add{Position,Rotation,Scale}Component` factories only take `local`, and
 start `world` as a copy of it.
 
-The transform system runs once per frame, after the systems that write
-`local` and before physics and rendering, which read `world`.
+Physics runs in the `fixed-update` group (`registerFixedUpdate`), so a
+world with physics registers two instances of the transform system: one
+first in the fixed-update group, so every fixed step's physics systems read
+current poses, and one in the default group before rendering, so a frame
+draws the latest step. Both are the same owner of `world`. A world without
+physics registers one, after the systems that write `local` and before
+rendering. A once-per-frame system that reads a dynamic or kinematic
+body's pose reads `local` (bodies are always root entities): before the
+default group's transform pass, its `world` is a step behind.
+Systems that apply forces or react to `ContactsEcsComponent.started`/`ended`
+go in the fixed-update group; systems that read `TriggerAction.isTriggered`
+stay in the default group and hand a press to a fixed-step system through a
+request field (like `wakeRequested`).
 `documentation-site/docs/docs/common/transforms.md` covers the ordering and
-following other entities.
+following other entities, and
+`documentation-site/docs/docs/physics/index.md` covers the physics
+registration and where game systems go.
 
 ### Angles and Directions
 
@@ -1035,8 +1048,8 @@ with its `sleepRecord`, so nothing else needs a `wakeUp` call:
   resolution, joints, springs, dampers, motors) or moves them (integration)
   skips a body that isn't awake (`isBodyAwake`), and skips a contact or
   joint when neither of its bodies is awake. Otherwise it writes a velocity
-  into a sleeping body every tick and the sleep system wakes it on the next.
-- Something that drives a body every tick from a setting the data doesn't
+  into a sleeping body every step and the sleep system wakes it on the next.
+- Something that drives a body every step from a setting the data doesn't
   show changing (an angular velocity motor's non-zero `targetVelocity`)
   keeps the body from resting: the sleep system reads it, resets the
   body's `restTime` and wakes its island, like repeated `AddTorque` in

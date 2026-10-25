@@ -17,7 +17,7 @@ export interface CameraFollowEcsComponent {
   /** The camera's top speed, in world units per second. */
   maxSpeed: number;
 
-  /** The camera's current velocity, carried between ticks. */
+  /** The camera's current velocity, carried between frames. */
   velocity: Vector2;
 }
 

@@ -24,7 +24,7 @@ export interface SoftConstraintParams {
 /**
  * Derives soft-constraint solver coefficients from a target frequency and
  * damping ratio, letting a constraint (e.g. a contact) correct its
- * positional error smoothly over several ticks through the velocity solve,
+ * positional error smoothly over several steps through the velocity solve,
  * rather than snapping it back in one step (as Baumgarte stabilization
  * does) or ignoring it entirely.
  * @param hertz - The constraint's natural frequency, in Hz. `0` disables

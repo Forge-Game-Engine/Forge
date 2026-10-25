@@ -23,13 +23,15 @@ import { CollisionPair } from '../types/collision-pair.js';
  * skipped before the AABB test. A collider entity needs a
  * `PositionEcsComponent` and a `ColliderEcsComponent` to take part;
  * `RotationEcsComponent` is optional, and an entity without one is treated
- * as unrotated. Must run after whatever system computes
- * `PositionEcsComponent.world`/`RotationEcsComponent.world` (e.g.
- * `createTransformEcsSystem`), since local values are only meaningful to
- * the parenting system.
+ * as unrotated. Register it in the fixed-update group after that group's
+ * `createTransformEcsSystem`, which computes
+ * `PositionEcsComponent.world`/`RotationEcsComponent.world`, since local
+ * values are only meaningful to the parenting system. The `aabb`s it
+ * writes then describe the colliders as of the latest step, which is what
+ * a raycast or another query made outside the step sees.
  * @param collisionPairs - The array the system clears and refills with the
- * current tick's overlapping entity pairs.
- * @returns An ECS system that populates `collisionPairs` every tick.
+ * current step's overlapping entity pairs.
+ * @returns An ECS system that populates `collisionPairs` every step.
  */
 export const createBroadPhaseEcsSystem = (
   collisionPairs: CollisionPair[],
@@ -37,7 +39,7 @@ export const createBroadPhaseEcsSystem = (
   query: [positionId, colliderId],
   update: (world, { entities, components: [positions, colliders] }) => {
     // Rotation is optional for colliders, so it can't be part of the query
-    // above; resolving its storage once per tick avoids a lookup per entity.
+    // above; resolving its storage once per step avoids a lookup per entity.
     const getRotation =
       world.getComponentAccessor<RotationEcsComponent>(rotationId);
 

@@ -13,8 +13,9 @@ import {
  * navigation agent's `desiredVelocity` into the unit's rigid body, and
  * physics moves the unit and pushes it out of walls and other units.
  *
- * Register it after `createNavigationAgentEcsSystem` and before the physics
- * systems.
+ * Register it in the fixed-update group, after
+ * `createNavigationAgentEcsSystem` and before the physics systems, so the
+ * agent's velocity is the one physics integrates over the same step.
  * @returns The ECS system.
  */
 export const createApplyVelocityEcsSystem = (): EcsSystem<
