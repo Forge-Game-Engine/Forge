@@ -91,8 +91,8 @@ const defaultRaycastOptions: RaycastOptions = {
  * @param end - The ray's world-space end point.
  * @param options - Sorting and filtering; see {@link RaycastOptions}.
  * @returns A {@link RaycastHit} for each collider the ray crosses.
- * @throws An error if the world has no broad phase (see `createBroadPhase`),
- * or more than one, or if `start` or `end` isn't finite.
+ * @throws An error if `start` or `end` isn't finite, or if the world has no
+ * broad phase (see `createBroadPhase`) or more than one.
  */
 export function raycast(
   world: EcsWorld,
@@ -100,6 +100,17 @@ export function raycast(
   end: Vector2,
   options: Partial<RaycastOptions> = {},
 ): RaycastHit[] {
+  if (
+    !Number.isFinite(start.x) ||
+    !Number.isFinite(start.y) ||
+    !Number.isFinite(end.x) ||
+    !Number.isFinite(end.y)
+  ) {
+    throw new Error(
+      `raycast: the ray from (${start.x}, ${start.y}) to (${end.x}, ${end.y}) must have finite ends.`,
+    );
+  }
+
   const { sort, mask, includeSensors } = withDefaults(
     defaultRaycastOptions,
     options,

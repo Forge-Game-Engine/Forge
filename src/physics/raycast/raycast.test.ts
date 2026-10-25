@@ -10,7 +10,11 @@ import { Vector2 } from '../../math/index.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { addColliderComponent } from '../components/collider-component.js';
-import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
+import { addRigidBodyComponent } from '../components/rigidbody-component.js';
+import {
+  createBroadPhase,
+  findBroadPhase,
+} from '../broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from '../systems/broad-phase-system.js';
 
 vi.mock('./raycast-circle.js', { spy: true });
@@ -228,6 +232,28 @@ describe('raycast', () => {
     for (const [body] of raycastCircleSpy.mock.calls) {
       expect(body.position.x).toBe(body.position.y);
     }
+  });
+
+  it('should hit both static colliders and colliders with a rigid body', () => {
+    const wall = addEntity({ x: 3, y: 0 }, new CircleCollider(1));
+    const body = addEntity({ x: -3, y: 0 }, new CircleCollider(1));
+
+    addRigidBodyComponent(world, body);
+    world.update();
+
+    // One collider in each of the broad phase's trees.
+    expect(findBroadPhase(world).movingTree.proxyCount).toBe(1);
+    expect(findBroadPhase(world).staticTree.proxyCount).toBe(1);
+
+    const hits = raycast(world, { x: -10, y: 0 }, { x: 10, y: 0 });
+
+    expect(hits.map((hit) => hit.entity)).toEqual([body, wall]);
+  });
+
+  it('should throw when an end of the ray is not finite', () => {
+    expect(() => raycast(world, { x: 0, y: 0 }, { x: Infinity, y: 0 })).toThrow(
+      'raycast: the ray from (0, 0) to (Infinity, 0)',
+    );
   });
 
   it('should throw when the world has no broad phase', () => {

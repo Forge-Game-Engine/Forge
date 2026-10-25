@@ -13,6 +13,9 @@ for a line-of-sight check or a hitscan weapon.
 
 ## Casting a ray
 
+`start` and `end` must be finite; `raycast` throws otherwise. For a ray
+with no end, cast to a point beyond everything it could hit.
+
 ```ts
 import { raycast } from '@forge-game-engine/forge/physics';
 
