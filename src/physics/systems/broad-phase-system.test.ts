@@ -22,6 +22,7 @@ import { Collider } from '../colliders/collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { aabbsOverlap } from '../collision/aabb-overlap.js';
 import { collidersCanCollide } from '../collision/collision-filter.js';
+import { addBroadPhaseComponent } from '../components/broad-phase-component.js';
 import {
   addColliderComponent,
   ColliderEcsComponent,
@@ -134,6 +135,12 @@ describe('createBroadPhaseEcsSystem', () => {
 
   it('should throw when a world gets a second broad phase', () => {
     expect(() => createBroadPhase(world)).toThrow(/already has a broad phase/);
+  });
+
+  it('should throw when the world has more than one broad phase', () => {
+    addBroadPhaseComponent(world, world.createEntity());
+
+    expect(() => world.update()).toThrow(/2 broad phases/);
   });
 
   describe('without a rotation component', () => {

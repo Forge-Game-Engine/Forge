@@ -158,15 +158,15 @@ addColliderComponent(world, zone, {
 addContactsComponent(world, zone);
 ```
 
-A sensor without a `RigidBodyEcsComponent` is static. A sensor on a moving
-body moves with it.
+A sensor without a `RigidBodyEcsComponent` is static, so it detects only
+kinematic and dynamic bodies. A sensor on a moving body moves with it.
 
 :::note
 A sensor overlap is detected only when at least one of the two entities has
 a `ContactsEcsComponent`: on the sensor to list what is inside it, or on
 the other body to list the sensors it is in. Two overlapping sensors are
-reported to each other, unless their categories and masks exclude each
-other.
+reported to each other, unless both are static or their categories and
+masks exclude each other.
 :::
 
 ## Reading contacts
