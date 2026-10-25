@@ -646,6 +646,22 @@ describe('MyClass', () => {
   breakdown in the terminal summary or `coverage/index.html`) are good
   candidates for new tests.
 
+### Benchmarks
+
+- `npm run bench` runs Vitest's benchmark mode (`vitest bench --run`) over
+  every `src/**/*.bench.ts` file (`test.benchmark.include` in
+  `vite.config.base.js`). Put a benchmark next to the code it times, like a
+  test (`src/physics/systems/collision-pipeline.bench.ts`).
+- `tsconfig.build.json` and the coverage config exclude `**/*.bench.ts`, so
+  benchmarks never ship in `/dist` or count toward coverage.
+- Build each scene with a seeded `Random` so every run times the same
+  work, and build it outside the timed function so only the work under
+  test is timed. Vitest runs no hook before each timed call, so anything
+  that has to change between calls (moving bodies) happens inside it.
+- Benchmarks don't run in CI. Run one before and after a performance
+  change and put both sets of numbers, with the machine, in the pull
+  request.
+
 ## Integration & E2E Testing
 
 `/e2e` holds real-browser tests (Playwright) for cross-system behavior that
@@ -1004,6 +1020,38 @@ spawn shape and direction) works in that entity's frame, turned by its
 `rotation.world`, the way Unity and Godot emitters follow their transform.
 `documentation-site/docs/docs/math/angles-and-rotation.md` covers the
 convention and which way a sprite faces.
+
+### Sleeping Bodies
+
+`createSleepEcsSystem` puts islands of resting dynamic bodies to sleep and
+is the only writer of `RigidBodyEcsComponent.isSleeping`, `restTime` and
+`sleepRecord` (game code only ever sets `wakeRequested` to `true`; the
+sleep system clears it). It wakes a sleeping island by comparing each body
+with its `sleepRecord`, so nothing else needs a `wakeUp` call:
+
+- A physics system that pushes on resting bodies (gravity, collision
+  resolution, joints, springs, dampers, motors) or moves them (integration)
+  skips a body that isn't awake (`isBodyAwake`), and skips a contact or
+  joint when neither of its bodies is awake. Otherwise it writes a velocity
+  into a sleeping body every tick and the sleep system wakes it on the next.
+- Something that drives a body every tick from a setting the data doesn't
+  show changing (an angular velocity motor's non-zero `targetVelocity`)
+  keeps the body from resting: the sleep system reads it, resets the
+  body's `restTime` and wakes its island, like repeated `AddTorque` in
+  Unity. Its own system then skips sleeping bodies like the rest.
+- A new component that connects two bodies (a joint) goes in
+  `islandLinkComponents` (`src/physics/islands/island-links.ts`), or the
+  bodies it connects fall asleep apart.
+- The narrow phase doesn't test a pair whose contact is asleep
+  (`isContactAsleep`: neither side awake, one of them a sleeping body). It
+  writes the manifolds the sleeping body recorded when it fell asleep
+  (`sleepRecord.manifolds`, written by the sleep system) instead, so a
+  sleeping island keeps its contacts, its links and its warm-start impulses
+  without collision tests. It only tests such a pair again when one of
+  `CollisionManifold.colliderA`/`colliderB` isn't the entity's current
+  `collider.collider` any more, so code that changes a collider's shape
+  assigns a new `Collider` object (as the tilemap collider system does)
+  rather than changing the old one in place.
 
 ### GPU Resources and Context Loss
 

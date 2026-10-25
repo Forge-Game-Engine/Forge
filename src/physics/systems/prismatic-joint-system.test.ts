@@ -154,4 +154,36 @@ describe('createPrismaticJointEcsSystem', () => {
 
     expect(maxTranslation).toBeLessThan(1.2);
   });
+
+  it.each([
+    ['leaves a sleeping slider on a static anchor alone', true],
+    ['warm-starts an awake slider on a static anchor', false],
+  ])('%s', (_name, isSleeping) => {
+    const anchor = world.createEntity();
+    addPositionComponent(world, anchor);
+    addRotationComponent(world, anchor);
+
+    const slider = world.createEntity();
+    addPositionComponent(world, slider);
+    addRotationComponent(world, slider);
+    addUnitMassCollider(world, slider);
+    const rigidBody = addRigidBodyComponent(world, slider, { isSleeping });
+
+    const joint = addPrismaticJointComponent(world, world.createEntity(), {
+      entityA: anchor,
+      entityB: slider,
+      axis: Vec2.right,
+    });
+    joint.accumulatedPerpImpulse = 1;
+
+    tick();
+
+    if (isSleeping) {
+      expect(rigidBody.velocity).toEqual({ x: 0, y: 0 });
+      expect(joint.accumulatedPerpImpulse).toBe(1);
+    } else {
+      // Warm-started and then solved back to no perpendicular motion.
+      expect(joint.accumulatedPerpImpulse).not.toBe(1);
+    }
+  });
 });

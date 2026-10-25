@@ -1,5 +1,7 @@
 import { clamp } from '../../math/index.js';
 
+const defaultFixedDeltaTimeInMilliseconds = 1000 / 60;
+
 /**
  * Class to manage and track time-related information.
  */
@@ -19,6 +21,12 @@ export class Time {
   private _previousTimeInSeconds: number;
 
   private _timeScale: number;
+
+  private _fixedDeltaTimeInMilliseconds: number;
+  private _fixedStepDeltaTimeInMilliseconds: number;
+  private _fixedAccumulatorInMilliseconds: number;
+  private _fixedTimeInMilliseconds: number;
+  private _isInFixedStep: boolean;
 
   private readonly _times: number[];
 
@@ -58,6 +66,13 @@ export class Time {
     this._previousTimeInSeconds = 0;
 
     this._timeScale = 1;
+
+    this._fixedDeltaTimeInMilliseconds = defaultFixedDeltaTimeInMilliseconds;
+    this._fixedStepDeltaTimeInMilliseconds = 0;
+    this._fixedAccumulatorInMilliseconds = 0;
+    this._fixedTimeInMilliseconds = 0;
+    this._isInFixedStep = false;
+
     this._times = [];
   }
 
@@ -90,19 +105,30 @@ export class Time {
   /**
    * Gets the delta time in milliseconds: the raw delta time multiplied by
    * `timeScale`, limited to the range `0` to `1000 / 15` (except on the first
-   * `update`).
+   * `update`). While `isInFixedStep` is `true`, it's the size of the running
+   * fixed step instead.
    * @returns The delta time in milliseconds.
    */
   get deltaTimeInMilliseconds(): number {
+    if (this._isInFixedStep) {
+      return this._fixedStepDeltaTimeInMilliseconds;
+    }
+
     return this._deltaTimeInMilliseconds;
   }
 
   /**
    * Gets the time in milliseconds: the sum of every frame's delta time, so it
-   * follows `timeScale`.
+   * follows `timeScale`. While `isInFixedStep` is `true`, it's the fixed time
+   * instead: the time at the end of the running fixed step, which is never
+   * ahead of the frame's time.
    * @returns The time in milliseconds.
    */
   get timeInMilliseconds(): number {
+    if (this._isInFixedStep) {
+      return this._fixedTimeInMilliseconds;
+    }
+
     return this._timeInMilliseconds;
   }
 
@@ -136,19 +162,30 @@ export class Time {
   /**
    * Gets the delta time in seconds: the raw delta time multiplied by
    * `timeScale`, limited to the range `0` to `1 / 15` (except on the first
-   * `update`).
+   * `update`). While `isInFixedStep` is `true`, it's the size of the running
+   * fixed step instead.
    * @returns The delta time in seconds.
    */
   get deltaTimeInSeconds(): number {
+    if (this._isInFixedStep) {
+      return this._fixedStepDeltaTimeInMilliseconds / 1000;
+    }
+
     return this._deltaTimeInSeconds;
   }
 
   /**
    * Gets the time in seconds: the sum of every frame's delta time, so it
-   * follows `timeScale`.
+   * follows `timeScale`. While `isInFixedStep` is `true`, it's the fixed time
+   * instead: the time at the end of the running fixed step, which is never
+   * ahead of the frame's time.
    * @returns The time in seconds.
    */
   get timeInSeconds(): number {
+    if (this._isInFixedStep) {
+      return this._fixedTimeInMilliseconds / 1000;
+    }
+
     return this._timeInSeconds;
   }
 
@@ -179,6 +216,65 @@ export class Time {
   }
 
   /**
+   * Gets the fixed delta time in milliseconds: the size of each fixed step
+   * `consumeFixedStep` takes. Defaults to `1000 / 60`.
+   * @returns The fixed delta time in milliseconds.
+   */
+  get fixedDeltaTimeInMilliseconds(): number {
+    return this._fixedDeltaTimeInMilliseconds;
+  }
+
+  /**
+   * Sets the fixed delta time in milliseconds. The time already accumulated
+   * is kept, and the next fixed step `consumeFixedStep` takes uses the new
+   * size. A fixed step that's running keeps its size.
+   * @param value - The new fixed delta time in milliseconds.
+   * @throws An error if the value isn't finite and greater than `0`.
+   */
+  set fixedDeltaTimeInMilliseconds(value: number) {
+    if (!Number.isFinite(value) || value <= 0) {
+      throw new Error(
+        `Unable to set the fixed delta time to "${value}" milliseconds, it must be finite and greater than 0.`,
+      );
+    }
+
+    this._fixedDeltaTimeInMilliseconds = value;
+  }
+
+  /**
+   * Gets the fixed delta time in seconds: the size of each fixed step
+   * `consumeFixedStep` takes. Defaults to `1 / 60`.
+   * @returns The fixed delta time in seconds.
+   */
+  get fixedDeltaTimeInSeconds(): number {
+    return this._fixedDeltaTimeInMilliseconds / 1000;
+  }
+
+  /**
+   * Gets whether a fixed step is running: `true` from when `consumeFixedStep`
+   * returns `true` until it returns `false`. While it's `true`, the delta time
+   * and time getters report the fixed clock.
+   * @returns Whether a fixed step is running.
+   */
+  get isInFixedStep(): boolean {
+    return this._isInFixedStep;
+  }
+
+  /**
+   * Gets the fixed overstep fraction: the time accumulated towards the next
+   * fixed step, as a fraction of the fixed delta time. Once `consumeFixedStep`
+   * has returned `false`, it's at least `0` and less than `1`, and it's the
+   * factor to interpolate rendering by, between the previous and the latest
+   * fixed step.
+   * @returns The fixed overstep fraction.
+   */
+  get fixedOverstepFraction(): number {
+    return (
+      this._fixedAccumulatorInMilliseconds / this._fixedDeltaTimeInMilliseconds
+    );
+  }
+
+  /**
    * Gets the timestamps, in milliseconds, of the `update` calls within the
    * last second. `fps` is its length.
    * @returns The times array.
@@ -188,12 +284,21 @@ export class Time {
   }
 
   /**
-   * Updates the time-related information. `Game` calls it once per frame,
+   * Updates the time-related information and adds the frame's delta time to
+   * the time accumulated towards fixed steps. `Game` calls it once per frame,
    * before updating its worlds.
    * @param time - The current time in milliseconds, such as
    * `performance.now()`.
+   * @throws An error if a fixed step is running, because `consumeFixedStep`
+   * wasn't called until it returned `false`.
    */
   public update(time: number): void {
+    if (this._isInFixedStep) {
+      throw new Error(
+        'Unable to update the time while a fixed step is running, call "consumeFixedStep" until it returns false before the next update.',
+      );
+    }
+
     // The very first call has no real previous frame to delta from
     // (`_rawTimeInMilliseconds` starts at 0), so its "delta" is really the
     // timestamp's arbitrary offset from whatever epoch the caller's clock
@@ -217,6 +322,17 @@ export class Time {
     this._timeInMilliseconds =
       this._timeInMilliseconds + this._deltaTimeInMilliseconds;
 
+    // The first delta is the clock's offset from its epoch, not elapsed time,
+    // and would run thousands of fixed steps at once. Starting the fixed time
+    // at the frame's time instead keeps the fixed time plus the accumulated
+    // time equal to the frame's time, so the time getters don't jump when a
+    // fixed step starts or ends.
+    if (isFirstUpdate) {
+      this._fixedTimeInMilliseconds = this._timeInMilliseconds;
+    } else {
+      this._fixedAccumulatorInMilliseconds += this._deltaTimeInMilliseconds;
+    }
+
     this._previousTimeInSeconds = this._rawTimeInSeconds;
     this._rawTimeInSeconds = time / 1000;
     this._rawDeltaTimeInSeconds = time / 1000 - this._previousTimeInSeconds;
@@ -228,6 +344,36 @@ export class Time {
     }
 
     this._times.push(time);
+  }
+
+  /**
+   * Takes one fixed step from the accumulated time, if it holds enough for
+   * one. Call it in a loop after each `update` and do the fixed-rate work
+   * once per step: `while (time.consumeFixedStep()) { ... }`.
+   *
+   * When the accumulated time holds at least `fixedDeltaTimeInMilliseconds`,
+   * it subtracts one fixed delta time, advances the fixed time by it, starts
+   * a fixed step (`isInFixedStep` becomes `true`) and returns `true`.
+   * Otherwise it ends the fixed step and returns `false`, and the rest stays
+   * accumulated for the next frame.
+   * @returns `true` if a fixed step was taken, `false` otherwise.
+   */
+  public consumeFixedStep(): boolean {
+    if (
+      this._fixedAccumulatorInMilliseconds < this._fixedDeltaTimeInMilliseconds
+    ) {
+      this._isInFixedStep = false;
+
+      return false;
+    }
+
+    this._fixedStepDeltaTimeInMilliseconds = this._fixedDeltaTimeInMilliseconds;
+    this._fixedAccumulatorInMilliseconds -=
+      this._fixedStepDeltaTimeInMilliseconds;
+    this._fixedTimeInMilliseconds += this._fixedStepDeltaTimeInMilliseconds;
+    this._isInFixedStep = true;
+
+    return true;
   }
 
   /**

@@ -1,6 +1,6 @@
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { CollisionBody } from '../types/collision-body.js';
-import { CollisionManifold } from '../types/collision-manifold.js';
+import { NarrowPhaseManifold } from '../types/collision-manifold.js';
 import { detectPolygonFacesCollision } from './polygon-faces-collision.js';
 
 /**
@@ -15,7 +15,7 @@ import { detectPolygonFacesCollision } from './polygon-faces-collision.js';
 export function detectPolygonPolygonCollision(
   bodyA: CollisionBody,
   bodyB: CollisionBody,
-): Omit<CollisionManifold, 'entityA' | 'entityB'> | null {
+): NarrowPhaseManifold | null {
   const colliderA = bodyA.collider as PolygonCollider;
   const colliderB = bodyB.collider as PolygonCollider;
 

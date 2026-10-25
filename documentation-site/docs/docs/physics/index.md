@@ -37,6 +37,9 @@ The physics module has these parts:
 - **Continuous collision detection**: stops fast circles from sinking into
   or passing through static colliders within one tick. See
   [Continuous Collision Detection](./continuous-collision-detection.md).
+- **Sleeping bodies**: groups of touching or jointed bodies that have
+  stopped moving are put to sleep, and the other physics systems skip them
+  until they're disturbed. See [Sleeping Bodies](./sleeping.md).
 - **Dynamic AABB tree**: a
   [`DynamicAabbTree`](/Forge/docs/api/classes/DynamicAabbTree) is a spatial
   index that finds the boxes overlapping a box or crossed by a segment,
@@ -66,6 +69,7 @@ import {
   createNarrowPhaseEcsSystem,
   createPrismaticJointEcsSystem,
   createRevoluteJointEcsSystem,
+  createSleepEcsSystem,
 } from '@forge-game-engine/forge/physics';
 
 const collisionPairs: CollisionPair[] = [];
@@ -73,11 +77,12 @@ const collisionManifolds: CollisionManifold[] = [];
 const contactConstraints: ContactConstraint[] = [];
 
 world.addSystem(createTransformEcsSystem());
+world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
+world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
+world.addSystem(createSleepEcsSystem(collisionManifolds, time));
 world.addSystem(createGravityEcsSystem(time));
 world.addSystem(createLinearSpringEcsSystem(time));
 world.addSystem(createLinearDamperEcsSystem(time));
-world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
-world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
 world.addSystem(
   createCollisionResolutionEcsSystem(
     collisionManifolds,
@@ -95,16 +100,21 @@ world.addSystem(createContinuousCollisionEcsSystem());
 1. `createTransformEcsSystem` writes every entity's world position and
    rotation, which the physics systems read (see
    [Transforms](../common/transforms.md)).
-2. Gravity, springs and dampers change velocities before collisions are
-   resolved, so the solver works with this tick's velocities.
-3. The broad phase writes each collider's bounds and lists the pairs whose
+2. The broad phase writes each collider's bounds and lists the pairs whose
    bounds overlap in `collisionPairs`. The narrow phase tests those pairs'
    shapes and writes each collision to `collisionManifolds`.
-4. Collision resolution changes velocities so colliding bodies separate.
+3. The sleep system reads this tick's `collisionManifolds`, wakes sleeping
+   bodies that were disturbed and puts resting ones to sleep, before any
+   system changes a velocity (see [Sleeping Bodies](./sleeping.md)).
+4. Gravity, springs and dampers change velocities before collisions are
+   resolved, so the solver works with this tick's velocities. They only
+   read poses and write velocities, so they run after the broad and narrow
+   phases without changing what those phases find.
+5. Collision resolution changes velocities so colliding bodies separate.
    `contactConstraints` keeps its solver state from one tick to the next.
-5. The joint systems run after collision resolution, then the angular
+6. The joint systems run after collision resolution, then the angular
    velocity motor system.
-6. `createEulerIntegrationEcsSystem` moves each body's local position and
+7. `createEulerIntegrationEcsSystem` moves each body's local position and
    rotation by its velocity, and continuous collision detection checks
    that movement.
 

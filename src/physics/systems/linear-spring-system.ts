@@ -5,6 +5,7 @@ import {
   LinearSpringEcsComponent,
   linearSpringId,
 } from '../components/linear-spring-component.js';
+import { isBodyAwake } from '../is-body-awake.js';
 import { applyPointImpulse } from '../joints/apply-point-impulse.js';
 import {
   getJointLeverArm,
@@ -19,7 +20,9 @@ const minAnchorDistance = 1e-6;
  * for the tick (`force * deltaTime`). A pure force generator - like gravity,
  * it has no warm-start state and should run before whatever system resolves
  * hard constraints (`createCollisionResolutionEcsSystem`, joint systems) so
- * they see this tick's spring force reflected in velocity.
+ * they see this tick's spring force reflected in velocity, and after
+ * `createSleepEcsSystem`. A spring is skipped while neither of its bodies is
+ * awake (see {@link isBodyAwake}).
  * @param time - Used to read the tick's delta time.
  * @returns An ECS system that applies every spring's force every tick.
  */
@@ -35,6 +38,15 @@ export const createLinearSpringEcsSystem = (
     }
 
     for (const spring of springs) {
+      // A spring holding a sleeping body still pulls on it, which would
+      // wake it, so a spring between bodies that aren't awake is skipped.
+      if (
+        !isBodyAwake(world, spring.entityA) &&
+        !isBodyAwake(world, spring.entityB)
+      ) {
+        continue;
+      }
+
       const bodyA = resolveJointBody(world, spring.entityA);
       const bodyB = resolveJointBody(world, spring.entityB);
 

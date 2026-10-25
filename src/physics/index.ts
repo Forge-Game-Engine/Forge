@@ -6,6 +6,7 @@ export * from './ccd/index.js';
 export * from './colliders/index.js';
 export * from './collision/index.js';
 export * from './components/index.js';
+export { isBodyAwake } from './is-body-awake.js';
 export * from './joints/index.js';
 export * from './raycast/index.js';
 export * from './rigid-body-mass-data.js';

@@ -70,6 +70,7 @@ import {
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createNarrowPhaseEcsSystem,
+  createSleepEcsSystem,
 } from '@forge-game-engine/forge/physics';
 import { createRenderEcsSystem } from '@forge-game-engine/forge/rendering';
 import {
@@ -81,9 +82,10 @@ world.addSystem(tileEditingSystem);
 world.addSystem(createTilemapColliderEcsSystem());
 world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
 world.addSystem(createTransformEcsSystem());
-world.addSystem(createGravityEcsSystem(time));
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
 world.addSystem(createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds));
+world.addSystem(createSleepEcsSystem(collisionManifolds, time));
+world.addSystem(createGravityEcsSystem(time));
 world.addSystem(
   createCollisionResolutionEcsSystem(
     collisionManifolds,

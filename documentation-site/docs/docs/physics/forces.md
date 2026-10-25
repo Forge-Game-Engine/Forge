@@ -57,10 +57,17 @@ Gravity is per entity, so each body can have a different `amount`, or none.
 
 ```ts
 gravity.amount.y = -600;
+rigidBody.wakeRequested = true;
 ```
 
+Changing `amount` doesn't change a sleeping body's data, so a sleeping body
+stays asleep until something wakes it. Setting the body's `wakeRequested`
+wakes it and every body it rests on or against (see
+[Waking a body](./sleeping.md#waking-a-body)).
+
 Register `createGravityEcsSystem` before `createCollisionResolutionEcsSystem`,
-so collision resolution works with the velocity gravity changed this tick.
+so collision resolution works with the velocity gravity changed this tick,
+and after `createSleepEcsSystem` if the game registers it.
 
 ## Impulses
 
@@ -151,8 +158,12 @@ world.addSystem(createAngularVelocityMotorEcsSystem(time));
 The system computes the torque every tick from the body's current angular
 velocity, so after a collision or another torque changes it, the motor
 turns the body back towards `targetVelocity`. Change `targetVelocity` or
-`maxTorque` on the component at any time. Register the system before
-`createEulerIntegrationEcsSystem`.
+`maxTorque` on the component at any time. Register the system after
+`createSleepEcsSystem` and before `createEulerIntegrationEcsSystem`.
+
+A motor with a non-zero `targetVelocity` keeps its body awake, even when
+the body can't turn; one whose `targetVelocity` is `0` lets it fall asleep
+(see [Sleeping Bodies](./sleeping.md#keeping-a-body-awake)).
 
 ## Springs and dampers
 
@@ -202,8 +213,10 @@ local space, and default to the bodies' origins. A spring without a
 An entity in `entityA` or `entityB` without a `RigidBodyEcsComponent` is
 static.
 
-Register both systems before `createCollisionResolutionEcsSystem`, as for
-gravity.
+Register both systems before `createCollisionResolutionEcsSystem` and after
+`createSleepEcsSystem`, as for gravity. A spring or damper between two
+bodies that aren't awake applies no force, so changing its `stiffness` or
+`restLength` while its bodies sleep has no effect until they wake.
 
 ## Explosions
 

@@ -245,6 +245,44 @@ describe('createEulerIntegrationEcsSystem', () => {
     );
   });
 
+  it('leaves an undisturbed sleeping body where it is', () => {
+    const entity = createBody('dynamic');
+    const rigidBody = world.getComponent(entity, rigidBodyId)!;
+
+    rigidBody.velocity = { x: 0, y: 0 };
+    rigidBody.angularVelocity = 0;
+    rigidBody.isSleeping = true;
+    world.update();
+
+    expect(world.getComponent(entity, positionId)!.local).toEqual({
+      x: 0,
+      y: 0,
+    });
+    expect(world.getComponent(entity, rotationId)!.local).toBe(0);
+  });
+
+  it('moves a sleeping body whose velocity was written since it fell asleep', () => {
+    const entity = createBody('dynamic');
+
+    world.getComponent(entity, rigidBodyId)!.isSleeping = true;
+    world.update();
+
+    expect(world.getComponent(entity, positionId)!.local.x).toBeGreaterThan(0);
+  });
+
+  it('throws for a sleeping body with a parent', () => {
+    const parent = world.createEntity();
+    const entity = createBody('dynamic');
+    const rigidBody = world.getComponent(entity, rigidBodyId)!;
+
+    rigidBody.velocity = { x: 0, y: 0 };
+    rigidBody.angularVelocity = 0;
+    rigidBody.isSleeping = true;
+    world.setParent(entity, parent);
+
+    expect(() => world.update()).toThrow(/has a ParentEcsComponent/);
+  });
+
   it('allows a static body with a parent', () => {
     const parent = world.createEntity();
     const entity = createBody('static');

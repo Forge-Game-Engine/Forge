@@ -14,9 +14,13 @@ import {
 import {
   addRigidBodyComponent,
   RigidBodyEcsComponent,
+  RigidBodyOptions,
 } from '../components/rigidbody-component.js';
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { ContactConstraint } from '../types/contact-constraint.js';
+
+// The solver never reads a manifold's colliders.
+const manifoldCollider = new CircleCollider(1);
 
 describe('createCollisionResolutionEcsSystem', () => {
   let world: EcsWorld;
@@ -50,7 +54,7 @@ describe('createCollisionResolutionEcsSystem', () => {
     radius: number,
     isDynamic: boolean,
     colliderOptions: Partial<ColliderEcsComponent> = {},
-    rigidBodyOptions: Partial<RigidBodyEcsComponent> = {},
+    rigidBodyOptions: RigidBodyOptions = {},
   ): { entity: number; rigidBody: RigidBodyEcsComponent | null } {
     const entity = world.createEntity();
 
@@ -82,6 +86,8 @@ describe('createCollisionResolutionEcsSystem', () => {
     collisionManifolds.push({
       entityA,
       entityB,
+      colliderA: manifoldCollider,
+      colliderB: manifoldCollider,
       normal,
       depth,
       contactPoints: [contactPoint],
@@ -206,7 +212,7 @@ describe('createCollisionResolutionEcsSystem', () => {
     // A ball falling onto the ground, touching it right of its center, as a
     // box's corner touches a step.
     function landOffCenter(
-      rigidBodyOptions: Partial<RigidBodyEcsComponent>,
+      rigidBodyOptions: RigidBodyOptions,
     ): RigidBodyEcsComponent {
       addSystem({ restitutionThreshold: 100 });
 
@@ -352,5 +358,36 @@ describe('createCollisionResolutionEcsSystem', () => {
     world.update();
 
     expect(contactConstraints).toHaveLength(0);
+  });
+
+  it('leaves a sleeping body’s contact with static geometry unsolved, keeping its accumulated impulse until it wakes', () => {
+    addSystem();
+
+    // A body resting on a floor below it (`+Y` is down), pressed into it.
+    const { entity: floor } = addCircleEntity({ x: 0, y: 2 }, 1, false);
+    const { entity: body, rigidBody } = addCircleEntity(
+      { x: 0, y: 0 },
+      1,
+      true,
+      { restitution: 0 },
+      { isSleeping: true },
+    );
+
+    pushManifold(floor, body, { x: 0, y: -1 }, 0.1, { x: 0, y: 1 });
+    world.update();
+
+    expect(contactConstraints).toHaveLength(1);
+
+    contactConstraints[0].accumulatedNormalImpulse = 0.5;
+    world.update();
+
+    expect(rigidBody!.velocity).toEqual({ x: 0, y: 0 });
+    expect(contactConstraints[0].accumulatedNormalImpulse).toBe(0.5);
+
+    rigidBody!.wakeRequested = true;
+    world.update();
+
+    // Woken, the warm start pushes it up out of the floor.
+    expect(rigidBody!.velocity.y).toBeLessThan(0);
   });
 });
