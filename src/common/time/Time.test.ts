@@ -109,9 +109,27 @@ describe('Time', () => {
     time.update(hitchTime);
 
     expect(time.rawDeltaTimeInMilliseconds).toBe(5000);
-    expect(time.deltaTimeInMilliseconds).toBeCloseTo(1000 / 15);
-    expect(time.deltaTimeInSeconds).toBeCloseTo(1 / 15);
-    expect(time.timeInMilliseconds).toBeCloseTo(currentTime + 1000 / 15);
+    expect(time.deltaTimeInMilliseconds).toBe(250);
+    expect(time.deltaTimeInSeconds).toBeCloseTo(0.25);
+    expect(time.timeInMilliseconds).toBe(currentTime + 250);
+  });
+
+  it('should pass a 200 millisecond delta time through unclamped', () => {
+    time.update(1000);
+    time.update(1200);
+
+    expect(time.deltaTimeInMilliseconds).toBe(200);
+    expect(time.deltaTimeInSeconds).toBeCloseTo(0.2);
+    expect(time.timeInMilliseconds).toBe(1200);
+  });
+
+  it('should clamp the scaled delta time, not the raw delta time', () => {
+    time.timeScale = 2;
+    time.update(1000);
+    time.update(1200);
+
+    expect(time.rawDeltaTimeInMilliseconds).toBe(200);
+    expect(time.deltaTimeInMilliseconds).toBe(250);
   });
 
   it('should clamp a negative delta time to zero, without clamping the raw delta', () => {
@@ -202,6 +220,31 @@ describe('Time', () => {
       time.update(1012);
       expect(consumeAllFixedSteps()).toBe(1);
       expect(time.fixedOverstepFraction).toBeCloseTo(0.2);
+    });
+
+    it('should take 9 steps for a 160 millisecond frame', () => {
+      time.update(1000);
+      time.update(1160);
+
+      expect(time.deltaTimeInMilliseconds).toBe(160);
+      expect(consumeAllFixedSteps()).toBe(9);
+      expect(time.fixedOverstepFraction).toBeCloseTo(
+        (160 - 9 * (1000 / 60)) / (1000 / 60),
+      );
+    });
+
+    it('should take at most 15 steps for a 1000 millisecond frame, without carrying the clipped time', () => {
+      time.update(1000);
+      time.update(2000);
+
+      expect(time.deltaTimeInMilliseconds).toBe(250);
+      expect(consumeAllFixedSteps()).toBe(15);
+      expect(time.fixedOverstepFraction).toBeCloseTo(0);
+
+      time.update(2001);
+
+      expect(consumeAllFixedSteps()).toBe(0);
+      expect(time.fixedOverstepFraction).toBeCloseTo(1 / (1000 / 60));
     });
 
     it('should take no steps while the time scale is 0', () => {
