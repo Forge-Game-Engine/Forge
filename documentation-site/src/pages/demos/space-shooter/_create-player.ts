@@ -16,6 +16,7 @@ import {
 
 import {
   addColliderComponent,
+  addRigidBodyComponent,
   CircleCollider,
 } from '@forge-game-engine/forge/physics';
 import { asteroidCategory, playerCategory } from './_collision-categories';
@@ -132,6 +133,8 @@ export function spawnPlayer(
     category: playerCategory,
     mask: asteroidCategory,
   });
+  // Moved by the movement system, not by physics.
+  addRigidBodyComponent(world, playerEntity, { type: 'kinematic' });
 }
 
 export async function createPlayer(

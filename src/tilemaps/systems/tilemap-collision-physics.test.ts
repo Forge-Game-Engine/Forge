@@ -22,6 +22,7 @@ import {
   addRigidBodyComponent,
   RigidBodyEcsComponent,
 } from '../../physics/components/rigidbody-component.js';
+import { createBroadPhase } from '../../physics/broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from '../../physics/systems/broad-phase-system.js';
 import { createCollisionResolutionEcsSystem } from '../../physics/systems/collision-resolution-system.js';
 import { createContinuousCollisionEcsSystem } from '../../physics/systems/continuous-collision-system.js';
@@ -75,6 +76,7 @@ describe('tile layer collision in the physics pipeline', () => {
 
     collisionManifolds = [];
 
+    createBroadPhase(world);
     world.addSystem(createTilemapColliderEcsSystem());
     world.addSystem(createTransformEcsSystem());
     world.addSystem(createGravityEcsSystem(time));

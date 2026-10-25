@@ -21,6 +21,7 @@ import {
 } from '@forge-game-engine/forge/audio';
 import {
   addColliderComponent,
+  addRigidBodyComponent,
   CircleCollider,
 } from '@forge-game-engine/forge/physics';
 import { bulletId } from './_bullet.component';
@@ -114,4 +115,6 @@ function createBulletWithOffset(
     category: bulletCategory,
     mask: asteroidCategory,
   });
+  // Moved by the bullet system, not by physics.
+  addRigidBodyComponent(world, bullet, { type: 'kinematic' });
 }

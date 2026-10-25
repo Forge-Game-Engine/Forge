@@ -10,6 +10,7 @@ import { addSpriteComponent } from '@forge-game-engine/forge/rendering';
 import {
   addColliderComponent,
   addContactsComponent,
+  addRigidBodyComponent,
   CircleCollider,
 } from '@forge-game-engine/forge/physics';
 import {
@@ -80,6 +81,10 @@ export const createAsteroidSpawnerEcsSystem = (
         category: asteroidCategory,
         mask: bulletCategory | playerCategory,
       });
+      // Moved by the asteroid system, not by physics. Kinematic, since a
+      // collider with no rigid body is static, and two static colliders
+      // never collide with each other.
+      addRigidBodyComponent(world, asteroidEntity, { type: 'kinematic' });
       // Asteroids are the only entities that check what they touch.
       addContactsComponent(world, asteroidEntity);
     }

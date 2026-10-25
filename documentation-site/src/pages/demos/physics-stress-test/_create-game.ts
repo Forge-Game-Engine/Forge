@@ -8,6 +8,7 @@ import {
   CollisionPair,
   ContactConstraint,
   createAngularVelocityMotorEcsSystem,
+  createBroadPhase,
   createBroadPhaseEcsSystem,
   createCollisionResolutionEcsSystem,
   createContinuousCollisionEcsSystem,
@@ -77,6 +78,7 @@ export const createPhysicsStressTestGame = async (): Promise<Game> => {
   world.addSystem(createGravityEcsSystem(time), physics);
   world.addSystem(createLinearSpringEcsSystem(time), physics);
   world.addSystem(createLinearDamperEcsSystem(time), physics);
+  createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

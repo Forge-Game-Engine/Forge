@@ -14,9 +14,12 @@ import { CollisionManifold } from '../types/collision-manifold.js';
  *   position itself). Not affected by gravity, forces, or collision
  *   impulses, but still integrated into position from `velocity` every step
  *   and still pushes dynamic bodies it contacts. Use this for moving
- *   platforms and other scripted movers that dynamic bodies should react to.
+ *   platforms and other scripted movers that dynamic bodies should react to,
+ *   and for colliders game code moves that must detect colliders with no
+ *   rigid body.
  * - `'static'`: never moves and is never integrated, with infinite effective
- *   mass in the solver. Equivalent to an entity with no
+ *   mass in the solver, and never collides with another static collider.
+ *   Equivalent to an entity with no
  *   `RigidBodyEcsComponent` at all (the convention every collider-only
  *   entity, e.g. `TerrainCollider` ground, already follows); attaching a
  *   `RigidBodyEcsComponent` with this type is only useful when other

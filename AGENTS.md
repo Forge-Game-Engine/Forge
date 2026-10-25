@@ -425,8 +425,10 @@ caller build up a composite entity by calling several `add<Name>Component`
 functions against the same entity (position + rotation + scale + sprite +
 ...), which is how entities are assembled throughout this codebase.
 `add<Name>Component` never creates its own entity; a handful of components
-that are always the root of their own entity in practice (currently just
-`camera`) additionally get a `create<Name>` aggregate factory that creates
+that are always the root of their own entity in practice (currently
+`camera`, and `broadPhase`, which `createBroadPhase(world)` puts on the
+world's one broad-phase entity) additionally get a `create<Name>`
+aggregate factory that creates
 an entity and calls the relevant `add<Name>Component` functions against it.
 See the `create-component` skill for the full pattern, including the
 default-options-object convention and `create-camera.ts` as the
