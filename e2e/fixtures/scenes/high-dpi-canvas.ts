@@ -138,7 +138,7 @@ export const createScene: CreateScene = (
     tintColor: toColor(inputSceneColors.green),
   });
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

@@ -137,7 +137,7 @@ describe('createSleepEcsSystem', () => {
   beforeEach(() => {
     // Game code moves entities by writing `local`; the sleep system reads
     // the `world` pose the transform system composes from it.
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     addSleepSystem();
   });
 

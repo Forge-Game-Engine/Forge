@@ -49,7 +49,7 @@ export const createSpriteAtlasGame = async (): Promise<Game> => {
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createSpriteAnimationEcsSystem(time, clips));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

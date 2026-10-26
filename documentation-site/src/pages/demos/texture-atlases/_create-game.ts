@@ -23,7 +23,7 @@ export const createTextureAtlasesGame = async (): Promise<Game> => {
 
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createSpriteAnimationEcsSystem(time, shipClips));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { addRigidBodyComponent, rigidBodyId } from './rigidbody-component.js';
+import {
+  addPositionComponent,
+  addTransformInterpolationComponent,
+  transformInterpolationId,
+} from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 
 describe('addRigidBodyComponent', () => {
@@ -77,5 +82,36 @@ describe('addRigidBodyComponent', () => {
         canSleep: false,
       }),
     ).toThrow(/canSleep is false/);
+  });
+
+  it.each(['static', 'kinematic', 'dynamic'] as const)(
+    'adds a transform interpolation component to a %s body, starting at its local transform',
+    (type) => {
+      const world = new EcsWorld();
+      const entity = world.createEntity();
+
+      addPositionComponent(world, entity, { local: { x: 3, y: 4 } });
+      addRigidBodyComponent(world, entity, { type });
+
+      const interpolation = world.getComponent(
+        entity,
+        transformInterpolationId,
+      );
+
+      expect(interpolation?.stepStart.position).toEqual({ x: 3, y: 4 });
+      expect(interpolation?.stepEnd.position).toEqual({ x: 3, y: 4 });
+    },
+  );
+
+  it('keeps a transform interpolation component the entity already has', () => {
+    const world = new EcsWorld();
+    const entity = world.createEntity();
+    const interpolation = addTransformInterpolationComponent(world, entity);
+
+    addRigidBodyComponent(world, entity);
+
+    expect(world.getComponent(entity, transformInterpolationId)).toBe(
+      interpolation,
+    );
   });
 });

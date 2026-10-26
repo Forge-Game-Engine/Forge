@@ -1,4 +1,5 @@
 import {
+  getInterpolatedLocalPosition,
   PositionEcsComponent,
   positionId,
   Time,
@@ -14,10 +15,12 @@ import {
  * Moves each following camera towards its target with `smoothDampVector2`.
  *
  * Register it in the default group, after the fixed steps and before the
- * frame's transform system. It reads the target's `local` position (the
- * chassis has no parent, so that's its pose after the frame's last physics
- * step, where its `world` would still be a step behind).
- * @param time - The time instance used to advance the smoothing.
+ * frame's transform system. It follows the target's interpolated position,
+ * where the frame's transform system draws the chassis between its last two
+ * physics steps, so the camera moves with the chassis on screen instead of
+ * shaking against it.
+ * @param time - The time instance used to advance the smoothing and blend the
+ * target's position.
  */
 export const createCameraFollowEcsSystem = (
   time: Time,
@@ -33,17 +36,19 @@ export const createCameraFollowEcsSystem = (
       const { targetEntity, offset, smoothTime, maxSpeed, velocity } =
         cameraFollow;
 
-      const targetPosition = world.getComponent(targetEntity, positionId);
-
-      if (targetPosition === null) {
+      if (world.getComponent(targetEntity, positionId) === null) {
         continue;
       }
 
-      // clone: targetPosition.local is the followed entity's own live
-      // position field, must not be mutated by adding offset into it.
+      // A new vector, so adding the offset into it leaves the chassis alone.
+      const targetPosition = getInterpolatedLocalPosition(
+        world,
+        targetEntity,
+        time,
+      );
       const { positionOutput, velocityOutput } = smoothDampVector2(
         positionComponent.local,
-        Vec2.add(Vec2.clone(targetPosition.local), offset),
+        Vec2.add(targetPosition, offset),
         velocity,
         maxSpeed,
         smoothTime,

@@ -14,6 +14,7 @@ import {
   addPositionComponent,
   addRotationComponent,
   createTransformEcsSystem,
+  Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Random, Vector2 } from '../../math/index.js';
@@ -126,7 +127,7 @@ function createScene(name: string, colliderCount: number): Scene {
   const world = new EcsWorld();
 
   createBroadPhase(world);
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(new Time()));
   world.addSystem(createBroadPhaseEcsSystem([]));
   addColliders(world, random, colliderCount, halfSide);
 

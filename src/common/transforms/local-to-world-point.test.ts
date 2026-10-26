@@ -7,6 +7,7 @@ import {
   positionId,
 } from '../components/index.js';
 import { createTransformEcsSystem } from '../systems/transform-system.js';
+import { Time } from '../time/Time.js';
 import { localToWorldPoint } from './local-to-world-point.js';
 import { worldToLocalPoint } from './world-to-local-point.js';
 
@@ -15,7 +16,7 @@ describe('localToWorldPoint and worldToLocalPoint', () => {
 
   beforeEach(() => {
     world = new EcsWorld();
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(new Time()));
   });
 
   it('map a point through position alone', () => {

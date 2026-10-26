@@ -129,7 +129,7 @@ export const createScene: CreateScene = (
     new Color(brightTint, brightTint, brightTint),
   );
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createBloomEcsSystem(renderContext));
   world.addSystem(createToneMapEcsSystem(renderContext));

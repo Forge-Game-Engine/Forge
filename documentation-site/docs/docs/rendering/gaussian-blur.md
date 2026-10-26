@@ -31,14 +31,14 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame } from '@forge-game-engine/forge/utilities';
 
-const { world, renderContext } = createGame('game-container');
+const { world, renderContext, time } = createGame('game-container');
 
 const sceneTarget = createRenderTarget(renderContext, 'canvas');
 const camera = createCamera(world, { renderTarget: sceneTarget });
 
 const blur = addGaussianBlurComponent(world, camera, { passes: 4 });
 
-world.addSystem(createTransformEcsSystem());
+world.addSystem(createTransformEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createGaussianBlurEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));

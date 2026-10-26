@@ -207,7 +207,7 @@ export const createScene: CreateScene = (
   // camera.position below reads) but the camera visibly never moves -
   // exactly the kind of bug a numeric-only assertion can't catch. Must run
   // after the system above and before the one below.
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

@@ -15,6 +15,11 @@ import {
   ColliderEcsComponent,
   colliderId,
 } from '../components/collider-component.js';
+import {
+  RigidBodyEcsComponent,
+  rigidBodyId,
+} from '../components/rigidbody-component.js';
+import { isStaticBody } from '../is-static-body.js';
 import { CollisionBody } from '../types/collision-body.js';
 import { RaycastHit, RaycastShapeHit } from '../types/raycast-hit.js';
 import { raycastChain } from './raycast-chain.js';
@@ -32,6 +37,33 @@ const raycastDetectors: Record<
   terrain: raycastTerrain,
   chain: raycastChain,
 };
+
+// The pose a ray tests a collider at: the simulated pose, like the physics
+// queries of other engines. A dynamic or kinematic body is always a root
+// entity, so its `local` is its world pose at the end of the latest fixed
+// step (or wherever game code has since put it). Its `world` is where it's
+// drawn, which outside a fixed step can be up to a step behind. Every other
+// collider is never moved by physics, so its `world` is its pose.
+function getSimulatedBody(
+  position: PositionEcsComponent,
+  rotation: RotationEcsComponent | null,
+  rigidBody: RigidBodyEcsComponent | null,
+  collider: ColliderEcsComponent,
+): CollisionBody {
+  if (!isStaticBody(rigidBody)) {
+    return {
+      position: position.local,
+      rotation: rotation ? rotation.local : 0,
+      collider: collider.collider,
+    };
+  }
+
+  return {
+    position: position.world,
+    rotation: getColliderRotation(rotation),
+    collider: collider.collider,
+  };
+}
 
 /**
  * Options for {@link raycast}.
@@ -75,16 +107,26 @@ const defaultRaycastOptions: RaycastOptions = {
  *
  * The segment walks the broad phase's trees (see `createBroadPhase`), the
  * way Box2D's and Godot's ray casts walk theirs, so only colliders whose
- * tree box the segment reaches are looked at, and only those whose
- * {@link ColliderEcsComponent.aabb} it reaches have their exact shape
- * tested. A ray's cost grows with the number of colliders near it, not
- * with every collider in the world.
+ * tree box the segment reaches are looked at, and only those whose tight
+ * bounds it reaches have their exact shape tested. A ray's cost grows with
+ * the number of colliders near it, not with every collider in the world.
+ *
+ * It tests each collider at its simulated pose. A collider on a `'dynamic'`
+ * or `'kinematic'` rigid body is tested at the body's `position.local` and
+ * `rotation.local`, against bounds computed from that pose: its pose at the
+ * end of the latest fixed step, or wherever game code has since put it.
+ * Bodies are drawn between their last two fixed steps, so a hit on a moving
+ * body can be up to one step ahead of where it's drawn. Every other
+ * collider is tested at its `world` transform, against its
+ * {@link ColliderEcsComponent.aabb}; an entity without a
+ * `RotationEcsComponent` is treated as unrotated.
  *
  * The trees and `aabb`s are what `createBroadPhaseEcsSystem` left them on
  * its last run, so a collider added since then can't be hit yet, and one
- * removed since then isn't hit. The exact test uses each collider's current
- * `PositionEcsComponent.world` and rotation; an entity without a
- * `RotationEcsComponent` is treated as unrotated.
+ * removed since then isn't hit. The broad phase runs before the step moves
+ * the bodies, so a moving body's tree box is where the step started it: a
+ * ray cast after the step can miss a body that has since moved further than
+ * the tree's `aabbMargin` away from that box.
  * @param world - The ECS world whose broad phase and colliders to cast
  * against.
  * @param start - The ray's world-space start point.
@@ -124,6 +166,8 @@ export function raycast(
   // unrotated), so it's read per entity rather than required.
   const getRotation =
     world.getComponentAccessor<RotationEcsComponent>(rotationId);
+  const getRigidBody =
+    world.getComponentAccessor<RigidBodyEcsComponent>(rigidBodyId);
 
   const deltaX = end.x - start.x;
   const deltaY = end.y - start.y;
@@ -152,7 +196,16 @@ export function raycast(
       return maxFraction;
     }
 
-    const { min, max } = collider.aabb;
+    const rigidBody = getRigidBody(entity);
+    const body = getSimulatedBody(
+      position,
+      getRotation(entity),
+      rigidBody,
+      collider,
+    );
+    const { min, max } = isStaticBody(rigidBody)
+      ? collider.aabb
+      : collider.collider.computeAabb(body.position, body.rotation);
 
     // A collider component added since the broad phase ran (replacing the
     // one its proxy was made from) still has its empty starting box, which
@@ -170,11 +223,6 @@ export function raycast(
       return maxFraction;
     }
 
-    const body: CollisionBody = {
-      position: position.world,
-      rotation: getColliderRotation(getRotation(entity)),
-      collider: collider.collider,
-    };
     const hit = raycastDetectors[body.collider.type](body, start, end);
 
     if (hit !== null) {

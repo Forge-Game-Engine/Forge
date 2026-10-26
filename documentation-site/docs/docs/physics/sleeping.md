@@ -52,7 +52,7 @@ import {
 createBroadPhase(world);
 const physics = { group: registerFixedUpdate(world, time) };
 
-world.addSystem(createTransformEcsSystem(), physics);
+world.addSystem(createTransformEcsSystem(time), physics);
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
 world.addSystem(
   createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

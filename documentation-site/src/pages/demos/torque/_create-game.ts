@@ -7,6 +7,7 @@ import {
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
@@ -85,16 +86,17 @@ export const createTorqueGame = async (): Promise<Game> => {
   // integrates velocity into position (`createEulerIntegrationEcsSystem`).
   // The thruster's torque is scaled by the step's duration, so it spins the
   // flywheel up the same way at any frame rate.
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createThrusterEcsSystem(time), physics);
   world.addSystem(createGustEcsSystem(time), physics);
   world.addSystem(createAngularVelocityMotorEcsSystem(time), physics);
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
   world.addSystem(createContinuousCollisionEcsSystem(), physics);
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps, so the frame draws the latest
   // step's rotations.
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 

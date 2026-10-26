@@ -28,7 +28,7 @@ export const createEasingFunctionsGame = async (): Promise<Game> => {
   world.addSystem(createEasingRowEcsSystem(time));
   // After the easing rows move their sprites' `local` poses, so the render
   // system draws this frame's `world` poses.
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

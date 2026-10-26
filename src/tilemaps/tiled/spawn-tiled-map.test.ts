@@ -5,6 +5,7 @@ import {
   scaleId,
 } from '../../common/components/index.js';
 import { createTransformEcsSystem } from '../../common/systems/transform-system.js';
+import { Time } from '../../common/time/Time.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { ChainCollider } from '../../physics/colliders/chain-collider.js';
 import { colliderId } from '../../physics/components/collider-component.js';
@@ -100,7 +101,7 @@ describe('spawnTiledMap', () => {
     const spawned = spawnTiledMap(world, map);
     const walls = findTiledLayer(spawned, 'Buildings/Walls').entity;
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(new Time()));
     world.update();
 
     expect(world.getComponent(walls, positionId)?.local).toEqual({

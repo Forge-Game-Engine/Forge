@@ -12,7 +12,11 @@ import { positionId, rotationId, scaleId } from '../components/index.js';
  * It only reads the world transform, which `createTransformEcsSystem`
  * writes, so it sees the transform from that system's last pass: a point
  * converted after changing the entity's `local` values and before the
- * transform system runs uses the previous world transform.
+ * transform system runs uses the previous world transform. For an entity with
+ * a `TransformInterpolationEcsComponent`, a point converted outside a fixed
+ * step goes through the pose the entity is drawn at, and one converted inside
+ * a fixed step, after the step's transform system, through its simulated
+ * pose.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity whose local space `point` is in. Its rotation
  * and scale are optional (`0` and `(1, 1)` without them).

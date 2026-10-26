@@ -44,6 +44,20 @@ enter a terrain from any side, including from below. A ray hits a
 enters solid, so a ray that starts inside a chain's solid doesn't hit the
 edge it leaves by.
 
+## Which pose a ray tests
+
+A ray tests each collider at its simulated pose:
+
+- A collider on a dynamic or kinematic body is tested at the body's
+  `position.local` and `rotation.local`: where the latest fixed step left
+  it, or where game code has since placed it. Bodies are drawn between
+  their last two fixed steps (see
+  [Interpolating between fixed steps](../common/transforms.md#interpolating-between-fixed-steps)),
+  so a hit on a moving body can be up to one step ahead of where the body
+  is drawn.
+- Every other collider is tested at its `position.world` and
+  `rotation.world`.
+
 ## Which colliders a ray sees
 
 `raycast` casts the segment through the
@@ -52,7 +66,8 @@ edge it leaves by.
 rays, so it only looks at colliders near the segment. Its cost grows with
 the number of colliders near the ray, not with the number of colliders in
 the world. Of those, it only tests the exact shape of colliders whose
-`aabb` the segment reaches.
+bounds the segment reaches: a static collider's `aabb`, and for a dynamic
+or kinematic body, bounds computed from the pose it's tested at.
 
 :::caution
 `raycast` throws if the world has no broad phase. Call
@@ -60,9 +75,12 @@ the world. Of those, it only tests the exact shape of colliders whose
 rays after it has run. The trees and each collider's `aabb` are as of the
 broad phase's last run, which is once per fixed step: a collider is found
 where it was then, a collider added since then isn't hit, and one removed
-since then isn't hit either. A ray cast from the default group or an event
-handler sees the colliders as of the latest fixed step, and on the frames
-before the first fixed step it hits nothing.
+since then isn't hit either. The broad phase runs before the step moves
+the bodies, so a ray cast after the step can miss a dynamic or kinematic
+body that has moved more than a tenth of a world unit since. A ray cast
+from the default group or an event handler sees the colliders as of the
+latest fixed step, and on the frames before the first fixed step it hits
+nothing.
 :::
 
 ## Choosing which colliders a ray hits

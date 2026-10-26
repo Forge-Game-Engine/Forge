@@ -18,6 +18,7 @@ import {
   addRotationComponent,
   createTransformEcsSystem,
   PositionEcsComponent,
+  Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Random, Vector2 } from '../../math/index.js';
@@ -175,7 +176,7 @@ function createScene(options: SceneOptions): Scene {
   const collisionManifolds: CollisionManifold[] = [];
 
   createBroadPhase(world);
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(new Time()));
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
 
   if (includeNarrowPhase) {

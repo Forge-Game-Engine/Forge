@@ -24,6 +24,7 @@ import {
   createRenderContext,
   createRenderEcsSystem,
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   EcsWorld,
   PolygonCollider,
   registerFixedUpdate,
@@ -82,8 +83,10 @@ export interface FixedTimestepPhysicsSceneHandle extends SceneHandle {
 /**
  * Builds a scene where a ball falls under gravity onto a static floor and
  * bounces, with the physics systems registered in the `registerFixedUpdate`
- * group behind a transform system (the fixed pass), and a second transform
- * system in the default group before rendering (the frame pass). Frames of
+ * group behind a transform system (the fixed pass) and ahead of the system
+ * that records where each step ended, and a second transform system in the
+ * default group before rendering (the frame pass), which draws the ball
+ * between its last two steps. Frames of
  * any length that add up to the same time run the same fixed steps, so the
  * ball ends in the same pose.
  * @param container - The element to render the scene's canvas into.
@@ -163,7 +166,7 @@ export const createScene: CreateScene = (
   let fixedSteps = 0;
 
   // Once per fixed step.
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(
     {
       name: 'fixed-step-counter',
@@ -191,9 +194,10 @@ export const createScene: CreateScene = (
   );
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
   world.addSystem(createContinuousCollisionEcsSystem(), physics);
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps.
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));

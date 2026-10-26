@@ -56,7 +56,7 @@ import {
   createTransformEcsSystem,
 } from '@forge-game-engine/forge/common';
 
-const { game, world, renderContext } = createGame('game-container');
+const { game, world, renderContext, time } = createGame('game-container');
 
 createCamera(world);
 
@@ -68,7 +68,7 @@ const entity = world.createEntity();
 addPositionComponent(world, entity);
 addSpriteComponent(world, entity, sprite);
 
-world.addSystem(createTransformEcsSystem());
+world.addSystem(createTransformEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
 
 game.run();

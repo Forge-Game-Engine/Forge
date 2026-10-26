@@ -4,6 +4,7 @@ import {
   addPositionComponent,
   createTransformEcsSystem,
   positionId,
+  Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
@@ -151,7 +152,7 @@ describe('createUiNavigationEcsSystem', () => {
     world.getComponent(higher, positionId)!.local.y = -100;
     navigate(navigateInput, 1, 0);
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(new Time()));
     world.addSystem(createUiNavigationEcsSystem());
     tick(world);
 
@@ -176,7 +177,7 @@ describe('createUiNavigationEcsSystem', () => {
     world.getComponent(second, positionId)!.local.y = -100;
     navigate(navigateInput, 1, 0);
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(new Time()));
     world.addSystem(createUiNavigationEcsSystem());
     tick(world);
 

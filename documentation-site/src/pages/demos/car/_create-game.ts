@@ -7,6 +7,7 @@ import {
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
@@ -104,7 +105,7 @@ export const createCarGame = async (): Promise<Game> => {
   const fixedUpdate = registerFixedUpdate(world, time);
   const physics = { group: fixedUpdate };
 
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createGravityEcsSystem(time), physics);
   createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
@@ -135,13 +136,14 @@ export const createCarGame = async (): Promise<Game> => {
   world.addSystem(createAirControlEcsSystem(time), physics);
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
   world.addSystem(createContinuousCollisionEcsSystem(), physics);
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps. The restart reads a press made
   // this frame, and it and the camera follow write `local` before the
   // transform system, so the frame shows their changes.
   world.addSystem(createCarResetEcsSystem());
   world.addSystem(createCameraFollowEcsSystem(time));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
