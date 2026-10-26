@@ -196,7 +196,7 @@ export const createScene: CreateScene = (
 
   addSquare(1.5, new Color(0, 0, 1, 1), 2);
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   let clockInMilliseconds = 0;

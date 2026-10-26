@@ -1,5 +1,6 @@
 import {
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import { Random } from '@forge-game-engine/forge/math';
@@ -74,7 +75,7 @@ export const createPhysicsStressTestGame = async (): Promise<Game> => {
   const fixedUpdate = registerFixedUpdate(world, time);
   const physics = { group: fixedUpdate };
 
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createGravityEcsSystem(time), physics);
   world.addSystem(createLinearSpringEcsSystem(time), physics);
   world.addSystem(createLinearDamperEcsSystem(time), physics);
@@ -97,6 +98,7 @@ export const createPhysicsStressTestGame = async (): Promise<Game> => {
   world.addSystem(createAngularVelocityMotorEcsSystem(time), physics);
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
   world.addSystem(createContinuousCollisionEcsSystem(), physics);
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps. Registers the UI layout systems,
   // which write the readout's `local` poses, so they run before the
@@ -107,7 +109,7 @@ export const createPhysicsStressTestGame = async (): Promise<Game> => {
   // transform system gives them a `world` pose before physics reads it.
   world.addSystem(createBodySpawnerEcsSystem(time, new Random()));
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));

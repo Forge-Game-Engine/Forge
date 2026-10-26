@@ -8,6 +8,7 @@ import {
   positionId,
   RotationEcsComponent,
   rotationId,
+  Time,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Random, Vector2 } from '../../math/index.js';
@@ -48,7 +49,7 @@ describe('createBroadPhaseEcsSystem', () => {
     world = new EcsWorld();
     collisionPairs = [];
     createBroadPhase(world);
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(new Time()));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   });
 
@@ -642,7 +643,7 @@ describe('createBroadPhaseEcsSystem', () => {
       const first = createBroadPhaseEcsSystem(collisionPairs);
 
       createBroadPhase(world);
-      world.addSystem(createTransformEcsSystem());
+      world.addSystem(createTransformEcsSystem(new Time()));
       world.addSystem(first);
 
       const { position } = addCircleEntity({ x: 0, y: 0 }, 1);

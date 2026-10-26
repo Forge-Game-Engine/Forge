@@ -1,6 +1,8 @@
 import {
+  getInterpolatedLocalPosition,
   PositionEcsComponent,
   positionId,
+  Time,
 } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { Vec2 } from '@forge-game-engine/forge/math';
@@ -16,13 +18,16 @@ import { SpringLineEcsComponent, springLineId } from './_spring-line.component';
  * target entity's current position every frame, purely a visual aid for the
  * demo (the anchor and body are always vertically aligned here, so no
  * rotation is needed). Runs in the default group, after the frame's fixed
- * steps. Reads the target's `local` position (it has no parent, so that's
- * the position the latest fixed step left it at, while its `world` is still
- * the one from the start of that step) and writes only the line's `local`
- * position, so it must run before the default group's
- * `createTransformEcsSystem` for the render pass to see this frame's line.
+ * steps. Reads the target's interpolated position (where the frame's
+ * transform system draws the body, between its last two fixed steps) and
+ * writes only the line's `local` position, so it must run before the default
+ * group's `createTransformEcsSystem` for the render pass to see this frame's
+ * line ending on the body.
+ * @param time - The time whose overstep fraction blends the body's position.
  */
-export const createSpringLineEcsSystem = (): EcsSystem<
+export const createSpringLineEcsSystem = (
+  time: Time,
+): EcsSystem<
   [SpringLineEcsComponent, PositionEcsComponent, SpriteEcsComponent]
 > => ({
   query: [springLineId, positionId, spriteId],
@@ -33,16 +38,13 @@ export const createSpringLineEcsSystem = (): EcsSystem<
       const spriteComponent = sprites[i];
       const { anchorPosition, entity, lineWidth } = springLine;
 
-      const targetPosition = world.getComponent(entity, positionId);
-
-      if (targetPosition === null) {
+      if (world.getComponent(entity, positionId) === null) {
         continue;
       }
 
-      const bodyPosition = targetPosition.local;
+      const bodyPosition = getInterpolatedLocalPosition(world, entity, time);
       // Clone before adding/subtracting: `anchorPosition` is a persistent
-      // component field reused every tick, and `bodyPosition` is the target
-      // entity's live position.
+      // component field reused every tick.
       const midpoint = Vec2.multiply(
         Vec2.add(Vec2.clone(anchorPosition), bodyPosition),
         0.5,

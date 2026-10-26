@@ -1,21 +1,35 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { raycast } from './raycast.js';
+import { raycastCircle } from './raycast-circle.js';
 import {
   addPositionComponent,
   addRotationComponent,
+  createTransformEcsSystem,
+  Time,
+  transformInterpolationId,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
+import { ChainCollider } from '../colliders/chain-collider.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { addColliderComponent } from '../components/collider-component.js';
-import { createBroadPhase } from '../broad-phase/create-broad-phase.js';
+import { addRigidBodyComponent } from '../components/rigidbody-component.js';
+import {
+  createBroadPhase,
+  findBroadPhase,
+} from '../broad-phase/create-broad-phase.js';
 import { createBroadPhaseEcsSystem } from '../systems/broad-phase-system.js';
+
+vi.mock('./raycast-circle.js', { spy: true });
+
+const raycastCircleSpy = vi.mocked(raycastCircle);
 
 describe('raycast', () => {
   let world: EcsWorld;
 
   beforeEach(() => {
+    raycastCircleSpy.mockClear();
     world = new EcsWorld();
     createBroadPhase(world);
     world.addSystem(createBroadPhaseEcsSystem([]));
@@ -75,7 +89,7 @@ describe('raycast', () => {
     expect(hits.map((hit) => hit.entity)).toEqual([near, far]);
   });
 
-  it('should preserve query order when sort is disabled', () => {
+  it('should return every hit, in no particular order, when sort is disabled', () => {
     addEntity({ x: 3, y: 0 }, new CircleCollider(1));
     addEntity({ x: -3, y: 0 }, new CircleCollider(1));
     world.update();
@@ -108,6 +122,19 @@ describe('raycast', () => {
     const hits = raycast(world, { x: -5, y: -5 }, { x: -0.99, y: -0.99 });
 
     expect(hits).toHaveLength(0);
+  });
+
+  it('should not test the shape of a collider whose tree box the ray reaches but whose AABB it misses', () => {
+    // The tree's fat box is the AABB grown by `aabbMargin` (0.1) on every
+    // side, so a ray along y = 1.05 reaches the fat box of a radius-1 circle
+    // at the origin but passes above its AABB.
+    addEntity({ x: 0, y: 0 }, new CircleCollider(1));
+    world.update();
+
+    const hits = raycast(world, { x: -5, y: 1.05 }, { x: 5, y: 1.05 });
+
+    expect(hits).toHaveLength(0);
+    expect(raycastCircleSpy).not.toHaveBeenCalled();
   });
 
   it('should hit an entity with no rotation component, treating it as unrotated', () => {
@@ -160,7 +187,7 @@ describe('raycast', () => {
     expect(hits.map((hit) => hit.entity)).toEqual([wall]);
   });
 
-  it('should not hit a collider whose bounds the broad phase has not computed yet', () => {
+  it('should not hit a collider the broad phase has no proxy for yet', () => {
     addEntity({ x: 3, y: 0 }, new CircleCollider(1));
     world.update();
     // Added after the broad phase ran, at the origin the ray passes through.
@@ -169,6 +196,89 @@ describe('raycast', () => {
     const hits = raycast(world, { x: -10, y: 0 }, { x: 10, y: 0 });
 
     expect(hits).toHaveLength(1);
+  });
+
+  it('should not hit a collider whose component was replaced since the broad phase ran', () => {
+    const entity = addEntity({ x: 0, y: 0 }, new CircleCollider(1));
+    world.update();
+    // The proxy is still in the tree, but the new component's bounds
+    // haven't been computed yet.
+    addColliderComponent(world, entity, { collider: new CircleCollider(1) });
+
+    const hits = raycast(world, { x: -10, y: 0 }, { x: 10, y: 0 });
+
+    expect(hits).toHaveLength(0);
+  });
+
+  it('should not hit an entity removed since the broad phase ran', () => {
+    const entity = addEntity({ x: 0, y: 0 }, new CircleCollider(1));
+    world.update();
+    world.removeEntity(entity);
+
+    const hits = raycast(world, { x: -10, y: 0 }, { x: 10, y: 0 });
+
+    expect(hits).toHaveLength(0);
+  });
+
+  it('should only test the shapes of colliders on the ray', () => {
+    const gridSize = 10;
+    const spacing = 2;
+    const diagonal: number[] = [];
+
+    for (let row = 0; row < gridSize; row++) {
+      for (let column = 0; column < gridSize; column++) {
+        const entity = addEntity(
+          { x: column * spacing, y: row * spacing },
+          new CircleCollider(0.5),
+        );
+
+        if (row === column) {
+          diagonal.push(entity);
+        }
+      }
+    }
+
+    world.update();
+
+    const last = (gridSize - 1) * spacing;
+    const hits = raycast(world, { x: -1, y: -1 }, { x: last + 1, y: last + 1 });
+
+    expect(hits.map((hit) => hit.entity)).toEqual(diagonal);
+    expect(raycastCircleSpy).toHaveBeenCalledTimes(gridSize);
+
+    for (const [body] of raycastCircleSpy.mock.calls) {
+      expect(body.position.x).toBe(body.position.y);
+    }
+  });
+
+  it('should hit both static colliders and colliders with a rigid body', () => {
+    const wall = addEntity({ x: 3, y: 0 }, new CircleCollider(1));
+    const body = addEntity({ x: -3, y: 0 }, new CircleCollider(1));
+
+    addRigidBodyComponent(world, body);
+    world.update();
+
+    // One collider in each of the broad phase's trees.
+    expect(findBroadPhase(world).movingTree.proxyCount).toBe(1);
+    expect(findBroadPhase(world).staticTree.proxyCount).toBe(1);
+
+    const hits = raycast(world, { x: -10, y: 0 }, { x: 10, y: 0 });
+
+    expect(hits.map((hit) => hit.entity)).toEqual([body, wall]);
+  });
+
+  it('should throw when an end of the ray is not finite', () => {
+    expect(() => raycast(world, { x: 0, y: 0 }, { x: Infinity, y: 0 })).toThrow(
+      'raycast: the ray from (0, 0) to (Infinity, 0)',
+    );
+  });
+
+  it('should throw when the world has no broad phase', () => {
+    const worldWithoutBroadPhase = new EcsWorld();
+
+    expect(() =>
+      raycast(worldWithoutBroadPhase, { x: -10, y: 0 }, { x: 10, y: 0 }),
+    ).toThrow('The world has no broad phase');
   });
 
   it('should pass through sensors unless asked to include them', () => {
@@ -192,5 +302,123 @@ describe('raycast', () => {
         (hit) => hit.entity,
       ),
     ).toEqual([sensor, wall]);
+  });
+
+  describe('a moving body drawn behind its simulated pose', () => {
+    beforeEach(() => {
+      // After the broad phase, so it sees the pose a tick starts with and
+      // the transform pass then draws the bodies where they're interpolated.
+      world.addSystem(createTransformEcsSystem(new Time()));
+    });
+
+    // A body whose `local` (where its latest step left it) is at x = 20,
+    // with its rotation, and which the broad phase saw there, while a
+    // frame's transform pass draws it at the step's start, the origin
+    // unrotated.
+    function addMovedBody(
+      type: 'dynamic' | 'kinematic' | 'static',
+      collider: CircleCollider | PolygonCollider | ChainCollider,
+      rotation = 0,
+    ): number {
+      const entity = world.createEntity();
+
+      addPositionComponent(world, entity, { local: { x: 20, y: 0 } });
+      addRotationComponent(world, entity, { local: rotation });
+      addColliderComponent(world, entity, { collider });
+      addRigidBodyComponent(world, entity, { type });
+
+      const interpolation = world.getComponent(
+        entity,
+        transformInterpolationId,
+      );
+
+      if (!interpolation) {
+        throw new Error('addRigidBodyComponent added no interpolation.');
+      }
+
+      // As if the latest fixed step had moved it from the origin.
+      interpolation.stepStart.position.x = 0;
+      interpolation.stepStart.rotation = 0;
+      world.update();
+
+      return entity;
+    }
+
+    it.each(['dynamic', 'kinematic'] as const)(
+      'should test a %s body at its local pose, with bounds from that pose',
+      (type) => {
+        const entity = addMovedBody(type, new CircleCollider(1));
+
+        const atLocal = raycast(world, { x: 20, y: -5 }, { x: 20, y: 5 });
+        const atWorld = raycast(world, { x: 0, y: -5 }, { x: 0, y: 5 });
+
+        expect(atLocal.map((hit) => hit.entity)).toEqual([entity]);
+        expect(atLocal[0].point.x).toBeCloseTo(20);
+        expect(atLocal[0].point.y).toBeCloseTo(-1);
+        expect(atLocal[0].distance).toBeCloseTo(4);
+        expect(atWorld).toHaveLength(0);
+      },
+    );
+
+    it('should cull a rotated polygon body with bounds from its local rotation', () => {
+      // A 10 x 2 box, turned a quarter turn: 2 wide and 10 tall at x = 20.
+      const entity = addMovedBody(
+        'dynamic',
+        new PolygonCollider([
+          { x: -5, y: -1 },
+          { x: 5, y: -1 },
+          { x: 5, y: 1 },
+          { x: -5, y: 1 },
+        ]),
+        Math.PI / 2,
+      );
+
+      const hits = raycast(world, { x: 10, y: 4 }, { x: 30, y: 4 });
+
+      expect(hits.map((hit) => hit.entity)).toEqual([entity]);
+      expect(hits[0].point.x).toBeCloseTo(19);
+    });
+
+    it('should cull a chain collider on a kinematic body with bounds from its local pose', () => {
+      const entity = addMovedBody(
+        'kinematic',
+        new ChainCollider([
+          [
+            { x: -2, y: -2 },
+            { x: 2, y: -2 },
+            { x: 2, y: 2 },
+            { x: -2, y: 2 },
+          ],
+        ]),
+      );
+
+      const hits = raycast(world, { x: 10, y: 0 }, { x: 30, y: 0 });
+
+      expect(hits.map((hit) => hit.entity)).toEqual([entity]);
+      expect(hits[0].point.x).toBeCloseTo(18);
+    });
+
+    it('should test a static body at its world pose with the broad-phase bounds', () => {
+      const entity = addMovedBody('static', new CircleCollider(1));
+
+      // The broad phase sees where the first tick drew it.
+      world.update();
+
+      expect(
+        raycast(world, { x: 0, y: -5 }, { x: 0, y: 5 }).map(
+          (hit) => hit.entity,
+        ),
+      ).toEqual([entity]);
+      expect(raycast(world, { x: 20, y: -5 }, { x: 20, y: 5 })).toHaveLength(0);
+    });
+
+    it('should still skip a collider without a body added since the broad phase ran', () => {
+      const entity = world.createEntity();
+
+      addPositionComponent(world, entity);
+      addColliderComponent(world, entity, { collider: new CircleCollider(1) });
+
+      expect(raycast(world, { x: 0, y: -5 }, { x: 0, y: 5 })).toHaveLength(0);
+    });
   });
 });

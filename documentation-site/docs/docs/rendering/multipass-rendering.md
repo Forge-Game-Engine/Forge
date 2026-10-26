@@ -34,7 +34,7 @@ const sceneTarget = createRenderTarget(renderContext, 'canvas');
 
 createCamera(world, { renderTarget: sceneTarget });
 
-world.addSystem(createTransformEcsSystem());
+world.addSystem(createTransformEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));
 ```
@@ -99,7 +99,7 @@ createCamera(world, {
 
 addGaussianBlurComponent(world, backgroundCamera, { passes: 4 });
 
-world.addSystem(createTransformEcsSystem());
+world.addSystem(createTransformEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createGaussianBlurEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));

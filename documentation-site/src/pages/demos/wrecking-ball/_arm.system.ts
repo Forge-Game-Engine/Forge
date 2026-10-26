@@ -1,8 +1,10 @@
 import {
+  getInterpolatedLocalPosition,
   PositionEcsComponent,
   positionId,
   RotationEcsComponent,
   rotationId,
+  Time,
 } from '@forge-game-engine/forge/common';
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import { Vec2 } from '@forge-game-engine/forge/math';
@@ -21,13 +23,16 @@ import { ArmEcsComponent, armId } from './_arm.component';
  * rotation 0 aligns with the pivot-to-ball direction, matching this
  * engine's `Vector2.rotate` convention (a positive angle turns `+X` towards
  * `+Y`, which is clockwise on the Y-down screen). Runs in the default group,
- * after the frame's fixed steps. Reads the ball's `local` position (it has no
- * parent, so that's the pose the latest fixed step left it in, while its
- * `world` is still the one from the start of that step) and writes only the
- * arm's `local` pose, so it must run before the default group's
- * `createTransformEcsSystem` for the render pass to see this frame's arm.
+ * after the frame's fixed steps. Reads the ball's interpolated position
+ * (where the frame's transform system draws the ball, between its last two
+ * fixed steps) and writes only the arm's `local` pose, so it must run before
+ * the default group's `createTransformEcsSystem` for the render pass to see
+ * this frame's arm ending on the ball.
+ * @param time - The time whose overstep fraction blends the ball's position.
  */
-export const createArmEcsSystem = (): EcsSystem<
+export const createArmEcsSystem = (
+  time: Time,
+): EcsSystem<
   [
     ArmEcsComponent,
     PositionEcsComponent,
@@ -44,14 +49,12 @@ export const createArmEcsSystem = (): EcsSystem<
       const spriteComponent = sprites[i];
       const { pivotPosition, entity, armWidth } = arm;
 
-      const targetPosition = world.getComponent(entity, positionId);
-
-      if (targetPosition === null) {
+      if (world.getComponent(entity, positionId) === null) {
         continue;
       }
 
-      const bodyPosition = targetPosition.local;
-      // clone: bodyPosition is targetPosition.local, live state, must not mutate.
+      const bodyPosition = getInterpolatedLocalPosition(world, entity, time);
+      // clone: bodyPosition is reused for the midpoint below.
       const delta = Vec2.subtract(Vec2.clone(bodyPosition), pivotPosition);
       const length = Vec2.magnitude(delta);
       // clone: pivotPosition is a persistent ArmEcsComponent field, reused every tick.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createUiLayoutEcsSystem } from './ui-layout-system.js';
-import { addPositionComponent, positionId } from '../../common/index.js';
+import { addPositionComponent, positionId, Time } from '../../common/index.js';
 import { createTransformEcsSystem } from '../../common/systems/transform-system.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
@@ -200,7 +200,7 @@ describe('createUiLayoutEcsSystem', () => {
     world.setParent(canvas, enemy);
 
     world.addSystem(createUiLayoutEcsSystem(renderContext));
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(new Time()));
     world.update();
 
     expect(world.getComponent(canvas, positionId)!.world).toEqual({
@@ -686,7 +686,7 @@ describe('createUiLayoutEcsSystem', () => {
     addRectTransformComponent(world, label, UiAnchor.center({ x: 40, y: 20 }));
 
     world.addSystem(createUiLayoutEcsSystem(renderContext));
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(new Time()));
     world.update();
 
     // canvas root is 1920x1080 centered at origin -> top-right corner (960, -540)

@@ -49,6 +49,24 @@ describe('TimerSystem', () => {
     expect(timerComponent.tasks).toHaveLength(0);
   });
 
+  it('should execute a one-shot timer on schedule across a 160 millisecond frame', () => {
+    const callback = vi.fn();
+
+    time.update(1000);
+    world.update();
+
+    timerComponent.tasks.push({
+      callback,
+      delay: 150,
+      elapsed: 0,
+    });
+
+    time.update(1160);
+    world.update();
+
+    expect(callback).toHaveBeenCalledTimes(1);
+  });
+
   it('should track elapsed time correctly', () => {
     const callback = vi.fn();
     timerComponent.tasks.push({

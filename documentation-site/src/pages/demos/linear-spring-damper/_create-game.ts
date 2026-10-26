@@ -6,6 +6,7 @@ import {
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
@@ -48,18 +49,19 @@ export const createLinearSpringDamperGame = async (): Promise<Game> => {
   // systems read. That way a replayed disturbance is reflected in this same
   // step's forces.
   world.addSystem(createResetEcsSystem(time), physics);
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createGravityEcsSystem(time), physics);
   world.addSystem(createLinearSpringEcsSystem(time), physics);
   world.addSystem(createLinearDamperEcsSystem(time), physics);
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps. `createSpringLineEcsSystem`
-  // writes each line's `local` position from the body's latest position, so
-  // it runs before the transform system, and the line spans the body in
-  // this frame's render.
-  world.addSystem(createSpringLineEcsSystem());
-  world.addSystem(createTransformEcsSystem());
+  // writes each line's `local` position from where the body is drawn this
+  // frame, so it runs before the transform system, and the line spans the
+  // body in this frame's render.
+  world.addSystem(createSpringLineEcsSystem(time));
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 

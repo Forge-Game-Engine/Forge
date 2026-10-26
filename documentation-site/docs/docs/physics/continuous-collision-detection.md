@@ -97,7 +97,9 @@ still pass through each other within one step.
 The targets are the colliders that were static when the step's
 `createBroadPhaseEcsSystem` ran. A static collider added after that, or a
 body changed to `'static'` after that, isn't a target until the broad phase
-runs in the next step, just as its `aabb` isn't computed until then.
+runs in the next step, just as its `aabb` isn't computed until then. In the
+same way, a body changed to `'dynamic'` or `'kinematic'` after that is
+still a target for other circles until then.
 :::
 
 ## Sweeping a circle yourself

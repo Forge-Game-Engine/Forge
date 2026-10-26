@@ -178,11 +178,16 @@ A kinematic body keeps the velocity game code gives it. A dynamic body's
 velocity also changes with gravity, forces and collisions (see
 [Applying Forces](./forces.md)).
 
+A body moves only in fixed steps. Each frame draws it between where it
+started and where it ended the latest step, so it moves on every frame at
+any display rate, up to one step behind its simulated pose.
+
 To place a body at a new position (a teleport), write its `local`
 position and rotation, as for any entity (see
 [Transforms](../common/transforms.md)). Physics systems read the `world`
 values, which the `createTransformEcsSystem` at the start of each fixed
-step writes from `local`.
+step writes from `local`. The body is drawn at the new pose from that frame
+on, without sliding there.
 
 :::caution
 Write a teleport in a system in the default group, or in the fixed-update
@@ -191,6 +196,22 @@ group before its `createTransformEcsSystem`.
 treats a change to `local` made later in a step as movement, and stops a
 dynamic circle at any static collider between the old and new positions.
 :::
+
+### Interpolation
+
+`addRigidBodyComponent` adds a
+[`TransformInterpolationEcsComponent`](/Forge/docs/api/interfaces/TransformInterpolationEcsComponent)
+to the body, which draws it between its last two fixed steps once
+`createTransformInterpolationEcsSystem` is registered last in the
+fixed-update group (see
+[Interpolating between fixed steps](../common/transforms.md#interpolating-between-fixed-steps)).
+To draw a body at its simulated pose instead, remove the component:
+
+```ts
+import { transformInterpolationId } from '@forge-game-engine/forge/common';
+
+world.removeComponent(body, transformInterpolationId);
+```
 
 Writing a sleeping body's velocity or `local` pose wakes it (see
 [Sleeping Bodies](./sleeping.md)).
@@ -206,7 +227,8 @@ uses:
   `addRigidBodyComponent` to create a dynamic body asleep.
 - `wakeRequested`: set to `true` to wake the body.
 - `restTime` and `sleepRecord`: how long the body has been resting, and
-  its pose and contacts when it fell asleep. Only the sleep system writes
+  what it recorded when the body fell asleep (its pose, contacts, collider
+  and gravity, and what it rests on). Only the sleep system writes
   them.
 
 [Sleeping Bodies](./sleeping.md) describes each of them.

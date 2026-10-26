@@ -18,6 +18,7 @@ import { TerrainCollider } from '../colliders/terrain-collider.js';
 import {
   addColliderComponent,
   ColliderDefaultedOptions,
+  colliderId,
 } from '../components/collider-component.js';
 import { addGravityComponent } from '../components/gravity-component.js';
 import {
@@ -122,7 +123,7 @@ describe('createContinuousCollisionEcsSystem', () => {
     time.update(0);
 
     createBroadPhase(world);
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem([]));
     world.addSystem(createEulerIntegrationEcsSystem(time));
     world.addSystem(createContinuousCollisionEcsSystem());
@@ -368,7 +369,7 @@ describe('continuous collision against colliders the broad phase has not seen', 
     afterBroadPhase = (): void => {};
 
     createBroadPhase(world);
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem([]));
     // Game code creating a collider after this step's broad phase ran.
     world.addSystem({ query: [], update: () => afterBroadPhase() });
@@ -471,7 +472,7 @@ describe('continuous collision of sleeping circles', () => {
 
     createBroadPhase(world);
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     // Game code moving a body after the transform pass, so the sweep sees
     // a `local` position far from the `world` one.
     world.addSystem({ query: [], update: () => moveAfterTransformPass() });
@@ -492,6 +493,9 @@ describe('continuous collision of sleeping circles', () => {
     body.rigidBody.sleepRecord = {
       position: recordedPosition,
       rotation: 0,
+      collider: world.getComponent(body.entity, colliderId)?.collider ?? null,
+      gravity: null,
+      partners: [],
       links: [],
       manifolds: [],
     };
@@ -559,7 +563,7 @@ describe('a sleeping circle in the full physics pipeline', () => {
 
     createBroadPhase(world);
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(
       createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
@@ -680,7 +684,7 @@ describe('continuous collision in the full physics pipeline', () => {
     time.update(0);
 
     createBroadPhase(world);
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createGravityEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(

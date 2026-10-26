@@ -159,7 +159,7 @@ export const createScene: CreateScene = (
   const menuVisibility = addVisibilityComponent(world, menu);
   const greenVisibility = addVisibilityComponent(world, rows[1]);
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));
 

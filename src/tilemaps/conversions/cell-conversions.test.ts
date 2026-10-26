@@ -5,6 +5,7 @@ import {
   addScaleComponent,
 } from '../../common/components/index.js';
 import { createTransformEcsSystem } from '../../common/systems/transform-system.js';
+import { Time } from '../../common/time/Time.js';
 import { EcsWorld } from '../../ecs/index.js';
 import {
   createIsometricGridLayout,
@@ -30,7 +31,7 @@ describe('cell conversions', () => {
 
   beforeEach(() => {
     world = new EcsWorld();
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(new Time()));
   });
 
   describe.each(layouts)('with an %s tile set', (_name, layout) => {

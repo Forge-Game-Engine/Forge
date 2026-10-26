@@ -7,6 +7,7 @@ import {
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
@@ -61,7 +62,7 @@ export const createPhysicsGame = async (): Promise<Game> => {
   // Once per fixed step. The transform system runs first, turning each
   // body's `local` pose (which the previous step's integration moved) into
   // the `world` pose the physics systems read.
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createGravityEcsSystem(time), physics);
   createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
@@ -79,10 +80,13 @@ export const createPhysicsGame = async (): Promise<Game> => {
   );
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
   world.addSystem(createContinuousCollisionEcsSystem(), physics);
+  // Last in the step: records where each body ended it.
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
-  // Once per frame, after the fixed steps, so the frame draws the latest
-  // step's poses.
-  world.addSystem(createTransformEcsSystem());
+  // Once per frame, after the fixed steps. The transform system draws each
+  // body between where it started and ended the latest step, by how far the
+  // frame is towards the next one.
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createCameraEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 

@@ -262,7 +262,7 @@ export const createCanvasGroupGame = async (): Promise<Game> => {
   });
 
   world.addSystem(createCameraEcsSystem(time));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));

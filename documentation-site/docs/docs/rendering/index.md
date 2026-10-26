@@ -60,7 +60,7 @@ import {
 } from '@forge-game-engine/forge/rendering';
 import { createGame } from '@forge-game-engine/forge/utilities';
 
-const { game, world, renderContext } = createGame('game-container');
+const { game, world, renderContext, time } = createGame('game-container');
 
 createCamera(world);
 
@@ -73,7 +73,7 @@ addSpriteComponent(world, entity, {
   height: 1,
 });
 
-world.addSystem(createTransformEcsSystem());
+world.addSystem(createTransformEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
 
 game.run();

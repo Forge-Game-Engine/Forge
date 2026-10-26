@@ -3,6 +3,7 @@ import { addPositionComponent } from '../../common/components/position-component
 import { addRotationComponent } from '../../common/components/rotation-component.js';
 import { addScaleComponent } from '../../common/components/scale-component.js';
 import { createTransformEcsSystem } from '../../common/systems/transform-system.js';
+import { Time } from '../../common/time/Time.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import {
   createIsometricGridLayout,
@@ -283,7 +284,7 @@ describe.each(layouts)(
     it('follows a parented layer offset from the grid', () => {
       const world = new EcsWorld();
 
-      world.addSystem(createTransformEcsSystem());
+      world.addSystem(createTransformEcsSystem(new Time()));
 
       const parent = world.createEntity();
 
@@ -312,7 +313,7 @@ describe.each(layouts)(
     it("follows a rotated and scaled layer's costs", () => {
       const world = new EcsWorld();
 
-      world.addSystem(createTransformEcsSystem());
+      world.addSystem(createTransformEcsSystem(new Time()));
 
       const testLayer = addLayer(world, layout, { x: 20, y: -10 });
 

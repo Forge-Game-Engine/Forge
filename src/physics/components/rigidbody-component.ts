@@ -1,8 +1,13 @@
+import {
+  addTransformInterpolationComponent,
+  transformInterpolationId,
+} from '../../common/components/transform-interpolation-component.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { formatEntity } from '../../ecs/entity.js';
 import { Vec2, Vector2 } from '../../math/index.js';
 import { withDefaults } from '../../utilities/with-defaults.js';
+import { Collider } from '../colliders/collider.js';
 import { CollisionManifold } from '../types/collision-manifold.js';
 
 /**
@@ -29,16 +34,58 @@ import { CollisionManifold } from '../types/collision-manifold.js';
 export type RigidBodyType = 'dynamic' | 'kinematic' | 'static';
 
 /**
+ * What `createSleepEcsSystem` records about an entity a sleeping body rests
+ * on or is jointed to that the sleep system doesn't put to sleep with it: a
+ * collider-only entity, a `'static'` or `'kinematic'` body. Nothing puts
+ * those to sleep, so game code may move, reshape or remove one under a
+ * sleeping body, and the body wakes when it does.
+ */
+export interface RigidBodySleepPartner {
+  /** The partner entity. */
+  readonly entity: number;
+  /** The partner's `position.world` when the body fell asleep (a copy). */
+  readonly position: Readonly<Vector2>;
+  /**
+   * The partner's `rotation.world` when the body fell asleep, or `null` if
+   * it had no `RotationEcsComponent`.
+   */
+  readonly rotation: number | null;
+  /**
+   * The partner's `ColliderEcsComponent.collider` when the body fell
+   * asleep, or `null` if it had no collider (a joint's static pivot).
+   */
+  readonly collider: Collider | null;
+}
+
+/**
  * What `createSleepEcsSystem` records about a body when it puts it to
- * sleep. While the body sleeps, any difference between its current data and
- * this record means something disturbed it, and the system wakes the body's
- * island.
+ * sleep. While the body sleeps, any difference between the world's current
+ * data and this record means something disturbed it, and the system wakes
+ * the body's island.
  */
 export interface RigidBodySleepRecord {
   /** `position.local` when the body fell asleep (a copy). */
   readonly position: Readonly<Vector2>;
   /** `rotation.local` when the body fell asleep. */
   readonly rotation: number;
+  /**
+   * The body's `ColliderEcsComponent.collider` when it fell asleep, or
+   * `null` if it had none. A different collider object means the body's
+   * shape, and so its mass and contacts, changed.
+   */
+  readonly collider: Collider | null;
+  /**
+   * The body's `GravityEcsComponent.amount` when it fell asleep (a copy), or
+   * `null` if it had no gravity.
+   */
+  readonly gravity: Readonly<Vector2> | null;
+  /**
+   * The entities outside the body's island it was linked to when it fell
+   * asleep, each listed once: the other entity of each collision manifold,
+   * and the other body of each joint, spring or damper, when that entity
+   * isn't a `'dynamic'` body the sleep system simulates.
+   */
+  readonly partners: readonly RigidBodySleepPartner[];
   /**
    * The body's links when it fell asleep, sorted and without duplicates:
    * the other entity of each collision manifold it was part of, and the
@@ -110,8 +157,8 @@ export interface RigidBodyEcsComponent {
 
   /**
    * A request to wake the body's island on `createSleepEcsSystem`'s next
-   * run, for changes the sleep system can't see in the body's data: a new
-   * gravity, a joint limit or spring stiffness, a motor's target. Game code
+   * run, for changes the sleep system can't see in the body's data: a joint
+   * limit, a spring's stiffness, a collider's friction. Game code
    * sets it to `true` and never to `false`; the sleep system wakes the
    * island, restarts every member's `restTime` (so the island stays awake at
    * least the system's `restDuration`) and sets it back to `false`. Setting
@@ -139,7 +186,8 @@ export interface RigidBodyEcsComponent {
   restTime: number;
 
   /**
-   * The body's pose and links when it fell asleep, which
+   * The body's pose, links, collider, gravity and partners when it fell
+   * asleep, which
    * `createSleepEcsSystem` and `isBodyAwake` compare against to notice that
    * it was disturbed. `null` while the body is awake, and for a body created
    * asleep until the sleep system first sees it. Output, written only by
@@ -161,7 +209,13 @@ export const rigidBodyId =
   createComponentId<RigidBodyEcsComponent>('f-rigid-body');
 
 /**
- * Attaches a {@link RigidBodyEcsComponent} to `entity`.
+ * Attaches a {@link RigidBodyEcsComponent} to `entity`, and a
+ * `TransformInterpolationEcsComponent` unless it already has one, so the body
+ * is drawn smoothly between fixed steps once
+ * `createTransformInterpolationEcsSystem` is registered last in the
+ * fixed-update group. Remove that component
+ * (`world.removeComponent(entity, transformInterpolationId)`) to draw the body
+ * at its simulated pose.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to attach the component to.
  * @param options - Options for configuring the rigid body.
@@ -208,6 +262,12 @@ export function addRigidBodyComponent(
     restTime: 0,
     sleepRecord: null,
   };
+
+  // Every body type gets it, since `type` can change after creation and a
+  // body that doesn't move is drawn at `local` either way.
+  if (!world.getComponent(entity, transformInterpolationId)) {
+    addTransformInterpolationComponent(world, entity);
+  }
 
   return world.addComponent(entity, rigidBodyId, component);
 }

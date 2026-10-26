@@ -2,7 +2,6 @@ import { positionId, rotationId } from '../../common/index.js';
 import { EcsSystem } from '../../ecs/ecs-system.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { getColliderRotation } from '../collider-rotation.js';
-import { Collider } from '../colliders/collider.js';
 import { detectCollision } from '../collision/detect-collision.js';
 import { colliderId } from '../components/collider-component.js';
 import {
@@ -30,15 +29,16 @@ import { CollisionPair } from '../types/collision-pair.js';
  *
  * A pair in a sleeping island isn't tested again. When neither entity is
  * awake (see `isBodyAwake`) and at least one of them is a sleeping
- * `'dynamic'` body whose `sleepRecord` holds manifolds for the pair,
- * computed from the colliders both entities still have, the system writes
- * those manifolds unchanged, the way Box2D keeps a sleeping island's
- * contacts without updating them. The contact stays in both entities'
- * `touching`, the sleep system keeps seeing it, and collision resolution
- * keeps its accumulated impulses for when the island wakes. Every other
- * pair is tested: one with an awake side, one the record has no manifolds
- * for (a new contact), one whose `ColliderEcsComponent.collider` was
- * replaced (a rebuilt tilemap layer) and every sensor pair.
+ * `'dynamic'` body whose `sleepRecord` holds manifolds for the pair, the
+ * system writes those manifolds unchanged, the way Box2D keeps a sleeping
+ * island's contacts without updating them. The contact stays in both
+ * entities' `touching`, the sleep system keeps seeing it, and collision
+ * resolution keeps its accumulated impulses for when the island wakes.
+ * Every other pair is tested: one with an awake side (which includes a
+ * sleeping body whose `ColliderEcsComponent.collider` was replaced, as a
+ * rebuilt tilemap layer does, or that rests on an entity game code moved
+ * or reshaped), one the record has no manifolds for (a new contact), and
+ * every sensor pair.
  *
  * The system also owns every `ContactsEcsComponent`: it queries for them
  * and, each step, rewrites their `touching`, `started` and `ended` lists
@@ -104,10 +104,10 @@ export const createNarrowPhaseEcsSystem = (
       }
 
       // Sensor pairs have no manifolds to reuse, so they're always tested.
-      const sideA = { entity: entityA, collider: bodyA.collider };
-      const sideB = { entity: entityB, collider: bodyB.collider };
       const manifolds =
-        (isSensorPair ? null : findSleepingManifolds(world, sideA, sideB)) ??
+        (isSensorPair
+          ? null
+          : findSleepingManifolds(world, entityA, entityB)) ??
         detectCollision(bodyA, bodyB).map((manifold): CollisionManifold => ({
           entityA,
           entityB,
@@ -143,17 +143,12 @@ export const createNarrowPhaseEcsSystem = (
 
 const noContacts: readonly number[] = Object.freeze([]);
 
-interface PairSide {
-  entity: number;
-  collider: Collider;
-}
-
 /**
  * The manifolds a sleeping body recorded for a pair when it fell asleep
  * (`RigidBodySleepRecord.manifolds`), or `null` when the pair has to be
- * tested. Neither body of a sleeping contact (see `isContactAsleep`) moved
- * since then, so as long as both entities still have the colliders the
- * manifolds were computed from, the manifolds are still right. Reusing
+ * tested. Neither entity of a sleeping contact (see `isContactAsleep`)
+ * moved or changed its collider since then (either would count as
+ * disturbing the sleeping body), so the manifolds are still right. Reusing
  * them, rather than dropping them, is what keeps the contact in
  * `touching`, keeps the bodies linked in their island, and lets collision
  * resolution keep the contact's accumulated impulses for when the island
@@ -162,42 +157,31 @@ interface PairSide {
  */
 function findSleepingManifolds(
   world: EcsWorld,
-  sideA: PairSide,
-  sideB: PairSide,
+  entityA: number,
+  entityB: number,
 ): CollisionManifold[] | null {
-  if (!isContactAsleep(world, sideA.entity, sideB.entity)) {
+  if (!isContactAsleep(world, entityA, entityB)) {
     return null;
   }
 
-  const manifolds = findRecordedManifolds(world, sideA.entity, sideA, sideB);
+  const manifolds = findRecordedManifolds(world, entityA, entityA, entityB);
   const recorded =
     manifolds.length > 0
       ? manifolds
-      : findRecordedManifolds(world, sideB.entity, sideA, sideB);
+      : findRecordedManifolds(world, entityB, entityA, entityB);
 
-  if (
-    recorded.length === 0 ||
-    recorded.some(
-      (manifold) =>
-        manifold.colliderA !== sideA.collider ||
-        manifold.colliderB !== sideB.collider,
-    )
-  ) {
-    return null;
-  }
-
-  return recorded;
+  return recorded.length === 0 ? null : recorded;
 }
 
 /**
- * The manifolds between `sideA` and `sideB`, in that order, in `entity`'s
- * sleep record. Empty when `entity` has no sleep record.
+ * The manifolds between `entityA` and `entityB`, in that order, in
+ * `entity`'s sleep record. Empty when `entity` has no sleep record.
  */
 function findRecordedManifolds(
   world: EcsWorld,
   entity: number,
-  sideA: PairSide,
-  sideB: PairSide,
+  entityA: number,
+  entityB: number,
 ): CollisionManifold[] {
   const record = world.getComponent(entity, rigidBodyId)?.sleepRecord;
 
@@ -206,8 +190,7 @@ function findRecordedManifolds(
   }
 
   return record.manifolds.filter(
-    (manifold) =>
-      manifold.entityA === sideA.entity && manifold.entityB === sideB.entity,
+    (manifold) => manifold.entityA === entityA && manifold.entityB === entityB,
   );
 }
 
