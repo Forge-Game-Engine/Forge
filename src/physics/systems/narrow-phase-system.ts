@@ -8,8 +8,7 @@ import {
   ContactsEcsComponent,
   contactsId,
 } from '../components/contacts-component.js';
-import { rigidBodyId } from '../components/rigidbody-component.js';
-import { isContactAsleep } from '../is-body-awake.js';
+import { findSleepingManifolds } from '../find-sleeping-manifolds.js';
 import { CollisionBody } from '../types/collision-body.js';
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { CollisionPair } from '../types/collision-pair.js';
@@ -142,57 +141,6 @@ export const createNarrowPhaseEcsSystem = (
 });
 
 const noContacts: readonly number[] = Object.freeze([]);
-
-/**
- * The manifolds a sleeping body recorded for a pair when it fell asleep
- * (`RigidBodySleepRecord.manifolds`), or `null` when the pair has to be
- * tested. Neither entity of a sleeping contact (see `isContactAsleep`)
- * moved or changed its collider since then (either would count as
- * disturbing the sleeping body), so the manifolds are still right. Reusing
- * them, rather than dropping them, is what keeps the contact in
- * `touching`, keeps the bodies linked in their island, and lets collision
- * resolution keep the contact's accumulated impulses for when the island
- * wakes. A pair the record has no manifolds for is tested, so a new contact
- * is still found.
- */
-function findSleepingManifolds(
-  world: EcsWorld,
-  entityA: number,
-  entityB: number,
-): CollisionManifold[] | null {
-  if (!isContactAsleep(world, entityA, entityB)) {
-    return null;
-  }
-
-  const manifolds = findRecordedManifolds(world, entityA, entityA, entityB);
-  const recorded =
-    manifolds.length > 0
-      ? manifolds
-      : findRecordedManifolds(world, entityB, entityA, entityB);
-
-  return recorded.length === 0 ? null : recorded;
-}
-
-/**
- * The manifolds between `entityA` and `entityB`, in that order, in
- * `entity`'s sleep record. Empty when `entity` has no sleep record.
- */
-function findRecordedManifolds(
-  world: EcsWorld,
-  entity: number,
-  entityA: number,
-  entityB: number,
-): CollisionManifold[] {
-  const record = world.getComponent(entity, rigidBodyId)?.sleepRecord;
-
-  if (!record) {
-    return [];
-  }
-
-  return record.manifolds.filter(
-    (manifold) => manifold.entityA === entityA && manifold.entityB === entityB,
-  );
-}
 
 function updateContacts(
   contacts: ContactsEcsComponent,

@@ -213,6 +213,23 @@ body, a collider-only entity or a still kinematic body that a sleeping
 body touches, tests their contact against the new shape or pose before
 collision resolution runs on that tick.
 
+[`findSleepingManifolds`](/Forge/docs/api/functions/findSleepingManifolds)
+returns the recorded manifolds the narrow phase reuses for a pair, or
+`null` when it tests the pair. It answers for the world as it is when you
+call it, so it tells you what the narrow phase would do with the pair on
+its next step, not what it did on the latest one. Use it for profiling or
+a debug readout, such as counting how many of the broad phase's pairs a
+settled scene still tests:
+
+```ts
+import { findSleepingManifolds } from '@forge-game-engine/forge/physics';
+
+const testedPairs = collisionPairs.filter(
+  ({ entityA, entityB }) =>
+    findSleepingManifolds(world, entityA, entityB) === null,
+).length;
+```
+
 ## Keeping a body awake
 
 A body whose `canSleep` is `false` never rests, so its island never falls

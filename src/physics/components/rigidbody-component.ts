@@ -97,7 +97,8 @@ export interface RigidBodySleepRecord {
    * The collision manifolds the body was part of when it fell asleep. The
    * body hasn't moved since, so while it sleeps
    * `createNarrowPhaseEcsSystem` reuses them for its pairs with entities
-   * that aren't awake instead of testing those pairs again.
+   * that aren't awake instead of testing those pairs again
+   * (`findSleepingManifolds` returns the ones it reuses for a pair).
    */
   readonly manifolds: readonly CollisionManifold[];
 }
