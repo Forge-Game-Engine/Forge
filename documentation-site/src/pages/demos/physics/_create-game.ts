@@ -22,6 +22,7 @@ import {
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createNarrowPhaseEcsSystem,
+  createSleepEcsSystem,
 } from '@forge-game-engine/forge/physics';
 import { DEMO_VERTICAL_WORLD_UNITS } from '@site/src/utils/demo-camera';
 import { createBoundaries } from './_create-boundaries';
@@ -39,6 +40,16 @@ const renderLayers = {
 // making the explosion look far stronger than in the windowed view.
 const explosionForce = 1_000_000;
 const explosionRadius = 600;
+
+// The sleep system's default resting speed, 0.01 units a second, is
+// Box2D's, which assumes a world measured in meters with bodies about a unit
+// across. Outside fullscreen a world unit here is a CSS pixel (see
+// DEMO_VERTICAL_WORLD_UNITS) and the shapes are 30-60 units across, so the
+// default would only count a shape as resting below a hundredth of a pixel
+// a second, and a shape still creeping too slowly to see would keep the
+// whole pile awake. It's scaled as if a meter were 40 units.
+const pixelsPerMeter = 40;
+const maxRestingSpeed = 0.01 * pixelsPerMeter;
 
 export const createPhysicsGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
@@ -61,15 +72,23 @@ export const createPhysicsGame = async (): Promise<Game> => {
 
   // Once per fixed step. The transform system runs first, turning each
   // body's `local` pose (which the previous step's integration moved) into
-  // the `world` pose the physics systems read.
+  // the `world` pose the physics systems read. The sleep system runs after
+  // the narrow phase, so it reads this step's contacts, and before gravity
+  // and every other system that changes velocity, so a resting shape isn't
+  // given this step's gravity before it's checked for rest. Settled shapes
+  // then fall asleep and the physics systems skip them.
   world.addSystem(createTransformEcsSystem(time), physics);
-  world.addSystem(createGravityEcsSystem(time), physics);
   createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
     createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
     physics,
   );
+  world.addSystem(
+    createSleepEcsSystem(collisionManifolds, time, { maxRestingSpeed }),
+    physics,
+  );
+  world.addSystem(createGravityEcsSystem(time), physics);
   world.addSystem(
     createCollisionResolutionEcsSystem(
       collisionManifolds,

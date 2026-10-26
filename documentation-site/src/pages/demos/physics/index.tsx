@@ -31,6 +31,10 @@ export default function Physics(): JSX.Element {
           file: 'create-game.ts',
         },
         {
+          text: 'The sleep system runs after the narrow phase and before gravity. Once the pile settles, it puts the shapes to sleep and the physics systems skip them until something disturbs them.',
+          file: 'create-game.ts',
+        },
+        {
           text: 'Each frame draws the bodies between their last two fixed steps, so they move smoothly on displays faster than 60 Hz.',
           file: 'create-game.ts',
         },
@@ -44,6 +48,7 @@ export default function Physics(): JSX.Element {
         { label: 'Bodies and shapes', to: '/docs/docs/physics/rigid-bodies' },
         { label: 'Collisions', to: '/docs/docs/physics/collisions' },
         { label: 'Forces', to: '/docs/docs/physics/forces' },
+        { label: 'Sleeping bodies', to: '/docs/docs/physics/sleeping' },
       ]}
       fileGroups={[
         {
@@ -52,7 +57,7 @@ export default function Physics(): JSX.Element {
             {
               name: 'create-game.ts',
               summary:
-                'Sets up the camera and scene, registers the physics systems and handles clicks.',
+                'Sets up the camera and scene, registers the physics and sleep systems and handles clicks.',
               content: gameCode,
             },
           ],

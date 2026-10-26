@@ -12,6 +12,12 @@ skip it until something disturbs it.
 puts bodies to sleep and wakes them, and it is the only system that writes
 a body's `isSleeping`.
 
+The [Sleeping Bodies demo](/Forge/demos/sleeping) dims each body while
+it's asleep. A pyramid of boxes and a chain of jointed planks fall asleep
+once they settle, and wake when you click near them or open the trapdoor
+under the pyramid. A readout shows how many pairs the narrow phase still
+tests.
+
 ## Islands
 
 Bodies fall asleep and wake in **islands**. An island is a group of dynamic
