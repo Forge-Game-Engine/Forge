@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.1] - 2026-10-26
+
 #### Added
 
 - **physics:** `DynamicAabbTree<T>`, a bounding-box tree (Box2D's dynamic AABB tree) for spatial queries over boxes that are added, moved and removed one at a time. `createProxy(aabb, value)` stores a box grown by `aabbMargin` (0.1 world units) on every side with a value and returns a proxy id; `moveProxy(proxyId, aabb)` changes nothing and returns `false` while the box stays inside that grown box, and otherwise stores a new one and returns `true`; `destroyProxy` and `clear` remove proxies, and a removed proxy's id is given to a later one. `query(aabb, callback)` visits every proxy whose grown box overlaps a box, and `raycast(start, end, callback)` every proxy whose grown box a segment reaches, where the callback's return value stops the cast (`0`) or clips the segment for closest-hit casts. `getValue`, `getFatAabb(proxyId, out)`, `proxyCount`, `height` and `validate()` read the tree. Nodes are pooled, so queries and moves within the margin allocate nothing. Invalid boxes and ids, and changing the tree from inside its own query callbacks, throw. See the new Dynamic AABB Tree guide
