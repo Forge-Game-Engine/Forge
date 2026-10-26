@@ -158,6 +158,37 @@ constant load, such as gravity, a jointed body stays a small distance from
 its exact position.
 :::
 
+## Sleeping jointed bodies
+
+Two dynamic bodies a joint connects are in one
+[island](./sleeping.md#islands): they fall asleep together, and when
+either is disturbed, both wake. A joint to a static body, a kinematic body
+or a collider-only entity doesn't put that entity in the island. The
+sleep system records its pose and collider instead, and wakes the sleeping
+body when that entity is moved, turned, removed or given a different
+collider, or
+when a kinematic body at that end has a non-zero velocity. A joint links
+its bodies only while both have a `PositionEcsComponent` and a
+`RotationEcsComponent`, the same condition under which the joint system
+solves it.
+
+Adding or removing a joint wakes the dynamic bodies at its ends, and their
+islands, on the sleep system's next run. Changing `entityA` or `entityB`
+wakes the dynamic body the joint was moved off and the one it was moved
+onto, since each loses or gains the joint. It doesn't wake the body at the
+end that didn't change when the joint is moved from one static body,
+kinematic body or collider-only entity to another, or from a dynamic body
+to one of those. Changing the joint's other fields, such as its limits,
+anchors, `hertz` or `dampingRatio`, doesn't wake its bodies either. To
+wake the bodies after such a change, set `wakeRequested` on one of them:
+
+```ts
+import { rigidBodyId } from '@forge-game-engine/forge/physics';
+
+hinge.upperAngle = Math.PI / 2;
+world.getComponentRequired(door, rigidBodyId).wakeRequested = true;
+```
+
 ## Removing a joint
 
 Remove the joint's entity with `world.removeEntity`. The bodies are no
