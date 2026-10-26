@@ -172,15 +172,21 @@ its bodies only while both have a `PositionEcsComponent` and a
 `RotationEcsComponent`, the same condition under which the joint system
 solves it.
 
-Adding or removing a joint wakes its bodies' islands on the sleep system's
-next run, and so does changing its `entityA` or `entityB`. Changing its
-other fields, such as its limits, anchors, `hertz` or `dampingRatio`,
-doesn't. To wake the bodies after such a change, set
-`wakeRequested` on one of them:
+Adding or removing a joint wakes the dynamic bodies at its ends, and their
+islands, on the sleep system's next run. Changing `entityA` or `entityB`
+wakes the dynamic body the joint was moved off and the one it was moved
+onto, since each loses or gains the joint. It doesn't wake the body at the
+end that didn't change when the joint is moved from one static body,
+kinematic body or collider-only entity to another, or from a dynamic body
+to one of those. Changing the joint's other fields, such as its limits,
+anchors, `hertz` or `dampingRatio`, doesn't wake its bodies either. To
+wake the bodies after such a change, set `wakeRequested` on one of them:
 
 ```ts
+import { rigidBodyId } from '@forge-game-engine/forge/physics';
+
 hinge.upperAngle = Math.PI / 2;
-rigidBody.wakeRequested = true;
+world.getComponentRequired(door, rigidBodyId).wakeRequested = true;
 ```
 
 ## Removing a joint

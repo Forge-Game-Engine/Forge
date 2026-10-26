@@ -158,8 +158,9 @@ wakes in the step after.
 ### Waking a body after a settings change
 
 Some changes aren't in a sleeping body's record: changing a joint's
-limits, a spring's `stiffness` or `restLength`, or a collider's `friction`
-or `restitution`. To wake a body after one of them, set its
+limits, moving a joint's other end from one static body, kinematic body or
+collider-only entity to another, a spring's `stiffness` or `restLength`,
+or a collider's `friction` or `restitution`. To wake a body after one of them, set its
 `wakeRequested` to `true`:
 
 ```ts
