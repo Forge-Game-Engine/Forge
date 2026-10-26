@@ -1,8 +1,11 @@
 import {
+  Color,
   createCamera,
   createCameraEcsSystem,
   createRenderEcsSystem,
   getCameraView,
+  SpriteEcsComponent,
+  spriteId,
 } from '@forge-game-engine/forge/rendering';
 import { createGame, Game } from '@forge-game-engine/forge/utilities';
 import {
@@ -13,6 +16,7 @@ import {
   CollisionPair,
   createBroadPhase,
   createBroadPhaseEcsSystem,
+  overlapPoint,
   raycast,
 } from '@forge-game-engine/forge/physics';
 import { Vec2 } from '@forge-game-engine/forge/math';
@@ -28,6 +32,9 @@ const renderLayers = {
 // direction, from the fixed origin near the left edge.
 const rayMaxLength = 2000;
 
+// Multiplies the hovered target's texture, so it turns a warm amber.
+const hoverTint = new Color(1, 0.75, 0.35, 1);
+
 export const createRaycastingGame = async (): Promise<Game> => {
   const { game, world, renderContext, time } = createGame('demo-game');
 
@@ -37,7 +44,12 @@ export const createRaycastingGame = async (): Promise<Game> => {
     verticalWorldUnits: DEMO_VERTICAL_WORLD_UNITS,
   });
 
-  await createTargets(world, camera, renderContext, renderLayers.foreground);
+  const targets = await createTargets(
+    world,
+    camera,
+    renderContext,
+    renderLayers.foreground,
+  );
 
   const { x: width } = getCameraView(world, camera, renderContext).size;
   const rayOrigin = { x: -width / 2 + 40, y: 0 };
@@ -60,13 +72,13 @@ export const createRaycastingGame = async (): Promise<Game> => {
   const fixedUpdate = registerFixedUpdate(world, time);
   const physics = { group: fixedUpdate };
 
-  // `raycast` casts through the broad phase's trees and tests each nearby
-  // collider's `aabb`, so the broad-phase system still needs to run every
-  // fixed step to keep them in sync - even though nothing in this scene has
-  // a `RigidBodyEcsComponent` for it to actually resolve collisions between.
-  // A raycast sees the colliders as of the last fixed step. The fixed
-  // step's `createTransformEcsSystem` runs first so the targets' `world`
-  // poses, which the broad phase reads, are up to date.
+  // `raycast` and `overlapPoint` search the broad phase's trees and test
+  // each nearby collider's `aabb`, so the broad-phase system still needs to
+  // run every fixed step to keep them in sync - even though nothing in this
+  // scene has a `RigidBodyEcsComponent` for it to actually resolve
+  // collisions between. A query sees the colliders as of the last fixed
+  // step. The fixed step's `createTransformEcsSystem` runs first so the
+  // targets' `world` poses, which the broad phase reads, are up to date.
   world.addSystem(createTransformEcsSystem(time), physics);
   createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
@@ -111,6 +123,19 @@ export const createRaycastingGame = async (): Promise<Game> => {
       closest ? closest.point : rayEnd,
       closest ? closest.point : null,
     );
+
+    // `overlapPoint` tests each collider's exact shape, so the cursor in a
+    // circle's bounding-square corner, outside the circle, tints nothing.
+    const hovered = overlapPoint(world, mouseWorldPosition);
+
+    for (const target of targets) {
+      const sprite = world.getComponentRequired<SpriteEcsComponent>(
+        target,
+        spriteId,
+      );
+
+      sprite.tintColor = hovered.includes(target) ? hoverTint : Color.white;
+    }
   });
 
   return game;

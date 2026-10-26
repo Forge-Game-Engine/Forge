@@ -150,16 +150,11 @@ What `Time` reports depends on where a system runs:
 | `fixed-update`                        | fixed delta time     | `true`          | the time left after this step; can still be `1` or more |
 | Default group and the groups after it | frame delta time     | `false`         | from `0` up to but not including `1`                    |
 
-Put work that has to advance in steps of the same size in the group: physics
-simulation (see
-[Registering the physics systems](../physics/index.md#registering-the-physics-systems)),
-forces or velocities changed by the delta time, and systems that react to
-the contacts that started or ended in a step. Leave in the
-default group the work that runs once per frame: reading trigger actions'
-`isTriggered` (a press is read by zero fixed steps on a short frame and by
-several on a long one), rendering, camera follow and UI. A system in the
-default group that reads a press and has to change the simulation writes it
-to a component that a system in `fixed-update` reads on its next step.
+Put work that has to advance in steps of the same size in the group, such as
+physics simulation, and leave the work that runs once per frame (reading
+trigger actions' `isTriggered`, rendering, camera follow, UI) in the default
+group. [Fixed Timestep](../physics/fixed-timestep.md) covers which systems go
+where, choosing a step rate and catching up after a long frame.
 
 Another group ordered only `before: [world.defaultSystemGroup]` has no order
 against `fixed-update`, so it runs before or after the fixed steps depending

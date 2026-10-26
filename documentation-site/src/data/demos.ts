@@ -91,9 +91,9 @@ export const demos: Demo[] = [
   },
   {
     slug: 'raycasting',
-    title: 'Raycasting',
+    title: 'Raycasting and point queries',
     description:
-      'Move the mouse to cast a ray toward the cursor and see where it first hits a collider.',
+      'Move the mouse to cast a ray toward the cursor and see where it first hits a collider, and hover a target to highlight it.',
     categories: ['physics'],
   },
   {
@@ -108,6 +108,13 @@ export const demos: Demo[] = [
     title: 'Prismatic Joint (Slider)',
     description:
       'A piston, an elevator and an inclined slider, each held to a single sliding axis by a prismatic joint.',
+    categories: ['physics'],
+  },
+  {
+    slug: 'fixed-timestep',
+    title: 'Fixed Timestep',
+    description:
+      'Two rows of the same pendulum and bouncing ball run in fixed steps, one drawn interpolated between steps and one not, with a step rate selector and a hitch button.',
     categories: ['physics'],
   },
   {

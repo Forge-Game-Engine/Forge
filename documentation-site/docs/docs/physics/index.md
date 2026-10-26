@@ -9,6 +9,9 @@ systems are registered on the `EcsWorld` like any other system.
 
 The physics module has these parts:
 
+- **Fixed timestep**: the simulation advances in steps of a fixed size,
+  and bodies are drawn between their last two steps. See
+  [Fixed Timestep](./fixed-timestep.md).
 - **Bodies and colliders**: a
   [`ColliderEcsComponent`](/Forge/docs/api/interfaces/ColliderEcsComponent)
   gives an entity a collision shape, and a
@@ -23,8 +26,12 @@ The physics module has these parts:
 - **Forces**: gravity, impulses, torque, angular velocity motors, springs,
   dampers and explosions change a body's velocity. See
   [Applying Forces](./forces.md).
-- **Raycasting**: [`raycast`](/Forge/docs/api/functions/raycast) finds the
-  colliders a line segment crosses. See [Raycasting](./raycasting.md).
+- **Queries**: [`raycast`](/Forge/docs/api/functions/raycast) finds the
+  colliders a line segment crosses,
+  [`queryAabb`](/Forge/docs/api/functions/queryAabb) the colliders whose
+  bounds overlap a box, and
+  [`overlapPoint`](/Forge/docs/api/functions/overlapPoint) the colliders
+  that contain a point. See [Queries](./queries.md).
 - **Joints**: revolute (hinge) and prismatic (slider) joints constrain how
   two bodies move relative to each other. See [Joints](./joints.md).
 - **Terrain**: a
@@ -176,73 +183,10 @@ is registered with the same `group` option at its place in the order, or
 with `addSystem`'s `before` or `after` option against a physics system in
 the same group.
 
-## Where game systems go
+## Running physics at a fixed rate
 
-A game system runs once per fixed step, in the `fixedUpdate` group above, when
-its effect on the simulation depends on how often it runs:
-
-- it applies a force, torque or velocity change scaled by the delta time;
-- it sets a velocity or a motor target that the solver reads in the same
-  step, registered before collision resolution;
-- it reads `ContactsEcsComponent.started` or `ended`, or
-  `collisionManifolds`, registered after the narrow phase (see
-  [Reading contacts](./collisions.md#reading-contacts));
-- it drives the simulation on a timer, such as a periodic impulse.
-
-A game system runs once per frame, in the default group, when it reads
-something that is true for one frame or when it draws:
-
-- it reads a trigger action's `isTriggered`: a press is read by zero fixed
-  steps on a short frame and by several on a long one;
-- it moves an entity that has no rigid body by writing its `local`;
-- it positions or draws something from a body's pose, such as a camera
-  that follows a body;
-- it spawns entities, edits tiles or colliders, or changes the camera,
-  rendering, UI or audio.
-
-A dynamic or kinematic body has no parent, so its `position.local` and
-`rotation.local` are its simulated world pose. A once-per-frame system
-reads them for game logic. A system that positions or draws something
-from a body's pose reads the pose the body is drawn at this frame, with
-[`getInterpolatedLocalPosition`](/Forge/docs/api/functions/getInterpolatedLocalPosition)
-and
-[`getInterpolatedLocalRotation`](/Forge/docs/api/functions/getInterpolatedLocalRotation),
-so it lines up with the body on screen (see
-[Reading the drawn pose](../common/transforms.md#reading-the-drawn-pose)).
-
-`ContactsEcsComponent.touching` is the state after the latest step, so a
-system in either group can read it.
-
-### Requesting a change from a once-per-frame system
-
-A system that reads a press and has to change the simulation inside a step
-is split in two. The once-per-frame system sets a field on a component,
-and a fixed-step system acts on the field and clears it:
-
-```ts
-import { EcsSystem } from '@forge-game-engine/forge/ecs';
-import { TriggerAction } from '@forge-game-engine/forge/input';
-
-const createJumpInputEcsSystem = (
-  jumpInput: TriggerAction,
-): EcsSystem<[PlayerEcsComponent]> => ({
-  query: [playerId],
-  update: (_world, { components: [players] }) => {
-    if (!jumpInput.isTriggered) {
-      return;
-    }
-
-    for (const player of players) {
-      player.jumpRequested = true;
-    }
-  },
-});
-
-world.addSystem(createJumpInputEcsSystem(jumpInput));
-```
-
-A player-move system registered in `fixedUpdate` after the narrow phase
-jumps when `jumpRequested` is `true` and the player is on the ground, and
-sets `jumpRequested` to `false` on every step. A
-press on a frame with no fixed step is acted on in the next frame's first
-step, and a press on a frame with several steps is acted on once.
+The physics systems run once per fixed step, and each frame draws bodies
+between their last two steps. [Fixed Timestep](./fixed-timestep.md) covers
+choosing a step rate, which game systems go in the fixed-update group and
+which run once per frame, teleporting a body, and what happens after a long
+frame.

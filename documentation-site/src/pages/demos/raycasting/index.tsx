@@ -14,7 +14,7 @@ export default function Raycasting(): JSX.Element {
       controls={[
         {
           inputs: [{ device: 'mouse', label: 'Move' }],
-          action: 'Aim the ray',
+          action: 'Aim the ray and hover a target',
         },
       ]}
       highlights={[
@@ -27,16 +27,20 @@ export default function Raycasting(): JSX.Element {
           file: 'ray-visual.ts',
         },
         {
-          text: 'The targets are plain static colliders with no rigid body, which is all a raycast needs.',
+          text: "Hovering a target tints it: each mouse move also asks overlapPoint which colliders' shapes contain the cursor.",
+          file: 'create-game.ts',
+        },
+        {
+          text: 'The targets are plain static colliders with no rigid body, which is all a query needs.',
           file: 'create-targets.ts',
         },
         {
-          text: 'The broad phase still runs every fixed step, because raycast casts through the trees of bounding boxes it keeps up to date.',
+          text: 'The broad phase still runs every fixed step, because raycast and overlapPoint search the trees of bounding boxes it keeps up to date.',
           file: 'create-game.ts',
         },
       ]}
       docLinks={[
-        { label: 'Raycasting', to: '/docs/docs/physics/raycasting' },
+        { label: 'Queries', to: '/docs/docs/physics/queries' },
         { label: 'Bodies and shapes', to: '/docs/docs/physics/rigid-bodies' },
       ]}
       fileGroups={[
@@ -46,7 +50,7 @@ export default function Raycasting(): JSX.Element {
             {
               name: 'create-game.ts',
               summary:
-                'Sets up the scene and casts a ray toward the cursor on every mouse move.',
+                'Sets up the scene, casts a ray toward the cursor and tints the target under it on every mouse move.',
               content: gameCode,
             },
           ],
