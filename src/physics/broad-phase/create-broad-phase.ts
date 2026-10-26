@@ -9,8 +9,12 @@ import {
  * Creates the world's broad-phase entity, holding an empty
  * {@link BroadPhaseEcsComponent} that `createBroadPhaseEcsSystem` keeps
  * up to date. Call it once per world, before the first `world.update()`.
+ * `createBroadPhaseEcsSystem`, `createContinuousCollisionEcsSystem`,
+ * `raycast`, `queryAabb` and `overlapPoint` all read this one component
+ * from the world (with {@link findBroadPhase}), and throw if it's missing.
  * @param world - The ECS world to create the entity in.
- * @returns The created entity.
+ * @returns The created entity, which holds the world's
+ * {@link BroadPhaseEcsComponent}.
  * @throws An error if the world already has a broad-phase entity.
  */
 export function createBroadPhase(world: EcsWorld): number {

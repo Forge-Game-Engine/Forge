@@ -53,6 +53,11 @@ A terrain is for static and kinematic bodies: give its entity no
 [Body types](./rigid-bodies.md#body-types)). A terrain has no mass, and a
 `'dynamic'` body with a `TerrainCollider` throws when it is simulated.
 
+A static terrain is one collider in the broad phase, so a body on it is in
+one pair with it, where ground built from many static boxes gives the body
+a pair for each box it overlaps (see
+[Keeping collision cost down](./broad-phase.md#keeping-collision-cost-down)).
+
 ## Colliding with terrain
 
 Bodies collide only with the terrain's surface, the chain of edges between

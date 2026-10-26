@@ -23,6 +23,10 @@ The physics module has these parts:
   overlaps without resolving them, and a
   [`ContactsEcsComponent`](/Forge/docs/api/interfaces/ContactsEcsComponent)
   lists what an entity touches. See [Collisions](./collisions.md).
+- **Broad phase**: the world's one broad phase keeps every collider in two
+  dynamic AABB trees and finds the pairs of colliders whose bounds overlap.
+  Two static colliders are never paired, and only colliders that moved
+  look for new pairs. See [Broad Phase](./broad-phase.md).
 - **Forces**: gravity, impulses, torque, angular velocity motors, springs,
   dampers and explosions change a body's velocity. See
   [Applying Forces](./forces.md).
@@ -147,7 +151,7 @@ world.addSystem(createRenderEcsSystem(renderContext));
    `collisionPairs`. It keeps every collider in the world's broad phase,
    which [`createBroadPhase`](/Forge/docs/api/functions/createBroadPhase)
    creates once per world, so it only looks for new pairs around the
-   colliders that moved (see [Finding colliding pairs](./collisions.md#finding-colliding-pairs)).
+   colliders that moved (see [Broad Phase](./broad-phase.md)).
    The narrow phase tests those pairs' shapes and writes each collision to
    `collisionManifolds`.
 3. The sleep system reads this step's `collisionManifolds`, wakes sleeping

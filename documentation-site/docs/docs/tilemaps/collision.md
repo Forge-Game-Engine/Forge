@@ -123,7 +123,7 @@ replaced.
 
 A layer with no rigid body is a static collider, so two such layers never
 collide with each other (see
-[Finding colliding pairs](../physics/collisions.md#finding-colliding-pairs)).
+[Static, kinematic and dynamic colliders](../physics/broad-phase.md#static-kinematic-and-dynamic-colliders)).
 
 :::caution
 Colliders ignore an entity's scale, so a scaled layer collides at its

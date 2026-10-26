@@ -13,7 +13,7 @@ the player.
 
 The tree knows nothing about entities or colliders: each entry holds a box
 and a value of the tree's type parameter, and the caller decides what goes
-in it. The [broad phase](./collisions.md#finding-colliding-pairs) keeps the
+in it. The [broad phase](./broad-phase.md) keeps the
 world's colliders in two trees of its own, and the
 [queries](./queries.md) (`raycast`, `queryAabb` and `overlapPoint`) search
 them.

@@ -31,6 +31,11 @@ is one of three values, `'dynamic'` by default:
   `type: 'static'`. Two static colliders never collide with each other.
   Use it for floors, walls and other fixed geometry.
 
+The broad phase never pairs two static colliders, and a static collider
+that doesn't move costs no tree work, so level geometry is cheapest as
+static colliders (see
+[Keeping collision cost down](./broad-phase.md#keeping-collision-cost-down)).
+
 ## Collider shapes
 
 A [`Collider`](/Forge/docs/api/classes/Collider) is one of four shapes:

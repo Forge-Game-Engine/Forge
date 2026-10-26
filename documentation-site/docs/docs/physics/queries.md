@@ -129,7 +129,7 @@ Every query tests each collider at its simulated pose:
 
 ## What a query sees
 
-Each query walks the [broad phase](./collisions.md#finding-colliding-pairs)'s
+Each query walks the [broad phase](./broad-phase.md)'s
 [dynamic AABB trees](./dynamic-aabb-tree.md), so it only looks at
 colliders near the segment, box or point. Its cost grows with the number of
 colliders near the query, not with the number of colliders in the world.
