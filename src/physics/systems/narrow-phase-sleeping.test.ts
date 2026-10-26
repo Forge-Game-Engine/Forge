@@ -62,7 +62,7 @@ describe('createNarrowPhaseEcsSystem with sleeping bodies', () => {
     collisionPairs = [];
     collisionManifolds = [];
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(new Time()));
     world.addSystem(
       createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
     );
@@ -342,7 +342,7 @@ describe('collision detection in a sleeping pile', () => {
     contactConstraints = [];
 
     createBroadPhase(world);
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(
       createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

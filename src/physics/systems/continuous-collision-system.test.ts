@@ -123,7 +123,7 @@ describe('createContinuousCollisionEcsSystem', () => {
     time.update(0);
 
     createBroadPhase(world);
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem([]));
     world.addSystem(createEulerIntegrationEcsSystem(time));
     world.addSystem(createContinuousCollisionEcsSystem());
@@ -333,6 +333,129 @@ describe('createContinuousCollisionEcsSystem', () => {
     expect(ball.position.local.x).toBeCloseTo(100);
     expect(ball.position.local.y).toBeCloseTo(-9.5);
   });
+
+  it('should leave a circle whose position is not a number alone', () => {
+    const ball = addBody(
+      world,
+      new CircleCollider(10),
+      { x: Number.NaN, y: 0 },
+      { x: 0, y: 6000 },
+    );
+
+    expect(() => tick()).not.toThrow();
+    expect(ball.position.local.x).toBeNaN();
+    expect(ball.position.local.y).toBeCloseTo(100);
+  });
+
+  it('should throw when the world has no broad phase', () => {
+    const worldWithoutBroadPhase = new EcsWorld();
+
+    worldWithoutBroadPhase.addSystem(createContinuousCollisionEcsSystem());
+
+    expect(() => worldWithoutBroadPhase.update()).toThrow(/no broad phase/);
+  });
+});
+
+describe('continuous collision against colliders the broad phase has not seen', () => {
+  let world: EcsWorld;
+  let time: Time;
+  let afterBroadPhase: () => void;
+
+  beforeEach(() => {
+    world = new EcsWorld();
+    time = new Time();
+    time.update(0);
+
+    afterBroadPhase = (): void => {};
+
+    createBroadPhase(world);
+    world.addSystem(createTransformEcsSystem(time));
+    world.addSystem(createBroadPhaseEcsSystem([]));
+    // Game code creating a collider after this step's broad phase ran.
+    world.addSystem({ query: [], update: () => afterBroadPhase() });
+    world.addSystem(createEulerIntegrationEcsSystem(time));
+    world.addSystem(createContinuousCollisionEcsSystem());
+  });
+
+  function tick(): void {
+    time.update(time.rawTimeInMilliseconds + fixedDeltaMilliseconds);
+    world.update();
+  }
+
+  it('should not sweep against a static collider until the broad phase has run over it', () => {
+    const ball = addBody(
+      world,
+      new CircleCollider(10),
+      { x: 0, y: -30 },
+      { x: 0, y: 6000 },
+    );
+
+    afterBroadPhase = (): void => {
+      addStaticCollider(world, flatTerrain(), { x: 0, y: 0 });
+
+      afterBroadPhase = (): void => {};
+    };
+
+    tick();
+
+    // Not in the static tree yet, so the ball's whole motion is kept.
+    expect(ball.position.local.y).toBeCloseTo(70);
+
+    const nextBall = addBody(
+      world,
+      new CircleCollider(10),
+      { x: 100, y: -30 },
+      { x: 0, y: 6000 },
+    );
+
+    tick();
+
+    // The next step's broad phase added it, so it stops the next ball.
+    expect(nextBall.position.local.y).toBeCloseTo(-9.9);
+  });
+
+  it('should sweep a body made dynamic after the broad phase ran', () => {
+    addStaticCollider(world, flatTerrain(), { x: 0, y: 0 });
+
+    // Still in the static tree this step, as a static body.
+    const ball = addBody(
+      world,
+      new CircleCollider(10),
+      { x: 0, y: -30 },
+      { x: 0, y: 6000 },
+      'static',
+    );
+
+    afterBroadPhase = (): void => {
+      ball.rigidBody.type = 'dynamic';
+    };
+
+    tick();
+
+    expect(ball.position.local.y).toBeCloseTo(-9.9);
+  });
+
+  it('should not sweep against a static collider removed after the broad phase ran', () => {
+    const wall = addStaticCollider(world, flatTerrain(), { x: 0, y: 0 });
+    const ball = addBody(
+      world,
+      new CircleCollider(10),
+      { x: 0, y: -130 },
+      { x: 0, y: 6000 },
+    );
+
+    tick();
+
+    afterBroadPhase = (): void => {
+      world.removeEntity(wall);
+    };
+
+    tick();
+
+    // The removed wall is still in the static tree for this step, but its
+    // components are gone, so it's skipped.
+    expect(ball.position.local.y).toBeCloseTo(70);
+  });
 });
 
 describe('continuous collision of sleeping circles', () => {
@@ -349,7 +472,7 @@ describe('continuous collision of sleeping circles', () => {
 
     createBroadPhase(world);
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     // Game code moving a body after the transform pass, so the sweep sees
     // a `local` position far from the `world` one.
     world.addSystem({ query: [], update: () => moveAfterTransformPass() });
@@ -440,7 +563,7 @@ describe('a sleeping circle in the full physics pipeline', () => {
 
     createBroadPhase(world);
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(
       createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
@@ -561,7 +684,7 @@ describe('continuous collision in the full physics pipeline', () => {
     time.update(0);
 
     createBroadPhase(world);
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createGravityEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(

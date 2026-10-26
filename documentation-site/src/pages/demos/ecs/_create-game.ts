@@ -26,7 +26,7 @@ export const createEcsGame = async (): Promise<Game> => {
   world.addSystem(createDemoEcsSystem(time));
   // After the demo system moves the star's `local` pose, so the render
   // system draws this frame's `world` pose.
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

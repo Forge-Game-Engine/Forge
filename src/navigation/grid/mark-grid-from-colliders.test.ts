@@ -3,6 +3,7 @@ import { addPositionComponent } from '../../common/components/position-component
 import { addRotationComponent } from '../../common/components/rotation-component.js';
 import { addScaleComponent } from '../../common/components/scale-component.js';
 import { createTransformEcsSystem } from '../../common/systems/transform-system.js';
+import { Time } from '../../common/time/Time.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { createIsometricGridLayout } from '../../math/grid-layout/create-isometric-grid-layout.js';
 import { createOrthogonalGridLayout } from '../../math/grid-layout/create-orthogonal-grid-layout.js';
@@ -563,7 +564,7 @@ describe('markGridFromColliders which colliders count', () => {
     });
 
     world.setParent(child, parent);
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(new Time()));
     world.update();
     markGridFromColliders(world, grid);
 
@@ -625,7 +626,7 @@ describe('markGridFromColliders grid behavior', () => {
     });
 
     addColliderComponent(world, entity, { collider: createBox(16, 16) });
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(new Time()));
     world.update();
     markGridFromColliders(world, grid);
 

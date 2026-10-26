@@ -32,7 +32,10 @@ export interface PositionEcsComponent extends PositionOptions {
   /**
    * The entity's position in world space. Output only:
    * `createTransformEcsSystem` writes it every frame from `local` and the
-   * parent's world transform. It starts out equal to `local`.
+   * parent's world transform (for an entity with a
+   * `TransformInterpolationEcsComponent`, outside a fixed step, from `local`
+   * blended between the latest step's start and end). It starts out equal to
+   * `local`.
    */
   world: Vector2;
 }

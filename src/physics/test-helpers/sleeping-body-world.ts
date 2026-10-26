@@ -55,7 +55,7 @@ export const createSleepingBodyWorld = (): SleepingBodyWorld => {
 
   time.update(0);
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createSleepEcsSystem([], time));
   world.addSystem(createEulerIntegrationEcsSystem(time));
 

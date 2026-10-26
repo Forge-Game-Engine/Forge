@@ -193,7 +193,7 @@ export const createScene: CreateScene = (
   const collisionManifolds: CollisionManifold[] = [];
   const contactConstraints: ContactConstraint[] = [];
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
   world.addSystem(

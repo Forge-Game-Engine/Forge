@@ -76,7 +76,7 @@ export const createTilemapsGame = async (
   // transform before they're drawn. It reads `time` to play animated tiles
   // such as the water.
   world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

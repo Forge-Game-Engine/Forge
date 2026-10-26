@@ -2,6 +2,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addPositionComponent,
   addRotationComponent,
+  createTransformEcsSystem,
+  positionId,
+  Time,
+  transformInterpolationId,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
@@ -88,6 +92,41 @@ describe('queryAabb', () => {
     expect(queryAabb(world, box(-5, -1, 5, 1)).sort(byEntity)).toEqual(
       [wall, body].sort(byEntity),
     );
+  });
+
+  it('finds a dynamic body by bounds at its local pose, not where it is drawn', () => {
+    // After the broad phase, so it sees the pose a tick starts with and the
+    // transform pass then draws the body where it's interpolated.
+    world.addSystem(createTransformEcsSystem(new Time()));
+
+    const body = addEntity({ x: 20, y: 0 }, new CircleCollider(1));
+
+    addRigidBodyComponent(world, body);
+
+    const interpolation = world.getComponent(body, transformInterpolationId);
+
+    if (!interpolation) {
+      throw new Error('addRigidBodyComponent added no interpolation.');
+    }
+
+    // As if the latest fixed step had moved it from the origin.
+    interpolation.stepStart.position.x = 0;
+    world.update();
+
+    expect(queryAabb(world, box(19.5, -0.5, 20.5, 0.5))).toEqual([body]);
+    expect(queryAabb(world, box(-0.5, -0.5, 0.5, 0.5))).toEqual([]);
+
+    // Moved within the tree's margin since the broad phase ran: the bounds
+    // follow the body, past the `aabb` the broad phase left.
+    const position = world.getComponent(body, positionId);
+
+    if (!position) {
+      throw new Error('The body has no position.');
+    }
+
+    position.local.x = 20.05;
+
+    expect(queryAabb(world, box(21.02, -0.5, 21.04, 0.5))).toEqual([body]);
   });
 
   it('finds every collider with an infinite box, but not one with no bounds yet', () => {

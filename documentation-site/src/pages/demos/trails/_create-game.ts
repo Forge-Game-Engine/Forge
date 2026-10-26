@@ -77,7 +77,7 @@ export const createTrailsGame = async (
   world.addSystem(createLoopingPathEcsSystem(time));
   // The trail system reads the world positions the transform system
   // writes, and adds the meshes the render system draws.
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createTrailEcsSystem(time, renderContext));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createBloomEcsSystem(renderContext));

@@ -65,6 +65,7 @@ collides with them and draws them registers them in this order:
 ```ts
 import {
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
@@ -87,7 +88,7 @@ createBroadPhase(world);
 const physics = { group: registerFixedUpdate(world, time) };
 
 // Once per fixed step.
-world.addSystem(createTransformEcsSystem(), physics);
+world.addSystem(createTransformEcsSystem(time), physics);
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
 world.addSystem(
   createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
@@ -104,12 +105,13 @@ world.addSystem(
   physics,
 );
 world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
 // Once per frame.
 world.addSystem(tileEditingSystem);
 world.addSystem(createTilemapColliderEcsSystem());
 world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
-world.addSystem(createTransformEcsSystem());
+world.addSystem(createTransformEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
 ```
 

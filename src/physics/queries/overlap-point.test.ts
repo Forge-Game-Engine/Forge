@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addPositionComponent,
   addRotationComponent,
+  createTransformEcsSystem,
+  Time,
+  transformInterpolationId,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
@@ -126,6 +129,29 @@ describe('overlapPoint', () => {
     world.update();
 
     expect(overlapPoint(world, { x: 0, y: 0 })).toEqual([body]);
+  });
+
+  it('finds a dynamic body at its local pose, not where it is drawn', () => {
+    // After the broad phase, so it sees the pose a tick starts with and the
+    // transform pass then draws the body where it's interpolated.
+    world.addSystem(createTransformEcsSystem(new Time()));
+
+    const body = addEntity({ x: 20, y: 0 }, new CircleCollider(1));
+
+    addRigidBodyComponent(world, body);
+
+    const interpolation = world.getComponent(body, transformInterpolationId);
+
+    if (!interpolation) {
+      throw new Error('addRigidBodyComponent added no interpolation.');
+    }
+
+    // As if the latest fixed step had moved it from the origin.
+    interpolation.stepStart.position.x = 0;
+    world.update();
+
+    expect(overlapPoint(world, { x: 20, y: 0 })).toEqual([body]);
+    expect(overlapPoint(world, { x: 0, y: 0 })).toEqual([]);
   });
 
   it('only finds colliders whose category is in the mask', () => {

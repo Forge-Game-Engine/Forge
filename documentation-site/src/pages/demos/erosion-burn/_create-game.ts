@@ -57,7 +57,7 @@ export const createErosionBurnGame = async (): Promise<Game> => {
   world.addSystem(createErosionEcsSystem(time));
   // Derives the sprite's `world` pose (including its scale) from its
   // `local` pose for the render system to draw.
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

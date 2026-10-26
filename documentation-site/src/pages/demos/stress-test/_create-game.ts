@@ -37,7 +37,7 @@ export const createStressTestGame = async (): Promise<Game> => {
   world.addSystem(createSpriteSpawnerEcsSystem(time, random));
   // After the spawner, so each sprite it spawns (with only a `local` pose)
   // gets its `world` pose before the render system first draws it.
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createFpsMonitorEcsSystem(time));
 

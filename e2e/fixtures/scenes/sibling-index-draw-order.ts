@@ -116,7 +116,7 @@ export const createScene: CreateScene = async (
   addSquare(1.5, new Color(0, 0, 1, 1));
   const inserted = addSquare(0, new Color(0, 1, 0, 1));
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   let clockInMilliseconds = 0;

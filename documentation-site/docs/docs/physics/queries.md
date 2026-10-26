@@ -53,8 +53,8 @@ edge it leaves by.
 
 ## Finding colliders in a box
 
-`queryAabb` returns the entities whose collider's bounds
-(`ColliderEcsComponent.aabb`) overlap a world-space box, touching included.
+`queryAabb` returns the entities whose collider's bounds overlap a
+world-space box, touching included.
 Use it for box selection, or to find what's near a point before testing
 each result yourself.
 
@@ -101,10 +101,10 @@ in no particular order. What a collider contains depends on its type:
 
 To test one entity's collider without the broad phase, call
 [`colliderContainsPoint(body, point)`](/Forge/docs/api/functions/colliderContainsPoint)
-with the collider and its entity's world position and rotation.
+with the collider and the position and rotation to test it at.
 
 :::caution
-`overlapPoint` only tests colliders whose `aabb` contains the point. A
+`overlapPoint` only tests colliders whose bounds contain the point. A
 chain whose loop with the largest area is a hole
 (`ChainCollider.outsideIsSolid`) is solid everywhere outside its loops, but
 `overlapPoint` only finds it at points inside its bounds.
@@ -113,6 +113,20 @@ bounds as solid. Surround the hole with a solid loop to give the solid
 bounds.
 :::
 
+## Which pose a query tests
+
+Every query tests each collider at its simulated pose:
+
+- A collider on a dynamic or kinematic body is tested at the body's
+  `position.local` and `rotation.local`: where the latest fixed step left
+  it, or where game code has since placed it. Its bounds are computed from
+  that pose. Bodies are drawn between their last two fixed steps (see
+  [Interpolating between fixed steps](../common/transforms.md#interpolating-between-fixed-steps)),
+  so a query can find a moving body up to one step ahead of where the body
+  is drawn.
+- Every other collider is tested at its `position.world` and
+  `rotation.world`, with its `ColliderEcsComponent.aabb` as its bounds.
+
 ## What a query sees
 
 Each query walks the [broad phase](./collisions.md#finding-colliding-pairs)'s
@@ -120,7 +134,7 @@ Each query walks the [broad phase](./collisions.md#finding-colliding-pairs)'s
 colliders near the segment, box or point. Its cost grows with the number of
 colliders near the query, not with the number of colliders in the world.
 `raycast` and `overlapPoint` only test the exact shape of colliders whose
-`aabb` the segment or point reaches.
+bounds the segment or point reaches.
 
 :::caution
 Every query throws if the world has no broad phase. Call
@@ -128,9 +142,11 @@ Every query throws if the world has no broad phase. Call
 after it has run. The trees and each collider's `aabb` are as of the broad
 phase's last run, which is once per fixed step: a collider is found where it
 was then, a collider added since then isn't found, and one removed since
-then isn't found either. A query from the default group or an event
-handler finds the colliders as of the latest fixed step, and on the frames
-before the first fixed step it finds nothing.
+then isn't found either. The broad phase runs before the step moves the
+bodies, so a query after the step can miss a dynamic or kinematic body that
+has moved more than a tenth of a world unit since. A query from the default
+group or an event handler finds the colliders as of the latest fixed step,
+and on the frames before the first fixed step it finds nothing.
 :::
 
 ## Choosing which colliders a query finds

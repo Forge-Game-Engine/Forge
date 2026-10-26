@@ -71,7 +71,7 @@ export const createParticlesGame = async (): Promise<Game> => {
   // Particles (like every entity) only update their local transform, so the
   // transform system runs after every system above and before the render
   // system, resolving it to the world transform the renderer reads.
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   const toWorldPosition = (event: MouseEvent): Vector2 => {

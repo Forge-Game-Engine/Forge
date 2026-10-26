@@ -52,7 +52,7 @@ import {
 createBroadPhase(world);
 const physics = { group: registerFixedUpdate(world, time) };
 
-world.addSystem(createTransformEcsSystem(), physics);
+world.addSystem(createTransformEcsSystem(time), physics);
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
 world.addSystem(
   createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),
@@ -142,7 +142,9 @@ island when any body in the island:
 - has `canSleep` set to `false` or `wakeRequested` set to `true`.
 
 A sensor never wakes a sleeping body: an overlap with a sensor produces no
-collision manifold, so the sleep system doesn't count it as a contact.
+collision manifold, so the sleep system doesn't count it as a contact. The
+narrow phase tests a sensor pair on every step, so a sensor's contacts list
+a sleeping body inside it in `touching`.
 
 A woken island's `restTime` values are set back to `0`, so it stays awake
 for at least `restDuration`.
@@ -156,8 +158,9 @@ wakes in the step after.
 ### Waking a body after a settings change
 
 Some changes aren't in a sleeping body's record: changing a joint's
-limits, a spring's `stiffness` or `restLength`, or a collider's `friction`
-or `restitution`. To wake a body after one of them, set its
+limits, moving a joint's other end from one static body, kinematic body or
+collider-only entity to another, a spring's `stiffness` or `restLength`,
+or a collider's `friction` or `restitution`. To wake a body after one of them, set its
 `wakeRequested` to `true`:
 
 ```ts
@@ -178,15 +181,14 @@ and at least one of them is a sleeping body: two sleeping boxes, or a
 sleeping box on a static floor. When a body falls asleep, the sleep system
 records the collision manifolds it's part of in its `sleepRecord`. Neither
 entity has moved since, so the narrow phase writes those manifolds into
-`collisionManifolds` instead of testing the pair, the way Box2D keeps a
-sleeping island's contacts. A settled pile costs no collision tests, and
-its contacts carry on as if they had been tested:
+`collisionManifolds` instead of testing the pair. A settled pile costs no
+collision tests:
 
 - each body's [contacts](./collisions.md#reading-contacts) keep the
   entities it rests on in `touching`, with nothing in `started` or
   `ended`;
-- the sleep system keeps seeing the island's contacts, so the island stays
-  asleep;
+- the sleep system reads the island's manifolds in `collisionManifolds`,
+  so the island stays asleep;
 - collision resolution keeps each contact's impulses, and starts from them
   when the island wakes, so a woken stack doesn't sag.
 

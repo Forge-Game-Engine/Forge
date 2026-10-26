@@ -166,7 +166,7 @@ export const createGameStatesGame = async (): Promise<Game> => {
 
   // These run in every state.
   world.addSystem(createCameraEcsSystem(time));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createTextShapingEcsSystem());
   world.addSystem(createRenderEcsSystem(renderContext));
 

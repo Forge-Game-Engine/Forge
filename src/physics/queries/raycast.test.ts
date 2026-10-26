@@ -4,9 +4,13 @@ import { raycastCircle } from './raycast-circle.js';
 import {
   addPositionComponent,
   addRotationComponent,
+  createTransformEcsSystem,
+  Time,
+  transformInterpolationId,
 } from '../../common/index.js';
 import { EcsWorld } from '../../ecs/index.js';
 import { Vector2 } from '../../math/index.js';
+import { ChainCollider } from '../colliders/chain-collider.js';
 import { CircleCollider } from '../colliders/circle-collider.js';
 import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { addColliderComponent } from '../components/collider-component.js';
@@ -298,5 +302,123 @@ describe('raycast', () => {
         (hit) => hit.entity,
       ),
     ).toEqual([sensor, wall]);
+  });
+
+  describe('a moving body drawn behind its simulated pose', () => {
+    beforeEach(() => {
+      // After the broad phase, so it sees the pose a tick starts with and
+      // the transform pass then draws the bodies where they're interpolated.
+      world.addSystem(createTransformEcsSystem(new Time()));
+    });
+
+    // A body whose `local` (where its latest step left it) is at x = 20,
+    // with its rotation, and which the broad phase saw there, while a
+    // frame's transform pass draws it at the step's start, the origin
+    // unrotated.
+    function addMovedBody(
+      type: 'dynamic' | 'kinematic' | 'static',
+      collider: CircleCollider | PolygonCollider | ChainCollider,
+      rotation = 0,
+    ): number {
+      const entity = world.createEntity();
+
+      addPositionComponent(world, entity, { local: { x: 20, y: 0 } });
+      addRotationComponent(world, entity, { local: rotation });
+      addColliderComponent(world, entity, { collider });
+      addRigidBodyComponent(world, entity, { type });
+
+      const interpolation = world.getComponent(
+        entity,
+        transformInterpolationId,
+      );
+
+      if (!interpolation) {
+        throw new Error('addRigidBodyComponent added no interpolation.');
+      }
+
+      // As if the latest fixed step had moved it from the origin.
+      interpolation.stepStart.position.x = 0;
+      interpolation.stepStart.rotation = 0;
+      world.update();
+
+      return entity;
+    }
+
+    it.each(['dynamic', 'kinematic'] as const)(
+      'should test a %s body at its local pose, with bounds from that pose',
+      (type) => {
+        const entity = addMovedBody(type, new CircleCollider(1));
+
+        const atLocal = raycast(world, { x: 20, y: -5 }, { x: 20, y: 5 });
+        const atWorld = raycast(world, { x: 0, y: -5 }, { x: 0, y: 5 });
+
+        expect(atLocal.map((hit) => hit.entity)).toEqual([entity]);
+        expect(atLocal[0].point.x).toBeCloseTo(20);
+        expect(atLocal[0].point.y).toBeCloseTo(-1);
+        expect(atLocal[0].distance).toBeCloseTo(4);
+        expect(atWorld).toHaveLength(0);
+      },
+    );
+
+    it('should cull a rotated polygon body with bounds from its local rotation', () => {
+      // A 10 x 2 box, turned a quarter turn: 2 wide and 10 tall at x = 20.
+      const entity = addMovedBody(
+        'dynamic',
+        new PolygonCollider([
+          { x: -5, y: -1 },
+          { x: 5, y: -1 },
+          { x: 5, y: 1 },
+          { x: -5, y: 1 },
+        ]),
+        Math.PI / 2,
+      );
+
+      const hits = raycast(world, { x: 10, y: 4 }, { x: 30, y: 4 });
+
+      expect(hits.map((hit) => hit.entity)).toEqual([entity]);
+      expect(hits[0].point.x).toBeCloseTo(19);
+    });
+
+    it('should cull a chain collider on a kinematic body with bounds from its local pose', () => {
+      const entity = addMovedBody(
+        'kinematic',
+        new ChainCollider([
+          [
+            { x: -2, y: -2 },
+            { x: 2, y: -2 },
+            { x: 2, y: 2 },
+            { x: -2, y: 2 },
+          ],
+        ]),
+      );
+
+      const hits = raycast(world, { x: 10, y: 0 }, { x: 30, y: 0 });
+
+      expect(hits.map((hit) => hit.entity)).toEqual([entity]);
+      expect(hits[0].point.x).toBeCloseTo(18);
+    });
+
+    it('should test a static body at its world pose with the broad-phase bounds', () => {
+      const entity = addMovedBody('static', new CircleCollider(1));
+
+      // The broad phase sees where the first tick drew it.
+      world.update();
+
+      expect(
+        raycast(world, { x: 0, y: -5 }, { x: 0, y: 5 }).map(
+          (hit) => hit.entity,
+        ),
+      ).toEqual([entity]);
+      expect(raycast(world, { x: 20, y: -5 }, { x: 20, y: 5 })).toHaveLength(0);
+    });
+
+    it('should still skip a collider without a body added since the broad phase ran', () => {
+      const entity = world.createEntity();
+
+      addPositionComponent(world, entity);
+      addColliderComponent(world, entity, { collider: new CircleCollider(1) });
+
+      expect(raycast(world, { x: 0, y: -5 }, { x: 0, y: 5 })).toHaveLength(0);
+    });
   });
 });
