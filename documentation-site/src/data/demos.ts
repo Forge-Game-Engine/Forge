@@ -55,6 +55,13 @@ export const demos: Demo[] = [
     categories: ['physics'],
   },
   {
+    slug: 'sleeping',
+    title: 'Sleeping Bodies',
+    description:
+      'A pyramid of boxes and a chain of jointed planks fall asleep as they settle, and wake when an explosion or a removed floor disturbs them.',
+    categories: ['physics'],
+  },
+  {
     slug: 'physics-stress-test',
     title: 'Physics Stress Test',
     description:
