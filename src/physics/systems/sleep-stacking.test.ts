@@ -83,7 +83,7 @@ describe('sleeping bodies in a physics scene', () => {
     contactConstraints = [];
 
     createBroadPhase(world);
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
     world.addSystem(
       createNarrowPhaseEcsSystem(collisionPairs, collisionManifolds),

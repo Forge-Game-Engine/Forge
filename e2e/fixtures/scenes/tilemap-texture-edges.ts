@@ -239,7 +239,7 @@ export const createScene: CreateScene = (
   );
 
   world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   let clockInMilliseconds = 0;

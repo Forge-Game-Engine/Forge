@@ -79,9 +79,9 @@ test.describe('A sprite animation of trimmed frames', () => {
     // The frames the first animated sprite shows, each once per change.
     const shownFrames: string[] = [];
 
-    // `Time` clamps each step after the first to under a frame's duration,
-    // so frames change every step or two: ten steps cover more than a loop
-    // of the three-frame clip.
+    // Each step is one frame's duration, so frames change every step or two
+    // (summing the steps' times in floating point can leave one a hair
+    // short): ten steps cover more than a loop of the three-frame clip.
     for (let step = 0; step < 10; step++) {
       const frame = await test.step(`render clip frame ${step}`, () =>
         captureFrame(page));

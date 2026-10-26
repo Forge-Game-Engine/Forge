@@ -84,7 +84,7 @@ const createScene = (options?: NavigationAgentSystemOptions): Scene => {
   const system = createNavigationAgentEcsSystem(time, options);
   const units: Unit[] = [];
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(system);
 
   const step = (move = true): void => {

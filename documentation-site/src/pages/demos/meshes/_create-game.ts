@@ -53,7 +53,7 @@ async function addImageSprite(
 export const createMeshesGame = async (
   onExhaustReady: (exhaust: Exhaust) => void,
 ): Promise<Game> => {
-  const { game, world, renderContext } = createGame('demo-game');
+  const { game, world, renderContext, time } = createGame('demo-game');
 
   createCamera(world, {
     isStatic: true,
@@ -98,7 +98,7 @@ export const createMeshesGame = async (
 
   onExhaustReady(exhaust);
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

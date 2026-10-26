@@ -73,7 +73,7 @@ import {
 
 addToneMappingComponent(world, camera);
 
-world.addSystem(createTransformEcsSystem());
+world.addSystem(createTransformEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
 world.addSystem(createToneMapEcsSystem(renderContext));
 world.addSystem(createPresentEcsSystem(renderContext));

@@ -280,7 +280,7 @@ export const createSpaceShooterGame = async (
   const fixedUpdate = registerFixedUpdate(world, time);
   const physics = { group: fixedUpdate };
 
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
   world.addSystem(
@@ -316,7 +316,7 @@ export const createSpaceShooterGame = async (
   // Every system above only writes `local` poses (and spawns entities with
   // only a `local` pose), so the transform system runs after all of them to
   // turn this frame's poses into the `world` poses that rendering reads.
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createBloomEcsSystem(renderContext));
   world.addSystem(createGaussianBlurEcsSystem(renderContext));

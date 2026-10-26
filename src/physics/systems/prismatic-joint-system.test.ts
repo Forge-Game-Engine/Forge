@@ -38,7 +38,7 @@ describe('createPrismaticJointEcsSystem', () => {
     currentMs = 0;
     time.update(currentMs);
 
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createPrismaticJointEcsSystem(time));
     world.addSystem(createEulerIntegrationEcsSystem(time));
   });

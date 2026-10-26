@@ -19,6 +19,7 @@ import {
 } from '@forge-game-engine/forge/physics';
 import {
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   PositionEcsComponent,
   positionId,
   registerFixedUpdate,
@@ -84,11 +85,6 @@ export const createRollingBallGame = async (): Promise<Game> => {
     gravity,
   );
 
-  const playerPosition = world.getComponent<PositionEcsComponent>(
-    player.entity,
-    positionId,
-  )!;
-
   // Start the camera already centered on the ball, rather than easing in
   // from the world origin on the first frame.
   const cameraPosition = world.getComponent<PositionEcsComponent>(
@@ -113,7 +109,7 @@ export const createRollingBallGame = async (): Promise<Game> => {
   const physics = { group: fixedUpdate };
 
   world.addSystem(createRollEcsSystem(rollInput), physics);
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createAngularVelocityMotorEcsSystem(time), physics);
   world.addSystem(createGravityEcsSystem(time), physics);
   createBroadPhase(world);
@@ -132,6 +128,7 @@ export const createRollingBallGame = async (): Promise<Game> => {
   );
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
   world.addSystem(createContinuousCollisionEcsSystem(), physics);
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps. The jump reads a press made this
   // frame, so it runs here, where it sees each press exactly once. It and
@@ -147,8 +144,8 @@ export const createRollingBallGame = async (): Promise<Game> => {
       spawnPosition,
     ),
   );
-  world.addSystem(createCameraFollowEcsSystem(playerPosition, time));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createCameraFollowEcsSystem(player.entity, time));
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

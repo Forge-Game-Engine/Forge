@@ -190,7 +190,7 @@ export const createScene: CreateScene = (
   setTile(layer, landmarkCell.column, landmarkCell.row, landmarkTile);
 
   world.addSystem(createTilemapRenderEcsSystem(renderContext, time));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   let clockInMilliseconds = 0;

@@ -139,7 +139,7 @@ export const createScene: CreateScene = (
     endColor: new Color(1, 0, 0, 1),
   });
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createTrailEcsSystem(time, renderContext));
   world.addSystem(createRenderEcsSystem(renderContext));
 

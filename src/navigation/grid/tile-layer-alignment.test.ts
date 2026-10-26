@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addPositionComponent } from '../../common/components/position-component.js';
 import { createTransformEcsSystem } from '../../common/systems/transform-system.js';
+import { Time } from '../../common/time/Time.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { createIsometricGridLayout } from '../../math/grid-layout/create-isometric-grid-layout.js';
 import { createOrthogonalGridLayout } from '../../math/grid-layout/create-orthogonal-grid-layout.js';
@@ -73,7 +74,7 @@ describe.each(layouts)(
     beforeEach(() => {
       world = new EcsWorld();
       world.addSystem(createTilemapColliderEcsSystem());
-      world.addSystem(createTransformEcsSystem());
+      world.addSystem(createTransformEcsSystem(new Time()));
 
       layerEntity = world.createEntity();
 

@@ -89,7 +89,7 @@ world.addSystem(createLifetimeTrackingEcsSystem(time));
 world.addSystem(createAgeScaleEcsSystem());
 world.addSystem(createParticleOpacityEcsSystem());
 world.addSystem(createRemoveFromWorldEcsSystem());
-world.addSystem(createTransformEcsSystem());
+world.addSystem(createTransformEcsSystem(time));
 
 sparks.emit();
 ```

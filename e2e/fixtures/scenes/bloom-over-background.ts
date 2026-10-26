@@ -135,7 +135,7 @@ export const createScene: CreateScene = (
     tintColor: spriteColor,
   });
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createBloomEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));

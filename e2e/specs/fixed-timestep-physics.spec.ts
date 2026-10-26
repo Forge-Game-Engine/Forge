@@ -147,7 +147,7 @@ test.describe('fixed-timestep physics', () => {
     });
   });
 
-  test('draws the ball where the latest fixed step left it', async ({
+  test("draws the ball where the frame's transform system put it", async ({
     page,
   }) => {
     await test.step('load the fixed-timestep-physics scene', () =>
@@ -169,20 +169,20 @@ test.describe('fixed-timestep physics', () => {
       }
     });
 
-    await test.step('assert the on-screen drop matches the simulated drop', () => {
+    await test.step('assert the on-screen drop matches the drawn drop', () => {
       expect(after.centerY).not.toBeNull();
 
-      const simulatedDrop = after.ball.localY - before.ball.localY;
+      const drawnDrop = after.ball.worldY - before.ball.worldY;
       const onScreenDrop = after.centerY! - before.centerY!;
 
-      // Mid-fall, the ball moves about 8 px per step, so a frame drawn from
-      // the pose before the latest step's integration is off by more than
-      // the tolerance. 1 world unit is 1 CSS pixel and the test runs at a
-      // device pixel ratio of 1; allow a couple of pixels for antialiased
-      // edges.
-      expect(simulatedDrop).toBeGreaterThan(50);
-      expect(Math.abs(onScreenDrop - simulatedDrop)).toBeLessThan(2);
-      expect(after.ball.worldY).toBe(after.ball.localY);
+      // Each 31.25 ms frame runs two whole steps, so the frame's transform
+      // system draws the ball at the start of its last step: mid-fall about
+      // 8 px above where the simulation has it. 1 world unit is 1 CSS pixel
+      // and the test runs at a device pixel ratio of 1; allow a couple of
+      // pixels for antialiased edges.
+      expect(drawnDrop).toBeGreaterThan(50);
+      expect(Math.abs(onScreenDrop - drawnDrop)).toBeLessThan(2);
+      expect(after.ball.localY - after.ball.worldY).toBeGreaterThan(2);
     });
   });
 });

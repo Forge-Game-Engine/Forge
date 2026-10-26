@@ -192,7 +192,7 @@ export const createScene: CreateScene = (
     -spriteOffsetInPixels,
   );
 
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
   world.addSystem(createToneMapEcsSystem(renderContext));
   world.addSystem(createPresentEcsSystem(renderContext));

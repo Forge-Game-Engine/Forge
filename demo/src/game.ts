@@ -8,6 +8,7 @@ import {
   createImageSprite,
   createRenderEcsSystem,
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   degreesToRadians,
   EcsSystem,
   EcsWorld,
@@ -319,7 +320,7 @@ const fixedUpdate = registerFixedUpdate(world, time);
 const physics = { group: fixedUpdate };
 
 // Once per fixed step.
-world.addSystem(createTransformEcsSystem(), physics);
+world.addSystem(createTransformEcsSystem(time), physics);
 world.addSystem(createGravityEcsSystem(time), physics);
 createBroadPhase(world);
 world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
@@ -337,6 +338,7 @@ world.addSystem(
 );
 world.addSystem(createEulerIntegrationEcsSystem(time), physics);
 world.addSystem(createContinuousCollisionEcsSystem(), physics);
+world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
 // Once per frame, after the fixed steps.
 world.addSystem(
@@ -357,7 +359,7 @@ world.addSystem(
   ),
 );
 world.addSystem(createCollisionTintEcsSystem());
-world.addSystem(createTransformEcsSystem());
+world.addSystem(createTransformEcsSystem(time));
 world.addSystem(createRenderEcsSystem(renderContext));
 
 game.run();

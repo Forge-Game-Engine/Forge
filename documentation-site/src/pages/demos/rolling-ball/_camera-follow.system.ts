@@ -1,5 +1,6 @@
 import { EcsSystem } from '@forge-game-engine/forge/ecs';
 import {
+  getInterpolatedLocalPosition,
   PositionEcsComponent,
   Time,
   positionId,
@@ -13,32 +14,33 @@ import {
 const followSpeed = 4;
 
 /**
- * Creates an ECS system that smoothly pans the camera towards
- * `targetPosition` every frame, using exponential smoothing so it eases
- * towards the ball rather than snapping to it or lagging at a fixed offset.
+ * Creates an ECS system that smoothly pans the camera towards `target`
+ * every frame, using exponential smoothing so it eases towards the ball
+ * rather than snapping to it or lagging at a fixed offset.
  *
  * Register it in the default group, after the fixed steps and before the
- * frame's transform system. It reads the ball's `local` position (the ball
- * has no parent, so that's its pose after the frame's last physics step,
- * where its `world` would still be a step behind) and writes the camera's
- * `local` position, which the transform system turns into the `world`
- * position the render system reads that frame.
- * @param targetPosition - The position component to follow, typically the ball's.
- * @param time - The time instance used to scale the follow speed by delta time.
+ * frame's transform system. It follows the ball's interpolated position,
+ * where the frame's transform system draws the ball between its last two
+ * physics steps, so the camera moves with the ball on screen. It writes the
+ * camera's `local` position, which the transform system turns into the
+ * `world` position the render system reads that frame.
+ * @param target - The entity to follow, typically the ball.
+ * @param time - The time instance used to scale the follow speed by delta
+ * time and blend the ball's position.
  */
 export const createCameraFollowEcsSystem = (
-  targetPosition: PositionEcsComponent,
+  target: number,
   time: Time,
 ): EcsSystem<[CameraEcsComponent, PositionEcsComponent]> => ({
   query: [cameraId, positionId],
-  update: (_world, { components: [, cameraPositions] }) => {
+  update: (world, { components: [, cameraPositions] }) => {
+    const targetPosition = getInterpolatedLocalPosition(world, target, time);
+
     for (const cameraPosition of cameraPositions) {
       const t = 1 - Math.exp(-followSpeed * time.deltaTimeInSeconds);
 
-      cameraPosition.local.x +=
-        (targetPosition.local.x - cameraPosition.local.x) * t;
-      cameraPosition.local.y +=
-        (targetPosition.local.y - cameraPosition.local.y) * t;
+      cameraPosition.local.x += (targetPosition.x - cameraPosition.local.x) * t;
+      cameraPosition.local.y += (targetPosition.y - cameraPosition.local.y) * t;
     }
   },
 });

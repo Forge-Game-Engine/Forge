@@ -49,7 +49,7 @@ describe('createRevoluteJointEcsSystem', () => {
   }
 
   it("swings a body about a pivot at its entity's origin, away from its center of mass", () => {
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
 
     const pivot = world.createEntity();
     addPositionComponent(world, pivot);

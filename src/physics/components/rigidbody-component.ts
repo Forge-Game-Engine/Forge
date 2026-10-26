@@ -1,3 +1,7 @@
+import {
+  addTransformInterpolationComponent,
+  transformInterpolationId,
+} from '../../common/components/transform-interpolation-component.js';
 import { createComponentId } from '../../ecs/ecs-component.js';
 import { EcsWorld } from '../../ecs/ecs-world.js';
 import { formatEntity } from '../../ecs/entity.js';
@@ -205,7 +209,13 @@ export const rigidBodyId =
   createComponentId<RigidBodyEcsComponent>('f-rigid-body');
 
 /**
- * Attaches a {@link RigidBodyEcsComponent} to `entity`.
+ * Attaches a {@link RigidBodyEcsComponent} to `entity`, and a
+ * `TransformInterpolationEcsComponent` unless it already has one, so the body
+ * is drawn smoothly between fixed steps once
+ * `createTransformInterpolationEcsSystem` is registered last in the
+ * fixed-update group. Remove that component
+ * (`world.removeComponent(entity, transformInterpolationId)`) to draw the body
+ * at its simulated pose.
  * @param world - The ECS world `entity` belongs to.
  * @param entity - The entity to attach the component to.
  * @param options - Options for configuring the rigid body.
@@ -252,6 +262,12 @@ export function addRigidBodyComponent(
     restTime: 0,
     sleepRecord: null,
   };
+
+  // Every body type gets it, since `type` can change after creation and a
+  // body that doesn't move is drawn at `local` either way.
+  if (!world.getComponent(entity, transformInterpolationId)) {
+    addTransformInterpolationComponent(world, entity);
+  }
 
   return world.addComponent(entity, rigidBodyId, component);
 }

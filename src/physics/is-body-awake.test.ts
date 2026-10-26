@@ -5,6 +5,7 @@ import {
   createTransformEcsSystem,
   positionId,
   rotationId,
+  Time,
 } from '../common/index.js';
 import { EcsWorld } from '../ecs/index.js';
 import {
@@ -30,7 +31,7 @@ describe('isBodyAwake', () => {
     world = new EcsWorld();
     // Game code moves a partner by writing `local`; the transform system
     // composes the `world` pose a sleeping body compares with its record.
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(new Time()));
   });
 
   function createSleepingBody(): {

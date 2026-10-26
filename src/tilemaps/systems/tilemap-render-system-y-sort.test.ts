@@ -275,7 +275,7 @@ describe('createTilemapRenderEcsSystem, y-sorted layers', () => {
   });
 
   it('gives every row entity the layer’s world transform once the transform system runs', () => {
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
 
     const { entity, layer } = addLayer();
 
@@ -783,7 +783,7 @@ describe('createTilemapRenderEcsSystem, y-sorted layers', () => {
     let material: ReturnType<typeof createMeshMaterial>;
 
     beforeEach(() => {
-      world.addSystem(createTransformEcsSystem());
+      world.addSystem(createTransformEcsSystem(time));
       world.addSystem(createRenderEcsSystem(renderContext));
       drawElements = gl.drawElements as Mock;
       material = createMeshMaterial(

@@ -1,6 +1,7 @@
 import {
   addPositionComponent,
   createTransformEcsSystem,
+  createTransformInterpolationEcsSystem,
   positionId,
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
@@ -181,7 +182,7 @@ export const createTiledMapsGame = async (
   const physics = { group: fixedUpdate };
 
   world.addSystem(createPlayerRespawnEcsSystem(), physics);
-  world.addSystem(createTransformEcsSystem(), physics);
+  world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createGravityEcsSystem(time), physics);
   createBroadPhase(world);
   world.addSystem(createBroadPhaseEcsSystem(collisionPairs), physics);
@@ -212,9 +213,10 @@ export const createTiledMapsGame = async (
     physics,
   );
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
+  world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps.
-  world.addSystem(createCameraFollowEcsSystem(renderContext));
+  world.addSystem(createCameraFollowEcsSystem(renderContext, time));
   // Edits the ground layer before the tilemap systems read it, so a toggled
   // tile draws on the frame it's clicked and collides from the next physics
   // step.
@@ -227,7 +229,7 @@ export const createTiledMapsGame = async (
   // A press lasts one frame, so it's read here and handed to the next
   // physics step through the player's `jumpRequested`.
   world.addSystem(createJumpInputEcsSystem(jumpInput));
-  world.addSystem(createTransformEcsSystem());
+  world.addSystem(createTransformEcsSystem(time));
   world.addSystem(createRenderEcsSystem(renderContext));
 
   return game;

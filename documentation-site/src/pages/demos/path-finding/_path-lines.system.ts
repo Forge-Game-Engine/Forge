@@ -1,8 +1,10 @@
 import {
   addPositionComponent,
   addRotationComponent,
+  getInterpolatedLocalPosition,
   positionId,
   rotationId,
+  Time,
 } from '@forge-game-engine/forge/common';
 import { EcsSystem, EcsWorld } from '@forge-game-engine/forge/ecs';
 import { Vector2 } from '@forge-game-engine/forge/math';
@@ -146,15 +148,15 @@ const drawUnitPaths = (
   grid: NavigationGrid,
   view: PathFindingViewEcsComponent,
   unit: number,
+  time: Time,
 ): void => {
   const agent = world.getComponent(unit, navigationAgentId);
   const lines = world.getComponent<UnitPathLinesEcsComponent>(
     unit,
     unitPathLinesId,
   );
-  const position = world.getComponent(unit, positionId);
 
-  if (!agent || !lines || !position) {
+  if (!agent || !lines || !world.getComponent(unit, positionId)) {
     return;
   }
 
@@ -168,7 +170,10 @@ const drawUnitPaths = (
   // to, then on through the remaining points.
   const smoothedPath =
     isWalking && view.showSmoothedPaths && agent.path.length > 0
-      ? [position.local, ...agent.path.slice(agent.waypointIndex)]
+      ? [
+          getInterpolatedLocalPosition(world, unit, time),
+          ...agent.path.slice(agent.waypointIndex),
+        ]
       : [];
   const rawPath = isWalking && view.showRawPaths ? lines.rawPath : [];
 
@@ -191,21 +196,31 @@ const drawUnitPaths = (
  * Register it in the default group, after the fixed steps and before the
  * frame's transform system, so the segments are drawn where it puts them on
  * the same frame. It draws the paths the agents planned in the frame's last
- * physics step, starting at each unit's `local` position: a unit is a root
- * body, so that's where it's drawn this frame, where its `world` would
- * still be a step behind.
+ * physics step, starting at each unit's interpolated position: where the
+ * frame's transform system draws the unit, between its last two physics
+ * steps.
  * @param renderContext - The render context whose white texture the lines
  * are drawn with.
+ * @param time - The time whose overstep fraction blends each unit's
+ * position.
  * @returns The ECS system.
  */
 export const createPathLinesEcsSystem = (
   renderContext: RenderContext,
+  time: Time,
 ): EcsSystem<[PathFindingLevelEcsComponent, PathFindingViewEcsComponent]> => ({
   query: [pathFindingLevelId, pathFindingViewId],
   update: (world, { components: [levels, views] }) => {
     for (let i = 0; i < levels.length; i++) {
       for (const unit of levels[i].units) {
-        drawUnitPaths(world, renderContext, levels[i].grid, views[i], unit);
+        drawUnitPaths(
+          world,
+          renderContext,
+          levels[i].grid,
+          views[i],
+          unit,
+          time,
+        );
       }
     }
   },

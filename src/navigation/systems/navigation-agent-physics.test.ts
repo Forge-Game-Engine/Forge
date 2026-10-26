@@ -84,7 +84,7 @@ describe('navigation agents with physics', () => {
     const unitRadius = 4;
 
     createBroadPhase(world);
-    world.addSystem(createTransformEcsSystem());
+    world.addSystem(createTransformEcsSystem(time));
     world.addSystem(createNavigationAgentEcsSystem(time));
     world.addSystem(createUnitVelocityEcsSystem());
     world.addSystem(createBroadPhaseEcsSystem(collisionPairs));
