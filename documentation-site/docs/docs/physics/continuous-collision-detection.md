@@ -15,17 +15,30 @@ back to the point where it first touches that collider.
 ## Registering the system
 
 Register `createContinuousCollisionEcsSystem` directly after
-`createEulerIntegrationEcsSystem`. It takes no arguments:
+`createEulerIntegrationEcsSystem`. It takes no arguments, and finds its
+targets in the world's broad phase, so the world needs one, created with
+`createBroadPhase(world)` and kept up to date by
+`createBroadPhaseEcsSystem` earlier in the same step (see
+[Finding colliding pairs](./collisions.md#finding-colliding-pairs)):
 
 ```ts
 import {
+  createBroadPhase,
+  createBroadPhaseEcsSystem,
   createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
 } from '@forge-game-engine/forge/physics';
 
+createBroadPhase(world);
+world.addSystem(createBroadPhaseEcsSystem(collisionPairs), {
+  group: fixedUpdate,
+});
+// ...
 world.addSystem(createEulerIntegrationEcsSystem(time), { group: fixedUpdate });
 world.addSystem(createContinuousCollisionEcsSystem(), { group: fixedUpdate });
 ```
+
+The system throws when the world has no broad phase.
 
 The system sweeps each circle in a straight line from its position at the
 start of the step (from `position.world` and `rotation.world`) to the
@@ -52,8 +65,11 @@ new position to `world` before any physics system reads it.
   doesn't move it. A sleeping body that gets a velocity or is moved before
   the step's integration is integrated and swept like an awake one.
 - **Targets**: static colliders (entities with no `RigidBodyEcsComponent`,
-  or a `'static'` one) of every shape, whose bounds overlap the circle's
-  path and whose category and mask let the two collide. Sensors aren't
+  or a `'static'` one) of every shape, whose `aabb` overlaps the box
+  around the circle's path and whose category and mask let the two
+  collide. The system queries the broad phase's tree of static colliders
+  with that box, so its cost depends on the static colliders near the
+  path, not on every static collider in the world. Sensors aren't
   targets. Against a `TerrainCollider`, the sweep only meets the surface,
   as [terrain collision](./terrain.md#colliding-with-terrain) does.
   Against a `ChainCollider`, it only meets edges from the side their
@@ -75,6 +91,15 @@ Polygon bodies aren't swept, so a fast `PolygonCollider` body can still
 pass into or through thin static geometry. Dynamic and kinematic bodies
 aren't targets, so two fast bodies, or a fast body and a kinematic one, can
 still pass through each other within one step.
+:::
+
+:::note
+The targets are the colliders that were static when the step's
+`createBroadPhaseEcsSystem` ran. A static collider added after that, or a
+body changed to `'static'` after that, isn't a target until the broad phase
+runs in the next step, just as its `aabb` isn't computed until then. In the
+same way, a body changed to `'dynamic'` or `'kinematic'` after that is
+still a target for other circles until then.
 :::
 
 ## Sweeping a circle yourself

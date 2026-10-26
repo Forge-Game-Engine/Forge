@@ -12,7 +12,6 @@ import {
 } from '@forge-game-engine/forge/common';
 import {
   createAngularVelocityMotorEcsSystem,
-  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
 } from '@forge-game-engine/forge/physics';
 import {
@@ -91,7 +90,6 @@ export const createTorqueGame = async (): Promise<Game> => {
   world.addSystem(createGustEcsSystem(time), physics);
   world.addSystem(createAngularVelocityMotorEcsSystem(time), physics);
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
-  world.addSystem(createContinuousCollisionEcsSystem(), physics);
   world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps, so the frame draws the latest
