@@ -202,7 +202,10 @@ export class Time {
 
   /**
    * Gets the time scale, the multiplier applied to the delta time. `1` is
-   * normal speed and `0` pauses time. Defaults to `1`.
+   * normal speed and `0` pauses time. Defaults to `1`. The scaled delta time
+   * is also what `update` adds towards fixed steps, so fixed steps run less
+   * often at a lower time scale, and none run at `0`. Their size,
+   * `fixedDeltaTimeInMilliseconds`, doesn't change.
    * @returns The time scale.
    */
   get timeScale(): number {
