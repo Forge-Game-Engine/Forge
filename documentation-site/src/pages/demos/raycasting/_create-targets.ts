@@ -78,18 +78,20 @@ function buildTargets(width: number): TargetSpec[] {
  * Creates a fixed arrangement of static circle and square "targets" for the
  * raycasting demo's ray to be cast against. None have a
  * `RigidBodyEcsComponent` - they're immovable scenery, not simulated bodies,
- * so a plain `ColliderEcsComponent` is all `raycast` needs to see them.
+ * so a plain `ColliderEcsComponent` is all `raycast` and `overlapPoint`
+ * need to find them.
  * @param world - The ECS world to add the target entities to.
  * @param camera - The camera entity whose visible width the targets are spread across.
  * @param renderContext - The render context used to load target sprites.
  * @param renderLayer - The render layer targets should be drawn on.
+ * @returns The target entities.
  */
 export async function createTargets(
   world: EcsWorld,
   camera: number,
   renderContext: RenderContext,
   renderLayer: number,
-): Promise<void> {
+): Promise<number[]> {
   const { textureCache } = renderContext;
 
   const [ballTexture, squareTexture] = await Promise.all([
@@ -111,9 +113,12 @@ export async function createTargets(
   };
 
   const { x: width } = getCameraView(world, camera, renderContext).size;
+  const targets: number[] = [];
 
   for (const target of buildTargets(width)) {
     const entity = world.createEntity();
+
+    targets.push(entity);
 
     addPositionComponent(world, entity, {
       local: Vec2.clone(target.position),
@@ -134,4 +139,6 @@ export async function createTargets(
     });
     addColliderComponent(world, entity, { collider });
   }
+
+  return targets;
 }

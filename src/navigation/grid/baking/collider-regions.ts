@@ -3,7 +3,6 @@ import { ChainCollider } from '../../../physics/colliders/chain-collider.js';
 import { CircleCollider } from '../../../physics/colliders/circle-collider.js';
 import { ColliderType } from '../../../physics/colliders/collider.js';
 import { PolygonCollider } from '../../../physics/colliders/polygon-collider.js';
-import { calculateSignedArea } from '../../../physics/colliders/polygon-math.js';
 import { TerrainCollider } from '../../../physics/colliders/terrain-collider.js';
 import { CollisionBody } from '../../../physics/types/collision-body.js';
 import { BakeRegion } from './mark-region.js';
@@ -71,32 +70,18 @@ const getTerrainRegion = (body: CollisionBody): BakeRegion => {
 
 /**
  * A chain's loops surround solid (positive signed area) or holes
- * (negative), and a lone hole is a room in unbounded solid. Loops never
- * cross, so the largest loop can't be inside another, and its sign says
- * whether the plane outside every loop is solid. A chain whose outermost
- * loops disagree, a solid island beside a separate lone hole, has no
- * consistent outside, and the largest loop decides for it.
+ * (negative), and a lone hole is a room in unbounded solid
+ * (`ChainCollider.outsideIsSolid`).
  */
 const getChainRegion = (body: CollisionBody): BakeRegion => {
   const collider = body.collider as ChainCollider;
-  let largestArea = 0;
-  let largestSignedArea = 0;
-
-  for (const loop of collider.loops) {
-    const signedArea = calculateSignedArea(loop);
-
-    if (Math.abs(signedArea) > largestArea) {
-      largestArea = Math.abs(signedArea);
-      largestSignedArea = signedArea;
-    }
-  }
 
   return {
     kind: 'loops',
     loops: collider.loops.map((loop) =>
       loop.map((point) => toWorld(point, body.position, body.rotation)),
     ),
-    outsideIsSolid: largestSignedArea < 0,
+    outsideIsSolid: collider.outsideIsSolid,
   };
 };
 

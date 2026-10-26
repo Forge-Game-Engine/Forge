@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Vec2, Vector2 } from '../../math/index.js';
 import { aabbsOverlap } from '../collision/aabb-overlap.js';
-import { raycastChain } from '../raycast/raycast-chain.js';
+import { raycastChain } from '../queries/raycast-chain.js';
 import { ChainCollider } from './chain-collider.js';
 
 const square: Vector2[] = [
@@ -211,6 +211,34 @@ describe('ChainCollider', () => {
             ],
           ]),
       ).not.toThrow();
+    });
+  });
+
+  describe('outsideIsSolid', () => {
+    const hole = (loop: Vector2[]): Vector2[] => [...loop].reverse();
+    const room: Vector2[] = [
+      { x: 2, y: 2 },
+      { x: 8, y: 2 },
+      { x: 8, y: 8 },
+      { x: 2, y: 8 },
+    ];
+
+    it('is false for a chain with no loops', () => {
+      expect(new ChainCollider([]).outsideIsSolid).toBe(false);
+    });
+
+    it('is false for a solid loop', () => {
+      expect(new ChainCollider([square]).outsideIsSolid).toBe(false);
+    });
+
+    it('is true for a lone hole', () => {
+      expect(new ChainCollider([hole(room)]).outsideIsSolid).toBe(true);
+    });
+
+    it('is false for a solid loop with a hole inside it', () => {
+      expect(new ChainCollider([square, hole(room)]).outsideIsSolid).toBe(
+        false,
+      );
     });
   });
 
