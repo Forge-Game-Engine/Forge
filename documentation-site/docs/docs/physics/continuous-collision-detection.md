@@ -19,7 +19,7 @@ Register `createContinuousCollisionEcsSystem` directly after
 targets in the world's broad phase, so the world needs one, created with
 `createBroadPhase(world)` and kept up to date by
 `createBroadPhaseEcsSystem` earlier in the same step (see
-[Finding colliding pairs](./collisions.md#finding-colliding-pairs)):
+[Creating the broad phase](./broad-phase.md#creating-the-broad-phase)):
 
 ```ts
 import {

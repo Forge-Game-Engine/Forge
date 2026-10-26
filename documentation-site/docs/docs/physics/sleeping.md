@@ -195,7 +195,7 @@ collision tests:
 The narrow phase tests the pair as usual when either entity is awake (an
 awake body hitting the pile is how the pile wakes), when the sleeping
 body's record has no manifolds for the pair, and when either collider is a
-sensor. When the broad phase stops listing the pair, because their bounds
+sensor. When the [broad phase](./broad-phase.md) stops listing the pair, because their bounds
 no longer overlap or one of them was removed or lost its collider, the
 contact ends and the sleeping body wakes.
 

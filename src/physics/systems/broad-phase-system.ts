@@ -31,10 +31,17 @@ import { CollisionPair } from '../types/collision-pair.js';
  *
  * A collider entity needs a `PositionEcsComponent` and a
  * `ColliderEcsComponent` to take part; `RotationEcsComponent` is optional,
- * and an entity without one is treated as unrotated. Register it in the
- * fixed-update group after that group's `createTransformEcsSystem`, which
- * computes `PositionEcsComponent.world`/`RotationEcsComponent.world`, since
- * local values are only meaningful to the parenting system. The `aabb`s it
+ * and an entity without one is treated as unrotated. Its proxy is created
+ * on the first update after it has both components and a finite `aabb`,
+ * moved to the other tree on the first update after its body type changes
+ * between static and kinematic or dynamic, and destroyed, with its pairs,
+ * on the first update after it loses either component, is removed, or its
+ * `aabb` stops being finite (an empty chain, a `NaN` position).
+ *
+ * Register it in the fixed-update group after that group's
+ * `createTransformEcsSystem`, which computes
+ * `PositionEcsComponent.world`/`RotationEcsComponent.world`, since local
+ * values are only meaningful to the parenting system. The `aabb`s it
  * writes then describe the colliders as of the latest step, which is what
  * a raycast or another query made outside the step sees.
  * @param collisionPairs - The array the system clears and refills with the

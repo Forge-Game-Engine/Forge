@@ -27,7 +27,7 @@ Forge is a browser-based, code-only game engine built with TypeScript. It provid
 
 - **ECS (Entity-Component-System)**: Core architecture pattern
 - **Rendering**: WebGL2-based rendering system
-- **Physics**: Native 2D physics engine (rigid bodies, collision detection/resolution, gravity)
+- **Physics**: Native 2D physics engine (rigid bodies, a persistent broad phase over dynamic AABB trees, collision detection/resolution, gravity)
 - **Audio**: Web Audio mixer with buses, sound assets, one-shot playback and entity-bound sounds
 - **Animations**: Robust animation system
 - **Input**: Keyboard, mouse, and gamepad input handling
@@ -1102,6 +1102,22 @@ with its `sleepRecord`, so nothing else needs a `wakeUp` call:
   partner's property) goes in `RigidBodySleepRecord` and the
   `isSleepingBodyDisturbed` comparison in `src/physics/is-body-awake.ts`,
   or a sleeping island ignores the change.
+
+### Broad Phase
+
+A world with physics has one `BroadPhaseEcsComponent`, on the entity
+`createBroadPhase(world)` creates. `createBroadPhaseEcsSystem` is the only
+writer of it and of `ColliderEcsComponent.aabb`. Everything else that needs
+colliders by location (continuous collision, `raycast`, `queryAabb`,
+`overlapPoint`) finds it with `findBroadPhase(world)` and only reads its
+trees, so it sees the colliders as of the broad phase's last run. A new
+system that needs spatial lookups does the same: it never creates, moves or
+destroys a proxy, and its factory never takes a broad phase as an argument.
+
+Two static colliders (no rigid body, or a `'static'` one) are never
+paired, so something game code moves on purpose should be `'kinematic'`.
+`documentation-site/docs/docs/physics/broad-phase.md` covers the pairing
+rules, fat boxes and collision cost.
 
 ### GPU Resources and Context Loss
 

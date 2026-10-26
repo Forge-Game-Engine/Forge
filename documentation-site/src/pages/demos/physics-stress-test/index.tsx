@@ -45,6 +45,7 @@ export default function PhysicsStressTest(): JSX.Element {
       docLinks={[
         { label: 'Physics', to: '/docs/docs/physics' },
         { label: 'Collisions', to: '/docs/docs/physics/collisions' },
+        { label: 'Broad Phase', to: '/docs/docs/physics/broad-phase' },
         { label: 'Terrain', to: '/docs/docs/physics/terrain' },
         { label: 'Time', to: '/docs/docs/common/time' },
       ]}
