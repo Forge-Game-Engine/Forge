@@ -1,0 +1,17 @@
+.readout {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.3rem 0.75rem;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.readout dt {
+  font-weight: 600;
+}
+
+.readout dd {
+  margin: 0;
+  font-family: var(--ifm-font-family-monospace);
+  text-align: right;
+}

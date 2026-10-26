@@ -323,6 +323,7 @@ substeps
 supercompression
 supercover
 swiftshader
+teleporting
 texel
 texels
 thresholded

@@ -104,6 +104,13 @@ export const demos: Demo[] = [
     categories: ['physics'],
   },
   {
+    slug: 'fixed-timestep',
+    title: 'Fixed Timestep',
+    description:
+      'Two rows of the same pendulum and bouncing ball run in fixed steps, one drawn interpolated between steps and one not, with a step rate selector and a hitch button.',
+    categories: ['physics'],
+  },
+  {
     slug: 'revolute-joint',
     title: 'Revolute Joint (Hinge)',
     description:
