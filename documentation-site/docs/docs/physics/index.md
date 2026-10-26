@@ -26,8 +26,12 @@ The physics module has these parts:
 - **Forces**: gravity, impulses, torque, angular velocity motors, springs,
   dampers and explosions change a body's velocity. See
   [Applying Forces](./forces.md).
-- **Raycasting**: [`raycast`](/Forge/docs/api/functions/raycast) finds the
-  colliders a line segment crosses. See [Raycasting](./raycasting.md).
+- **Queries**: [`raycast`](/Forge/docs/api/functions/raycast) finds the
+  colliders a line segment crosses,
+  [`queryAabb`](/Forge/docs/api/functions/queryAabb) the colliders whose
+  bounds overlap a box, and
+  [`overlapPoint`](/Forge/docs/api/functions/overlapPoint) the colliders
+  that contain a point. See [Queries](./queries.md).
 - **Joints**: revolute (hinge) and prismatic (slider) joints constrain how
   two bodies move relative to each other. See [Joints](./joints.md).
 - **Terrain**: a

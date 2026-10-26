@@ -84,9 +84,9 @@ export const demos: Demo[] = [
   },
   {
     slug: 'raycasting',
-    title: 'Raycasting',
+    title: 'Raycasting and point queries',
     description:
-      'Move the mouse to cast a ray toward the cursor and see where it first hits a collider.',
+      'Move the mouse to cast a ray toward the cursor and see where it first hits a collider, and hover a target to highlight it.',
     categories: ['physics'],
   },
   {

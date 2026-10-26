@@ -32,6 +32,12 @@ How far a force moves a body depends on the body's mass and moment of
 inertia, which come from its collider (see
 [Mass and center of mass](./rigid-bodies.md#mass-and-center-of-mass)).
 
+`applyImpulse`, `applyTorque` and `applyExplosiveForce` also act on
+[sleeping bodies](./sleeping.md). A sleeping body whose `velocity` or
+`angularVelocity` they change counts as awake, so the next integration pass
+moves it, and the sleep system wakes its island on its next run. A torque
+on a body with locked rotation changes nothing, so the body stays asleep.
+
 The examples on this page register the physics systems in `fixedUpdate`,
 the group [`registerFixedUpdate`](/Forge/docs/api/functions/registerFixedUpdate)
 returns (see
@@ -64,8 +70,8 @@ Gravity is per entity, so each body can have a different `amount`, or none.
 gravity.amount.y = -600;
 ```
 
-Changing `amount` on a sleeping body, or adding or removing its
-`GravityEcsComponent`, wakes it and every body it rests on or against on
+Gravity isn't applied to a sleeping body. Changing `amount` on a sleeping
+body, or adding or removing its `GravityEcsComponent`, wakes its island on
 the sleep system's next run (see
 [Waking a body](./sleeping.md#waking-a-body)).
 

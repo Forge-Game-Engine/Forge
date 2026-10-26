@@ -70,7 +70,8 @@ A terrain is one-sided. A body that gets below the surface is pushed back
 up through it, and a body below the slab's bottom edge doesn't collide with
 it. Use a [`ChainCollider`](./chain-colliders.md) for walls, ceilings,
 overhangs or platforms that bodies hit from below. A ray can still hit the
-terrain from any side (see [Raycasting](./raycasting.md)).
+terrain from any side, and `overlapPoint` finds it at any point in its slab
+(see [Queries](./queries.md)).
 :::
 
 Two `TerrainCollider`s, or a `TerrainCollider` and a `ChainCollider`, never

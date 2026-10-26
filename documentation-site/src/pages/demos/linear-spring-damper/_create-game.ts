@@ -10,7 +10,6 @@ import {
   registerFixedUpdate,
 } from '@forge-game-engine/forge/common';
 import {
-  createContinuousCollisionEcsSystem,
   createEulerIntegrationEcsSystem,
   createGravityEcsSystem,
   createLinearDamperEcsSystem,
@@ -48,15 +47,13 @@ export const createLinearSpringDamperGame = async (): Promise<Game> => {
   // runs before `createTransformEcsSystem`, which turns every entity's
   // `local` position into the `world` position that the spring/damper
   // systems read. That way a replayed disturbance is reflected in this same
-  // step's forces, and continuous collision detection doesn't treat the
-  // jump as motion.
+  // step's forces.
   world.addSystem(createResetEcsSystem(time), physics);
   world.addSystem(createTransformEcsSystem(time), physics);
   world.addSystem(createGravityEcsSystem(time), physics);
   world.addSystem(createLinearSpringEcsSystem(time), physics);
   world.addSystem(createLinearDamperEcsSystem(time), physics);
   world.addSystem(createEulerIntegrationEcsSystem(time), physics);
-  world.addSystem(createContinuousCollisionEcsSystem(), physics);
   world.addSystem(createTransformInterpolationEcsSystem(), physics);
 
   // Once per frame, after the fixed steps. `createSpringLineEcsSystem`

@@ -64,6 +64,19 @@ export class ChainCollider extends Collider {
   public readonly outline: EdgeChain;
 
   /**
+   * Whether the plane outside every loop is solid: `true` when the loop
+   * with the largest area is a hole, as a room carved out of solid is.
+   * Loops never cross, so the largest loop isn't inside another, and its
+   * winding says what lies outside them all. Loops that disagree (a solid
+   * island beside a separate lone hole) have no consistent outside, and the
+   * largest decides. `false` for a chain with no loops.
+   *
+   * Navigation baking and `containsPointChain` both read it, so they agree
+   * on which points are inside the chain's solid.
+   */
+  public readonly outsideIsSolid: boolean;
+
+  /**
    * Creates a new ChainCollider instance.
    * @param loops - The closed loops, in the entity's local space, each
    * wound with positive signed area around solid and negative signed area
@@ -86,6 +99,7 @@ export class ChainCollider extends Collider {
 
     this.loops = clonedLoops;
     this.outline = createClosedEdgeChain(clonedLoops);
+    this.outsideIsSolid = isOutsideSolid(clonedLoops);
 
     validateNoCrossings(this.outline, clonedLoops);
   }
@@ -103,6 +117,26 @@ export class ChainCollider extends Collider {
 
     return transformBounds(this.outline.bounds, position, rotation);
   }
+}
+
+/**
+ * Finds whether the plane outside every loop is solid, from the sign of the
+ * loop with the largest area.
+ */
+function isOutsideSolid(loops: readonly (readonly Vector2[])[]): boolean {
+  let largestArea = 0;
+  let largestSignedArea = 0;
+
+  for (const loop of loops) {
+    const signedArea = calculateSignedArea(loop);
+
+    if (Math.abs(signedArea) > largestArea) {
+      largestArea = Math.abs(signedArea);
+      largestSignedArea = signedArea;
+    }
+  }
+
+  return largestSignedArea < 0;
 }
 
 function validateLoop(loop: readonly Vector2[], loopIndex: number): void {

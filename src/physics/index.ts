@@ -8,7 +8,7 @@ export * from './collision/index.js';
 export * from './components/index.js';
 export { isBodyAwake } from './is-body-awake.js';
 export * from './joints/index.js';
-export * from './raycast/index.js';
+export * from './queries/index.js';
 export * from './rigid-body-mass-data.js';
 export * from './solve-soft-constraint.js';
 export * from './systems/index.js';

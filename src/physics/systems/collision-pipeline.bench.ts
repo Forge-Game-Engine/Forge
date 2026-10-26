@@ -11,6 +11,11 @@
  * so every timed tick only checks that nothing changed. The "10% moving"
  * scenes move their bodies two radii every tick, far enough to leave their
  * padded ("fat") boxes in the trees.
+ *
+ * The "continuous collision" cases time the continuous collision system
+ * alone, sweeping a fixed group of fast circles through a grid of static
+ * boxes that grows away from them, so they show how its cost depends on
+ * static colliders far from the moving ones.
  */
 import { bench, describe } from 'vitest';
 import {
@@ -31,6 +36,7 @@ import { addRigidBodyComponent } from '../components/rigidbody-component.js';
 import { CollisionManifold } from '../types/collision-manifold.js';
 import { CollisionPair } from '../types/collision-pair.js';
 import { createBroadPhaseEcsSystem } from './broad-phase-system.js';
+import { createContinuousCollisionEcsSystem } from './continuous-collision-system.js';
 import { createNarrowPhaseEcsSystem } from './narrow-phase-system.js';
 
 const circleRadius = 10;
@@ -301,3 +307,103 @@ for (const includeNarrowPhase of [true, false]) {
     );
   });
 }
+
+const sweptCircleCount = 200;
+const sweptCircleRadius = 5;
+const sweepCellSize = 60;
+const sweepBoxSize = 20;
+const sweepDistance = sweepCellSize / 2;
+
+// The circles stay in the same 10 x 10 cells of the grid in every scene, so
+// the boxes near their paths are the same and only far boxes are added.
+const sweptCellsPerSide = 10;
+
+interface SweepScene {
+  world: EcsWorld;
+  circlePositions: PositionEcsComponent[];
+}
+
+/**
+ * Builds a grid of `boxCount` static boxes, one at each cell corner, with
+ * fast circles between them in the grid's first cells. Each circle moves
+ * half a cell to the right per tick; its row is jittered, so about a
+ * quarter of them clip a box and are stopped.
+ */
+function createSweepScene(boxCount: number): SweepScene {
+  const random = new Random(`continuous collision ${boxCount}`);
+  const world = new EcsWorld();
+  const columns = Math.ceil(Math.sqrt(boxCount));
+
+  createBroadPhase(world);
+
+  for (let i = 0; i < boxCount; i++) {
+    const entity = world.createEntity();
+
+    addPositionComponent(world, entity, {
+      local: {
+        x: (i % columns) * sweepCellSize,
+        y: Math.floor(i / columns) * sweepCellSize,
+      },
+      isStatic: true,
+    });
+    addRotationComponent(world, entity);
+    addColliderComponent(world, entity, {
+      collider: new PolygonCollider(boxVertices(sweepBoxSize)),
+    });
+  }
+
+  const circlePositions: PositionEcsComponent[] = [];
+
+  for (let i = 0; i < sweptCircleCount; i++) {
+    const entity = world.createEntity();
+    const column = random.randomInt(0, sweptCellsPerSide - 1);
+    const row = random.randomInt(0, sweptCellsPerSide - 1);
+    const jitter = (sweepCellSize - sweepBoxSize) / 2;
+
+    circlePositions.push(
+      addPositionComponent(world, entity, {
+        local: {
+          x: (column + 0.5) * sweepCellSize,
+          y: (row + 0.5) * sweepCellSize + random.randomFloat(-jitter, jitter),
+        },
+      }),
+    );
+    addRotationComponent(world, entity);
+    addColliderComponent(world, entity, {
+      collider: new CircleCollider(sweptCircleRadius),
+    });
+    addRigidBodyComponent(world, entity);
+  }
+
+  // One warm-up tick computes every `world` position, `aabb` and tree, then
+  // only the continuous collision system runs, so every timed tick sweeps
+  // the same circles from the same start.
+  const transformSystem = createTransformEcsSystem(new Time());
+  const broadPhaseSystem = createBroadPhaseEcsSystem([]);
+
+  world.addSystem(transformSystem);
+  world.addSystem(broadPhaseSystem);
+  world.update();
+  world.removeSystem(transformSystem);
+  world.removeSystem(broadPhaseSystem);
+  world.addSystem(createContinuousCollisionEcsSystem());
+
+  return { world, circlePositions };
+}
+
+describe('continuous collision: fast circles among static boxes', () => {
+  for (const boxCount of [500, 2_000, 10_000]) {
+    const { world, circlePositions } = createSweepScene(boxCount);
+
+    bench(`${sweptCircleCount} fast circles, ${boxCount} static boxes`, () => {
+      // Stands in for integration: each circle moves from its `world`
+      // position, which nothing changes between ticks.
+      for (const position of circlePositions) {
+        position.local.x = position.world.x + sweepDistance;
+        position.local.y = position.world.y;
+      }
+
+      world.update();
+    });
+  }
+});

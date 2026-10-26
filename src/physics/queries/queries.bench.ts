@@ -1,9 +1,10 @@
 /**
- * Times `raycast` over repeatable scenes of growing collider counts, so a
- * change to it can be compared against the numbers it replaces. Every scene
- * has the same density of colliders and every ray has the same length, so
- * each ray crosses about as many colliders in every scene: the time per ray
- * should stay roughly flat as the scene grows.
+ * Times `raycast`, `queryAabb` and `overlapPoint` over repeatable scenes of
+ * growing collider counts, so a change to them can be compared against the
+ * numbers it replaces. Every scene has the same density of colliders, and
+ * every ray has the same length and every box the same size, so each query
+ * reaches about as many colliders in every scene: the time per query should
+ * stay roughly flat as the scene grows.
  *
  * Each scene is built and ticked once before timing, so the broad phase's
  * trees are built before the first timed call. Nothing moves afterwards,
@@ -24,6 +25,9 @@ import { PolygonCollider } from '../colliders/polygon-collider.js';
 import { addColliderComponent } from '../components/collider-component.js';
 import { addRigidBodyComponent } from '../components/rigidbody-component.js';
 import { createBroadPhaseEcsSystem } from '../systems/broad-phase-system.js';
+import { Aabb } from '../types/aabb.js';
+import { overlapPoint } from './overlap-point.js';
+import { queryAabb } from './query-aabb.js';
 import { raycast } from './raycast.js';
 
 const colliderSize = 10;
@@ -34,6 +38,9 @@ const areaPerColliderSide = 40;
 
 const rayCount = 100;
 const rayLength = 400;
+const boxCount = 100;
+const boxSize = 200;
+const pointCount = 1_000;
 
 interface Ray {
   start: Vector2;
@@ -43,6 +50,8 @@ interface Ray {
 interface Scene {
   world: EcsWorld;
   rays: Ray[];
+  boxes: Aabb[];
+  points: Vector2[];
 }
 
 function boxVertices(size: number): Vector2[] {
@@ -121,6 +130,30 @@ function createRays(random: Random, halfSide: number): Ray[] {
   return rays;
 }
 
+function createPoints(
+  random: Random,
+  halfSide: number,
+  count: number,
+): Vector2[] {
+  return Array.from({ length: count }, () => ({
+    x: random.randomFloat(-halfSide, halfSide),
+    y: random.randomFloat(-halfSide, halfSide),
+  }));
+}
+
+/**
+ * Makes {@link boxCount} boxes of {@link boxSize}, each centered on a random
+ * point in the square.
+ */
+function createBoxes(random: Random, halfSide: number): Aabb[] {
+  const half = boxSize / 2;
+
+  return createPoints(random, halfSide, boxCount).map(({ x, y }) => ({
+    min: { x: x - half, y: y - half },
+    max: { x: x + half, y: y + half },
+  }));
+}
+
 function createScene(name: string, colliderCount: number): Scene {
   const random = new Random(name);
   const halfSide = (Math.sqrt(colliderCount) * areaPerColliderSide) / 2;
@@ -135,24 +168,59 @@ function createScene(name: string, colliderCount: number): Scene {
   world.update();
 
   const rays = createRays(random, halfSide);
+  const boxes = createBoxes(random, halfSide);
+  const points = createPoints(random, halfSide, pointCount);
   const hitCount = rays.reduce(
     (total, { start, end }) => total + raycast(world, start, end).length,
     0,
   );
+  const boxHitCount = boxes.reduce(
+    (total, box) => total + queryAabb(world, box).length,
+    0,
+  );
+  const pointHitCount = points.reduce(
+    (total, point) => total + overlapPoint(world, point).length,
+    0,
+  );
 
-  console.log(`${name}: ${hitCount / rayCount} hits per ray`);
+  console.log(
+    `${name}: ${hitCount / rayCount} hits per ray, ${boxHitCount / boxCount} per box, ${pointHitCount / pointCount} per point`,
+  );
 
-  return { world, rays };
+  return { world, rays, boxes, points };
 }
 
-describe(`raycast: ${rayCount} rays`, () => {
-  for (const colliderCount of [1_000, 4_000, 16_000]) {
-    const name = `${colliderCount} colliders`;
-    const { world, rays } = createScene(name, colliderCount);
+const scenes = [1_000, 4_000, 16_000].map((colliderCount) => {
+  const name = `${colliderCount} colliders`;
 
+  return { name, ...createScene(name, colliderCount) };
+});
+
+describe(`raycast: ${rayCount} rays`, () => {
+  for (const { name, world, rays } of scenes) {
     bench(name, () => {
       for (const { start, end } of rays) {
         raycast(world, start, end);
+      }
+    });
+  }
+});
+
+describe(`queryAabb: ${boxCount} boxes`, () => {
+  for (const { name, world, boxes } of scenes) {
+    bench(name, () => {
+      for (const box of boxes) {
+        queryAabb(world, box);
+      }
+    });
+  }
+});
+
+describe(`overlapPoint: ${pointCount} points`, () => {
+  for (const { name, world, points } of scenes) {
+    bench(name, () => {
+      for (const point of points) {
+        overlapPoint(world, point);
       }
     });
   }
