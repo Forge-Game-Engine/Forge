@@ -1023,9 +1023,11 @@ go in the fixed-update group; systems that read `TriggerAction.isTriggered`
 stay in the default group and hand a press to a fixed-step system through a
 request field (like `wakeRequested`).
 `documentation-site/docs/docs/common/transforms.md` covers the ordering and
-following other entities, and
+following other entities,
 `documentation-site/docs/docs/physics/index.md` covers the physics
-registration and where game systems go.
+registration, and `documentation-site/docs/docs/physics/fixed-timestep.md`
+covers where game systems go, choosing a step rate and catching up after
+long frames.
 
 ### Angles and Directions
 
