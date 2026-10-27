@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **create:** A Vite + TypeScript starter project for `@forge-game-engine/create` to copy: a game with a camera and a sprite you move with WASD or the arrow keys, through an `Axis2dAction` and a small player-movement system that writes `position.local`. It runs with `npm run dev` and builds with `npm run build`
+
 ## [0.27.1] - 2026-10-26
 
 #### Added
