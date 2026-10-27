@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+
+- **create:** `@forge-game-engine/create`, the package `npm create @forge-game-engine@latest [directory]` runs (`pnpm`, `yarn` and `bun create` work too). It copies a starter project into the directory, asking for one when none is given (default `forge-game`, `.` for the current directory) and asking before writing into a directory that isn't empty (it aborts without a terminal). It names the project's `package.json` after the directory, pins its `@forge-game-engine/forge` dependency to the engine release the create package matches, and prints the commands to install and run it with the package manager that ran it. The starter project itself is still a placeholder
+
 ## [0.27.1] - 2026-10-26
 
 #### Added

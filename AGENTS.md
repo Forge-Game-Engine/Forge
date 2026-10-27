@@ -216,6 +216,8 @@ unattended:
 
 /demo                      # Demo application
 /documentation-site        # Docusaurus documentation
+/packages
+  /create                  # @forge-game-engine/create, the CLI `npm create @forge-game-engine` runs (see "Create Package" below)
 /scripts                   # Build and utility scripts
 /assets                    # Static assets (images, etc.)
 /design                    # Design docs / RFCs for not-yet-built subsystems
@@ -235,6 +237,27 @@ the _why_ of the code it sits next to in a way that stands on its own - a
 reader with no access to `/design` (or to a since-superseded plan inside it)
 must still be able to follow the reasoning. If a design document's rationale
 is worth keeping, restate it in the comment; don't point at the document.
+
+### Create Package
+
+`packages/create` is a second npm package, `@forge-game-engine/create`.
+`npm create @forge-game-engine` (and `pnpm`/`yarn`/`bun create`) runs its
+`create-forge` bin, which copies `template/` into a new directory, renames
+`_gitignore` to `.gitignore` (npm leaves `.gitignore` files out of a
+published package), names the copied `package.json` after the directory
+and pins its `@forge-game-engine/forge` dependency to the create package's
+own `version`. That version is always the engine's, so a project gets the
+engine release its template was written for.
+
+- It's plain Node ESM with no build step and no runtime dependencies:
+  `index.js` is the bin, and `create.js` holds the logic its tests import.
+  JSDoc types are checked by `packages/create/tsconfig.json`, which
+  `npm run check-types` runs.
+- `npm run lint` and `npm test` cover it (its tests are `*.test.js` next to
+  the code). `template/` is a project of its own, copied as is: ESLint
+  ignores it, and no root `tsconfig` or Vite config includes it.
+- It isn't an npm workspace, so the root `npm ci` never installs the
+  template's dependencies.
 
 ### Module Exports
 

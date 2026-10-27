@@ -6,7 +6,7 @@ export default defineConfig({
     host: '127.0.0.1',
   },
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'packages/create/*.test.js'],
     environment: 'jsdom',
     setupFiles: ['setup-tests.ts'],
     benchmark: {

@@ -1,0 +1,33 @@
+{
+  "name": "@forge-game-engine/create",
+  "version": "0.27.1",
+  "description": "Create a new Forge game project.",
+  "type": "module",
+  "bin": {
+    "create-forge": "index.js"
+  },
+  "files": [
+    "index.js",
+    "create.js",
+    "template"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/forge-game-engine/Forge.git",
+    "directory": "packages/create"
+  },
+  "keywords": [
+    "forge",
+    "game-engine",
+    "create",
+    "scaffold"
+  ],
+  "license": "MIT"
+}
