@@ -1,0 +1,12 @@
+{
+  "name": "forge-game",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node -e \"console.log('The Forge starter template is a placeholder for now.')\""
+  },
+  "dependencies": {
+    "@forge-game-engine/forge": "0.0.0"
+  }
+}

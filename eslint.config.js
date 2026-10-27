@@ -10,7 +10,13 @@ import pluginJest from 'eslint-plugin-jest';
 
 export default tseslint.config(
   {
-    ignores: ['**/*.config.js', '**/*.snippet.ts'],
+    ignores: [
+      '**/*.config.js',
+      '**/*.snippet.ts',
+      // Copied into new projects as is, with its own package.json and
+      // tsconfig.json; its dependencies aren't installed here.
+      'packages/create/template/**',
+    ],
   },
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
@@ -128,8 +134,17 @@ export default tseslint.config(
   },
 
   {
+    // JavaScript can't carry type annotations; packages/create/tsconfig.json
+    // checks its JSDoc types instead.
+    files: ['packages/create/**/*.js'],
+    rules: {
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+    },
+  },
+
+  {
     // update this to match your test files
-    files: ['**/*.spec.ts', '**/*.test.ts'],
+    files: ['**/*.spec.ts', '**/*.test.ts', '**/*.test.js'],
     plugins: { jest: pluginJest },
     languageOptions: {
       globals: pluginJest.environments.globals.globals,
