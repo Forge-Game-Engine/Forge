@@ -20,23 +20,9 @@ Entity-Component-System (ECS) core, physics, and more.
 
 ### Install
 
-Forge is published to GitHub Packages, so npm needs a GitHub token before it
-can install it:
-
-1. [Create a classic personal access token](https://github.com/settings/tokens/new)
-   with the `read:packages` scope.
-2. Log in to the GitHub npm registry for the `@forge-game-engine` scope.
-   Enter your GitHub username, and the token as the password:
-
-   ```sh
-   npm login --scope=@forge-game-engine --registry=https://npm.pkg.github.com
-   ```
-
-3. Install the package:
-
-   ```sh
-   npm install @forge-game-engine/forge
-   ```
+```sh
+npm install @forge-game-engine/forge
+```
 
 ### Draw a sprite
 
@@ -88,3 +74,13 @@ commit and changelog conventions.
 
 Forge's demos and website use art, audio and fonts by many creators. See
 [Credits and attributions](https://forge-game-engine.github.io/Forge/docs/credits).
+
+## License
+
+Forge is released under the [MIT License](./LICENSE) and is provided as is,
+without warranty of any kind. The default font atlas the package ships in
+`assets/fonts/default` is generated from Liberation Sans and is licensed
+under the SIL Open Font License 1.1; see
+[its license](./assets/fonts/default/License.txt).
+
+To report a security vulnerability, see [SECURITY.md](./SECURITY.md).

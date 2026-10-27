@@ -13,3 +13,8 @@ updates:
     directory: '/documentation-site' # Location of package manifests
     schedule:
       interval: 'weekly'
+  # Keeps the actions the workflows pin to commit SHAs up to date.
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'

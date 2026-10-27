@@ -144,7 +144,15 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/forge-game-engine/Forge.git"
+    "url": "git+https://github.com/Forge-Game-Engine/Forge.git"
+  },
+  "homepage": "https://forge-game-engine.github.io/Forge/",
+  "bugs": {
+    "url": "https://github.com/Forge-Game-Engine/Forge/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "dev": "vite --config vite.config.demo.js",
@@ -170,9 +178,19 @@
     "changelog:promote": "node scripts/changelog/promote-unreleased.mjs",
     "prepare": "husky"
   },
-  "author": "",
-  "license": "MIT",
-  "description": "",
+  "author": "Storm Muller",
+  "license": "(MIT AND OFL-1.1)",
+  "description": "A browser-based, code-only TypeScript game engine: ECS, WebGL2 rendering, 2D physics, audio, input, UI and more.",
+  "keywords": [
+    "game-engine",
+    "game",
+    "ecs",
+    "webgl2",
+    "2d",
+    "physics",
+    "typescript",
+    "browser"
+  ],
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
     "@commitlint/cli": "^21.2.1",

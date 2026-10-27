@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Changed
+
+- **build:** Forge is published to the public npm registry instead of GitHub Packages, so `npm install @forge-game-engine/forge` works without a GitHub token or `npm login`. Remove the `@forge-game-engine:registry=https://npm.pkg.github.com` line from your `.npmrc`, and the `//npm.pkg.github.com/:_authToken` line if you added one for Forge; later versions aren't published to GitHub Packages. Releases are published from GitHub Actions with npm provenance, which `npm audit signatures` verifies. The package's `license` is now `(MIT AND OFL-1.1)`, since it ships a font atlas generated from Liberation Sans under the SIL Open Font License
+
 ## [0.27.1] - 2026-10-26
 
 #### Added
