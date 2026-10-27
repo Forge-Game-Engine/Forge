@@ -246,8 +246,10 @@ is worth keeping, restate it in the comment; don't point at the document.
 `_gitignore` to `.gitignore` (npm leaves `.gitignore` files out of a
 published package), names the copied `package.json` after the directory
 and pins its `@forge-game-engine/forge` dependency to the create package's
-own `version`. That version is always the engine's, so a project gets the
-engine release its template was written for.
+own `version`, so a project gets the engine release its template was
+written for. That only holds while the two packages share a version:
+`create-release.yml` doesn't bump `packages/create/package.json` yet, so
+until it does, a release has to bump it to the engine's new version too.
 
 - It's plain Node ESM with no build step and no runtime dependencies:
   `index.js` is the bin, and `create.js` holds the logic its tests import.
