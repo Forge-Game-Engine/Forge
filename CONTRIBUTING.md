@@ -43,6 +43,9 @@ this repo, but it's an equally good reference for human contributors.
    update the corresponding page.
 5. Add a `CHANGELOG.md` entry if required — see below.
 
+By contributing, you agree that your contributions are licensed under the
+project's [MIT License](./LICENSE).
+
 Forge is pre-1.0 and doesn't keep backwards compatibility. When fixing a bug,
 change the behavior outright rather than adding an option, deprecated alias
 or fallback that preserves the old behavior. See AGENTS.md's
@@ -124,6 +127,53 @@ and doesn't push, approve or block merging. New commits aren't reviewed
 again automatically: run the `pr-reviewer` agent locally (in Claude Code)
 to review them. Mentioning `@claude` on the pull request asks Claude to
 change it, not to review it.
+
+## Releasing
+
+`@forge-game-engine/forge` is published to the public npm registry
+(npmjs.com) by the "Create Release" workflow
+(`.github/workflows/create-release.yml`) and nothing else. It uses npm
+trusted publishing, so no npm token exists anywhere, and every release
+carries npm provenance. Nobody publishes from their own machine:
+`publishConfig.provenance` in `package.json` makes a local `npm publish`
+fail, and the package refuses token publishing.
+
+A release needs two approvals from a maintainer:
+
+1. **Actions → Create Release → Run workflow** on `dev`, with the release
+   type. The `prepare` job bumps the version, installs dependencies without
+   lifecycle scripts, checks their registry signatures, promotes the
+   changelog, builds and packs the package. Its run summary shows the
+   commit it built and the tarball's integrity. It holds no secrets.
+2. The `stage` job stages that tarball on npm. A staged version can't be
+   installed yet. Open it on npmjs.com (or run
+   `npm stage list @forge-game-engine/forge`) and check that its version is
+   the one in the run summary, its provenance links to the run you started
+   and the commit the summary shows, and its integrity matches the summary.
+   If anything is off, reject it. Otherwise approve it with your second
+   factor; that's when it goes live.
+3. Approve the run's `release` environment. The `release-commit` job checks
+   that the version is live on npm, then commits the version bump and
+   changelog, tags it and pushes `main`, `dev` and the tag in one atomic
+   push. Pushing `main` deploys the docs.
+
+When a run stops partway:
+
+- A run that fails before `stage` changed nothing. Fix the cause and run it
+  again.
+- A staged version that's rejected or never approved leaves no commit or
+  tag behind, and the next run stages the same version number. If npm
+  refuses to reuse it, merge a pull request that bumps `package.json` past
+  it.
+- `release-commit`'s push is atomic: it either pushed `main`, `dev` and the
+  tag, or none of them. If it failed because you approved it before the
+  npm approval landed, use **Re-run failed jobs**. If the push was rejected
+  because `dev` moved in the meantime, record the release by hand: check
+  out the commit the run released (in its summary), apply the run's
+  `release-files` artifact, commit and tag it, push `main` and the tag
+  together
+  (`git push --atomic origin HEAD:refs/heads/main refs/tags/v<version>`),
+  then merge that commit into `dev` through a pull request.
 
 ## Handing an issue to Claude
 

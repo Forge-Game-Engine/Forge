@@ -563,6 +563,13 @@ everything under `[Unreleased]` into a new `## [x.y.z] - date` section and leave
 empty `[Unreleased]` behind. Don't run this manually or preemptively rename `[Unreleased]`
 yourself — the release workflow owns that step.
 
+**Publishing**: the package is published to the public npm registry (npmjs.com) only by
+`.github/workflows/create-release.yml`, through npm trusted publishing: the workflow stages
+each version and a maintainer approves it on npmjs.com with 2FA. `files` in `package.json`
+is the one list of what ships. Agents never run `npm publish` or `npm stage`, and never add
+npm tokens, registry settings or `.npmrc` files. `CONTRIBUTING.md`'s "Releasing" section
+covers the maintainer's steps.
+
 ## Testing
 
 ### Testing Framework
